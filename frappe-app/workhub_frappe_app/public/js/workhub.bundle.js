@@ -320,9 +320,13 @@ frappe.workhub.sidebar = {
     },
 
     getModuleBadgeCount(moduleId) {
-        // TODO: Conectar con sistema de alertas real
+        // Conectar con sistema de alertas real
         if (moduleId === 'alertas') {
-            return 5; // Mock data
+            // Obtener contador del modulo de notificaciones
+            if (frappe.workhub.notifications && frappe.workhub.notifications.unreadCount > 0) {
+                return frappe.workhub.notifications.unreadCount;
+            }
+            return null; // Ocultar badge si count es 0
         }
         return null;
     },
@@ -469,6 +473,43 @@ frappe.workhub.sidebar = {
         }
     },
 
+    /**
+     * Actualizar badge de un modulo especifico sin re-renderizar todo
+     * @param {string} moduleId - ID del modulo (ej: 'alertas')
+     * @param {number} count - Numero a mostrar en el badge (null para ocultar)
+     */
+    updateBadgeCount(moduleId, count) {
+        const navItem = document.querySelector(`[data-module-id="${moduleId}"]`);
+        if (!navItem) return;
+
+        // Buscar badge existente o el lugar donde deberia ir
+        let badge = navItem.querySelector('.wh-nav-item-badge');
+
+        if (count && count > 0) {
+            // Crear badge si no existe
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'wh-nav-item-badge';
+
+                // Insertar antes del chevron (si existe) o al final del label
+                const chevron = navItem.querySelector('.wh-nav-item-chevron');
+                if (chevron) {
+                    navItem.insertBefore(badge, chevron);
+                } else {
+                    navItem.appendChild(badge);
+                }
+            }
+            // Actualizar contenido del badge
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = '';
+        } else {
+            // Ocultar o eliminar badge si count es 0 o null
+            if (badge) {
+                badge.remove();
+            }
+        }
+    },
+
     updateActivePath() {
         // Actualizar item activo según ruta actual
         document.querySelectorAll('.wh-nav-item').forEach(item => {
@@ -563,25 +604,31 @@ frappe.workhub.notifications = {
     },
 
     /**
-     * Actualizar el badge visual del header
+     * Actualizar el badge visual del header y del sidebar
      */
     updateBadge() {
+        // Actualizar badge del header
         const badge = document.querySelector('.wh-notification-badge');
-        if (!badge) return;
+        if (badge) {
+            if (this.unreadCount > 0) {
+                badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+                badge.style.display = 'flex';
 
-        if (this.unreadCount > 0) {
-            badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
-            badge.style.display = 'flex';
-
-            // Agregar clase especial si hay notificaciones de alta prioridad
-            if (this.highPriorityCount > 0) {
-                badge.classList.add('has-high-priority');
+                // Agregar clase especial si hay notificaciones de alta prioridad
+                if (this.highPriorityCount > 0) {
+                    badge.classList.add('has-high-priority');
+                } else {
+                    badge.classList.remove('has-high-priority');
+                }
             } else {
+                badge.style.display = 'none';
                 badge.classList.remove('has-high-priority');
             }
-        } else {
-            badge.style.display = 'none';
-            badge.classList.remove('has-high-priority');
+        }
+
+        // Actualizar badge del sidebar (Alertas)
+        if (frappe.workhub.sidebar && frappe.workhub.sidebar.updateBadgeCount) {
+            frappe.workhub.sidebar.updateBadgeCount('alertas', this.unreadCount);
         }
     },
 
