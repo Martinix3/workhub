@@ -1,6 +1,6 @@
 // Notifications Tab - Email, push, and digest settings
 import { useState, useEffect } from 'react'
-import { Save, Loader2 } from 'lucide-react'
+import { Save, Loader2, Bell, CheckCircle, AlertCircle, Package, Activity } from 'lucide-react'
 import { useUserSettings } from '../../api'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
@@ -10,7 +10,12 @@ type DigestFrequency = 'daily' | 'weekly' | 'none'
 interface NotificationSettings {
   email: boolean
   push: boolean
-  digest: DigestFrequency
+  task_assigned: boolean
+  task_status: boolean
+  overdue_alerts: boolean
+  order_status: boolean
+  project_health: boolean
+  digest_frequency: DigestFrequency
 }
 
 export function NotificationsTab() {
@@ -18,7 +23,12 @@ export function NotificationsTab() {
   const [notifications, setNotifications] = useState<NotificationSettings>({
     email: true,
     push: false,
-    digest: 'daily'
+    task_assigned: true,
+    task_status: true,
+    overdue_alerts: true,
+    order_status: true,
+    project_health: true,
+    digest_frequency: 'daily'
   })
   const [hasChanges, setHasChanges] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -51,7 +61,12 @@ export function NotificationsTab() {
     setHasChanges(
       updated.email !== settings.notifications.email ||
       updated.push !== settings.notifications.push ||
-      updated.digest !== settings.notifications.digest
+      updated.task_assigned !== settings.notifications.task_assigned ||
+      updated.task_status !== settings.notifications.task_status ||
+      updated.overdue_alerts !== settings.notifications.overdue_alerts ||
+      updated.order_status !== settings.notifications.order_status ||
+      updated.project_health !== settings.notifications.project_health ||
+      updated.digest_frequency !== settings.notifications.digest_frequency
     )
     setSaveSuccess(false)
   }
@@ -68,15 +83,16 @@ export function NotificationsTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* General Channels */}
       <div>
-        <h3 className="text-lg font-medium text-stone-900 mb-1">Notificaciones</h3>
+        <h3 className="text-lg font-medium text-stone-900 mb-1">Canales de notificación</h3>
         <p className="text-sm text-stone-500 mb-6">
           Configura como quieres recibir notificaciones del sistema
         </p>
 
-        {/* Email Notifications */}
         <div className="space-y-4">
+          {/* Email Notifications */}
           <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
             <div>
               <span className="font-medium text-stone-900">Notificaciones por email</span>
@@ -116,9 +132,139 @@ export function NotificationsTab() {
         </div>
       </div>
 
+      {/* Task Notifications */}
+      <div>
+        <h3 className="text-lg font-medium text-stone-900 mb-1">Notificaciones de tareas</h3>
+        <p className="text-sm text-stone-500 mb-6">
+          Recibe notificaciones sobre tus tareas y proyectos
+        </p>
+
+        <div className="space-y-4">
+          {/* Task Assignment */}
+          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
+            <div className="flex items-start gap-3">
+              <Bell className="w-5 h-5 text-stone-600 mt-0.5" />
+              <div>
+                <span className="font-medium text-stone-900">Asignación de tareas</span>
+                <p className="text-sm text-stone-500">
+                  Notificar cuando te asignen una nueva tarea
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={notifications.task_assigned}
+                onChange={(e) => handleChange('task_assigned', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </div>
+          </label>
+
+          {/* Task Status Changes */}
+          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-stone-600 mt-0.5" />
+              <div>
+                <span className="font-medium text-stone-900">Cambios de estado</span>
+                <p className="text-sm text-stone-500">
+                  Notificar cuando cambie el estado de tus tareas
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={notifications.task_status}
+                onChange={(e) => handleChange('task_status', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </div>
+          </label>
+
+          {/* Overdue Alerts */}
+          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-stone-600 mt-0.5" />
+              <div>
+                <span className="font-medium text-stone-900">Tareas vencidas</span>
+                <p className="text-sm text-stone-500">
+                  Alertas sobre tareas que pasaron su fecha límite
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={notifications.overdue_alerts}
+                onChange={(e) => handleChange('overdue_alerts', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* Business Notifications */}
+      <div>
+        <h3 className="text-lg font-medium text-stone-900 mb-1">Notificaciones de negocio</h3>
+        <p className="text-sm text-stone-500 mb-6">
+          Recibe notificaciones sobre pedidos y salud de proyectos
+        </p>
+
+        <div className="space-y-4">
+          {/* Order Updates */}
+          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
+            <div className="flex items-start gap-3">
+              <Package className="w-5 h-5 text-stone-600 mt-0.5" />
+              <div>
+                <span className="font-medium text-stone-900">Actualizaciones de pedidos</span>
+                <p className="text-sm text-stone-500">
+                  Notificar sobre cambios en pedidos de distribuidores
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={notifications.order_status}
+                onChange={(e) => handleChange('order_status', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </div>
+          </label>
+
+          {/* Project Health */}
+          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
+            <div className="flex items-start gap-3">
+              <Activity className="w-5 h-5 text-stone-600 mt-0.5" />
+              <div>
+                <span className="font-medium text-stone-900">Salud de proyectos</span>
+                <p className="text-sm text-stone-500">
+                  Alertas sobre proyectos en riesgo o con problemas
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={notifications.project_health}
+                onChange={(e) => handleChange('project_health', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </div>
+          </label>
+        </div>
+      </div>
+
       {/* Digest Frequency */}
       <div>
-        <h4 className="font-medium text-stone-900 mb-3">Resumen de actividad</h4>
+        <h3 className="text-lg font-medium text-stone-900 mb-1">Resumen de actividad</h3>
         <p className="text-sm text-stone-500 mb-4">
           Frecuencia del resumen de actividad por email
         </p>
@@ -130,10 +276,10 @@ export function NotificationsTab() {
           ].map((option) => (
             <button
               key={option.value}
-              onClick={() => handleChange('digest', option.value)}
+              onClick={() => handleChange('digest_frequency', option.value)}
               className={`
                 p-3 rounded-xl border-2 font-medium transition-all
-                ${notifications.digest === option.value
+                ${notifications.digest_frequency === option.value
                   ? 'border-amber-500 bg-amber-50 text-amber-700'
                   : 'border-stone-200 hover:border-stone-300 text-stone-600'
                 }

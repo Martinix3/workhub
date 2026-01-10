@@ -8,7 +8,12 @@ export interface UserSettings {
   notifications: {
     email: boolean
     push: boolean
-    digest: 'daily' | 'weekly' | 'none'
+    task_assigned: boolean
+    task_status: boolean
+    overdue_alerts: boolean
+    order_status: boolean
+    project_health: boolean
+    digest_frequency: 'daily' | 'weekly' | 'none'
   }
   department_access: string[]
 }
@@ -41,7 +46,12 @@ export interface UpdateSettingsData {
   notifications?: {
     email?: boolean
     push?: boolean
-    digest?: 'daily' | 'weekly' | 'none'
+    task_assigned?: boolean
+    task_status?: boolean
+    overdue_alerts?: boolean
+    order_status?: boolean
+    project_health?: boolean
+    digest_frequency?: 'daily' | 'weekly' | 'none'
   }
 }
 
