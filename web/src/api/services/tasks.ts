@@ -56,10 +56,11 @@ export const tasksApi = {
     })
   },
 
-  async changeStatus(taskId: string, status: TaskStatus): Promise<Task> {
+  async changeStatus(taskId: string, status: TaskStatus, blockedReason?: string): Promise<Task> {
     return frappe.call<Task>('workhub_frappe_app.api.tasks.change_status', {
       task_id: taskId,
-      status
+      status,
+      blocked_reason: blockedReason
     })
   },
 
