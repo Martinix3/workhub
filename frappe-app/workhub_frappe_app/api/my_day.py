@@ -7,6 +7,9 @@ from frappe.utils import nowdate, getdate, add_days
 import json
 
 from workhub_frappe_app.api.utils import require_auth
+from workhub_frappe_app.services.ai_recommendations import (
+    get_next_task_recommendations as get_recommendations_service
+)
 
 
 @frappe.whitelist()
@@ -101,6 +104,26 @@ def get_my_day():
         "inbox_count": len(inbox)
     }
 
+    # AI recommendations - suggested next tasks
+    suggested_next = []
+    try:
+        recommendations = get_recommendations_service(user, limit=3)
+        for rec in recommendations:
+            task = rec["task"]
+            suggested_next.append({
+                "task_id": task["name"],
+                "title": task["title"],
+                "status": task["status"],
+                "priority": task["priority"],
+                "project": task.get("project"),
+                "due_date": task.get("due_date"),
+                "score": round(rec["score"], 2),
+                "confidence": round(rec["confidence"], 2),
+                "reason": rec["reason"]
+            })
+    except Exception as e:
+        frappe.log_error(f"Error getting AI recommendations: {str(e)}", "My Day AI Recommendations")
+
     return {
         "summary": summary,
         "today": today_tasks,
@@ -108,7 +131,8 @@ def get_my_day():
         "upcoming": upcoming,
         "blocked": blocked,
         "blocking_others": blocking_others[:5],
-        "inbox": inbox
+        "inbox": inbox,
+        "suggested_next": suggested_next
     }
 
 
@@ -194,17 +218,16 @@ def mark_worked_today(task_ids):
 
 @frappe.whitelist()
 def get_focus_mode():
-    """Get single task to focus on - TDAH optimization"""
+    """Get single task to focus on - TDAH optimization with AI recommendations"""
     require_auth()
     user = frappe.session.user
 
     # Priority order:
     # 1. DOING tasks (already started)
-    # 2. P0 NEXT tasks
-    # 3. Overdue tasks
-    # 4. Today's tasks
+    # 2. AI-recommended top task
+    # 3. Fallback to rule-based logic
 
-    # Check for DOING first
+    # Check for DOING first - always prioritize tasks already in progress
     doing = frappe.get_all("WH Task",
         filters={"assigned_to": user, "status": "DOING"},
         fields=["name", "title", "priority", "project", "due_date"],
@@ -214,6 +237,32 @@ def get_focus_mode():
     if doing:
         return {"focus_task": doing[0], "reason": "Ya empezaste esta tarea"}
 
+    # Get AI recommendation for next task
+    try:
+        recommendations = get_recommendations_service(user, limit=1)
+        if recommendations:
+            top_rec = recommendations[0]
+            task = top_rec["task"]
+            focus_task = {
+                "name": task["name"],
+                "title": task["title"],
+                "priority": task["priority"],
+                "project": task.get("project"),
+                "due_date": task.get("due_date"),
+                "score": round(top_rec["score"], 2),
+                "confidence": round(top_rec["confidence"], 2)
+            }
+            return {
+                "focus_task": focus_task,
+                "reason": top_rec["reason"],
+                "ai_recommended": True
+            }
+    except Exception as e:
+        frappe.log_error(f"Error getting AI focus recommendation: {str(e)}", "Focus Mode AI")
+
+    # Fallback to rule-based logic if AI fails or has no recommendations
+    today = nowdate()
+
     # P0 NEXT
     p0_next = frappe.get_all("WH Task",
         filters={"assigned_to": user, "status": "NEXT", "priority": "P0"},
@@ -221,10 +270,9 @@ def get_focus_mode():
         limit=1)
 
     if p0_next:
-        return {"focus_task": p0_next[0], "reason": "Prioridad critica"}
+        return {"focus_task": p0_next[0], "reason": "Prioridad critica", "ai_recommended": False}
 
     # Overdue
-    today = nowdate()
     overdue = frappe.get_all("WH Task",
         filters={
             "assigned_to": user,
@@ -236,7 +284,7 @@ def get_focus_mode():
         limit=1)
 
     if overdue:
-        return {"focus_task": overdue[0], "reason": "Vencida - urgente"}
+        return {"focus_task": overdue[0], "reason": "Vencida - urgente", "ai_recommended": False}
 
     # Today's task
     today_task = frappe.get_all("WH Task",
@@ -250,7 +298,7 @@ def get_focus_mode():
         limit=1)
 
     if today_task:
-        return {"focus_task": today_task[0], "reason": "Para hoy"}
+        return {"focus_task": today_task[0], "reason": "Para hoy", "ai_recommended": False}
 
     # Any NEXT task
     any_next = frappe.get_all("WH Task",
@@ -260,9 +308,9 @@ def get_focus_mode():
         limit=1)
 
     if any_next:
-        return {"focus_task": any_next[0], "reason": "Siguiente en cola"}
+        return {"focus_task": any_next[0], "reason": "Siguiente en cola", "ai_recommended": False}
 
-    return {"focus_task": None, "reason": "No hay tareas pendientes"}
+    return {"focus_task": None, "reason": "No hay tareas pendientes", "ai_recommended": False}
 
 
 @frappe.whitelist()
