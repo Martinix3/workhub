@@ -107,13 +107,141 @@ def get_velocity_trends(period="daily", days=14):
     """
     require_auth()
 
-    # TODO: Implement velocity trends logic
+    # Convert days parameter to int
+    days = int(days)
+
+    # Calculate date ranges
+    today = getdate(nowdate())
+    current_start = add_days(today, -days)
+    current_end = today
+
+    # Previous period has the same length as current period
+    previous_start = add_days(current_start, -days)
+    previous_end = add_days(current_end, -days)
+
+    if period == "weekly":
+        # For weekly, we need 8 weeks = 56 days
+        if days < 56:
+            days = 56
+            current_start = add_days(today, -56)
+
+        # Query completed tasks for current period
+        current_query = """
+            SELECT
+                DATE(modified) as completion_date,
+                COUNT(*) as completed
+            FROM `tabWH Task`
+            WHERE status = 'DONE'
+            AND DATE(modified) BETWEEN %s AND %s
+            GROUP BY DATE(modified)
+            ORDER BY completion_date
+        """
+        current_data = frappe.db.sql(current_query, (current_start, current_end), as_dict=True)
+
+        # Query completed tasks for previous period
+        previous_query = """
+            SELECT
+                DATE(modified) as completion_date,
+                COUNT(*) as completed
+            FROM `tabWH Task`
+            WHERE status = 'DONE'
+            AND DATE(modified) BETWEEN %s AND %s
+            GROUP BY DATE(modified)
+            ORDER BY completion_date
+        """
+        previous_data = frappe.db.sql(previous_query, (previous_start, previous_end), as_dict=True)
+
+        # Group by week
+        result_data = []
+        week_count = 8
+
+        for week_num in range(week_count):
+            week_start = add_days(current_start, week_num * 7)
+            week_end = add_days(week_start, 6)
+
+            # Count current period completed tasks for this week
+            current_completed = sum(
+                item['completed'] for item in current_data
+                if getdate(week_start) <= getdate(item['completion_date']) <= getdate(week_end)
+            )
+
+            # Count previous period completed tasks for equivalent week
+            prev_week_start = add_days(previous_start, week_num * 7)
+            prev_week_end = add_days(prev_week_start, 6)
+            previous_completed = sum(
+                item['completed'] for item in previous_data
+                if getdate(prev_week_start) <= getdate(item['completion_date']) <= getdate(prev_week_end)
+            )
+
+            result_data.append({
+                "date": str(week_start),
+                "completed": current_completed,
+                "previous_period": previous_completed
+            })
+    else:
+        # Daily period (default)
+        # Query completed tasks for current period
+        current_query = """
+            SELECT
+                DATE(modified) as completion_date,
+                COUNT(*) as completed
+            FROM `tabWH Task`
+            WHERE status = 'DONE'
+            AND DATE(modified) BETWEEN %s AND %s
+            GROUP BY DATE(modified)
+            ORDER BY completion_date
+        """
+        current_data = frappe.db.sql(current_query, (current_start, current_end), as_dict=True)
+
+        # Query completed tasks for previous period
+        previous_query = """
+            SELECT
+                DATE(modified) as completion_date,
+                COUNT(*) as completed
+            FROM `tabWH Task`
+            WHERE status = 'DONE'
+            AND DATE(modified) BETWEEN %s AND %s
+            GROUP BY DATE(modified)
+            ORDER BY completion_date
+        """
+        previous_data = frappe.db.sql(previous_query, (previous_start, previous_end), as_dict=True)
+
+        # Create a dictionary for easy lookup
+        current_dict = {str(item['completion_date']): item['completed'] for item in current_data}
+        previous_dict = {str(item['completion_date']): item['completed'] for item in previous_data}
+
+        # Build result with all days in range
+        result_data = []
+        for day_offset in range(days):
+            current_date = add_days(current_start, day_offset)
+            previous_date = add_days(previous_start, day_offset)
+
+            result_data.append({
+                "date": str(current_date),
+                "completed": current_dict.get(str(current_date), 0),
+                "previous_period": previous_dict.get(str(previous_date), 0)
+            })
+
+    # Calculate averages
+    total_current = sum(item['completed'] for item in result_data)
+    total_previous = sum(item['previous_period'] for item in result_data)
+
+    avg_current = round(total_current / len(result_data), 2) if result_data else 0
+    avg_previous = round(total_previous / len(result_data), 2) if result_data else 0
+
+    # Calculate trend
+    trend = "stable"
+    if avg_current > avg_previous * 1.1:  # 10% threshold
+        trend = "up"
+    elif avg_current < avg_previous * 0.9:  # 10% threshold
+        trend = "down"
+
     return {
         "period": period,
-        "data": [],
-        "trend": "stable",
-        "avg_current": 0,
-        "avg_previous": 0
+        "data": result_data,
+        "trend": trend,
+        "avg_current": avg_current,
+        "avg_previous": avg_previous
     }
 
 
