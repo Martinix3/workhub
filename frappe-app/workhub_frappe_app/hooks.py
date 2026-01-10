@@ -164,6 +164,10 @@ scheduler_events = {
 		# Email diario a las 8am (hora local)
 		"0 8 * * *": [
 			"workhub_frappe_app.api.notifications.send_daily_emails"
+		],
+		# Procesar reportes programados cada 15 minutos
+		"*/15 * * * *": [
+			"workhub_frappe_app.api.report_scheduler.process_scheduled_reports"
 		]
 	},
 	"hourly": [

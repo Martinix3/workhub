@@ -3,23 +3,23 @@
   "spec": "020-advanced-reporting-export",
   "state": "building",
   "subtasks": {
-    "completed": 11,
+    "completed": 15,
     "total": 42,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Export Functionality",
+    "current": "Scheduled Reports",
     "id": null,
-    "total": 5
+    "total": 4
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 131,
+    "number": 135,
     "started_at": "2026-01-10T21:23:41.964627"
   },
-  "last_update": "2026-01-10T22:17:34.421106"
+  "last_update": "2026-01-10T22:30:20.942475"
 }

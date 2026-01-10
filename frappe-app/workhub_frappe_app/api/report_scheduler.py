@@ -83,7 +83,7 @@ def get_scheduled_reports(filters=None, limit=50, offset=0):
 			filters={"parent": schedule["name"]})
 		schedule["recipient_count"] = recipient_count
 
-		# Count executions (from WH Generated Report)
+		# Count executions (from WH Generated Report linked to this schedule)
 		execution_count = frappe.db.count("WH Generated Report",
 			filters={"scheduled_report": schedule["name"]})
 		schedule["execution_count"] = execution_count
@@ -281,17 +281,13 @@ def get_schedule_history(schedule_id, limit=50, offset=0):
 	"""
 	Get execution history for a scheduled report
 
-	Note: This function currently returns generated reports for the same report definition.
-	A 'scheduled_report' link field should be added to WH Generated Report DocType
-	in subtask 4.2 to properly track which schedule generated each report.
-
 	Args:
 		schedule_id: ID of the scheduled report
 		limit: Maximum number of records to return
 		offset: Number of records to skip for pagination
 
 	Returns:
-		List of report generation records for this schedule's report definition
+		List of report generation records for this schedule
 	"""
 	require_auth()
 
@@ -305,12 +301,11 @@ def get_schedule_history(schedule_id, limit=50, offset=0):
 	# Get the scheduled report for context
 	schedule = frappe.get_doc("WH Scheduled Report", schedule_id)
 
-	# Get generated reports for this report definition
-	# TODO: Filter by scheduled_report field once it's added to WH Generated Report in subtask 4.2
+	# Get generated reports for this specific schedule
 	history = frappe.get_list("WH Generated Report",
-		filters={"report_definition": schedule.report_definition},
+		filters={"scheduled_report": schedule_id},
 		fields=[
-			"name", "report_definition", "generated_at", "generated_by",
+			"name", "report_definition", "scheduled_report", "generated_at", "generated_by",
 			"export_format", "file_url", "status", "creation", "modified"
 		],
 		limit_page_length=int(limit),
@@ -345,16 +340,15 @@ def get_schedule_history(schedule_id, limit=50, offset=0):
 			except Exception:
 				pass
 
-	# Get summary statistics for this report definition
-	# TODO: Filter by scheduled_report once field is added
+	# Get summary statistics for this specific schedule
 	total_count = frappe.db.count("WH Generated Report",
-		filters={"report_definition": schedule.report_definition})
+		filters={"scheduled_report": schedule_id})
 
 	success_count = frappe.db.count("WH Generated Report",
-		filters={"report_definition": schedule.report_definition, "status": "Completed"})
+		filters={"scheduled_report": schedule_id, "status": "Completed"})
 
 	failed_count = frappe.db.count("WH Generated Report",
-		filters={"report_definition": schedule.report_definition, "status": "Failed"})
+		filters={"scheduled_report": schedule_id, "status": "Failed"})
 
 	return {
 		"success": True,
@@ -373,8 +367,7 @@ def get_schedule_history(schedule_id, limit=50, offset=0):
 			"successful": success_count,
 			"failed": failed_count,
 			"success_rate": round((success_count / total_count * 100), 1) if total_count > 0 else 0
-		},
-		"note": "History shows all generations of this report definition. Add 'scheduled_report' field to WH Generated Report to track specific schedule executions."
+		}
 	}
 
 
@@ -421,3 +414,302 @@ def _format_schedule_description(schedule):
 		return f"Monthly on day {day_of_month} at {formatted_time}"
 
 	return f"{schedule_type} at {formatted_time}"
+
+
+# ========================================
+# Scheduler Job Functions
+# ========================================
+
+def process_scheduled_reports():
+	"""
+	Scheduler function to check and execute due scheduled reports
+	This function is called by the Frappe scheduler (cron)
+	"""
+	try:
+		# Get all active scheduled reports that are due
+		now = now_datetime()
+
+		due_schedules = frappe.get_all("WH Scheduled Report",
+			filters={
+				"is_active": 1,
+				"next_run": ["<=", now]
+			},
+			fields=["name", "schedule_name", "report_definition", "export_format"],
+			order_by="next_run asc",
+			ignore_permissions=True
+		)
+
+		if not due_schedules:
+			frappe.logger().info("No scheduled reports due for execution")
+			return
+
+		frappe.logger().info(f"Processing {len(due_schedules)} scheduled reports")
+
+		# Execute each due schedule
+		for schedule in due_schedules:
+			try:
+				execute_scheduled_report(schedule["name"])
+			except Exception as e:
+				error_message = f"Error executing scheduled report {schedule['name']}: {str(e)}"
+				frappe.log_error(error_message, "Scheduled Report Execution Failed")
+
+				# Mark schedule as failed
+				try:
+					schedule_doc = frappe.get_doc("WH Scheduled Report", schedule["name"])
+					schedule_doc.mark_failed(error_message)
+				except Exception:
+					pass
+
+		frappe.db.commit()
+		frappe.logger().info(f"Completed processing {len(due_schedules)} scheduled reports")
+
+	except Exception as e:
+		frappe.log_error(f"Error in process_scheduled_reports: {str(e)}", "Scheduled Reports Processor Error")
+
+
+def execute_scheduled_report(schedule_id):
+	"""
+	Execute a single scheduled report: generate report and send to recipients
+
+	Args:
+		schedule_id: ID of the WH Scheduled Report to execute
+
+	Returns:
+		Dict with success status and generated report ID
+	"""
+	frappe.logger().info(f"Executing scheduled report: {schedule_id}")
+
+	# Get the scheduled report
+	schedule_doc = frappe.get_doc("WH Scheduled Report", schedule_id)
+
+	if not schedule_doc.is_active:
+		frappe.logger().info(f"Scheduled report {schedule_id} is not active, skipping")
+		return {"success": False, "message": "Schedule is not active"}
+
+	# Get the report definition
+	report_def = frappe.get_doc("WH Report Definition", schedule_doc.report_definition)
+
+	if not report_def.is_active:
+		error_message = f"Report definition '{schedule_doc.report_definition}' is not active"
+		frappe.logger().warning(error_message)
+		schedule_doc.mark_failed(error_message)
+		return {"success": False, "message": error_message}
+
+	try:
+		# Import export function
+		from workhub_frappe_app.api.report_export import (
+			get_report_generation_data,
+			create_generated_report_record,
+			update_generated_report_status,
+			export_to_pdf,
+			export_to_excel,
+			export_to_csv
+		)
+
+		# Generate the report data
+		frappe.logger().info(f"Generating report data for: {schedule_doc.report_definition}")
+		report_data = get_report_generation_data(schedule_doc.report_definition, filters=None)
+
+		# Create generated report record with scheduled_report link
+		generated_report_id = create_generated_report_record(
+			report_id=schedule_doc.report_definition,
+			export_format=schedule_doc.export_format,
+			data_snapshot=report_data
+		)
+
+		# Update the generated report to link it to this schedule
+		frappe.db.set_value("WH Generated Report", generated_report_id, "scheduled_report", schedule_id)
+
+		# Export the report in the specified format
+		frappe.logger().info(f"Exporting report in {schedule_doc.export_format} format")
+
+		export_result = None
+		if schedule_doc.export_format == "PDF":
+			export_result = export_to_pdf(
+				report_id=schedule_doc.report_definition,
+				filters=None,
+				generated_report_id=generated_report_id
+			)
+		elif schedule_doc.export_format == "Excel":
+			export_result = export_to_excel(
+				report_id=schedule_doc.report_definition,
+				filters=None,
+				generated_report_id=generated_report_id
+			)
+		elif schedule_doc.export_format == "CSV":
+			export_result = export_to_csv(
+				report_id=schedule_doc.report_definition,
+				filters=None,
+				generated_report_id=generated_report_id
+			)
+		else:
+			error_message = f"Unsupported export format: {schedule_doc.export_format}"
+			update_generated_report_status(generated_report_id, "Failed", error_message=error_message)
+			schedule_doc.mark_failed(error_message)
+			return {"success": False, "message": error_message}
+
+		if not export_result.get("success"):
+			error_message = export_result.get("message", "Export failed")
+			schedule_doc.mark_failed(error_message)
+			return {"success": False, "message": error_message}
+
+		file_url = export_result.get("file_url")
+
+		frappe.logger().info(f"Report exported successfully: {file_url}")
+
+		# Send email to recipients
+		send_result = send_scheduled_report_email(
+			schedule_doc=schedule_doc,
+			report_def=report_def,
+			file_url=file_url,
+			generated_report_id=generated_report_id
+		)
+
+		if send_result.get("success"):
+			# Mark schedule as successful
+			schedule_doc.mark_success()
+			frappe.logger().info(f"Scheduled report {schedule_id} executed successfully")
+
+			return {
+				"success": True,
+				"generated_report_id": generated_report_id,
+				"file_url": file_url,
+				"recipients_sent": send_result.get("recipients_sent", 0)
+			}
+		else:
+			# Email sending failed, but report was generated
+			error_message = f"Report generated but email delivery failed: {send_result.get('message', 'Unknown error')}"
+			frappe.logger().warning(error_message)
+			schedule_doc.mark_failed(error_message)
+
+			return {
+				"success": False,
+				"message": error_message,
+				"generated_report_id": generated_report_id,
+				"file_url": file_url
+			}
+
+	except Exception as e:
+		error_message = f"Error executing scheduled report: {str(e)}"
+		frappe.log_error(error_message, f"Scheduled Report Execution Error - {schedule_id}")
+
+		# Mark schedule as failed
+		try:
+			schedule_doc.mark_failed(error_message)
+		except Exception:
+			pass
+
+		return {"success": False, "message": error_message}
+
+
+def send_scheduled_report_email(schedule_doc, report_def, file_url, generated_report_id):
+	"""
+	Send scheduled report email to all recipients
+
+	Args:
+		schedule_doc: WH Scheduled Report document
+		report_def: WH Report Definition document
+		file_url: URL of the generated report file
+		generated_report_id: ID of the generated report record
+
+	Returns:
+		Dict with success status and count of emails sent
+	"""
+	try:
+		# Get recipients
+		recipients = []
+
+		for recipient_row in schedule_doc.recipients:
+			if recipient_row.recipient_type == "User":
+				# Get user email
+				user_email = frappe.db.get_value("User", recipient_row.user, "email")
+				if user_email:
+					recipients.append(user_email)
+			elif recipient_row.recipient_type == "Email":
+				# Use email directly
+				if recipient_row.email:
+					recipients.append(recipient_row.email)
+
+		if not recipients:
+			frappe.logger().warning(f"No recipients configured for scheduled report {schedule_doc.name}")
+			return {"success": False, "message": "No recipients configured"}
+
+		frappe.logger().info(f"Sending report to {len(recipients)} recipients: {', '.join(recipients)}")
+
+		# Build email subject
+		subject = schedule_doc.email_subject or f"Scheduled Report: {report_def.title}"
+
+		# Build email body
+		if schedule_doc.email_body:
+			message = schedule_doc.email_body
+		else:
+			# Default email body
+			message = f"""
+			<h2>Scheduled Report: {report_def.title}</h2>
+			<p>Your scheduled report has been generated and is attached to this email.</p>
+
+			<h3>Report Details</h3>
+			<ul>
+				<li><strong>Report:</strong> {report_def.title}</li>
+				<li><strong>Type:</strong> {report_def.report_type}</li>
+				<li><strong>Category:</strong> {report_def.category}</li>
+				<li><strong>Generated:</strong> {format_datetime(now_datetime(), "MMM dd, yyyy HH:mm")}</li>
+				<li><strong>Format:</strong> {schedule_doc.export_format}</li>
+			</ul>
+
+			<p>The report is attached to this email. You can also download it from the system.</p>
+
+			<p><em>This is an automated email from WorkHub Reporting System.</em></p>
+			"""
+
+		# Get the file document to attach
+		file_doc = None
+		if file_url:
+			try:
+				file_doc = frappe.get_doc("File", {"file_url": file_url})
+			except Exception as e:
+				frappe.logger().warning(f"Could not find file document for {file_url}: {str(e)}")
+
+		# Prepare attachments
+		attachments = []
+		if file_doc:
+			# Get the physical file path
+			from frappe.utils import get_site_path
+			import os
+
+			if file_doc.is_private:
+				file_path = os.path.join(get_site_path(), "private", "files", file_doc.file_name)
+			else:
+				file_path = os.path.join(get_site_path(), "public", "files", file_doc.file_name)
+
+			# Check if file exists
+			if os.path.exists(file_path):
+				attachments.append({
+					"fname": file_doc.file_name,
+					"fcontent": open(file_path, "rb").read()
+				})
+			else:
+				frappe.logger().warning(f"File not found at path: {file_path}")
+
+		# Send email
+		frappe.sendmail(
+			recipients=recipients,
+			subject=subject,
+			message=message,
+			attachments=attachments if attachments else None,
+			reference_doctype="WH Generated Report",
+			reference_name=generated_report_id
+		)
+
+		frappe.logger().info(f"Email sent successfully to {len(recipients)} recipients")
+
+		return {
+			"success": True,
+			"recipients_sent": len(recipients),
+			"recipients": recipients
+		}
+
+	except Exception as e:
+		error_message = f"Error sending scheduled report email: {str(e)}"
+		frappe.log_error(error_message, f"Scheduled Report Email Error - {schedule_doc.name}")
+		return {"success": False, "message": error_message}

@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "report_definition",
+  "scheduled_report",
   "generated_at",
   "column_break_1",
   "generated_by",
@@ -27,6 +28,13 @@
    "label": "Report Definition",
    "options": "WH Report Definition",
    "reqd": 1
+  },
+  {
+   "fieldname": "scheduled_report",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Scheduled Report",
+   "options": "WH Scheduled Report"
   },
   {
    "default": "now",
