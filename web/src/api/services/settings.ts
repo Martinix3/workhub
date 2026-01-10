@@ -90,6 +90,14 @@ const settingsApi = {
   // Get available departments
   async getDepartments(): Promise<Department[]> {
     return frappe.call<Department[]>('workhub_frappe_app.api.settings.get_available_departments')
+  },
+
+  // Get user KPIs
+  async getUserKPIs(params?: { userId?: string; period?: 'week' | 'month' }): Promise<UserKPIs> {
+    return frappe.call<UserKPIs>('workhub_frappe_app.api.kpis.get_user_kpis', {
+      user_id: params?.userId,
+      period: params?.period
+    })
   }
 }
 
