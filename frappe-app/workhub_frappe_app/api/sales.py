@@ -560,6 +560,80 @@ def get_order_detail(order_id):
 
 
 @frappe.whitelist()
+def update_order(order_id, data):
+    """Update an existing order - handles both Sales Order (Sell In) and Distributor Sell Out Order (Sell Out)"""
+    require_auth()
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    if not order_id:
+        frappe.throw(_("Order ID is required"))
+
+    # Determine document type - check Sales Order first, then Distributor Sell Out Order
+    doc = None
+    doctype = None
+
+    if frappe.db.exists("Sales Order", order_id):
+        doctype = "Sales Order"
+        doc = frappe.get_doc("Sales Order", order_id)
+    elif frappe.db.exists("Distributor Sell Out Order", order_id):
+        doctype = "Distributor Sell Out Order"
+        doc = frappe.get_doc("Distributor Sell Out Order", order_id)
+    else:
+        frappe.throw(_("Order {0} not found").format(order_id))
+
+    # Check permission
+    if not frappe.has_permission(doctype, "write", doc=doc):
+        frappe.throw(_("No permission to update this order"))
+
+    # Only allow updates for draft or confirmed orders
+    if doctype == "Sales Order":
+        # Draft = docstatus 0, Confirmed = docstatus 1 with certain statuses
+        if doc.docstatus == 2:  # Cancelled
+            frappe.throw(_("Cannot update a cancelled order"))
+        if doc.docstatus == 1 and doc.status not in ["To Deliver and Bill", "On Hold", "To Deliver", "To Bill"]:
+            frappe.throw(_("Cannot update order with status {0}").format(doc.status))
+    else:  # Distributor Sell Out Order
+        if doc.status in ["Cancelled", "Delivered", "Completed"]:
+            frappe.throw(_("Cannot update order with status {0}").format(doc.status))
+
+    # Update delivery_date if provided
+    if data.get("deliveryDate"):
+        if doctype == "Sales Order":
+            doc.delivery_date = data["deliveryDate"]
+        else:
+            doc.expected_delivery_date = data["deliveryDate"]
+
+    # Update sales_type if provided (only for Sales Order)
+    if doctype == "Sales Order" and data.get("salesType"):
+        sales_type_map = {
+            "sell_in": "Sell In",
+            "sell_out": "Sell Out"
+        }
+        if hasattr(doc, "sales_type"):
+            doc.sales_type = sales_type_map.get(data["salesType"], "Sell In")
+
+    # Update items if provided
+    if data.get("items"):
+        # Clear existing items
+        doc.items = []
+
+        # Add new items
+        for item_data in data["items"]:
+            doc.append("items", {
+                "item_code": item_data.get("itemCode") or item_data.get("item_code"),
+                "qty": flt(item_data.get("qty", 0)),
+                "rate": flt(item_data.get("rate", 0)),
+            })
+
+    # Save the document
+    doc.save()
+
+    # Return updated order detail using get_order_detail
+    return get_order_detail(order_id)
+
+
+@frappe.whitelist()
 def create_order(data):
     """Create a new order - routes to Sales Order (Sell In) or Distributor Sell Out Order (Sell Out)"""
     require_permission("Sales Order", "create")
