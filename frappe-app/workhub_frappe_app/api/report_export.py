@@ -1186,3 +1186,217 @@ def download_report(generated_report_id):
 	except Exception as e:
 		frappe.log_error(f"Error downloading report {generated_report_id}: {str(e)}")
 		frappe.throw(_("Failed to download report: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def send_report_email(report_id, recipients, export_format="PDF", filters=None,
+					  email_subject=None, email_body=None):
+	"""
+	Generate a report and send it via email to specified recipients
+	This is a general-purpose function for ad-hoc report sharing
+
+	Args:
+		report_id: ID of the WH Report Definition to generate
+		recipients: List of email addresses or User IDs (JSON array or comma-separated string)
+		export_format: Format to export (PDF, Excel, CSV) - default PDF
+		filters: Optional filters to apply to the report (JSON object)
+		email_subject: Optional custom email subject
+		email_body: Optional custom email body (HTML supported)
+
+	Returns:
+		Dict with success status, generated report ID, file URL, and delivery details
+	"""
+	require_auth()
+
+	try:
+		# Parse recipients
+		if isinstance(recipients, str):
+			# Try to parse as JSON first
+			try:
+				recipients_list = json.loads(recipients)
+			except json.JSONDecodeError:
+				# If not JSON, treat as comma-separated string
+				recipients_list = [r.strip() for r in recipients.split(",") if r.strip()]
+		elif isinstance(recipients, list):
+			recipients_list = recipients
+		else:
+			frappe.throw(_("Recipients must be a list or comma-separated string"))
+
+		if not recipients_list:
+			frappe.throw(_("At least one recipient is required"))
+
+		# Parse filters if provided
+		if filters and isinstance(filters, str):
+			filters = json.loads(filters)
+
+		# Normalize format
+		export_format = export_format.upper()
+		if export_format not in ["PDF", "EXCEL", "CSV"]:
+			frappe.throw(_("Invalid export format. Must be PDF, Excel, or CSV"))
+
+		frappe.logger().info(f"Generating and emailing report {report_id} to {len(recipients_list)} recipients")
+
+		# Verify report exists and is active
+		if not frappe.db.exists("WH Report Definition", report_id):
+			frappe.throw(_("Report not found: {0}").format(report_id))
+
+		report_def = frappe.get_doc("WH Report Definition", report_id)
+		if not report_def.is_active:
+			frappe.throw(_("Report '{0}' is not active").format(report_def.title))
+
+		# Generate the report data
+		frappe.logger().info(f"Generating report data for: {report_id}")
+		report_data = get_report_generation_data(report_id, filters=filters)
+
+		# Create generated report record
+		generated_report_id = create_generated_report_record(
+			report_id=report_id,
+			export_format=export_format,
+			data_snapshot=report_data
+		)
+
+		# Export the report in the specified format
+		frappe.logger().info(f"Exporting report in {export_format} format")
+
+		export_result = None
+		if export_format == "PDF":
+			export_result = export_to_pdf(
+				report_id=report_id,
+				filters=filters,
+				generated_report_id=generated_report_id
+			)
+		elif export_format == "EXCEL":
+			export_result = export_to_excel(
+				report_id=report_id,
+				filters=filters,
+				generated_report_id=generated_report_id
+			)
+		elif export_format == "CSV":
+			export_result = export_to_csv(
+				report_id=report_id,
+				filters=filters,
+				generated_report_id=generated_report_id
+			)
+
+		if not export_result.get("success"):
+			error_message = export_result.get("message", "Export failed")
+			frappe.throw(_("Failed to export report: {0}").format(error_message))
+
+		file_url = export_result.get("file_url")
+		frappe.logger().info(f"Report exported successfully: {file_url}")
+
+		# Resolve recipients to email addresses
+		email_addresses = []
+		for recipient in recipients_list:
+			# Check if it's a User ID (starts with alphanumeric pattern typical of Frappe IDs)
+			# or if it looks like an email address
+			if "@" in recipient:
+				# Direct email address
+				email_addresses.append(recipient)
+			else:
+				# Assume it's a User ID, try to get email
+				user_email = frappe.db.get_value("User", recipient, "email")
+				if user_email:
+					email_addresses.append(user_email)
+				else:
+					frappe.logger().warning(f"Could not resolve recipient '{recipient}' to email address, skipping")
+
+		if not email_addresses:
+			frappe.throw(_("No valid email addresses found in recipients list"))
+
+		frappe.logger().info(f"Resolved to {len(email_addresses)} email addresses: {', '.join(email_addresses)}")
+
+		# Build email subject
+		if not email_subject:
+			email_subject = f"Report: {report_def.title}"
+
+		# Build email body
+		if not email_body:
+			# Default email body
+			email_body = f"""
+			<h2>Report: {report_def.title}</h2>
+			<p>A report has been generated and is attached to this email.</p>
+
+			<h3>Report Details</h3>
+			<ul>
+				<li><strong>Report:</strong> {report_def.title}</li>
+				<li><strong>Type:</strong> {report_def.report_type}</li>
+				<li><strong>Category:</strong> {report_def.category}</li>
+				<li><strong>Generated:</strong> {format_datetime(now_datetime(), "MMM dd, yyyy HH:mm")}</li>
+				<li><strong>Format:</strong> {export_format}</li>
+			</ul>
+
+			<p>The report is attached to this email for your review.</p>
+
+			<p><em>This email was sent from WorkHub Reporting System.</em></p>
+			"""
+
+		# Get the file document to attach
+		file_doc = None
+		if file_url:
+			try:
+				file_doc = frappe.get_doc("File", {"file_url": file_url})
+			except Exception as e:
+				frappe.logger().warning(f"Could not find file document for {file_url}: {str(e)}")
+
+		# Prepare attachments
+		attachments = []
+		if file_doc:
+			# Get the physical file path
+			from frappe.utils import get_site_path
+
+			if file_doc.is_private:
+				file_path = os.path.join(get_site_path(), "private", "files", file_doc.file_name)
+			else:
+				file_path = os.path.join(get_site_path(), "public", "files", file_doc.file_name)
+
+			# Check if file exists
+			if os.path.exists(file_path):
+				attachments.append({
+					"fname": file_doc.file_name,
+					"fcontent": open(file_path, "rb").read()
+				})
+			else:
+				frappe.logger().warning(f"File not found at path: {file_path}")
+				frappe.throw(_("Generated report file not found"))
+
+		# Send email
+		frappe.sendmail(
+			recipients=email_addresses,
+			subject=email_subject,
+			message=email_body,
+			attachments=attachments if attachments else None,
+			reference_doctype="WH Generated Report",
+			reference_name=generated_report_id
+		)
+
+		frappe.logger().info(f"Email sent successfully to {len(email_addresses)} recipients")
+
+		# Log the delivery in the generated report's data snapshot
+		try:
+			gen_report = frappe.get_doc("WH Generated Report", generated_report_id)
+			snapshot = json.loads(gen_report.data_snapshot) if gen_report.data_snapshot else {}
+			snapshot["email_delivery"] = {
+				"sent_at": str(now_datetime()),
+				"recipients": email_addresses,
+				"subject": email_subject,
+				"success": True
+			}
+			gen_report.data_snapshot = json.dumps(snapshot)
+			gen_report.save(ignore_permissions=True)
+		except Exception as e:
+			frappe.logger().warning(f"Could not log email delivery to generated report: {str(e)}")
+
+		return {
+			"success": True,
+			"message": _("Report generated and sent to {0} recipient(s)").format(len(email_addresses)),
+			"generated_report_id": generated_report_id,
+			"file_url": file_url,
+			"recipients_sent": len(email_addresses),
+			"recipients": email_addresses
+		}
+
+	except Exception as e:
+		error_message = f"Error sending report email: {str(e)}"
+		frappe.log_error(error_message, "Report Email Send Error")
+		frappe.throw(_("Failed to send report: {0}").format(str(e)))
