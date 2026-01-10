@@ -131,11 +131,11 @@ export function useTaskMutations() {
     }
   }, [])
 
-  const changeStatus = useCallback(async (taskId: string, status: TaskStatus): Promise<Task | null> => {
+  const changeStatus = useCallback(async (taskId: string, status: TaskStatus, blockedReason?: string): Promise<Task | null> => {
     setLoading(true)
     setError(null)
     try {
-      return await tasksApi.changeStatus(taskId, status)
+      return await tasksApi.changeStatus(taskId, status, blockedReason)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to change status'))
       return null
