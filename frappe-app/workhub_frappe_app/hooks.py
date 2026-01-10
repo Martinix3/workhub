@@ -94,7 +94,9 @@ after_install = "workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm
 fixtures = [
     {"dt": "Custom Field", "filters": [["dt", "=", "Sales Order"], ["fieldname", "=", "sales_type"]]},
     # Project templates con sus tareas
-    {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]}
+    {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]},
+    # KPI metrics
+    {"dt": "WH KPI Metric", "filters": [["is_active", "=", 1]]}
 ]
 
 # Boot Session
