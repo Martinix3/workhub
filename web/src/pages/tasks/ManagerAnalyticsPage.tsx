@@ -9,6 +9,7 @@ import {
   VelocityTrendChart,
   BlockerAnalysisPanel,
   OverdueRatioChart,
+  DrillDownPanel,
   type DrillDownContext,
   type VelocityData,
   type BlockerData,
@@ -50,8 +51,10 @@ export function ManagerAnalyticsPage() {
 
   const handleDrillDown = (context: DrillDownContext) => {
     setDrillDownContext(context)
-    // TODO: Subtask 4.2 will implement the side panel/modal for drill-down
-    console.log('Drill-down context:', context)
+  }
+
+  const handleCloseDrillDown = () => {
+    setDrillDownContext(null)
   }
 
   const handleViewTask = (taskId: string) => {
@@ -201,6 +204,13 @@ export function ManagerAnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Drill-Down Panel */}
+      <DrillDownPanel
+        context={drillDownContext}
+        onClose={handleCloseDrillDown}
+        onTaskClick={handleViewTask}
+      />
     </div>
   )
 }
