@@ -988,3 +988,201 @@ def export_to_pdf(report_id, filters=None):
 
 		frappe.log_error(f"PDF export failed for report {report_id}: {str(e)}")
 		frappe.throw(_("Failed to export PDF: {0}").format(str(e)))
+
+
+# ========================================
+# Export API Endpoints
+# ========================================
+
+@frappe.whitelist()
+def export_report(report_id, format, filters=None):
+	"""
+	Export a report in the specified format
+
+	Main API endpoint for report exports. Routes to appropriate export function
+	based on format parameter.
+
+	Args:
+		report_id: Report definition ID
+		format: Export format (PDF/Excel/CSV)
+		filters: Optional filters to apply (JSON string or dict)
+
+	Returns:
+		dict with success flag, file_url, generated_report_id, and message
+	"""
+	require_auth()
+
+	# Validate inputs
+	if not report_id:
+		frappe.throw(_("Report ID is required"))
+
+	if not format:
+		frappe.throw(_("Export format is required"))
+
+	# Normalize format
+	format = format.upper()
+
+	# Validate format
+	valid_formats = ["PDF", "EXCEL", "CSV"]
+	if format not in valid_formats:
+		frappe.throw(_("Invalid export format. Must be one of: {0}").format(", ".join(valid_formats)))
+
+	# Parse filters if string
+	if filters and isinstance(filters, str):
+		try:
+			filters = json.loads(filters)
+		except:
+			filters = None
+
+	# Route to appropriate export function
+	try:
+		if format == "PDF":
+			result = export_to_pdf(report_id, filters)
+		elif format == "EXCEL":
+			result = export_to_excel(report_id, filters)
+		elif format == "CSV":
+			result = export_to_csv(report_id, filters)
+
+		return result
+
+	except Exception as e:
+		frappe.log_error(f"Export failed for report {report_id} in format {format}: {str(e)}")
+		frappe.throw(_("Export failed: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def get_export_status(job_id):
+	"""
+	Get the status of an export job
+
+	Used for checking async export status. Returns the current status
+	and file URL if completed.
+
+	Args:
+		job_id: WH Generated Report ID (the export job identifier)
+
+	Returns:
+		dict with status, file_url, error_message, and metadata
+	"""
+	require_auth()
+
+	# Validate input
+	if not job_id:
+		frappe.throw(_("Job ID is required"))
+
+	try:
+		# Get the generated report record
+		doc = frappe.get_doc("WH Generated Report", job_id)
+
+		# Build response
+		response = {
+			"success": True,
+			"job_id": job_id,
+			"status": doc.status,
+			"export_format": doc.export_format,
+			"generated_at": doc.generated_at,
+			"generated_by": doc.generated_by
+		}
+
+		# Add file URL if completed
+		if doc.status == "Completed" and doc.file_url:
+			response["file_url"] = doc.file_url
+			response["message"] = _("Export completed successfully")
+
+		# Add error message if failed
+		elif doc.status == "Failed":
+			# Get error from data_snapshot if available
+			error_message = "Export failed"
+			if doc.data_snapshot:
+				try:
+					snapshot = json.loads(doc.data_snapshot) if isinstance(doc.data_snapshot, str) else doc.data_snapshot
+					if isinstance(snapshot, dict) and snapshot.get("error"):
+						error_message = snapshot["error"]
+				except:
+					pass
+
+			response["error_message"] = error_message
+			response["message"] = _("Export failed")
+
+		# Pending status
+		else:
+			response["message"] = _("Export is in progress")
+
+		# Add report info
+		if doc.report_definition:
+			report = frappe.get_doc("WH Report Definition", doc.report_definition)
+			response["report_title"] = report.title
+			response["report_type"] = report.report_type
+
+		return response
+
+	except frappe.DoesNotExistError:
+		frappe.throw(_("Export job not found: {0}").format(job_id))
+	except Exception as e:
+		frappe.log_error(f"Error getting export status for {job_id}: {str(e)}")
+		frappe.throw(_("Failed to get export status: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def download_report(generated_report_id):
+	"""
+	Get download URL for a generated report
+
+	Returns the file URL for direct download of a previously generated report.
+
+	Args:
+		generated_report_id: WH Generated Report ID
+
+	Returns:
+		dict with success flag, file_url, and report metadata
+	"""
+	require_auth()
+
+	# Validate input
+	if not generated_report_id:
+		frappe.throw(_("Generated report ID is required"))
+
+	try:
+		# Get the generated report record
+		doc = frappe.get_doc("WH Generated Report", generated_report_id)
+
+		# Check if report is completed
+		if doc.status != "Completed":
+			frappe.throw(_("Report generation is not complete. Current status: {0}").format(doc.status))
+
+		# Check if file exists
+		if not doc.file_url:
+			frappe.throw(_("Report file not found"))
+
+		# Build response with metadata
+		response = {
+			"success": True,
+			"generated_report_id": generated_report_id,
+			"file_url": doc.file_url,
+			"export_format": doc.export_format,
+			"generated_at": doc.generated_at,
+			"generated_by": doc.generated_by
+		}
+
+		# Add report info
+		if doc.report_definition:
+			report = frappe.get_doc("WH Report Definition", doc.report_definition)
+			response["report_title"] = report.title
+			response["report_type"] = report.report_type
+			response["category"] = report.category
+
+		# Add user info
+		if doc.generated_by:
+			user_data = frappe.db.get_value("User", doc.generated_by,
+				["full_name", "email"], as_dict=True)
+			if user_data:
+				response["generated_by_name"] = user_data.full_name
+				response["generated_by_email"] = user_data.email
+
+		return response
+
+	except frappe.DoesNotExistError:
+		frappe.throw(_("Generated report not found: {0}").format(generated_report_id))
+	except Exception as e:
+		frappe.log_error(f"Error downloading report {generated_report_id}: {str(e)}")
+		frappe.throw(_("Failed to download report: {0}").format(str(e)))
