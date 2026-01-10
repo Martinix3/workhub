@@ -10,6 +10,7 @@ class WHTask(Document):
     def before_save(self):
         self.handle_status_change()
         self.handle_worked_today()
+        self.calculate_total_hours()
         self.set_defaults()
 
     def on_update(self):
@@ -69,6 +70,14 @@ class WHTask(Document):
                 if log.date:
                     unique_days.add(str(log.date))
             self.total_work_days = len(unique_days)
+
+    def calculate_total_hours(self):
+        """Calculate total_hours from all work_log entries."""
+        total = 0.0
+        for log in (self.work_log or []):
+            if log.duration_hours:
+                total += log.duration_hours
+        self.total_hours = total
 
     def update_project_kpis(self):
         """Notifica al proyecto que recalcule sus KPIs"""
