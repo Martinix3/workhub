@@ -1,10 +1,11 @@
 // Kanban Board Page - Enhanced with priority bars, avatars, drag effects, FAB
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen } from 'lucide-react'
+import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, CheckCircle } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { useKanban, useTaskMutations } from '../../api'
+import { TaskCompletionModal } from '../../components/tasks/TaskCompletionModal'
 import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
 
 const columnConfig: Record<TaskStatus, { label: string; headerBg: string; bg: string; dropBg: string }> = {
@@ -42,12 +43,14 @@ export function KanbanPage() {
     searchParams.delete('project')
     setSearchParams(searchParams)
   }
-  const { quickAdd } = useTaskMutations()
+  const { quickAdd, completeTask } = useTaskMutations()
 
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
+  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null)
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
 
   if (loading) {
     return <LoadingState message="Cargando tablero..." />
@@ -106,6 +109,19 @@ export function KanbanPage() {
       setShowQuickAdd(false)
       await refetch()
     }
+  }
+
+  const handleTaskComplete = (task: Task) => {
+    setTaskToComplete(task)
+    setShowCompletionModal(true)
+  }
+
+  const handleModalComplete = async (taskId: string, notes?: string) => {
+    await completeTask(taskId, notes)
+    // Refetch kanban data to update the UI
+    await refetch()
+    setShowCompletionModal(false)
+    setTaskToComplete(null)
   }
 
   return (
@@ -213,6 +229,7 @@ export function KanbanPage() {
                       onDragStart={() => handleDragStart(task)}
                       onDragEnd={handleDragEnd}
                       onClick={() => navigate(`/tareas/tarea/${task.name}`)}
+                      onComplete={() => handleTaskComplete(task)}
                       isDragging={draggedTask?.name === task.name}
                     />
                   ))}
@@ -313,6 +330,17 @@ export function KanbanPage() {
           </form>
         </div>
       )}
+
+      {/* Task Completion Modal */}
+      <TaskCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => {
+          setShowCompletionModal(false)
+          setTaskToComplete(null)
+        }}
+        task={taskToComplete}
+        onComplete={handleModalComplete}
+      />
     </div>
   )
 }
@@ -322,10 +350,11 @@ interface TaskCardProps {
   onDragStart: () => void
   onDragEnd: () => void
   onClick: () => void
+  onComplete: () => void
   isDragging: boolean
 }
 
-function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCardProps) {
+function TaskCard({ task, onDragStart, onDragEnd, onClick, onComplete, isDragging }: TaskCardProps) {
   const priority = priorityConfig[task.priority]
   const isDone = task.status === 'DONE'
 
@@ -372,9 +401,27 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCar
               <span className="text-[10px] text-stone-400 uppercase">{task.department}</span>
             )}
           </div>
-          {task.status === 'BLOCKED' && (
-            <AlertTriangle size={14} className="text-red-500" />
-          )}
+          <div className="flex items-center gap-1">
+            {task.status === 'BLOCKED' && (
+              <AlertTriangle size={14} className="text-red-500" />
+            )}
+            {!isDone && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onComplete()
+                }}
+                className="
+                  p-1 hover:bg-green-100
+                  text-stone-400 hover:text-green-600
+                  transition-colors rounded
+                "
+                title="Completar tarea"
+              >
+                <CheckCircle size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Title */}
