@@ -103,3 +103,10 @@ export {
   useTaskKPIs,
   useTaskDashboard
 } from './hooks/useTasks'
+
+// Template Management Hooks
+export {
+  useTemplates,
+  useTemplatePreview,
+  useTemplateMutations
+} from './hooks/useTemplates'

@@ -2,7 +2,7 @@
 
 export type TaskStatus = 'BACKLOG' | 'NEXT' | 'DOING' | 'BLOCKED' | 'DONE'
 export type TaskPriority = 'P0' | 'P1' | 'P2'
-export type Department = 'SALES' | 'OPS' | 'MKT'
+export type Department = 'SALES' | 'OPS' | 'MKT' | 'PRODUCTION'
 export type ProjectStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED'
 export type ProjectHealth = 'GREEN' | 'YELLOW' | 'RED'
 

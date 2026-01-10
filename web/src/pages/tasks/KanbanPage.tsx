@@ -1,10 +1,11 @@
 // Kanban Board Page - Enhanced with priority bars, avatars, drag effects, FAB
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen } from 'lucide-react'
+import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, Save } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useKanban, useTaskMutations } from '../../api'
+import { Modal } from '../../components/ui/Modal'
+import { useKanban, useTaskMutations, useTemplateMutations } from '../../api'
 import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
 
 const columnConfig: Record<TaskStatus, { label: string; headerBg: string; bg: string; dropBg: string }> = {
@@ -43,11 +44,22 @@ export function KanbanPage() {
     setSearchParams(searchParams)
   }
   const { quickAdd } = useTaskMutations()
+  const { saveProjectAsTemplate } = useTemplateMutations()
 
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
+
+  // Save as Template state
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+  const [templateDescription, setTemplateDescription] = useState('')
+  const [templateDepartment, setTemplateDepartment] = useState<Department>('SALES')
+  const [templateDuration, setTemplateDuration] = useState('30')
+  const [saveTemplateLoading, setSaveTemplateLoading] = useState(false)
+  const [saveTemplateError, setSaveTemplateError] = useState<string | null>(null)
+  const [saveTemplateSuccess, setSaveTemplateSuccess] = useState(false)
 
   if (loading) {
     return <LoadingState message="Cargando tablero..." />
@@ -108,6 +120,56 @@ export function KanbanPage() {
     }
   }
 
+  const handleSaveAsTemplate = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!projectFilter) return
+    if (!templateName.trim()) {
+      setSaveTemplateError('El nombre de la plantilla es requerido')
+      return
+    }
+
+    const duration = parseInt(templateDuration)
+    if (isNaN(duration) || duration <= 0) {
+      setSaveTemplateError('La duración debe ser un número mayor a 0')
+      return
+    }
+
+    setSaveTemplateLoading(true)
+    setSaveTemplateError(null)
+
+    try {
+      const result = await saveProjectAsTemplate(projectFilter, {
+        template_name: templateName.trim(),
+        description: templateDescription.trim(),
+        department: templateDepartment,
+        default_duration_days: duration
+      })
+
+      setSaveTemplateSuccess(true)
+
+      // Reset form after short delay
+      setTimeout(() => {
+        setShowSaveAsTemplate(false)
+        setTemplateName('')
+        setTemplateDescription('')
+        setTemplateDepartment('SALES')
+        setTemplateDuration('30')
+        setSaveTemplateSuccess(false)
+      }, 2000)
+    } catch (err) {
+      setSaveTemplateError(err instanceof Error ? err.message : 'Error al guardar la plantilla')
+    } finally {
+      setSaveTemplateLoading(false)
+    }
+  }
+
+  const handleOpenSaveAsTemplate = () => {
+    setShowSaveAsTemplate(true)
+    setSaveTemplateError(null)
+    setSaveTemplateSuccess(false)
+  }
+
   return (
     <div className="min-h-screen bg-stone-100">
       {/* Header */}
@@ -131,6 +193,27 @@ export function KanbanPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Save as Template button (only show when project is filtered) */}
+            {projectFilter && (
+              <button
+                onClick={handleOpenSaveAsTemplate}
+                className="
+                  inline-flex items-center gap-2 px-3 py-1.5
+                  bg-white hover:bg-stone-100
+                  text-stone-900 font-medium text-xs uppercase tracking-wider
+                  border-2 border-stone-900
+                  shadow-[2px_2px_0_#1c1917]
+                  hover:shadow-[1px_1px_0_#1c1917]
+                  hover:translate-x-[1px] hover:translate-y-[1px]
+                  transition-all duration-75
+                "
+                title="Guardar estructura del proyecto como plantilla reutilizable"
+              >
+                <Save size={14} />
+                <span className="hidden sm:inline">Guardar como Plantilla</span>
+              </button>
+            )}
+
             {/* Task count */}
             <div className="px-3 py-1 border-2 border-stone-900 font-mono font-bold text-sm">
               {totalTasks} tareas
@@ -313,6 +396,150 @@ export function KanbanPage() {
           </form>
         </div>
       )}
+
+      {/* Save as Template Modal */}
+      <Modal
+        isOpen={showSaveAsTemplate}
+        onClose={() => setShowSaveAsTemplate(false)}
+        title="Guardar Proyecto como Plantilla"
+        size="md"
+      >
+        <form onSubmit={handleSaveAsTemplate} className="p-6 space-y-4">
+          <p className="text-sm text-stone-600">
+            Guarda la estructura actual de este proyecto como una plantilla reutilizable para futuros proyectos.
+          </p>
+
+          {/* Template Name */}
+          <div>
+            <label className="block text-sm font-medium text-stone-900 mb-1.5">
+              Nombre de la Plantilla *
+            </label>
+            <input
+              type="text"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="ej: Workflow de Ventas"
+              required
+              className="
+                w-full px-3 py-2 text-sm
+                border-2 border-stone-900
+                focus:outline-none focus:ring-2 focus:ring-amber-400
+              "
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-stone-900 mb-1.5">
+              Descripción
+            </label>
+            <textarea
+              value={templateDescription}
+              onChange={(e) => setTemplateDescription(e.target.value)}
+              placeholder="Describe cuándo usar esta plantilla..."
+              rows={3}
+              className="
+                w-full px-3 py-2 text-sm
+                border-2 border-stone-900
+                focus:outline-none focus:ring-2 focus:ring-amber-400
+                resize-none
+              "
+            />
+          </div>
+
+          {/* Department */}
+          <div>
+            <label className="block text-sm font-medium text-stone-900 mb-1.5">
+              Departamento *
+            </label>
+            <div className="flex gap-2">
+              {(['SALES', 'OPS', 'MKT', 'PRODUCTION'] as const).map((dept) => (
+                <button
+                  key={dept}
+                  type="button"
+                  onClick={() => setTemplateDepartment(dept)}
+                  className={`
+                    flex-1 px-3 py-2 text-xs font-medium uppercase tracking-wider
+                    border-2 border-stone-900
+                    transition-all duration-75
+                    ${templateDepartment === dept
+                      ? 'bg-stone-900 text-white'
+                      : 'bg-white text-stone-900 hover:bg-stone-100'
+                    }
+                  `}
+                >
+                  {dept === 'PRODUCTION' ? 'PROD' : dept}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div>
+            <label className="block text-sm font-medium text-stone-900 mb-1.5">
+              Duración Estimada (días) *
+            </label>
+            <input
+              type="number"
+              value={templateDuration}
+              onChange={(e) => setTemplateDuration(e.target.value)}
+              min="1"
+              required
+              className="
+                w-full px-3 py-2 text-sm font-mono
+                border-2 border-stone-900
+                focus:outline-none focus:ring-2 focus:ring-amber-400
+              "
+            />
+          </div>
+
+          {/* Error Message */}
+          {saveTemplateError && (
+            <div className="p-3 bg-red-50 border-2 border-red-500 text-red-700 text-sm">
+              {saveTemplateError}
+            </div>
+          )}
+
+          {/* Success Message */}
+          {saveTemplateSuccess && (
+            <div className="p-3 bg-green-50 border-2 border-green-500 text-green-700 text-sm">
+              ✓ Plantilla guardada correctamente
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex gap-2 pt-2">
+            <button
+              type="submit"
+              disabled={saveTemplateLoading || saveTemplateSuccess}
+              className="
+                flex-1 py-3
+                bg-amber-400 hover:bg-amber-500
+                text-stone-900 font-medium uppercase tracking-wider text-sm
+                border-2 border-stone-900
+                disabled:opacity-50 disabled:cursor-not-allowed
+                transition-colors
+              "
+            >
+              {saveTemplateLoading ? 'Guardando...' : 'Guardar Plantilla'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSaveAsTemplate(false)}
+              disabled={saveTemplateLoading}
+              className="
+                px-6 py-3
+                text-stone-600 hover:text-stone-900
+                font-medium uppercase tracking-wider text-sm
+                transition-colors
+                disabled:opacity-50
+              "
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
