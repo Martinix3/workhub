@@ -43,7 +43,7 @@ def get_tasks(filters=None, limit=50, offset=0):
             "name", "title", "description", "status", "priority",
             "project", "department", "assigned_to", "created_by",
             "start_date", "due_date", "is_milestone", "is_inbox",
-            "worked_today", "total_work_days", "blocked_reason",
+            "worked_today", "total_work_days", "total_hours", "blocked_reason",
             "creation", "modified"
         ],
         limit_page_length=int(limit),
