@@ -1,10 +1,12 @@
 // HACCP Monitor Page with data fetching
 import { useState } from 'react'
 import { HACCPMonitor } from '../components/sections/production-and-quality/HACCPMonitor'
+import { RecordReadingModal } from '../components/sections/production-and-quality/RecordReadingModal'
 import { LoadingState } from '../components/ui/LoadingState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { useHACCPMonitor } from '../api'
 import type { CriticalControlPoint } from '../components/sections/production-and-quality/types'
+import type { ReadingSubmission } from '../components/sections/production-and-quality/RecordReadingModal'
 
 export function HACCPMonitorPage() {
   const { plans, recentReadings, activeAlerts, loading, error, refetch, acknowledgeAlert } = useHACCPMonitor()
@@ -45,6 +47,17 @@ export function HACCPMonitorPage() {
     }
   }
 
+  const handleModalClose = () => {
+    setIsModalOpen(false)
+    setSelectedCCP(null)
+  }
+
+  const handleModalSubmit = async (data: ReadingSubmission) => {
+    // TODO: Will be implemented in subtask 2.3
+    // This will call recordReading API and refresh data
+    console.log('Recording reading:', data)
+  }
+
   const handleAcknowledgeAlert = async (readingId: string) => {
     try {
       await acknowledgeAlert(readingId)
@@ -55,14 +68,23 @@ export function HACCPMonitorPage() {
   }
 
   return (
-    <HACCPMonitor
-      plans={plans}
-      recentReadings={recentReadings || []}
-      activeAlerts={activeAlerts || []}
-      onViewPlan={(id) => console.log('View plan:', id)}
-      onRecordReading={handleRecordReading}
-      onAcknowledgeAlert={handleAcknowledgeAlert}
-    />
+    <>
+      <HACCPMonitor
+        plans={plans}
+        recentReadings={recentReadings || []}
+        activeAlerts={activeAlerts || []}
+        onViewPlan={(id) => console.log('View plan:', id)}
+        onRecordReading={handleRecordReading}
+        onAcknowledgeAlert={handleAcknowledgeAlert}
+      />
+
+      <RecordReadingModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        ccp={selectedCCP}
+        onSubmit={handleModalSubmit}
+      />
+    </>
   )
 }
 
