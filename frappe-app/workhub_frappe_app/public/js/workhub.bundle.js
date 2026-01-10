@@ -739,28 +739,43 @@ frappe.workhub.notifications = {
 
     /**
      * Configurar listener de eventos en tiempo real
+     * Escucha el evento 'wh_notification' publicado por el backend
      */
     setupRealtimeListener() {
-        // Escuchar nuevas notificaciones
+        // Escuchar nuevas notificaciones via Frappe realtime (socket.io)
         frappe.realtime.on('wh_notification', (data) => {
-            // Agregar a array local
-            this.notifications.unshift(data);
-
-            // Incrementar contador si no esta leida
-            if (!data.read) {
-                this.unreadCount++;
-                if (data.priority === 'HIGH') {
-                    this.highPriorityCount++;
-                }
+            // Validar que tenemos datos validos
+            if (!data || !data.name) {
+                console.warn('Received invalid notification data:', data);
+                return;
             }
 
-            // Actualizar UI
-            this.updateBadge();
-            this.addNotificationToList(data, true);
+            try {
+                // Agregar a array local (al inicio)
+                this.notifications.unshift(data);
 
-            // Mostrar toast para notificaciones de alta prioridad
-            if (data.priority === 'HIGH') {
-                this.showHighPriorityToast(data);
+                // Incrementar contador si no esta leida
+                if (!data.read) {
+                    this.unreadCount++;
+                    if (data.priority === 'HIGH') {
+                        this.highPriorityCount++;
+                    }
+                }
+
+                // Actualizar UI inmediatamente
+                this.updateBadge();
+                this.addNotificationToList(data, true);
+
+                // Mostrar toast para notificaciones de alta prioridad
+                if (data.priority === 'HIGH') {
+                    this.showHighPriorityToast(data);
+                }
+            } catch (error) {
+                console.error('Error handling realtime notification:', error);
+                frappe.show_alert({
+                    message: __('Error al procesar notificación en tiempo real'),
+                    indicator: 'red'
+                }, 3);
             }
         });
     },
