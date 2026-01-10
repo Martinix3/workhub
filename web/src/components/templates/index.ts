@@ -15,3 +15,5 @@ export type {
   TemplateEditorProps,
   TemplateTaskData
 } from './TemplateEditor'
+export { TemplateTaskRow } from './TemplateTaskRow'
+export type { TemplateTaskRowProps } from './TemplateTaskRow'
