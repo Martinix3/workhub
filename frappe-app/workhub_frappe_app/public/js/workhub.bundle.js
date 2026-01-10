@@ -2138,6 +2138,185 @@ frappe.workhub.serviceWorker = {
 };
 
 // ==========================================
+// OFFLINE INDICATOR (PWA)
+// ==========================================
+frappe.workhub.offlineIndicator = {
+    indicator: null,
+    autoHideTimeout: null,
+    autoHideDelay: 5000, // Auto-hide online status after 5 seconds
+
+    /**
+     * Initialize offline indicator component
+     */
+    init() {
+        console.log('[Offline Indicator] Initializing...');
+
+        // Create indicator DOM element
+        this.createIndicator();
+
+        // Listen to connectivity events from service worker
+        this.setupEventListeners();
+
+        // Set initial state
+        this.updateStatus(navigator.onLine);
+
+        console.log('[Offline Indicator] Initialized');
+    },
+
+    /**
+     * Create the indicator DOM element and inject into page
+     */
+    createIndicator() {
+        // Check if indicator already exists
+        if (document.querySelector('.wh-offline-indicator')) {
+            console.log('[Offline Indicator] Already exists');
+            return;
+        }
+
+        // Create indicator element
+        const indicator = document.createElement('div');
+        indicator.className = 'wh-offline-indicator';
+        indicator.setAttribute('role', 'status');
+        indicator.setAttribute('aria-live', 'polite');
+
+        // Create status dot
+        const dot = document.createElement('span');
+        dot.className = 'wh-offline-indicator__dot';
+        dot.setAttribute('aria-hidden', 'true');
+
+        // Create status text
+        const text = document.createElement('span');
+        text.className = 'wh-offline-indicator__text';
+        text.textContent = navigator.onLine ? 'Online' : 'Offline';
+
+        // Assemble indicator
+        indicator.appendChild(dot);
+        indicator.appendChild(text);
+
+        // Inject into page
+        document.body.appendChild(indicator);
+
+        // Store reference
+        this.indicator = indicator;
+
+        console.log('[Offline Indicator] DOM element created');
+    },
+
+    /**
+     * Setup event listeners for connectivity changes
+     */
+    setupEventListeners() {
+        // Listen to custom connectivity events from service worker
+        frappe.ui.on('connectivity:online', () => {
+            console.log('[Offline Indicator] Received online event');
+            this.updateStatus(true);
+        });
+
+        frappe.ui.on('connectivity:offline', () => {
+            console.log('[Offline Indicator] Received offline event');
+            this.updateStatus(false);
+        });
+
+        // Also listen to native events as fallback
+        window.addEventListener('online', () => {
+            console.log('[Offline Indicator] Native online event');
+            this.updateStatus(true);
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('[Offline Indicator] Native offline event');
+            this.updateStatus(false);
+        });
+
+        console.log('[Offline Indicator] Event listeners registered');
+    },
+
+    /**
+     * Update indicator status
+     * @param {boolean} isOnline - Whether the app is online
+     */
+    updateStatus(isOnline) {
+        if (!this.indicator) {
+            console.warn('[Offline Indicator] Indicator not initialized');
+            return;
+        }
+
+        // Clear any pending auto-hide timeout
+        if (this.autoHideTimeout) {
+            clearTimeout(this.autoHideTimeout);
+            this.autoHideTimeout = null;
+        }
+
+        // Update indicator classes
+        this.indicator.classList.remove('online', 'offline');
+        this.indicator.classList.add(isOnline ? 'online' : 'offline');
+
+        // Update text
+        const textElement = this.indicator.querySelector('.wh-offline-indicator__text');
+        if (textElement) {
+            textElement.textContent = isOnline ? 'Online' : 'Offline';
+        }
+
+        // Show indicator
+        this.show();
+
+        // Auto-hide online status after delay (keep offline visible)
+        if (isOnline) {
+            this.autoHideTimeout = setTimeout(() => {
+                this.hide();
+            }, this.autoHideDelay);
+        }
+
+        console.log('[Offline Indicator] Status updated:', isOnline ? 'online' : 'offline');
+    },
+
+    /**
+     * Show the indicator
+     */
+    show() {
+        if (!this.indicator) return;
+
+        // Add visible class to trigger slide-down animation
+        this.indicator.classList.add('visible');
+    },
+
+    /**
+     * Hide the indicator
+     */
+    hide() {
+        if (!this.indicator) return;
+
+        // Remove visible class to trigger slide-up animation
+        this.indicator.classList.remove('visible');
+    },
+
+    /**
+     * Check if indicator is currently visible
+     * @returns {boolean}
+     */
+    isVisible() {
+        return this.indicator && this.indicator.classList.contains('visible');
+    },
+
+    /**
+     * Destroy the indicator (for cleanup)
+     */
+    destroy() {
+        if (this.autoHideTimeout) {
+            clearTimeout(this.autoHideTimeout);
+            this.autoHideTimeout = null;
+        }
+
+        if (this.indicator) {
+            this.indicator.remove();
+            this.indicator = null;
+        }
+
+        console.log('[Offline Indicator] Destroyed');
+    }
+};
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 (function initWorkHub() {
@@ -2170,6 +2349,11 @@ frappe.workhub.serviceWorker = {
         // Inicializar Service Worker (PWA)
         if (frappe.workhub && frappe.workhub.serviceWorker) {
             frappe.workhub.serviceWorker.init();
+        }
+
+        // Inicializar Offline Indicator (PWA)
+        if (frappe.workhub && frappe.workhub.offlineIndicator) {
+            frappe.workhub.offlineIndicator.init();
         }
 
         // Inicializar Command Palette (Cmd+K)
