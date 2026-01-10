@@ -637,30 +637,72 @@ def send_scheduled_report_email(schedule_doc, report_def, file_url, generated_re
 		frappe.logger().info(f"Sending report to {len(recipients)} recipients: {', '.join(recipients)}")
 
 		# Build email subject
-		subject = schedule_doc.email_subject or f"Scheduled Report: {report_def.title}"
+		subject = schedule_doc.email_subject or f"Reporte Programado: {report_def.title}"
 
 		# Build email body
 		if schedule_doc.email_body:
+			# Use custom email body if specified
 			message = schedule_doc.email_body
 		else:
-			# Default email body
-			message = f"""
-			<h2>Scheduled Report: {report_def.title}</h2>
-			<p>Your scheduled report has been generated and is attached to this email.</p>
+			# Use professional email template
+			# Get generated report to extract section information
+			generated_report = frappe.get_doc("WH Generated Report", generated_report_id)
 
-			<h3>Report Details</h3>
-			<ul>
-				<li><strong>Report:</strong> {report_def.title}</li>
-				<li><strong>Type:</strong> {report_def.report_type}</li>
-				<li><strong>Category:</strong> {report_def.category}</li>
-				<li><strong>Generated:</strong> {format_datetime(now_datetime(), "MMM dd, yyyy HH:mm")}</li>
-				<li><strong>Format:</strong> {schedule_doc.export_format}</li>
-			</ul>
+			# Get sections preview for summary
+			sections_preview = []
+			sections_count = 0
+			if report_def.sections:
+				sections_count = len(report_def.sections)
+				# Get first 5 sections for preview
+				for section in report_def.sections[:5]:
+					section_type_label = {
+						"Header": "Encabezado",
+						"Text": "Texto",
+						"KPI": "Indicador KPI",
+						"Chart": "Gráfico",
+						"Table": "Tabla"
+					}.get(section.section_type, section.section_type)
 
-			<p>The report is attached to this email. You can also download it from the system.</p>
+					sections_preview.append(f"{section.title} ({section_type_label})")
 
-			<p><em>This is an automated email from WorkHub Reporting System.</em></p>
-			"""
+				# Add "and more" if there are more than 5 sections
+				if sections_count > 5:
+					sections_preview.append(f"... y {sections_count - 5} secciones más")
+
+			# Get user info
+			generated_by_name = frappe.db.get_value("User", generated_report.generated_by, "full_name") or generated_report.generated_by
+
+			# Build download URL (if file exists)
+			download_url = None
+			if file_url:
+				# Construct full URL for download
+				site_url = frappe.utils.get_url()
+				download_url = f"{site_url}{file_url}"
+
+			# Build view URL
+			view_url = f"{frappe.utils.get_url()}/app/wh-generated-report/{generated_report_id}"
+
+			# Prepare template context
+			context = {
+				"report_title": report_def.title,
+				"report_type": report_def.report_type,
+				"category": report_def.category,
+				"report_description": report_def.description,
+				"generated_at": format_datetime(generated_report.generated_at, "dd MMM yyyy HH:mm"),
+				"export_format": schedule_doc.export_format,
+				"generated_by_name": generated_by_name,
+				"schedule_name": schedule_doc.schedule_name if hasattr(schedule_doc, 'schedule_name') else None,
+				"schedule_type": schedule_doc.schedule_type,
+				"next_run": format_datetime(schedule_doc.next_run, "dd MMM yyyy HH:mm") if schedule_doc.next_run else None,
+				"sections_count": sections_count,
+				"sections_preview": sections_preview,
+				"download_url": download_url,
+				"view_url": view_url,
+				"custom_message": None  # Can be used for additional messages
+			}
+
+			# Render template
+			message = frappe.render_template("workhub_frappe_app/templates/emails/scheduled_report.html", context)
 
 		# Get the file document to attach
 		file_doc = None
