@@ -185,3 +185,194 @@
 .kpi-card--warning .kpi-card__value {
 	color: var(--warning);
 }
+
+/* === MOBILE RESPONSIVE === */
+
+/* Mobile: 1 column on very small screens (<375px) */
+@media (max-width: 374px) {
+	.kpi-grid {
+		grid-template-columns: 1fr;
+		gap: var(--mobile-card-gap);
+	}
+
+	/* All cards use compact styling on very small screens */
+	.kpi-card {
+		padding: var(--space-3);
+	}
+
+	.kpi-card__value {
+		font-size: var(--text-2xl);
+		margin-bottom: var(--space-2);
+	}
+
+	.kpi-card__separator {
+		width: 40px;
+		height: 2px;
+		margin: var(--space-3) 0;
+	}
+
+	.kpi-card__label {
+		font-size: var(--mobile-text-xs);
+	}
+
+	.kpi-card__change {
+		font-size: var(--mobile-text-sm);
+	}
+
+	/* Hero cards span full width */
+	.kpi-card--hero {
+		grid-column: 1;
+		padding: var(--space-5);
+	}
+
+	.kpi-card--hero .kpi-card__value {
+		font-size: var(--text-3xl);
+	}
+
+	/* Chart adjustments */
+	.kpi-card__chart {
+		height: 36px;
+		margin-top: var(--space-3);
+	}
+}
+
+/* Mobile: 2 columns on small screens (375px - 767px) */
+@media (min-width: 375px) and (max-width: 767px) {
+	.kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--mobile-card-gap);
+	}
+
+	/* Use compact variant styling by default on mobile */
+	.kpi-card {
+		padding: var(--space-4);
+	}
+
+	.kpi-card__value {
+		font-size: var(--text-3xl);
+		margin-bottom: var(--space-2);
+	}
+
+	.kpi-card__separator {
+		width: 45px;
+		margin: var(--space-3) 0;
+	}
+
+	.kpi-card__label {
+		font-size: var(--mobile-text-sm);
+	}
+
+	.kpi-card__change {
+		font-size: var(--mobile-text-sm);
+	}
+
+	/* Hero cards span full width (both columns) */
+	.kpi-card--hero {
+		grid-column: 1 / -1;
+		padding: var(--space-6);
+	}
+
+	.kpi-card--hero .kpi-card__value {
+		font-size: var(--text-4xl);
+	}
+
+	/* Chart adjustments */
+	.kpi-card__chart {
+		height: 40px;
+		margin-top: var(--space-3);
+	}
+}
+
+/* Tablet: Optimize for touch targets */
+@media (min-width: 768px) and (max-width: 1023px) {
+	.kpi-grid {
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: var(--space-4);
+	}
+
+	/* Touch-friendly clickable cards */
+	.kpi-card--clickable {
+		min-height: var(--touch-target-large);
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	/* Hero cards span 2 columns on tablet */
+	.kpi-card--hero {
+		grid-column: span 2;
+	}
+}
+
+/* Mobile: Improved touch feedback */
+@media (max-width: 767px) {
+	.kpi-card--clickable:active {
+		transform: translate(2px, 2px);
+		box-shadow: 1px 1px 0 var(--border-1);
+		transition: transform var(--mobile-transition-fast), box-shadow var(--mobile-transition-fast);
+	}
+
+	/* GPU acceleration for smooth scrolling */
+	.kpi-card {
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+	}
+
+	/* Reduce shadow complexity on mobile for performance */
+	.kpi-card {
+		box-shadow: 3px 3px 0 var(--border-1);
+	}
+
+	.kpi-card:hover {
+		box-shadow: 2px 2px 0 var(--border-1);
+	}
+
+	/* Remove hover effects on mobile (touch devices) */
+	@media (hover: none) {
+		.kpi-card:hover {
+			transform: none;
+			box-shadow: 3px 3px 0 var(--border-1);
+		}
+
+		.kpi-card__chart-bar:hover {
+			background: var(--border-2);
+		}
+
+		.kpi-card__chart-bar--current:hover {
+			background: var(--primary);
+		}
+	}
+}
+
+/* Landscape mobile: Optimize spacing */
+@media (max-width: 767px) and (orientation: landscape) {
+	.kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--space-3);
+	}
+
+	.kpi-card {
+		padding: var(--space-3);
+	}
+
+	.kpi-card__value {
+		font-size: var(--text-2xl);
+		margin-bottom: var(--space-1);
+	}
+
+	.kpi-card__separator {
+		margin: var(--space-2) 0;
+	}
+
+	/* Hero cards maintain full width */
+	.kpi-card--hero {
+		grid-column: 1 / -1;
+		padding: var(--space-4);
+	}
+
+	.kpi-card--hero .kpi-card__value {
+		font-size: var(--text-3xl);
+	}
+}
