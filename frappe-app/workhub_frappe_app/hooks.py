@@ -91,9 +91,16 @@ after_install = "workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm
 
 # Fixtures
 # --------
+# Fixtures allow exporting DocType data to JSON for version control and migration portability.
+# Run `bench export-fixtures` to generate JSON files in workhub_frappe_app/fixtures/
+# These fixtures are automatically imported when installing the app on a new site.
 fixtures = [
+    # Custom fields for Sales Order
     {"dt": "Custom Field", "filters": [["dt", "=", "Sales Order"], ["fieldname", "=", "sales_type"]]},
-    # Project templates con sus tareas
+
+    # WH Project Templates with child tasks for department workflows
+    # Exports all active templates (is_active=1) including their task definitions
+    # Child table (WH Project Template Task) is automatically included
     {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]}
 ]
 
