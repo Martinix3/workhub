@@ -643,5 +643,155 @@ def get_project_time_summary(project_id):
 	}
 
 
-# To be implemented in subsequent subtasks:
-# - get_user_time_summary(user=None, from_date=None, to_date=None)
+@frappe.whitelist()
+def get_user_time_summary(user=None, from_date=None, to_date=None):
+	"""
+	Get time summary for a user (productivity view) with daily/weekly totals and breakdowns.
+
+	Args:
+		user: User email (optional, defaults to current user)
+		from_date: Start date for filtering (optional)
+		to_date: End date for filtering (optional)
+
+	Returns:
+		dict with daily totals, breakdown by project, and breakdown by task
+	"""
+	require_permission("WH Task", "read")
+
+	# Default user to current user if not provided
+	if not user:
+		user = frappe.session.user
+
+	# Build SQL query conditions
+	conditions = ["wl.user = %(user)s"]
+	params = {"user": user}
+
+	if from_date:
+		conditions.append("wl.date >= %(from_date)s")
+		params["from_date"] = from_date
+
+	if to_date:
+		conditions.append("wl.date <= %(to_date)s")
+		params["to_date"] = to_date
+
+	where_clause = " AND ".join(conditions)
+
+	# Query to get all work_log entries for the user with task and project details
+	query = f"""
+		SELECT
+			wl.name as log_name,
+			wl.parent as task_id,
+			wl.date,
+			wl.user,
+			wl.hours,
+			wl.minutes,
+			wl.duration_hours,
+			wl.notes,
+			t.title as task_title,
+			t.project,
+			t.status as task_status,
+			t.priority as task_priority
+		FROM `tabWH Task Work Log` wl
+		INNER JOIN `tabWH Task` t ON wl.parent = t.name
+		WHERE {where_clause}
+		ORDER BY wl.date DESC, wl.creation DESC
+	"""
+
+	entries = frappe.db.sql(query, params, as_dict=True)
+
+	# Calculate daily totals
+	daily_totals = {}
+	for entry in entries:
+		date = str(entry.get("date"))
+		duration = entry.get("duration_hours") or 0
+		if date not in daily_totals:
+			daily_totals[date] = {
+				"date": date,
+				"hours": 0,
+				"entries_count": 0
+			}
+		daily_totals[date]["hours"] += duration
+		daily_totals[date]["entries_count"] += 1
+
+	# Convert daily_totals dict to list and sort by date descending
+	daily_totals_list = sorted(daily_totals.values(), key=lambda x: x["date"], reverse=True)
+
+	# Calculate breakdown by project
+	project_breakdown = {}
+	for entry in entries:
+		project = entry.get("project")
+		duration = entry.get("duration_hours") or 0
+
+		if project:
+			if project not in project_breakdown:
+				# Get project details
+				project_data = frappe.db.get_value(
+					"WH Project",
+					project,
+					["title", "department"],
+					as_dict=True
+				)
+				project_breakdown[project] = {
+					"project_id": project,
+					"project_title": project_data.get("title") if project_data else None,
+					"project_department": project_data.get("department") if project_data else None,
+					"hours": 0,
+					"entries_count": 0
+				}
+			project_breakdown[project]["hours"] += duration
+			project_breakdown[project]["entries_count"] += 1
+
+	# Convert project_breakdown dict to list and sort by hours descending
+	project_breakdown_list = sorted(project_breakdown.values(), key=lambda x: x["hours"], reverse=True)
+
+	# Calculate breakdown by task
+	task_breakdown = {}
+	for entry in entries:
+		task_id = entry.get("task_id")
+		duration = entry.get("duration_hours") or 0
+
+		if task_id not in task_breakdown:
+			task_breakdown[task_id] = {
+				"task_id": task_id,
+				"task_title": entry.get("task_title"),
+				"task_status": entry.get("task_status"),
+				"task_priority": entry.get("task_priority"),
+				"project": entry.get("project"),
+				"hours": 0,
+				"entries_count": 0
+			}
+		task_breakdown[task_id]["hours"] += duration
+		task_breakdown[task_id]["entries_count"] += 1
+
+	# Convert task_breakdown dict to list and sort by hours descending
+	task_breakdown_list = sorted(task_breakdown.values(), key=lambda x: x["hours"], reverse=True)
+
+	# Enrich task breakdown with project info
+	for task_data in task_breakdown_list:
+		if task_data.get("project"):
+			project_data = frappe.db.get_value(
+				"WH Project",
+				task_data["project"],
+				["title", "department"],
+				as_dict=True
+			)
+			if project_data:
+				task_data["project_title"] = project_data.get("title")
+				task_data["project_department"] = project_data.get("department")
+
+	# Calculate total hours
+	total_hours = sum(entry.get("duration_hours") or 0 for entry in entries)
+
+	return {
+		"success": True,
+		"summary": {
+			"user": user,
+			"total_hours": total_hours,
+			"total_entries": len(entries),
+			"from_date": from_date,
+			"to_date": to_date
+		},
+		"daily_totals": daily_totals_list,
+		"breakdown_by_project": project_breakdown_list,
+		"breakdown_by_task": task_breakdown_list
+	}
