@@ -151,13 +151,13 @@ after_migrate = ["workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_cr
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Sales Order": {
+		"on_submit": "workhub_frappe_app.api.notifications.on_sales_order_change",
+		"on_cancel": "workhub_frappe_app.api.notifications.on_sales_order_change",
+		"on_update_after_submit": "workhub_frappe_app.api.notifications.on_sales_order_change"
+	}
+}
 
 # Scheduled Tasks
 # ---------------

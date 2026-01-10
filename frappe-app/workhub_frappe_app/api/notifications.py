@@ -331,3 +331,172 @@ def notify_task_completed(task_id):
             reference_name=dep["successor"],
             priority="LOW"
         )
+
+
+def notify_new_message(message_id):
+    """Notificar cuando se recibe un nuevo mensaje"""
+    message = frappe.get_doc("Distributor Message", message_id)
+
+    # Obtener nombre del remitente
+    sender_name = frappe.db.get_value("User", message.sender, "full_name") or message.sender
+
+    # Crear notificación para el receptor
+    create_notification(
+        user=message.receiver,
+        notification_type="NEW_MESSAGE",
+        title=f"Nuevo mensaje de {sender_name}",
+        message=f"{sender_name}: {message.subject}",
+        reference_doctype="Distributor Message",
+        reference_name=message_id,
+        action_url="/workhub_distribuidores_portal" if is_distributor(message.receiver) else "/workhub_ventas",
+        priority="MEDIUM"
+    )
+
+
+def notify_change_request_status(request_id):
+    """Notificar cuando cambia el estado de una solicitud de cambio"""
+    request = frappe.get_doc("Order Change Request", request_id)
+
+    # Obtener el usuario del distribuidor
+    distributor_user = frappe.db.get_value("Customer", request.distributor, "email_id")
+
+    if not distributor_user:
+        # Intentar obtener via Portal User
+        portal_users = frappe.get_all("Portal User",
+            filters={"parent": request.distributor, "parenttype": "Customer"},
+            fields=["user"],
+            limit=1)
+        if portal_users:
+            distributor_user = portal_users[0].user
+
+    if not distributor_user:
+        return  # No podemos notificar si no hay usuario
+
+    # Mapear estados a mensajes en español
+    status_labels = {
+        "Pending": "Pendiente",
+        "Approved": "Aprobada",
+        "Rejected": "Rechazada"
+    }
+
+    status_label = status_labels.get(request.status, request.status)
+
+    # Determinar prioridad y mensaje según el estado
+    if request.status == "Approved":
+        priority = "HIGH"
+        title = f"Solicitud aprobada: {request.order_id}"
+        message = f"Tu solicitud de cambio para el pedido {request.order_id} ha sido aprobada."
+    elif request.status == "Rejected":
+        priority = "MEDIUM"
+        title = f"Solicitud rechazada: {request.order_id}"
+        message = f"Tu solicitud de cambio para el pedido {request.order_id} ha sido rechazada."
+    else:
+        priority = "LOW"
+        title = f"Solicitud actualizada: {request.order_id}"
+        message = f"El estado de tu solicitud para {request.order_id} es ahora: {status_label}"
+
+    # Agregar notas de respuesta si existen
+    if request.response_notes:
+        message += f" Comentario: {request.response_notes}"
+
+    create_notification(
+        user=distributor_user,
+        notification_type="CHANGE_REQUEST_STATUS",
+        title=title,
+        message=message,
+        reference_doctype="Order Change Request",
+        reference_name=request_id,
+        action_url="/workhub_distribuidores_portal",
+        priority=priority
+    )
+
+
+def on_sales_order_change(doc, method=None):
+    """
+    Hook para doc_events de Sales Order
+    Se ejecuta en on_submit, on_cancel, on_update_after_submit
+    """
+    try:
+        notify_order_status_change(doc.name)
+    except Exception as e:
+        frappe.log_error(f"Error notificando cambio de estado de pedido {doc.name}: {str(e)}")
+
+
+def notify_order_status_change(order_id, old_status=None, new_status=None):
+    """Notificar cuando cambia el estado de un pedido"""
+    order = frappe.get_doc("Sales Order", order_id)
+
+    # Obtener el usuario del distribuidor/cliente
+    customer_user = frappe.db.get_value("Customer", order.customer, "email_id")
+
+    if not customer_user:
+        # Intentar obtener via Portal User
+        portal_users = frappe.get_all("Portal User",
+            filters={"parent": order.customer, "parenttype": "Customer"},
+            fields=["user"],
+            limit=1)
+        if portal_users:
+            customer_user = portal_users[0].user
+
+    if not customer_user:
+        return  # No podemos notificar si no hay usuario
+
+    # Mapear estados a mensajes en español
+    status_messages = {
+        0: "Borrador",  # Draft
+        1: "Confirmado",  # Submitted
+        2: "Cancelado"  # Cancelled
+    }
+
+    # Determinar el mensaje según el estado del documento
+    if order.docstatus == 1:  # Submitted
+        if order.status == "Completed":
+            title = f"Pedido completado: {order_id}"
+            message = f"Tu pedido {order_id} ha sido completado y entregado."
+            priority = "LOW"
+        elif order.status == "On Hold":
+            title = f"Pedido en espera: {order_id}"
+            message = f"Tu pedido {order_id} está temporalmente en espera."
+            priority = "MEDIUM"
+        else:
+            title = f"Pedido confirmado: {order_id}"
+            message = f"Tu pedido {order_id} ha sido confirmado y está en proceso."
+            priority = "MEDIUM"
+    elif order.docstatus == 2:  # Cancelled
+        title = f"Pedido cancelado: {order_id}"
+        message = f"Tu pedido {order_id} ha sido cancelado."
+        priority = "HIGH"
+    else:  # Draft
+        # No notificar borradores
+        return
+
+    create_notification(
+        user=customer_user,
+        notification_type="ORDER_STATUS",
+        title=title,
+        message=message,
+        reference_doctype="Sales Order",
+        reference_name=order_id,
+        action_url="/workhub_distribuidores_portal",
+        priority=priority
+    )
+
+
+def is_distributor(user):
+    """Verificar si un usuario es distribuidor"""
+    # Buscar si el usuario está vinculado a un Customer del tipo Distribuidor
+    customer = frappe.db.exists("Customer", {"email_id": user, "customer_group": "Distribuidor"})
+    if customer:
+        return True
+
+    # También verificar via Portal User
+    portal_user = frappe.get_all("Portal User",
+        filters={"user": user, "parenttype": "Customer"},
+        fields=["parent"],
+        limit=1)
+
+    if portal_user:
+        customer_group = frappe.db.get_value("Customer", portal_user[0].parent, "customer_group")
+        return customer_group == "Distribuidor"
+
+    return False

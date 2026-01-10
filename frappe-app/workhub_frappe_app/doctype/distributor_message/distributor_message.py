@@ -26,8 +26,12 @@ class DistributorMessage(Document):
 
 	def after_insert(self):
 		"""Acciones después de crear el mensaje"""
-		# Aquí se puede notificar al receptor
-		pass
+		# Notificar al receptor
+		from workhub_frappe_app.api.notifications import notify_new_message
+		try:
+			notify_new_message(self.name)
+		except Exception as e:
+			frappe.log_error(f"Error notificando nuevo mensaje {self.name}: {str(e)}")
 
 
 @frappe.whitelist()

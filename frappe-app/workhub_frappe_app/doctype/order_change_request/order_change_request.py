@@ -55,8 +55,12 @@ class OrderChangeRequest(Document):
 		"""
 		Notifica al distribuidor cuando cambia el estado de su solicitud
 		"""
-		# Aquí se puede integrar con el sistema de notificaciones WH
-		pass
+		# Integrar con el sistema de notificaciones WH
+		from workhub_frappe_app.api.notifications import notify_change_request_status
+		try:
+			notify_change_request_status(self.name)
+		except Exception as e:
+			frappe.log_error(f"Error notificando cambio de estado de solicitud {self.name}: {str(e)}")
 
 
 @frappe.whitelist()
