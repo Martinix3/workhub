@@ -76,83 +76,24 @@ export const useLots = createDataHook<Lot[], { status?: string; search?: string 
 })
 
 // HACCP hooks
-export function useHACCPPlans(): UseDataState<HACCPPlan[]> {
-  const [data, setData] = useState<HACCPPlan[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+export const useHACCPPlans = createDataHook<HACCPPlan[]>({
+  apiMethod: productionApi.getHACCPPlans,
+  sampleData: sampleHACCPPlans,
+  errorMessage: 'Failed to fetch HACCP plans'
+})
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const plans = await productionApi.getHACCPPlans()
-      setData(plans)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleHACCPPlans)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch HACCP plans'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+export const useHACCPReadings = createDataHook<CCPReading[]>({
+  apiMethod: productionApi.getRecentReadings,
+  sampleData: sampleCCPReadings,
+  errorMessage: 'Failed to fetch HACCP readings'
+})
 
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useHACCPReadings(): UseDataState<CCPReading[]> {
-  const [data, setData] = useState<CCPReading[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const readings = await productionApi.getRecentReadings()
-      setData(readings)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleCCPReadings)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch HACCP readings'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useActiveAlerts(): UseDataState<CCPReading[]> {
-  const [data, setData] = useState<CCPReading[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const alerts = await productionApi.getActiveAlerts()
-      setData(alerts)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleCCPReadings.filter(r => r.status === 'critical' || r.status === 'warning'))
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch alerts'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useActiveAlerts = createDataHook<CCPReading[]>({
+  apiMethod: productionApi.getActiveAlerts,
+  sampleData: sampleCCPReadings,
+  errorMessage: 'Failed to fetch alerts',
+  bypassTransformer: (data) => data.filter(r => r.status === 'critical' || r.status === 'warning')
+})
 
 export function useHACCPMonitor() {
   const plans = useHACCPPlans()
