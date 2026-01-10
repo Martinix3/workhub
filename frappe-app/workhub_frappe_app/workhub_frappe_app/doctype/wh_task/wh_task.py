@@ -9,12 +9,14 @@ from frappe.utils import nowdate, now_datetime, getdate, add_days, date_diff
 class WHTask(Document):
     def before_save(self):
         self.handle_status_change()
+        self.handle_assignment_change()
         self.handle_worked_today()
         self.set_defaults()
 
     def on_update(self):
         self.update_project_kpis()
         self.propagate_to_successors()
+        self.send_assignment_notifications()
 
     def set_defaults(self):
         """Establece valores por defecto"""
@@ -45,6 +47,54 @@ class WHTask(Document):
             if old_status != "DONE" and self.status == "DONE":
                 if not self.actual_end:
                     self.actual_end = now_datetime()
+
+    def handle_assignment_change(self):
+        """Detecta cambios en assigned_to para notificaciones posteriores"""
+        if not self.is_new():
+            old_assigned_to = frappe.db.get_value("WH Task", self.name, "assigned_to")
+
+            # Guardar valores para notificaciones en on_update
+            if old_assigned_to != self.assigned_to:
+                self._assignment_changed = True
+                self._old_assigned_to = old_assigned_to
+                self._new_assigned_to = self.assigned_to
+            else:
+                self._assignment_changed = False
+        else:
+            # Nueva tarea - marcar para notificar al asignado inicial
+            if self.assigned_to:
+                self._assignment_changed = True
+                self._old_assigned_to = None
+                self._new_assigned_to = self.assigned_to
+            else:
+                self._assignment_changed = False
+
+    def send_assignment_notifications(self):
+        """Envía notificaciones cuando cambia assigned_to"""
+        if not getattr(self, '_assignment_changed', False):
+            return
+
+        from workhub_frappe_app.api.notifications import notify_task_assigned, create_notification
+
+        old_assignee = getattr(self, '_old_assigned_to', None)
+        new_assignee = getattr(self, '_new_assigned_to', None)
+
+        # Notificar al nuevo asignado
+        if new_assignee:
+            assigned_by = frappe.session.user if frappe.session.user != new_assignee else None
+            notify_task_assigned(self.name, new_assignee, assigned_by)
+
+        # Notificar al asignado anterior que la tarea fue reasignada
+        if old_assignee and old_assignee != new_assignee:
+            create_notification(
+                user=old_assignee,
+                notification_type="TASK_ASSIGNED",
+                title=f"Tarea reasignada: {self.title}",
+                message=f"La tarea '{self.title}' fue reasignada a {new_assignee or 'otro usuario'}",
+                reference_doctype="WH Task",
+                reference_name=self.name,
+                priority="LOW"
+            )
 
     def handle_worked_today(self):
         """Si se marca 'trabaje hoy', agregar entrada al log"""
