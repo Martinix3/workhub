@@ -37,9 +37,46 @@ def get_team_workload(department=None):
     """
     require_auth()
 
-    # TODO: Implement workload distribution logic
+    # Build WHERE clause for department filter
+    where_clause = "WHERE assigned_to IS NOT NULL"
+    params = []
+
+    if department:
+        where_clause += " AND department = %s"
+        params.append(department)
+
+    # Query tasks grouped by assignee with status breakdown
+    # Recent done tasks are from the last 30 days
+    recent_done_date = add_days(nowdate(), -30)
+
+    query = f"""
+        SELECT
+            assigned_to as user,
+            SUM(CASE WHEN status = 'BACKLOG' THEN 1 ELSE 0 END) as backlog,
+            SUM(CASE WHEN status = 'NEXT' THEN 1 ELSE 0 END) as next,
+            SUM(CASE WHEN status = 'DOING' THEN 1 ELSE 0 END) as doing,
+            SUM(CASE WHEN status = 'BLOCKED' THEN 1 ELSE 0 END) as blocked,
+            SUM(CASE WHEN status = 'DONE' AND modified >= %s THEN 1 ELSE 0 END) as done_recent,
+            COUNT(*) as total
+        FROM `tabWH Task`
+        {where_clause}
+        GROUP BY assigned_to
+        ORDER BY total DESC
+    """
+
+    params.insert(0, recent_done_date)
+    workload_data = frappe.db.sql(query, tuple(params), as_dict=True)
+
+    # Enrich with full name from User table
+    for item in workload_data:
+        if item.get("user"):
+            full_name = frappe.db.get_value("User", item["user"], "full_name")
+            item["full_name"] = full_name or item["user"]
+        else:
+            item["full_name"] = "Unassigned"
+
     return {
-        "workload": []
+        "workload": workload_data
     }
 
 
