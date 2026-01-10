@@ -31,8 +31,8 @@ def get_context(context):
 	context.distributor = distributor
 	context.distributor_name = frappe.db.get_value("Customer", distributor, "customer_name")
 
-	# Tab 1: Mis Pedidos (Delivery Notes)
-	context.delivery_notes = get_delivery_notes(distributor)
+	# Tab 1: Mis Pedidos - Now loaded via JavaScript API (get_my_orders)
+	# No longer passing delivery_notes via server-side context
 
 	# Tab 2: SELL OUT - Obtener items disponibles para el formulario
 	context.items = get_available_items()

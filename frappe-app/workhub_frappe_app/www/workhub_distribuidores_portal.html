@@ -35,57 +35,45 @@
 					<h5>Mis Pedidos (SELL IN)</h5>
 				</div>
 				<div class="card-body">
-					<p class="text-muted">Entregas realizadas por Santa Brisa para tu distribución</p>
+					<p class="text-muted">Pedidos realizados a Santa Brisa</p>
 
-					{% if delivery_notes %}
-					<div class="table-responsive">
-						<table class="table table-hover">
-							<thead>
-								<tr>
-									<th>Nota de Entrega</th>
-									<th>Fecha</th>
-									<th>Estado</th>
-									<th class="text-right">Total</th>
-									<th class="text-center">Facturado</th>
-									<th></th>
-								</tr>
-							</thead>
-							<tbody>
-								{% for dn in delivery_notes %}
-								<tr>
-									<td><strong>{{ dn.name }}</strong></td>
-									<td>{{ dn.posting_date }}</td>
-									<td>
-										<span class="badge badge-{% if dn.status == 'Completed' %}success{% elif dn.status == 'To Bill' %}warning{% else %}info{% endif %}">
-											{{ dn.status }}
-										</span>
-									</td>
-									<td class="text-right">
-										<strong>{{ "%.2f"|format(dn.grand_total) }} {{ dn.currency }}</strong>
-									</td>
-									<td class="text-center">
-										<div class="progress" style="height: 20px; min-width: 60px;">
-											<div class="progress-bar bg-success" role="progressbar"
-												style="width: {{ dn.per_billed }}%">
-												{{ "%.0f"|format(dn.per_billed) }}%
-											</div>
-										</div>
-									</td>
-									<td>
-										<button class="btn btn-sm btn-outline-primary" onclick="viewDeliveryNote('{{ dn.name }}')">
-											Ver Detalle
-										</button>
-									</td>
-								</tr>
-								{% endfor %}
-							</tbody>
-						</table>
+					<!-- Loading State -->
+					<div id="orders-loading" class="text-center py-4">
+						<div class="spinner-border text-primary" role="status">
+							<span class="sr-only">Cargando...</span>
+						</div>
+						<p class="text-muted mt-2">Cargando pedidos...</p>
 					</div>
-					{% else %}
-					<div class="alert alert-info">
-						<strong>No hay entregas registradas.</strong> Cuando Santa Brisa te envíe productos, aparecerán aquí.
+
+					<!-- Orders Table -->
+					<div id="orders-container" style="display: none;">
+						<div class="table-responsive">
+							<table class="table table-hover">
+								<thead>
+									<tr>
+										<th width="5%"></th>
+										<th>Pedido</th>
+										<th>Fecha Pedido</th>
+										<th>Fecha Entrega</th>
+										<th>Estado</th>
+										<th class="text-center">Progreso Entrega</th>
+										<th class="text-right">Total</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="orders-tbody">
+									<!-- Orders will be dynamically inserted here -->
+								</tbody>
+							</table>
+						</div>
 					</div>
-					{% endif %}
+
+					<!-- Empty State -->
+					<div id="orders-empty" style="display: none;">
+						<div class="alert alert-info">
+							<strong>No hay pedidos registrados.</strong> Tus pedidos aparecerán aquí.
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -409,12 +397,336 @@
 	color: #007bff;
 	font-weight: 600;
 }
+
+/* Mis Pedidos - Orders Table Enhancements */
+.order-row {
+	transition: background-color 0.2s;
+}
+
+.order-row:hover {
+	background-color: #f8f9fa;
+}
+
+.items-row {
+	border-top: none !important;
+}
+
+.items-container {
+	background-color: white;
+	border-radius: 6px;
+	padding: 15px;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.items-container h6 {
+	color: #495057;
+	font-weight: 600;
+	border-bottom: 2px solid #e9ecef;
+	padding-bottom: 8px;
+	margin-bottom: 15px;
+}
+
+.items-container .table {
+	margin-bottom: 0;
+}
+
+.items-container .table thead {
+	background-color: #f8f9fa;
+}
+
+.items-container .table td,
+.items-container .table th {
+	padding: 8px 12px;
+	font-size: 0.9em;
+}
+
+.items-container code {
+	color: #e83e8c;
+	background-color: #f8f9fa;
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+/* Progress bar styling */
+.progress {
+	background-color: #e9ecef;
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.progress-bar {
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 20px;
+	text-align: center;
+	transition: width 0.6s ease;
+}
+
+/* Status badges */
+.badge {
+	font-size: 0.75rem;
+	padding: 4px 8px;
+	font-weight: 600;
+}
+
+/* Spinner */
+.spinner-border {
+	width: 3rem;
+	height: 3rem;
+}
+
+/* Expand/collapse icon animation */
+.order-row i {
+	transition: transform 0.2s ease;
+}
 </style>
 
 <script>
 // Portal de Distribuidores - JavaScript
 
 let itemRowIndex = 1;
+let currentOrders = [];
+
+// ============================================================
+// MIS PEDIDOS - Load and Display Orders
+// ============================================================
+
+// Load orders on page load
+document.addEventListener('DOMContentLoaded', function() {
+	loadOrders();
+});
+
+function loadOrders() {
+	// Show loading state
+	document.getElementById('orders-loading').style.display = 'block';
+	document.getElementById('orders-container').style.display = 'none';
+	document.getElementById('orders-empty').style.display = 'none';
+
+	// Call API to get orders
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.get_my_orders',
+		args: {
+			limit: 50,
+			offset: 0
+		},
+		callback: function(r) {
+			document.getElementById('orders-loading').style.display = 'none';
+
+			if (r.message && r.message.length > 0) {
+				currentOrders = r.message;
+				renderOrders(currentOrders);
+				document.getElementById('orders-container').style.display = 'block';
+			} else {
+				document.getElementById('orders-empty').style.display = 'block';
+			}
+		},
+		error: function(r) {
+			document.getElementById('orders-loading').style.display = 'none';
+			document.getElementById('orders-empty').style.display = 'block';
+			frappe.msgprint({
+				title: 'Error',
+				message: 'Error al cargar pedidos. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+function renderOrders(orders) {
+	const tbody = document.getElementById('orders-tbody');
+	tbody.innerHTML = '';
+
+	orders.forEach(function(order, index) {
+		// Main order row
+		const mainRow = createOrderRow(order, index);
+		tbody.appendChild(mainRow);
+
+		// Expandable items row (hidden by default)
+		const itemsRow = createItemsRow(order, index);
+		tbody.appendChild(itemsRow);
+	});
+}
+
+function createOrderRow(order, index) {
+	const row = document.createElement('tr');
+	row.className = 'order-row';
+	row.style.cursor = 'pointer';
+	row.onclick = function() { toggleOrderItems(index); };
+
+	// Expand/collapse icon
+	const iconCell = document.createElement('td');
+	iconCell.innerHTML = '<i id="expand-icon-' + index + '" class="fa fa-chevron-right text-muted"></i>';
+	row.appendChild(iconCell);
+
+	// Order ID
+	const idCell = document.createElement('td');
+	idCell.innerHTML = '<strong>' + order.id + '</strong>';
+	row.appendChild(idCell);
+
+	// Order Date
+	const orderDateCell = document.createElement('td');
+	orderDateCell.textContent = formatDate(order.orderDate);
+	row.appendChild(orderDateCell);
+
+	// Delivery Date
+	const deliveryDateCell = document.createElement('td');
+	deliveryDateCell.innerHTML = order.deliveryDate ?
+		'<span class="text-primary"><i class="fa fa-calendar"></i> ' + formatDate(order.deliveryDate) + '</span>' :
+		'<span class="text-muted">-</span>';
+	row.appendChild(deliveryDateCell);
+
+	// Status Badge
+	const statusCell = document.createElement('td');
+	statusCell.innerHTML = getStatusBadge(order.status, order.detailedStatus);
+	row.appendChild(statusCell);
+
+	// Delivery Progress Bar
+	const progressCell = document.createElement('td');
+	progressCell.className = 'text-center';
+	progressCell.innerHTML = createProgressBar(order.deliveryProgress);
+	row.appendChild(progressCell);
+
+	// Total
+	const totalCell = document.createElement('td');
+	totalCell.className = 'text-right';
+	totalCell.innerHTML = '<strong>MXN $' + order.total.toFixed(2) + '</strong>';
+	row.appendChild(totalCell);
+
+	// Actions
+	const actionsCell = document.createElement('td');
+	actionsCell.innerHTML = '<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewOrder(\'' + order.id + '\')">Ver Detalle</button>';
+	row.appendChild(actionsCell);
+
+	return row;
+}
+
+function createItemsRow(order, index) {
+	const row = document.createElement('tr');
+	row.id = 'items-row-' + index;
+	row.className = 'items-row';
+	row.style.display = 'none';
+	row.style.backgroundColor = '#f8f9fa';
+
+	const cell = document.createElement('td');
+	cell.colSpan = 8;
+	cell.style.padding = '15px';
+
+	let itemsHtml = '<div class="items-container">';
+	itemsHtml += '<h6 class="mb-3"><i class="fa fa-box"></i> Items del Pedido (' + order.itemCount + ')</h6>';
+	itemsHtml += '<div class="table-responsive">';
+	itemsHtml += '<table class="table table-sm table-bordered">';
+	itemsHtml += '<thead class="thead-light">';
+	itemsHtml += '<tr>';
+	itemsHtml += '<th>Código</th>';
+	itemsHtml += '<th>Producto</th>';
+	itemsHtml += '<th class="text-right">Cantidad</th>';
+	itemsHtml += '<th class="text-right">Entregado</th>';
+	itemsHtml += '<th class="text-right">Precio Unit.</th>';
+	itemsHtml += '<th class="text-right">Total</th>';
+	itemsHtml += '</tr>';
+	itemsHtml += '</thead>';
+	itemsHtml += '<tbody>';
+
+	order.items.forEach(function(item) {
+		itemsHtml += '<tr>';
+		itemsHtml += '<td><code>' + item.itemCode + '</code></td>';
+		itemsHtml += '<td>' + item.itemName + '</td>';
+		itemsHtml += '<td class="text-right">' + item.qty + '</td>';
+		itemsHtml += '<td class="text-right"><span class="badge badge-' + (item.deliveredQty >= item.qty ? 'success' : 'warning') + '">' + item.deliveredQty + '</span></td>';
+		itemsHtml += '<td class="text-right">$' + item.rate.toFixed(2) + '</td>';
+		itemsHtml += '<td class="text-right"><strong>$' + item.amount.toFixed(2) + '</strong></td>';
+		itemsHtml += '</tr>';
+	});
+
+	itemsHtml += '</tbody>';
+	itemsHtml += '</table>';
+	itemsHtml += '</div>';
+	itemsHtml += '</div>';
+
+	cell.innerHTML = itemsHtml;
+	row.appendChild(cell);
+
+	return row;
+}
+
+function toggleOrderItems(index) {
+	const itemsRow = document.getElementById('items-row-' + index);
+	const icon = document.getElementById('expand-icon-' + index);
+
+	if (itemsRow.style.display === 'none') {
+		itemsRow.style.display = 'table-row';
+		icon.className = 'fa fa-chevron-down text-primary';
+	} else {
+		itemsRow.style.display = 'none';
+		icon.className = 'fa fa-chevron-right text-muted';
+	}
+}
+
+function getStatusBadge(status, detailedStatus) {
+	const statusColors = {
+		'pending': 'warning',
+		'confirmed': 'info',
+		'in_transit': 'primary',
+		'delivered': 'success',
+		'cancelled': 'danger',
+		'on_hold': 'secondary'
+	};
+
+	const statusLabels = {
+		'pending': 'Pendiente',
+		'confirmed': 'Confirmado',
+		'in_transit': 'En Tránsito',
+		'delivered': 'Entregado',
+		'cancelled': 'Cancelado',
+		'on_hold': 'En Espera'
+	};
+
+	const color = statusColors[status] || 'secondary';
+	const label = statusLabels[status] || status;
+
+	let badge = '<span class="badge badge-' + color + '">' + label + '</span>';
+
+	// Add submission indicator if not submitted
+	if (detailedStatus && !detailedStatus.isSubmitted) {
+		badge += ' <span class="badge badge-light">Borrador</span>';
+	}
+
+	return badge;
+}
+
+function createProgressBar(progress) {
+	const percentage = Math.round(progress);
+	let barColor = 'bg-warning';
+
+	if (percentage >= 100) {
+		barColor = 'bg-success';
+	} else if (percentage >= 50) {
+		barColor = 'bg-info';
+	}
+
+	return '<div class="progress" style="height: 20px; min-width: 100px;">' +
+		'<div class="progress-bar ' + barColor + '" role="progressbar" style="width: ' + percentage + '%">' +
+		percentage + '%' +
+		'</div>' +
+		'</div>';
+}
+
+function formatDate(dateStr) {
+	if (!dateStr) return '-';
+	const date = new Date(dateStr);
+	const day = String(date.getDate()).padStart(2, '0');
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const year = date.getFullYear();
+	return day + '/' + month + '/' + year;
+}
+
+function viewOrder(orderId) {
+	window.open('/app/sales-order/' + orderId, '_blank');
+}
+
+// ============================================================
+// SELL OUT FORM
+// ============================================================
 
 // Agregar nueva fila de item al formulario
 function addItemRow() {
