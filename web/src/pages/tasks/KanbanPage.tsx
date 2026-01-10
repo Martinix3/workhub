@@ -4,7 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useKanban, useTaskMutations } from '../../api'
+import { BlockedReasonModal } from '../../components/ui/BlockedReasonModal'
+import { useKanban, useTaskMutations, tasksApi } from '../../api'
 import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
 
 const columnConfig: Record<TaskStatus, { label: string; headerBg: string; bg: string; dropBg: string }> = {
@@ -48,6 +49,8 @@ export function KanbanPage() {
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
+  const [blockModalOpen, setBlockModalOpen] = useState(false)
+  const [taskToBlock, setTaskToBlock] = useState<{ task: Task; targetStatus: TaskStatus } | null>(null)
 
   if (loading) {
     return <LoadingState message="Cargando tablero..." />
@@ -92,6 +95,14 @@ export function KanbanPage() {
 
   const handleDrop = async (status: TaskStatus) => {
     if (draggedTask && draggedTask.status !== status) {
+      // Intercept drops to BLOCKED column and show modal
+      if (status === 'BLOCKED') {
+        setTaskToBlock({ task: draggedTask, targetStatus: status })
+        setBlockModalOpen(true)
+        setDraggedTask(null)
+        setDragOverColumn(null)
+        return
+      }
       await moveTask(draggedTask.name, status)
     }
     setDraggedTask(null)
@@ -106,6 +117,19 @@ export function KanbanPage() {
       setShowQuickAdd(false)
       await refetch()
     }
+  }
+
+  const handleBlockConfirm = async (reason: string) => {
+    if (taskToBlock) {
+      await tasksApi.changeStatus(taskToBlock.task.name, taskToBlock.targetStatus, reason)
+      await refetch()
+      setTaskToBlock(null)
+    }
+  }
+
+  const handleBlockCancel = () => {
+    setBlockModalOpen(false)
+    setTaskToBlock(null)
   }
 
   return (
@@ -313,6 +337,14 @@ export function KanbanPage() {
           </form>
         </div>
       )}
+
+      {/* Blocked Reason Modal */}
+      <BlockedReasonModal
+        isOpen={blockModalOpen}
+        onClose={handleBlockCancel}
+        onConfirm={handleBlockConfirm}
+        taskName={taskToBlock?.task.title}
+      />
     </div>
   )
 }
