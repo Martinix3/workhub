@@ -3,13 +3,13 @@
   "spec": "015-department-workflow-templates",
   "state": "building",
   "subtasks": {
-    "completed": 14,
+    "completed": 16,
     "total": 27,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Frontend - Template Gallery",
+    "current": "Frontend - Template Management (Admin)",
     "id": null,
     "total": 6
   },
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 134,
+    "number": 136,
     "started_at": "2026-01-10T21:23:47.557945"
   },
-  "last_update": "2026-01-10T22:24:25.849308"
+  "last_update": "2026-01-10T22:28:14.002147"
 }

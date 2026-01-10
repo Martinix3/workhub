@@ -9,3 +9,9 @@ export type {
   TemplateMilestone,
   TemplateDependency
 } from './TemplatePreviewModal'
+export { TemplateEditor } from './TemplateEditor'
+export type {
+  TemplateEditorData,
+  TemplateEditorProps,
+  TemplateTaskData
+} from './TemplateEditor'
