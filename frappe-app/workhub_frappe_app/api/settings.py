@@ -22,6 +22,100 @@ DEPARTMENT_ROLES = {
 ALL_DEPARTMENTS = ["SALES", "OPS", "MKT"]
 
 
+# ========== HELPER FUNCTIONS ==========
+
+def _get_default_notification_preferences():
+    """
+    Get default notification preferences with granular control.
+
+    Returns:
+        dict: Default notification preferences
+    """
+    return {
+        "email": True,
+        "push": False,
+        "task_assigned": True,
+        "task_status": True,
+        "overdue_alerts": True,
+        "order_status": True,
+        "project_health": True,
+        "digest_frequency": "daily"
+    }
+
+
+def _migrate_notification_preferences(old_prefs):
+    """
+    Migrate old notification format to new granular format.
+    Ensures backwards compatibility with existing settings.
+
+    Args:
+        old_prefs (dict): Old format preferences
+
+    Returns:
+        dict: Migrated preferences with granular fields
+    """
+    # Start with defaults
+    new_prefs = _get_default_notification_preferences()
+
+    # Keep existing email/push settings if present
+    if "email" in old_prefs:
+        new_prefs["email"] = old_prefs["email"]
+    if "push" in old_prefs:
+        new_prefs["push"] = old_prefs["push"]
+
+    # Handle old 'digest' field -> 'digest_frequency'
+    if "digest" in old_prefs:
+        new_prefs["digest_frequency"] = old_prefs["digest"]
+
+    # If already has granular fields, preserve them
+    for field in ["task_assigned", "task_status", "overdue_alerts",
+                  "order_status", "project_health", "digest_frequency"]:
+        if field in old_prefs:
+            new_prefs[field] = old_prefs[field]
+
+    return new_prefs
+
+
+def _validate_notification_preferences(prefs):
+    """
+    Validate and sanitize notification preferences.
+    Ensures all required fields exist with valid values.
+
+    Args:
+        prefs (dict): Raw notification preferences from user
+
+    Returns:
+        dict: Validated preferences with all required fields
+    """
+    # Start with defaults to ensure all fields exist
+    validated = _get_default_notification_preferences()
+
+    # Update with provided values, validating types
+    if "email" in prefs and isinstance(prefs["email"], bool):
+        validated["email"] = prefs["email"]
+
+    if "push" in prefs and isinstance(prefs["push"], bool):
+        validated["push"] = prefs["push"]
+
+    # Validate boolean notification type preferences
+    for field in ["task_assigned", "task_status", "overdue_alerts",
+                  "order_status", "project_health"]:
+        if field in prefs and isinstance(prefs[field], bool):
+            validated[field] = prefs[field]
+
+    # Validate digest_frequency
+    if "digest_frequency" in prefs:
+        if prefs["digest_frequency"] in ["daily", "weekly", "none"]:
+            validated["digest_frequency"] = prefs["digest_frequency"]
+
+    # Handle old 'digest' field for backwards compatibility
+    if "digest" in prefs and "digest_frequency" not in prefs:
+        if prefs["digest"] in ["daily", "weekly", "none"]:
+            validated["digest_frequency"] = prefs["digest"]
+
+    return validated
+
+
 @frappe.whitelist()
 def get_user_settings():
     """
@@ -31,7 +125,16 @@ def get_user_settings():
         dict: {
             theme: 'light' | 'dark' | 'system',
             language: 'es' | 'en',
-            notifications: { email: bool, push: bool, digest: 'daily'|'weekly'|'none' },
+            notifications: {
+                email: bool,
+                push: bool,
+                task_assigned: bool,
+                task_status: bool,
+                overdue_alerts: bool,
+                order_status: bool,
+                project_health: bool,
+                digest_frequency: 'daily'|'weekly'|'none'
+            },
             department_access: ['SALES', 'OPS', 'MKT']
         }
     """
@@ -51,10 +154,12 @@ def get_user_settings():
     if notifications_json:
         try:
             notifications = json.loads(notifications_json)
+            # Migrate old format to new format (backwards compatibility)
+            notifications = _migrate_notification_preferences(notifications)
         except (json.JSONDecodeError, TypeError):
-            notifications = {"email": True, "push": False, "digest": "daily"}
+            notifications = _get_default_notification_preferences()
     else:
-        notifications = {"email": True, "push": False, "digest": "daily"}
+        notifications = _get_default_notification_preferences()
 
     # Department access based on user roles
     department_access = get_user_departments(user)
@@ -76,7 +181,16 @@ def update_user_settings(settings):
         settings: JSON string or dict with keys:
             - theme: 'light' | 'dark' | 'system'
             - language: 'es' | 'en'
-            - notifications: { email: bool, push: bool, digest: str }
+            - notifications: {
+                email: bool,
+                push: bool,
+                task_assigned: bool,
+                task_status: bool,
+                overdue_alerts: bool,
+                order_status: bool,
+                project_health: bool,
+                digest_frequency: 'daily'|'weekly'|'none'
+              }
 
     Returns:
         dict: Updated settings
@@ -106,8 +220,10 @@ def update_user_settings(settings):
     # Update notifications if provided
     if "notifications" in settings:
         notif = settings["notifications"]
+        # Validate and sanitize notification preferences
+        validated_notif = _validate_notification_preferences(notif)
         if hasattr(user_doc, 'workhub_notifications'):
-            user_doc.workhub_notifications = json.dumps(notif)
+            user_doc.workhub_notifications = json.dumps(validated_notif)
 
     user_doc.save(ignore_permissions=True)
     frappe.db.commit()
