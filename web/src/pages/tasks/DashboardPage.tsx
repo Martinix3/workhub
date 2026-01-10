@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, Minus, CheckCircle } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useTaskDashboard } from '../../api'
-import type { ProjectHealth } from '../../components/sections/tasks/types'
+import { useTaskDashboard, useBlockedTasks, useTaskMutations } from '../../api'
+import { BlockedTasksPanel } from '../../components/sections/tasks'
+import type { ProjectHealth, TaskStatus } from '../../components/sections/tasks/types'
 
 const healthConfig: Record<ProjectHealth, { bg: string; text: string }> = {
   GREEN: { bg: 'bg-emerald-400', text: 'text-emerald-600' },
@@ -15,6 +16,8 @@ const healthConfig: Record<ProjectHealth, { bg: string; text: string }> = {
 export function DashboardPage() {
   const navigate = useNavigate()
   const { kpis, projects, loading, error, refetch } = useTaskDashboard()
+  const { data: blockedTasksData, loading: blockedLoading, refetch: refetchBlocked } = useBlockedTasks()
+  const { changeStatus } = useTaskMutations()
 
   if (loading) {
     return <LoadingState message="Cargando dashboard..." />
@@ -32,8 +35,19 @@ export function DashboardPage() {
   }
 
   const projectsList = projects || []
+  const blockedTasks = blockedTasksData?.tasks || []
   const TrendIcon = kpis.team.trend === 'up' ? TrendingUp : kpis.team.trend === 'down' ? TrendingDown : Minus
   const trendColor = kpis.team.trend === 'up' ? 'text-emerald-500' : kpis.team.trend === 'down' ? 'text-red-500' : 'text-stone-500'
+
+  const handleUnblock = async (taskId: string, newStatus: 'NEXT' | 'DOING') => {
+    await changeStatus(taskId, newStatus as TaskStatus)
+    refetchBlocked()
+    refetch() // Refresh KPIs as well
+  }
+
+  const handleTaskClick = (taskId: string) => {
+    navigate(`/tareas/mis-tareas?task=${taskId}`)
+  }
 
   return (
     <div className="min-h-screen bg-stone-100">
@@ -160,6 +174,14 @@ export function DashboardPage() {
 
           {/* Right Column - Lists */}
           <div className="space-y-6">
+            {/* Blocked Tasks Panel */}
+            <BlockedTasksPanel
+              tasks={blockedTasks}
+              onUnblock={handleUnblock}
+              onTaskClick={handleTaskClick}
+              loading={blockedLoading}
+            />
+
             {/* Projects at Risk */}
             <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] p-6">
               <h2 className="font-serif text-lg font-bold text-stone-900 mb-4 flex items-center gap-2 uppercase tracking-wider">

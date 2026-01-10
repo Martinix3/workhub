@@ -3,7 +3,7 @@
   "spec": "007-complete-task-status-flow-with-blocked-reasons",
   "state": "building",
   "subtasks": {
-    "completed": 8,
+    "completed": 11,
     "total": 14,
     "in_progress": 1,
     "failed": 0
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 10,
+    "number": 13,
     "started_at": "2026-01-10T19:33:19.301660"
   },
-  "last_update": "2026-01-10T19:47:51.528170"
+  "last_update": "2026-01-10T19:53:29.331466"
 }

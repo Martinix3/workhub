@@ -101,5 +101,6 @@ export {
   useGantt,
   useKanban,
   useTaskKPIs,
-  useTaskDashboard
+  useTaskDashboard,
+  useBlockedTasks
 } from './hooks/useTasks'
