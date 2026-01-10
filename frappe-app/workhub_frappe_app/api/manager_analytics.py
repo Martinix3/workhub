@@ -394,10 +394,97 @@ def get_overdue_trends(weeks=8):
     """
     require_auth()
 
-    # TODO: Implement overdue trends logic
+    # Convert weeks parameter to int
+    weeks = int(weeks)
+
+    # Calculate date ranges
+    today = getdate(nowdate())
+
+    # Department list
+    departments = ['SALES', 'OPS', 'MKT']
+
+    result_data = []
+
+    # Process each week from oldest to newest
+    for week_num in range(weeks):
+        # Calculate week boundaries (going backwards from today)
+        week_start = add_days(today, -(weeks - week_num) * 7)
+        week_end = add_days(week_start, 6)
+
+        # Query for overall stats for this week
+        # Tasks are considered "active" if they have a due_date and status != 'DONE'
+        # Tasks are "overdue" if due_date <= week_end and status != 'DONE'
+        overall_query = """
+            SELECT
+                COUNT(*) as total_tasks,
+                SUM(CASE WHEN due_date <= %s AND status != 'DONE' THEN 1 ELSE 0 END) as overdue_tasks
+            FROM `tabWH Task`
+            WHERE due_date IS NOT NULL
+            AND due_date <= %s
+        """
+        overall_result = frappe.db.sql(overall_query, (week_end, week_end), as_dict=True)
+
+        total_tasks = overall_result[0].get('total_tasks') or 0
+        overdue_tasks = overall_result[0].get('overdue_tasks') or 0
+        overdue_ratio = round((overdue_tasks / total_tasks * 100), 1) if total_tasks > 0 else 0.0
+
+        # Query for department breakdown
+        dept_breakdown = {}
+
+        for dept in departments:
+            dept_query = """
+                SELECT
+                    COUNT(*) as total_tasks,
+                    SUM(CASE WHEN due_date <= %s AND status != 'DONE' THEN 1 ELSE 0 END) as overdue_tasks
+                FROM `tabWH Task`
+                WHERE due_date IS NOT NULL
+                AND due_date <= %s
+                AND department = %s
+            """
+            dept_result = frappe.db.sql(dept_query, (week_end, week_end, dept), as_dict=True)
+
+            dept_total = dept_result[0].get('total_tasks') or 0
+            dept_overdue = dept_result[0].get('overdue_tasks') or 0
+            dept_ratio = round((dept_overdue / dept_total * 100), 1) if dept_total > 0 else 0.0
+
+            dept_breakdown[dept] = {
+                "total": dept_total,
+                "overdue": dept_overdue,
+                "ratio": dept_ratio
+            }
+
+        result_data.append({
+            "week_start": str(week_start),
+            "week_end": str(week_end),
+            "total_tasks": total_tasks,
+            "overdue_tasks": overdue_tasks,
+            "overdue_ratio": overdue_ratio,
+            "by_department": dept_breakdown
+        })
+
+    # Calculate trend based on first half vs second half of the period
+    # "improving" = ratio is decreasing, "worsening" = ratio is increasing
+    if len(result_data) >= 4:
+        # Compare first half average to second half average
+        first_half = result_data[:len(result_data)//2]
+        second_half = result_data[len(result_data)//2:]
+
+        first_half_avg = sum(w['overdue_ratio'] for w in first_half) / len(first_half) if first_half else 0
+        second_half_avg = sum(w['overdue_ratio'] for w in second_half) / len(second_half) if second_half else 0
+
+        # If second half ratio is lower, we're improving (10% threshold)
+        if second_half_avg < first_half_avg * 0.9:
+            trend = "improving"
+        elif second_half_avg > first_half_avg * 1.1:
+            trend = "worsening"
+        else:
+            trend = "stable"
+    else:
+        trend = "stable"
+
     return {
-        "weeks": [],
-        "trend": "stable"
+        "weeks": result_data,
+        "trend": trend
     }
 
 
