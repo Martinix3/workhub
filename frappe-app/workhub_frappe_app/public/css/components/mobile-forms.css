@@ -1,0 +1,668 @@
+/**
+ * Mobile Forms Component - Neobrutalismo Editorial
+ * Touch-optimized form styles for task creation/editing
+ * Larger inputs, better spacing, and mobile-friendly interactions
+ */
+
+/* === BASE FORM STYLES === */
+.wh-mobile-form {
+	width: 100%;
+}
+
+/* === FORM GROUPS === */
+.wh-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	margin-bottom: var(--space-4);
+}
+
+/* === LABELS === */
+.wh-form-label {
+	font-family: var(--font-ui);
+	font-size: var(--mobile-text-sm);
+	font-weight: var(--weight-semibold);
+	color: var(--text-1);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	line-height: var(--leading-normal);
+}
+
+.wh-form-label-required::after {
+	content: '*';
+	color: var(--danger);
+	margin-left: var(--space-1);
+}
+
+/* Optional label indicator */
+.wh-form-label-optional::after {
+	content: '(Optional)';
+	font-weight: var(--weight-normal);
+	text-transform: none;
+	color: var(--text-3);
+	margin-left: var(--space-2);
+	font-size: var(--mobile-text-xs);
+}
+
+/* === TEXT INPUTS === */
+.wh-form-input,
+.wh-form-textarea,
+.wh-form-select {
+	width: 100%;
+	font-family: var(--font-ui);
+	font-size: var(--mobile-text-base);
+	font-weight: var(--weight-normal);
+	color: var(--text-1);
+	background: var(--surface-1);
+	border: var(--border-width) solid var(--border-1);
+	border-radius: var(--radius);
+	padding: var(--space-3) var(--space-4);
+	min-height: var(--touch-target-min);
+	line-height: var(--leading-normal);
+	transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+}
+
+/* Prevent iOS zoom on focus by ensuring 16px font size */
+.wh-form-input:focus,
+.wh-form-textarea:focus,
+.wh-form-select:focus {
+	outline: none;
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+/* Placeholder styling */
+.wh-form-input::placeholder,
+.wh-form-textarea::placeholder {
+	color: var(--text-3);
+	opacity: 1;
+}
+
+/* === TEXTAREA === */
+.wh-form-textarea {
+	min-height: 120px;
+	resize: vertical;
+	line-height: var(--leading-relaxed);
+}
+
+/* Larger textarea for task descriptions */
+.wh-form-textarea-large {
+	min-height: 180px;
+}
+
+/* === SELECT DROPDOWN === */
+.wh-form-select {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231a1a1a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right var(--space-3) center;
+	background-size: 20px 20px;
+	padding-right: var(--space-8);
+	cursor: pointer;
+}
+
+/* Remove default arrow on IE */
+.wh-form-select::-ms-expand {
+	display: none;
+}
+
+/* === INPUT STATES === */
+
+/* Disabled state */
+.wh-form-input:disabled,
+.wh-form-textarea:disabled,
+.wh-form-select:disabled {
+	background: var(--surface-2);
+	color: var(--text-3);
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+/* Read-only state */
+.wh-form-input:read-only,
+.wh-form-textarea:read-only {
+	background: var(--surface-2);
+	border-style: dashed;
+}
+
+/* Error state */
+.wh-form-input.error,
+.wh-form-textarea.error,
+.wh-form-select.error {
+	border-color: var(--danger);
+}
+
+.wh-form-input.error:focus,
+.wh-form-textarea.error:focus,
+.wh-form-select.error:focus {
+	box-shadow: 0 0 0 3px var(--danger-soft);
+}
+
+/* Success state */
+.wh-form-input.success,
+.wh-form-textarea.success,
+.wh-form-select.success {
+	border-color: var(--success);
+}
+
+.wh-form-input.success:focus,
+.wh-form-textarea.success:focus,
+.wh-form-select.success:focus {
+	box-shadow: 0 0 0 3px var(--success-soft);
+}
+
+/* === HELP TEXT & ERRORS === */
+.wh-form-help {
+	font-size: var(--mobile-text-xs);
+	color: var(--text-3);
+	line-height: var(--leading-normal);
+	margin-top: var(--space-1);
+}
+
+.wh-form-error {
+	font-size: var(--mobile-text-xs);
+	color: var(--danger);
+	font-weight: var(--weight-medium);
+	line-height: var(--leading-normal);
+	margin-top: var(--space-1);
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.wh-form-error::before {
+	content: '⚠';
+	font-size: var(--mobile-text-sm);
+}
+
+.wh-form-success {
+	font-size: var(--mobile-text-xs);
+	color: var(--success);
+	font-weight: var(--weight-medium);
+	line-height: var(--leading-normal);
+	margin-top: var(--space-1);
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.wh-form-success::before {
+	content: '✓';
+	font-size: var(--mobile-text-sm);
+}
+
+/* === CHECKBOXES & RADIOS === */
+.wh-form-check {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-height: var(--touch-target-min);
+	cursor: pointer;
+	user-select: none;
+}
+
+.wh-form-check-input {
+	width: 24px;
+	height: 24px;
+	min-width: 24px;
+	min-height: 24px;
+	border: var(--border-width) solid var(--border-1);
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+	background: var(--surface-1);
+	transition: background var(--transition-fast), border-color var(--transition-fast);
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	position: relative;
+}
+
+/* Checkbox checked state */
+.wh-form-check-input[type="checkbox"]:checked {
+	background: var(--primary);
+	border-color: var(--primary);
+}
+
+.wh-form-check-input[type="checkbox"]:checked::after {
+	content: '';
+	position: absolute;
+	left: 7px;
+	top: 3px;
+	width: 6px;
+	height: 11px;
+	border: solid var(--text-1);
+	border-width: 0 2px 2px 0;
+	transform: rotate(45deg);
+}
+
+/* Radio button styling */
+.wh-form-check-input[type="radio"] {
+	border-radius: 50%;
+}
+
+.wh-form-check-input[type="radio"]:checked {
+	background: var(--surface-1);
+	border-color: var(--primary);
+}
+
+.wh-form-check-input[type="radio"]:checked::after {
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 12px;
+	height: 12px;
+	background: var(--primary);
+	border-radius: 50%;
+}
+
+/* Focus state for checkboxes/radios */
+.wh-form-check-input:focus {
+	outline: 3px solid var(--primary-soft);
+	outline-offset: 2px;
+}
+
+/* Disabled state for checkboxes/radios */
+.wh-form-check-input:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.wh-form-check-input:disabled + .wh-form-check-label {
+	color: var(--text-3);
+	cursor: not-allowed;
+}
+
+/* Checkbox/radio label */
+.wh-form-check-label {
+	font-size: var(--mobile-text-base);
+	color: var(--text-1);
+	line-height: var(--leading-normal);
+	cursor: pointer;
+	flex: 1;
+}
+
+/* === CHECKBOX/RADIO GROUP === */
+.wh-form-check-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+/* Horizontal layout option */
+.wh-form-check-group-horizontal {
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: var(--space-4);
+}
+
+/* === SEGMENTED CONTROL (for status selection) === */
+.wh-form-segmented {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	width: 100%;
+}
+
+.wh-form-segmented-option {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: var(--touch-target-comfortable);
+	padding: var(--space-3) var(--space-4);
+	font-size: var(--mobile-text-base);
+	font-weight: var(--weight-semibold);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	color: var(--text-1);
+	background: var(--surface-1);
+	border: var(--border-width) solid var(--border-1);
+	cursor: pointer;
+	transition: background var(--transition-fast), transform var(--transition-fast);
+	user-select: none;
+}
+
+.wh-form-segmented-option:active {
+	transform: scale(0.98);
+}
+
+.wh-form-segmented-option.active {
+	background: var(--primary);
+	box-shadow: var(--shadow-sm);
+}
+
+.wh-form-segmented-option:not(.active):hover {
+	background: var(--surface-2);
+}
+
+/* === PRIORITY PICKER === */
+.wh-form-priority-group {
+	display: flex;
+	gap: var(--space-2);
+}
+
+.wh-form-priority-option {
+	flex: 1;
+	min-height: var(--touch-target-min);
+	padding: var(--space-3);
+	font-size: var(--mobile-text-sm);
+	font-weight: var(--weight-semibold);
+	text-align: center;
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	border: var(--border-width) solid var(--border-1);
+	background: var(--surface-1);
+	cursor: pointer;
+	transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.wh-form-priority-option:active {
+	transform: scale(0.98);
+}
+
+.wh-form-priority-option.active {
+	box-shadow: var(--shadow-sm);
+}
+
+/* Priority color variants */
+.wh-form-priority-option.priority-p0.active {
+	background: var(--danger);
+	color: var(--surface-1);
+}
+
+.wh-form-priority-option.priority-p1.active {
+	background: var(--accent);
+	color: var(--surface-1);
+}
+
+.wh-form-priority-option.priority-p2.active {
+	background: var(--primary);
+	color: var(--text-1);
+}
+
+/* === DATE & TIME INPUTS === */
+.wh-form-input[type="date"],
+.wh-form-input[type="time"],
+.wh-form-input[type="datetime-local"] {
+	/* Use native date/time picker on mobile */
+	padding-right: var(--space-4);
+}
+
+/* === FORM ACTIONS === */
+.wh-form-actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	margin-top: var(--space-5);
+	padding-top: var(--space-5);
+	border-top: var(--border-width-thin) solid var(--border-2);
+}
+
+/* Horizontal actions on wider screens */
+@media (min-width: 375px) {
+	.wh-form-actions-horizontal {
+		flex-direction: row;
+		justify-content: flex-end;
+	}
+
+	.wh-form-actions-horizontal .btn {
+		flex: 0 1 auto;
+		min-width: 120px;
+	}
+}
+
+/* === FORM SECTIONS === */
+.wh-form-section {
+	margin-bottom: var(--space-5);
+	padding-bottom: var(--space-5);
+	border-bottom: var(--border-width-thin) solid var(--border-2);
+}
+
+.wh-form-section:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
+	margin-bottom: 0;
+}
+
+.wh-form-section-title {
+	font-family: var(--font-display);
+	font-size: var(--mobile-text-lg);
+	font-weight: var(--weight-bold);
+	color: var(--text-1);
+	margin-bottom: var(--space-4);
+	line-height: var(--leading-tight);
+}
+
+/* === INPUT GROUPS (with prefix/suffix) === */
+.wh-form-input-group {
+	display: flex;
+	align-items: stretch;
+	width: 100%;
+}
+
+.wh-form-input-group .wh-form-input {
+	flex: 1;
+	border-radius: 0;
+}
+
+.wh-form-input-group-prepend,
+.wh-form-input-group-append {
+	display: flex;
+	align-items: center;
+	padding: var(--space-3) var(--space-4);
+	background: var(--surface-2);
+	border: var(--border-width) solid var(--border-1);
+	font-size: var(--mobile-text-sm);
+	font-weight: var(--weight-medium);
+	color: var(--text-2);
+	white-space: nowrap;
+}
+
+.wh-form-input-group-prepend {
+	border-right: none;
+}
+
+.wh-form-input-group-append {
+	border-left: none;
+}
+
+/* === MOBILE-SPECIFIC ADJUSTMENTS === */
+@media (max-width: 767px) {
+	/* Increase spacing on mobile */
+	.wh-form-group {
+		margin-bottom: var(--space-5);
+	}
+
+	/* Larger labels on mobile */
+	.wh-form-label {
+		font-size: var(--mobile-text-base);
+	}
+
+	/* Comfortable touch targets */
+	.wh-form-input,
+	.wh-form-textarea,
+	.wh-form-select {
+		min-height: var(--touch-target-comfortable);
+		padding: var(--space-4);
+	}
+
+	/* More padding for segmented controls */
+	.wh-form-segmented-option {
+		min-height: var(--touch-target-large);
+		padding: var(--space-4);
+		font-size: var(--mobile-text-lg);
+	}
+
+	/* Larger checkboxes/radios on mobile */
+	.wh-form-check-input {
+		width: 28px;
+		height: 28px;
+		min-width: 28px;
+		min-height: 28px;
+	}
+
+	.wh-form-check-input[type="checkbox"]:checked::after {
+		left: 8px;
+		top: 3px;
+		width: 7px;
+		height: 13px;
+	}
+
+	.wh-form-check-input[type="radio"]:checked::after {
+		width: 14px;
+		height: 14px;
+	}
+
+	/* Better spacing for checkbox groups */
+	.wh-form-check-group {
+		gap: var(--space-4);
+	}
+
+	/* Stack priority options on small screens */
+	@media (max-width: 320px) {
+		.wh-form-priority-group {
+			flex-direction: column;
+		}
+	}
+
+	/* Better textarea sizing */
+	.wh-form-textarea {
+		min-height: 140px;
+	}
+
+	.wh-form-textarea-large {
+		min-height: 200px;
+	}
+
+	/* Larger form actions */
+	.wh-form-actions {
+		gap: var(--space-4);
+		margin-top: var(--space-6);
+		padding-top: var(--space-6);
+	}
+
+	/* GPU acceleration for smooth scrolling */
+	.wh-form-input,
+	.wh-form-textarea,
+	.wh-form-select {
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+	}
+}
+
+/* === LANDSCAPE ORIENTATION === */
+@media (max-width: 767px) and (orientation: landscape) {
+	/* Reduce vertical spacing in landscape */
+	.wh-form-group {
+		margin-bottom: var(--space-4);
+	}
+
+	.wh-form-textarea {
+		min-height: 100px;
+	}
+
+	.wh-form-textarea-large {
+		min-height: 140px;
+	}
+}
+
+/* === TABLET AND UP === */
+@media (min-width: 768px) {
+	/* Two-column layout for form groups */
+	.wh-form-row {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--space-4);
+	}
+
+	/* Full width option */
+	.wh-form-row .wh-form-group-full {
+		grid-column: 1 / -1;
+	}
+
+	/* Horizontal segmented control on desktop */
+	.wh-form-segmented {
+		flex-direction: row;
+	}
+
+	.wh-form-segmented-option {
+		flex: 1;
+	}
+
+	/* Horizontal form actions */
+	.wh-form-actions {
+		flex-direction: row;
+		justify-content: flex-end;
+	}
+}
+
+/* === ACCESSIBILITY === */
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+	.wh-form-input,
+	.wh-form-textarea,
+	.wh-form-select,
+	.wh-form-check-input,
+	.wh-form-segmented-option,
+	.wh-form-priority-option {
+		border-width: 3px !important;
+	}
+
+	.wh-form-input:focus,
+	.wh-form-textarea:focus,
+	.wh-form-select:focus,
+	.wh-form-check-input:focus {
+		outline-width: 4px;
+	}
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	.wh-form-input,
+	.wh-form-textarea,
+	.wh-form-select,
+	.wh-form-check-input,
+	.wh-form-segmented-option,
+	.wh-form-priority-option {
+		transition: none !important;
+	}
+}
+
+/* === LOADING STATE === */
+.wh-form-loading {
+	position: relative;
+	pointer-events: none;
+}
+
+.wh-form-loading::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 24px;
+	height: 24px;
+	border: 3px solid var(--border-2);
+	border-top-color: var(--primary);
+	border-radius: 50%;
+	animation: form-spin 0.6s linear infinite;
+}
+
+@keyframes form-spin {
+	to {
+		transform: translate(-50%, -50%) rotate(360deg);
+	}
+}
+
+/* Hide input when form is loading */
+.wh-form-loading .wh-form-input,
+.wh-form-loading .wh-form-textarea,
+.wh-form-loading .wh-form-select {
+	opacity: 0.3;
+}
