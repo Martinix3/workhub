@@ -1,6 +1,8 @@
 // MyDay Component - TDAH-friendly task view
 import { useState, useMemo } from 'react'
-import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight, CheckSquare, Square } from 'lucide-react'
+import { useTaskSelection } from '../../contexts/TaskSelectionContext'
+import { BulkActionsBar } from '../tasks/BulkActionsBar'
 import type { Task, TaskStatus, TaskPriority, MyDayData } from './types'
 
 interface MyDayProps {
@@ -10,6 +12,13 @@ interface MyDayProps {
   onTaskClick?: (id: string) => void
   onQuickAdd?: (title: string, priority: TaskPriority) => void
   onChangeStatus?: (id: string, status: TaskStatus) => void
+  selectionMode?: boolean
+  onToggleSelectionMode?: () => void
+  onBulkChangeStatus?: () => void
+  onBulkAssign?: () => void
+  onBulkChangePriority?: () => void
+  onBulkMoveProject?: () => void
+  onBulkAddWorkLink?: () => void
 }
 
 const priorityConfig: Record<TaskPriority, { bg: string; text: string; softBg: string }> = {
@@ -33,11 +42,19 @@ export function MyDay({
   onTaskClick,
   onQuickAdd,
   onChangeStatus,
+  selectionMode = false,
+  onToggleSelectionMode,
+  onBulkChangeStatus,
+  onBulkAssign,
+  onBulkChangePriority,
+  onBulkMoveProject,
+  onBulkAddWorkLink,
 }: MyDayProps) {
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>('P2')
+  const { selectAll, clearSelection } = useTaskSelection()
 
   const allTasks = [...data.today, ...data.upcoming]
   const focusedTask = focusedTaskId ? allTasks.find(t => t.name === focusedTaskId) : null
@@ -59,6 +76,20 @@ export function MyDay({
       setQuickAddTitle('')
       setShowQuickAdd(false)
     }
+  }
+
+  // Toggle selection mode - clear selections when exiting
+  const handleToggleSelectionMode = () => {
+    if (selectionMode) {
+      clearSelection()
+    }
+    onToggleSelectionMode?.()
+  }
+
+  // Select all tasks in a section
+  const handleSelectAllSection = (tasks: Task[]) => {
+    const taskIds = tasks.map(task => task.name)
+    selectAll(taskIds)
   }
 
   // Focus Mode - Full screen immersive
@@ -156,22 +187,46 @@ export function MyDay({
             </p>
           </div>
 
-          <button
-            onClick={() => setShowQuickAdd(true)}
-            className="
-              inline-flex items-center gap-2 px-4 py-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium text-sm uppercase tracking-wider
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:shadow-[2px_2px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
-              transition-all duration-75
-            "
-          >
-            <Plus size={18} />
-            Agregar
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Selection Mode Toggle */}
+            {onToggleSelectionMode && (
+              <button
+                onClick={handleToggleSelectionMode}
+                className={`
+                  px-3 py-2 text-xs font-medium uppercase tracking-wider
+                  border-2 border-stone-900
+                  transition-all duration-75
+                  flex items-center gap-2
+                  ${selectionMode
+                    ? 'bg-amber-400 text-stone-900 shadow-[2px_2px_0_#1c1917]'
+                    : 'bg-white text-stone-900 hover:bg-stone-100'
+                  }
+                `}
+                title={selectionMode ? 'Salir del modo selección' : 'Activar modo selección'}
+              >
+                {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
+                <span>{selectionMode ? 'Seleccionando' : 'Seleccionar'}</span>
+              </button>
+            )}
+
+            {/* Quick Add Button */}
+            <button
+              onClick={() => setShowQuickAdd(true)}
+              className="
+                inline-flex items-center gap-2 px-4 py-2
+                bg-amber-400 hover:bg-amber-500
+                text-stone-900 font-medium text-sm uppercase tracking-wider
+                border-2 border-stone-900
+                shadow-[4px_4px_0_#1c1917]
+                hover:shadow-[2px_2px_0_#1c1917]
+                hover:translate-x-[2px] hover:translate-y-[2px]
+                transition-all duration-75
+              "
+            >
+              <Plus size={18} />
+              Agregar
+            </button>
+          </div>
         </div>
 
         {/* Main Content with Calendar */}
@@ -210,10 +265,30 @@ export function MyDay({
             {/* En Progreso */}
             {doingTasks.length > 0 && (
               <section className="mb-8">
-                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-stone-500 mb-3">
-                  <span className="w-2 h-2 bg-amber-400 animate-pulse" />
-                  En Progreso
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-stone-500">
+                    <span className="w-2 h-2 bg-amber-400 animate-pulse" />
+                    En Progreso
+                  </h2>
+                  {selectionMode && doingTasks.length > 0 && (
+                    <button
+                      onClick={() => handleSelectAllSection(doingTasks)}
+                      className="
+                        px-2 py-1 text-xs font-medium
+                        bg-white hover:bg-stone-100
+                        border-2 border-stone-900
+                        transition-all duration-75
+                        shadow-[2px_2px_0_#1c1917]
+                        hover:shadow-[1px_1px_0_#1c1917]
+                        hover:translate-x-[1px] hover:translate-y-[1px]
+                        flex items-center gap-1
+                      "
+                    >
+                      <CheckSquare size={12} />
+                      <span>Seleccionar todas</span>
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {doingTasks.map(task => (
                     <TaskCard
@@ -223,6 +298,7 @@ export function MyDay({
                       onFocus={() => handleFocus(task.name)}
                       onComplete={() => handleComplete(task.name)}
                       onClick={() => onTaskClick?.(task.name)}
+                      selectionMode={selectionMode}
                     />
                   ))}
                 </div>
@@ -232,9 +308,29 @@ export function MyDay({
             {/* Siguiente */}
             {nextTasks.length > 0 && (
               <section className="mb-8">
-                <h2 className="text-xs font-medium uppercase tracking-wider text-stone-500 mb-3">
-                  Siguiente
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-medium uppercase tracking-wider text-stone-500">
+                    Siguiente
+                  </h2>
+                  {selectionMode && nextTasks.length > 0 && (
+                    <button
+                      onClick={() => handleSelectAllSection(nextTasks)}
+                      className="
+                        px-2 py-1 text-xs font-medium
+                        bg-white hover:bg-stone-100
+                        border-2 border-stone-900
+                        transition-all duration-75
+                        shadow-[2px_2px_0_#1c1917]
+                        hover:shadow-[1px_1px_0_#1c1917]
+                        hover:translate-x-[1px] hover:translate-y-[1px]
+                        flex items-center gap-1
+                      "
+                    >
+                      <CheckSquare size={12} />
+                      <span>Seleccionar todas</span>
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {nextTasks.map(task => (
                     <TaskCard
@@ -244,6 +340,7 @@ export function MyDay({
                       onComplete={() => handleComplete(task.name)}
                       onClick={() => onTaskClick?.(task.name)}
                       onStartDoing={() => onChangeStatus?.(task.name, 'DOING')}
+                      selectionMode={selectionMode}
                     />
                   ))}
                 </div>
@@ -253,16 +350,37 @@ export function MyDay({
             {/* Blocked */}
             {data.blocked.length > 0 && (
               <section className="mb-8">
-                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-red-500 mb-3">
-                  <AlertTriangle size={14} />
-                  Bloqueadas
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-red-500">
+                    <AlertTriangle size={14} />
+                    Bloqueadas
+                  </h2>
+                  {selectionMode && data.blocked.length > 0 && (
+                    <button
+                      onClick={() => handleSelectAllSection(data.blocked)}
+                      className="
+                        px-2 py-1 text-xs font-medium
+                        bg-white hover:bg-stone-100
+                        border-2 border-stone-900
+                        transition-all duration-75
+                        shadow-[2px_2px_0_#1c1917]
+                        hover:shadow-[1px_1px_0_#1c1917]
+                        hover:translate-x-[1px] hover:translate-y-[1px]
+                        flex items-center gap-1
+                      "
+                    >
+                      <CheckSquare size={12} />
+                      <span>Seleccionar todas</span>
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {data.blocked.map(task => (
                     <TaskCard
                       key={task.name}
                       task={task}
                       onClick={() => onTaskClick?.(task.name)}
+                      selectionMode={selectionMode}
                     />
                   ))}
                 </div>
@@ -365,6 +483,17 @@ export function MyDay({
             </form>
           </div>
         )}
+
+        {/* Bulk Actions Bar - shown when tasks are selected in selection mode */}
+        {selectionMode && onBulkChangeStatus && onBulkAssign && onBulkChangePriority && onBulkMoveProject && onBulkAddWorkLink && (
+          <BulkActionsBar
+            onChangeStatus={onBulkChangeStatus}
+            onAssign={onBulkAssign}
+            onChangePriority={onBulkChangePriority}
+            onMoveProject={onBulkMoveProject}
+            onAddWorkLink={onBulkAddWorkLink}
+          />
+        )}
       </div>
     </div>
   )
@@ -395,10 +524,26 @@ interface TaskCardProps {
   onComplete?: () => void
   onClick?: () => void
   onStartDoing?: () => void
+  selectionMode?: boolean
 }
 
-function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoing }: TaskCardProps) {
+function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoing, selectionMode = false }: TaskCardProps) {
   const priority = priorityConfig[task.priority]
+  const { isSelected, toggleSelection } = useTaskSelection()
+  const selected = isSelected(task.name)
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    toggleSelection(task.name)
+  }
+
+  const handleCardClick = () => {
+    if (selectionMode) {
+      toggleSelection(task.name)
+    } else {
+      onClick?.()
+    }
+  }
 
   return (
     <div
@@ -408,14 +553,39 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
         border-t-4 ${statusBorderTop[task.status]}
         ${highlighted
           ? 'shadow-[4px_4px_0_#1c1917]'
-          : 'shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]'
+          : selected
+            ? 'shadow-[4px_4px_0_#f59e0b] ring-2 ring-amber-400'
+            : 'shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]'
         }
         transition-all duration-75
+        ${selectionMode ? 'cursor-pointer' : ''}
       `}
     >
       <div className="p-4 flex items-start gap-4">
-        {/* Checkbox */}
-        {task.status !== 'BLOCKED' && onComplete && (
+        {/* Selection Checkbox - shown in selection mode */}
+        {selectionMode && (
+          <div
+            onClick={handleCheckboxClick}
+            className="flex-shrink-0 mt-0.5"
+          >
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => {}}
+              onClick={handleCheckboxClick}
+              className="
+                w-5 h-5
+                border-2 border-stone-900
+                cursor-pointer
+                accent-amber-400
+                focus:ring-2 focus:ring-amber-400 focus:ring-offset-0
+              "
+            />
+          </div>
+        )}
+
+        {/* Complete Checkbox - shown when not in selection mode */}
+        {!selectionMode && task.status !== 'BLOCKED' && onComplete && (
           <button
             onClick={e => {
               e.stopPropagation()
@@ -434,7 +604,7 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
         )}
 
         {/* Content */}
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={handleCardClick}>
           <div className="flex items-center gap-2 mb-1">
             <span className={`px-1.5 py-0.5 text-xs font-medium ${priority.softBg} ${priority.text}`}>
               {task.priority}
@@ -462,41 +632,43 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1">
-          {task.status === 'NEXT' && onStartDoing && (
-            <button
-              onClick={e => {
-                e.stopPropagation()
-                onStartDoing?.()
-              }}
-              className="
-                p-2 text-stone-400 hover:text-cyan-500
-                hover:bg-cyan-50
-                transition-colors
-              "
-              title="Empezar"
-            >
-              <Play size={16} />
-            </button>
-          )}
-          {task.status === 'DOING' && onFocus && (
-            <button
-              onClick={e => {
-                e.stopPropagation()
-                onFocus?.()
-              }}
-              className="
-                p-2 text-stone-400 hover:text-amber-500
-                hover:bg-amber-50
-                transition-colors
-              "
-              title="Focus Mode"
-            >
-              <Play size={20} />
-            </button>
-          )}
-        </div>
+        {/* Actions - hidden in selection mode */}
+        {!selectionMode && (
+          <div className="flex items-center gap-1">
+            {task.status === 'NEXT' && onStartDoing && (
+              <button
+                onClick={e => {
+                  e.stopPropagation()
+                  onStartDoing?.()
+                }}
+                className="
+                  p-2 text-stone-400 hover:text-cyan-500
+                  hover:bg-cyan-50
+                  transition-colors
+                "
+                title="Empezar"
+              >
+                <Play size={16} />
+              </button>
+            )}
+            {task.status === 'DOING' && onFocus && (
+              <button
+                onClick={e => {
+                  e.stopPropagation()
+                  onFocus?.()
+                }}
+                className="
+                  p-2 text-stone-400 hover:text-amber-500
+                  hover:bg-amber-50
+                  transition-colors
+                "
+                title="Focus Mode"
+              >
+                <Play size={20} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
