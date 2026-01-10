@@ -870,3 +870,199 @@ def get_unread_count():
     return {
         "unread_count": count
     }
+
+
+# ============================================================
+# ORDER CHANGE REQUESTS - Workflow for order modifications
+# ============================================================
+
+@frappe.whitelist()
+def submit_change_request(order_id, request_type, reason, new_values=None):
+    """Submit a new order change request from the logged-in distributor.
+
+    Args:
+        order_id: Sales Order ID to modify
+        request_type: Type of change (Quantity Change, Cancel, Date Change)
+        reason: Reason for the change request
+        new_values: Optional JSON string with new values (e.g., '{"quantity": 100, "item": "ITEM-001"}')
+
+    Returns: Created change request details
+    """
+    require_auth()
+    user = frappe.session.user
+
+    # Validate required fields
+    if not order_id or not request_type or not reason:
+        frappe.throw(_("Order ID, request type, and reason are required"))
+
+    # Validate request_type
+    valid_types = ["Quantity Change", "Cancel", "Date Change"]
+    if request_type not in valid_types:
+        frappe.throw(_("Invalid request type. Must be one of: ") + ", ".join(valid_types))
+
+    # Get distributor linked to this user
+    distributor = frappe.db.get_value("Customer", {"email_id": user}, "name")
+    if not distributor:
+        distributor = frappe.db.get_value("Portal User", {"user": user}, "parent")
+
+    if not distributor:
+        frappe.throw(_("No distributor account linked to this user"))
+
+    # Verify the order exists and belongs to this distributor
+    order = frappe.db.get_value("Sales Order",
+        filters={"name": order_id, "customer": distributor},
+        fieldname=["name", "customer"]
+    )
+    if not order:
+        frappe.throw(_("Order not found or does not belong to your account"))
+
+    # Validate new_values if provided
+    if new_values:
+        try:
+            if isinstance(new_values, str):
+                json.loads(new_values)
+        except json.JSONDecodeError:
+            frappe.throw(_("New values must be valid JSON"))
+
+    try:
+        # Create new order change request
+        doc = frappe.new_doc("Order Change Request")
+        doc.order_id = order_id
+        doc.distributor = distributor
+        doc.request_type = request_type
+        doc.reason = reason
+        doc.status = "Pending"
+
+        if new_values:
+            doc.new_values = new_values if isinstance(new_values, str) else json.dumps(new_values)
+
+        doc.insert(ignore_permissions=True)
+
+        return {
+            "success": True,
+            "request_id": doc.name,
+            "status": doc.status,
+            "message": _("Change request submitted successfully")
+        }
+    except Exception as e:
+        frappe.throw(_(str(e)))
+
+
+@frappe.whitelist()
+def get_my_change_requests(order_id=None, status_filter=None, limit=50, offset=0):
+    """Get order change requests for the logged-in distributor.
+
+    Args:
+        order_id: Optional - filter by specific order
+        status_filter: Optional - filter by status (Pending, Approved, Rejected)
+        limit: Number of records to return
+        offset: Number of records to skip
+
+    Returns: List of change requests with details
+    """
+    require_auth()
+    user = frappe.session.user
+
+    # Get distributor linked to this user
+    distributor = frappe.db.get_value("Customer", {"email_id": user}, "name")
+    if not distributor:
+        distributor = frappe.db.get_value("Portal User", {"user": user}, "parent")
+
+    if not distributor:
+        return []
+
+    # Build filters
+    filters = {"distributor": distributor}
+
+    if order_id:
+        filters["order_id"] = order_id
+
+    if status_filter:
+        valid_statuses = ["Pending", "Approved", "Rejected"]
+        if status_filter in valid_statuses:
+            filters["status"] = status_filter
+
+    # Get change requests
+    requests = frappe.get_list("Order Change Request",
+        filters=filters,
+        fields=["name", "order_id", "request_type", "status", "reason",
+                "new_values", "response_notes", "processed_by", "processed_date",
+                "creation", "modified"],
+        limit_page_length=int(limit),
+        limit_start=int(offset),
+        order_by="creation desc",
+        ignore_permissions=True
+    )
+
+    # Transform to match expected interface (camelCase)
+    result = []
+    for req in requests:
+        result.append({
+            "id": req.name,
+            "orderId": req.order_id,
+            "requestType": req.request_type,
+            "status": req.status,
+            "reason": req.reason,
+            "newValues": req.new_values,
+            "responseNotes": req.response_notes,
+            "processedBy": req.processed_by,
+            "processedDate": str(req.processed_date) if req.processed_date else None,
+            "createdAt": str(req.creation) if req.creation else "",
+            "modifiedAt": str(req.modified) if req.modified else ""
+        })
+
+    return result
+
+
+@frappe.whitelist()
+def cancel_change_request(request_id):
+    """Cancel a pending order change request.
+
+    Only the distributor who created the request can cancel it.
+    Only pending requests can be cancelled.
+
+    Args:
+        request_id: ID of the change request to cancel
+
+    Returns: Success status and message
+    """
+    require_auth()
+    user = frappe.session.user
+
+    if not request_id:
+        frappe.throw(_("Request ID is required"))
+
+    # Get distributor linked to this user
+    distributor = frappe.db.get_value("Customer", {"email_id": user}, "name")
+    if not distributor:
+        distributor = frappe.db.get_value("Portal User", {"user": user}, "parent")
+
+    if not distributor:
+        frappe.throw(_("No distributor account linked to this user"))
+
+    # Get the request and verify ownership
+    try:
+        request = frappe.get_doc("Order Change Request", request_id)
+    except Exception:
+        frappe.throw(_("Change request not found"))
+
+    # Verify the request belongs to this distributor
+    if request.distributor != distributor:
+        frappe.throw(_("You are not authorized to cancel this request"))
+
+    # Only pending requests can be cancelled
+    if request.status != "Pending":
+        frappe.throw(_("Only pending requests can be cancelled. This request is already {0}").format(request.status))
+
+    # Cancel the request
+    request.status = "Rejected"
+    request.response_notes = "Cancelado por el distribuidor"
+    request.processed_by = user
+    request.processed_date = now_datetime()
+    request.save(ignore_permissions=True)
+
+    return {
+        "success": True,
+        "request_id": request.name,
+        "message": _("Change request cancelled successfully")
+    }
