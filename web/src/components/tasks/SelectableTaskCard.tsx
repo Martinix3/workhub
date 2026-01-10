@@ -46,8 +46,12 @@ export function SelectableTaskCard({
     toggleSelection(task.name)
   }
 
-  const handleCardClick = () => {
-    if (selectionMode) {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Ctrl/Cmd+Click toggles selection even when not in selection mode
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      toggleSelection(task.name)
+    } else if (selectionMode) {
       toggleSelection(task.name)
     } else {
       onClick()

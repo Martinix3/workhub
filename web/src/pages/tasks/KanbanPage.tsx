@@ -1,7 +1,7 @@
 // Kanban Board Page - Enhanced with priority bars, avatars, drag effects, FAB
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, CheckSquare, Square } from 'lucide-react'
+import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, CheckSquare, Square, HelpCircle } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { useKanban, useTaskMutations } from '../../api'
@@ -97,6 +97,26 @@ function KanbanContent() {
     // TODO: Implement in subtask 4.2
   }
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd+A: Select all visible tasks
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode) {
+        e.preventDefault()
+        const allVisibleTasks = allColumns.flatMap(col => col.tasks)
+        const allTaskIds = allVisibleTasks.map(task => task.name)
+        selectAll(allTaskIds)
+      }
+      // Escape: Clear selection
+      else if (e.key === 'Escape' && selectionMode) {
+        clearSelection()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectionMode, columns, selectAll, clearSelection])
+
   if (loading) {
     return <LoadingState message="Cargando tablero..." />
   }
@@ -185,23 +205,55 @@ function KanbanContent() {
             </div>
 
             {/* Selection Mode Toggle */}
-            <button
-              onClick={toggleSelectionMode}
-              className={`
-                px-3 py-1.5 text-xs font-medium uppercase tracking-wider
-                border-2 border-stone-900
-                transition-all duration-75
-                flex items-center gap-2
-                ${selectionMode
-                  ? 'bg-amber-400 text-stone-900 shadow-[2px_2px_0_#1c1917]'
-                  : 'bg-white text-stone-900 hover:bg-stone-100'
-                }
-              `}
-              title={selectionMode ? 'Salir del modo selección' : 'Activar modo selección'}
-            >
-              {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
-              <span>{selectionMode ? 'Seleccionando' : 'Seleccionar'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleSelectionMode}
+                className={`
+                  px-3 py-1.5 text-xs font-medium uppercase tracking-wider
+                  border-2 border-stone-900
+                  transition-all duration-75
+                  flex items-center gap-2
+                  ${selectionMode
+                    ? 'bg-amber-400 text-stone-900 shadow-[2px_2px_0_#1c1917]'
+                    : 'bg-white text-stone-900 hover:bg-stone-100'
+                  }
+                `}
+                title={selectionMode ? 'Salir del modo selección' : 'Activar modo selección'}
+              >
+                {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
+                <span>{selectionMode ? 'Seleccionando' : 'Seleccionar'}</span>
+              </button>
+
+              {/* Keyboard Shortcuts Help */}
+              <div className="relative group">
+                <HelpCircle size={18} className="text-stone-400 hover:text-stone-600 cursor-help" />
+                <div className="
+                  absolute right-0 top-full mt-2 w-64 p-3
+                  bg-white border-2 border-stone-900
+                  shadow-[4px_4px_0_#1c1917]
+                  opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                  transition-all duration-150 z-50
+                ">
+                  <p className="font-bold text-xs uppercase tracking-wider text-stone-900 mb-2">
+                    Atajos de Teclado
+                  </p>
+                  <div className="space-y-1 text-xs text-stone-700">
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Ctrl/Cmd+A</span>
+                      <span className="text-[10px] ml-2">Seleccionar todas</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Escape</span>
+                      <span className="text-[10px] ml-2">Limpiar selección</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Ctrl/Cmd+Click</span>
+                      <span className="text-[10px] ml-2">Alternar selección</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Department Filter */}
             <div className="flex gap-2">

@@ -1,11 +1,11 @@
 // My Day Page - TDAH-friendly task view
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MyDay } from '../../components/sections/tasks'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { useMyDay, useTaskMutations } from '../../api'
-import { TaskSelectionProvider } from '../../contexts/TaskSelectionContext'
+import { TaskSelectionProvider, useTaskSelection } from '../../contexts/TaskSelectionContext'
 
 export function MyDayPage() {
   return (
@@ -20,6 +20,29 @@ function MyDayContent() {
   const [selectionMode, setSelectionMode] = useState(false)
   const { data, loading, error, refetch } = useMyDay()
   const { changeStatus, quickAdd } = useTaskMutations()
+  const { selectAll, clearSelection } = useTaskSelection()
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!data) return
+
+      // Ctrl/Cmd+A: Select all visible tasks
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode) {
+        e.preventDefault()
+        const allVisibleTasks = [...data.today, ...data.blocked]
+        const allTaskIds = allVisibleTasks.map(task => task.name)
+        selectAll(allTaskIds)
+      }
+      // Escape: Clear selection
+      else if (e.key === 'Escape' && selectionMode) {
+        clearSelection()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectionMode, data, selectAll, clearSelection])
 
   if (loading) {
     return <LoadingState message="Cargando tu dia..." />
