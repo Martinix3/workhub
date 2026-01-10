@@ -38,6 +38,9 @@ const UserDetailPage = lazy(() => import('./pages/admin/UserDetailPage').then(m 
 const CreateUserPage = lazy(() => import('./pages/admin/CreateUserPage').then(m => ({ default: m.CreateUserPage })))
 const RolesPage = lazy(() => import('./pages/admin/RolesPage').then(m => ({ default: m.RolesPage })))
 const InvitationsPage = lazy(() => import('./pages/admin/InvitationsPage').then(m => ({ default: m.InvitationsPage })))
+const AdminTemplatesPage = lazy(() => import('./pages/admin/TemplatesPage').then(m => ({ default: m.AdminTemplatesPage })))
+const NewTemplatePage = lazy(() => import('./pages/admin/NewTemplatePage').then(m => ({ default: m.NewTemplatePage })))
+const EditTemplatePage = lazy(() => import('./pages/admin/EditTemplatePage').then(m => ({ default: m.EditTemplatePage })))
 
 // Icons
 import {
@@ -200,6 +203,9 @@ function AppContent() {
               <Route path="users/:userId" element={<UserDetailPage />} />
               <Route path="roles" element={<RolesPage />} />
               <Route path="invitations" element={<InvitationsPage />} />
+              <Route path="templates" element={<AdminTemplatesPage />} />
+              <Route path="templates/new" element={<NewTemplatePage />} />
+              <Route path="templates/:templateId/edit" element={<EditTemplatePage />} />
             </Route>
 
             {/* 404 */}
