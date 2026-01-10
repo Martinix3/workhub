@@ -3,23 +3,23 @@
   "spec": "016-bulk-task-operations",
   "state": "building",
   "subtasks": {
-    "completed": 10,
+    "completed": 11,
     "total": 18,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "UI Components for Bulk Selection",
+    "current": "Integration with Kanban and Task Views",
     "id": null,
-    "total": 5
+    "total": 4
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 129,
+    "number": 130,
     "started_at": "2026-01-10T21:23:46.479367"
   },
-  "last_update": "2026-01-10T22:19:51.751379"
+  "last_update": "2026-01-10T22:22:23.710292"
 }
