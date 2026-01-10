@@ -8,6 +8,7 @@ import type {
   Activity,
   SalesTrends
 } from '../../components/sections/sell-in-operations/types'
+import type { OrderDetail } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
 
 export const salesApi = {
   async getKPIs(): Promise<KPIs> {
@@ -108,6 +109,14 @@ export const salesApi = {
     const data = await frappe.call<CreateOrderResponse>(
       'workhub_frappe_app.api.sales.create_order',
       { data: orderData }
+    )
+    return data
+  },
+
+  async getOrderDetail(orderId: string): Promise<OrderDetail> {
+    const data = await frappe.call<OrderDetail>(
+      'workhub_frappe_app.api.sales.get_order_detail',
+      { order_id: orderId }
     )
     return data
   }
