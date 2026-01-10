@@ -421,7 +421,103 @@ def resume_timer():
 	}
 
 
-# Time reports (to be implemented in subsequent subtasks)
-# - get_time_report(user=None, project=None, from_date=None, to_date=None)
+# Time Reports
+
+@frappe.whitelist()
+def get_time_report(user=None, project=None, from_date=None, to_date=None):
+	"""
+	Get time tracking data with filters for user reports.
+
+	Args:
+		user: User email (optional, defaults to current user)
+		project: Project ID to filter by (optional)
+		from_date: Start date for filtering (optional)
+		to_date: End date for filtering (optional)
+
+	Returns:
+		dict with time entries list and totals
+	"""
+	require_permission("WH Task", "read")
+
+	# Default user to current user if not provided
+	if not user:
+		user = frappe.session.user
+
+	# Build SQL query to get work_log entries with task details
+	# We need to join WH Task Work Log (child table) with WH Task (parent)
+	conditions = ["wl.user = %(user)s"]
+	params = {"user": user}
+
+	if project:
+		conditions.append("t.project = %(project)s")
+		params["project"] = project
+
+	if from_date:
+		conditions.append("wl.date >= %(from_date)s")
+		params["from_date"] = from_date
+
+	if to_date:
+		conditions.append("wl.date <= %(to_date)s")
+		params["to_date"] = to_date
+
+	where_clause = " AND ".join(conditions)
+
+	# Query to get work_log entries with task details
+	query = f"""
+		SELECT
+			wl.name as log_name,
+			wl.parent as task_id,
+			wl.date,
+			wl.user,
+			wl.hours,
+			wl.minutes,
+			wl.duration_hours,
+			wl.notes,
+			t.title as task_title,
+			t.project,
+			t.status as task_status,
+			t.priority as task_priority
+		FROM `tabWH Task Work Log` wl
+		INNER JOIN `tabWH Task` t ON wl.parent = t.name
+		WHERE {where_clause}
+		ORDER BY wl.date DESC, wl.creation DESC
+	"""
+
+	entries = frappe.db.sql(query, params, as_dict=True)
+
+	# Enrich entries with project info
+	for entry in entries:
+		if entry.get("project"):
+			project_data = frappe.db.get_value(
+				"WH Project",
+				entry["project"],
+				["title", "department"],
+				as_dict=True
+			)
+			if project_data:
+				entry["project_title"] = project_data.title
+				entry["project_department"] = project_data.department
+
+	# Calculate totals
+	total_hours = sum(entry.get("duration_hours") or 0 for entry in entries)
+	entries_count = len(entries)
+
+	return {
+		"success": True,
+		"entries": entries,
+		"totals": {
+			"total_hours": total_hours,
+			"entries_count": entries_count
+		},
+		"filters": {
+			"user": user,
+			"project": project,
+			"from_date": from_date,
+			"to_date": to_date
+		}
+	}
+
+
+# To be implemented in subsequent subtasks:
 # - get_project_time_summary(project_id)
 # - get_user_time_summary(user=None, from_date=None, to_date=None)
