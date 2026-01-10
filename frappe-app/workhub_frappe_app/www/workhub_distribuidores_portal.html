@@ -495,6 +495,71 @@
 	</div>
 </div>
 
+<!-- Change Request Modal -->
+<div class="modal fade" id="changeRequestModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">🔄 Solicitar Cambio de Pedido</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<form id="change-request-form" onsubmit="submitChangeRequest(event)">
+				<div class="modal-body">
+					<div class="alert alert-info">
+						<i class="fa fa-info-circle"></i>
+						<strong>Importante:</strong> Tu solicitud será revisada por el equipo de ventas.
+						Recibirás una notificación cuando sea procesada.
+					</div>
+
+					<div class="form-group">
+						<label>Pedido *</label>
+						<input type="text" class="form-control" id="change-request-order-id" readonly>
+					</div>
+
+					<div class="form-group">
+						<label>Tipo de Cambio *</label>
+						<select class="form-control" id="change-request-type" required onchange="updateNewValuesField()">
+							<option value="">-- Seleccionar --</option>
+							<option value="Quantity Change">Cambio de Cantidad</option>
+							<option value="Date Change">Cambio de Fecha</option>
+							<option value="Cancel">Cancelación</option>
+						</select>
+						<small class="form-text text-muted">
+							Selecciona el tipo de modificación que necesitas
+						</small>
+					</div>
+
+					<div class="form-group" id="new-values-group" style="display: none;">
+						<label id="new-values-label">Nuevos Valores *</label>
+						<textarea class="form-control" id="change-request-new-values"
+							rows="3" placeholder='{"campo": "valor"}'></textarea>
+						<small class="form-text text-muted" id="new-values-help">
+							JSON con los nuevos valores
+						</small>
+					</div>
+
+					<div class="form-group">
+						<label>Razón del Cambio *</label>
+						<textarea class="form-control" id="change-request-reason"
+							rows="4" placeholder="Explica el motivo de tu solicitud..." required></textarea>
+						<small class="form-text text-muted">
+							Proporciona detalles que ayuden a procesar tu solicitud más rápido
+						</small>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+					<button type="submit" class="btn btn-primary">
+						<i class="fa fa-paper-plane"></i> Enviar Solicitud
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
 <style>
 .wh-page-container {
 	padding: 20px;
@@ -631,6 +696,54 @@
 .tasks-container .alert {
 	font-size: 0.9em;
 	padding: 10px 15px;
+}
+
+/* Change requests section styling - matches items/tasks container */
+.change-requests-row {
+	border-top: none !important;
+}
+
+.change-requests-container {
+	background-color: white;
+	border-radius: 6px;
+	padding: 15px;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+	margin-top: 10px;
+}
+
+.change-requests-container h6 {
+	color: #495057;
+	font-weight: 600;
+	border-bottom: 2px solid #e9ecef;
+	padding-bottom: 8px;
+	margin-bottom: 15px;
+}
+
+.change-requests-container .table {
+	margin-bottom: 0;
+}
+
+.change-requests-container .table thead {
+	background-color: #f8f9fa;
+}
+
+.change-requests-container .table td,
+.change-requests-container .table th {
+	padding: 8px 12px;
+	font-size: 0.9em;
+}
+
+.change-requests-container .alert {
+	font-size: 0.9em;
+	padding: 10px 15px;
+}
+
+.change-requests-container code {
+	color: #e83e8c;
+	background-color: #f8f9fa;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 0.85em;
 }
 
 /* Progress bar styling */
@@ -814,6 +927,7 @@
 let itemRowIndex = 1;
 let currentOrders = [];
 let currentTasks = [];
+let currentChangeRequests = [];
 
 // ============================================================
 // MIS PEDIDOS - Load and Display Orders
@@ -830,7 +944,7 @@ function loadOrders() {
 	document.getElementById('orders-container').style.display = 'none';
 	document.getElementById('orders-empty').style.display = 'none';
 
-	// Call API to get orders and tasks in parallel
+	// Call API to get orders, tasks, and change requests in parallel
 	Promise.all([
 		// Get orders
 		new Promise(function(resolve, reject) {
@@ -860,12 +974,30 @@ function loadOrders() {
 					resolve([]);
 				}
 			});
+		}),
+		// Get change requests
+		new Promise(function(resolve, reject) {
+			frappe.call({
+				method: 'workhub_frappe_app.api.distributors.get_my_change_requests',
+				args: {
+					limit: 100,
+					offset: 0
+				},
+				callback: function(r) {
+					resolve(r.message || []);
+				},
+				error: function(err) {
+					// Change requests are optional, don't fail if they error
+					resolve([]);
+				}
+			});
 		})
 	]).then(function(results) {
 		document.getElementById('orders-loading').style.display = 'none';
 
 		currentOrders = results[0];
 		currentTasks = results[1];
+		currentChangeRequests = results[2];
 
 		if (currentOrders.length > 0) {
 			renderOrders(currentOrders);
@@ -900,6 +1032,10 @@ function renderOrders(orders) {
 		// Expandable tasks row (hidden by default)
 		const tasksRow = createTasksRow(order, index);
 		tbody.appendChild(tasksRow);
+
+		// Expandable change requests row (hidden by default)
+		const changeRequestsRow = createChangeRequestsRow(order, index);
+		tbody.appendChild(changeRequestsRow);
 	});
 }
 
@@ -950,7 +1086,8 @@ function createOrderRow(order, index) {
 
 	// Actions
 	const actionsCell = document.createElement('td');
-	actionsCell.innerHTML = '<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewOrder(\'' + order.id + '\')">Ver Detalle</button>';
+	actionsCell.innerHTML = '<button class="btn btn-sm btn-outline-primary mr-1" onclick="event.stopPropagation(); viewOrder(\'' + order.id + '\')">Ver Detalle</button>' +
+		'<button class="btn btn-sm btn-outline-warning" onclick="event.stopPropagation(); showChangeRequestModal(\'' + order.id + '\')">Solicitar Cambio</button>';
 	row.appendChild(actionsCell);
 
 	return row;
@@ -1063,18 +1200,106 @@ function createTasksRow(order, index) {
 	return row;
 }
 
+function createChangeRequestsRow(order, index) {
+	const row = document.createElement('tr');
+	row.id = 'change-requests-row-' + index;
+	row.className = 'change-requests-row';
+	row.style.display = 'none';
+	row.style.backgroundColor = '#f8f9fa';
+
+	const cell = document.createElement('td');
+	cell.colSpan = 8;
+	cell.style.padding = '0 15px 15px 15px';
+
+	// Filter change requests for this specific order
+	const orderChangeRequests = currentChangeRequests.filter(function(req) {
+		return req.orderId === order.id;
+	});
+
+	let requestsHtml = '<div class="change-requests-container">';
+	requestsHtml += '<h6 class="mb-3"><i class="fa fa-exchange"></i> Solicitudes de Cambio (' + orderChangeRequests.length + ')</h6>';
+
+	if (orderChangeRequests.length > 0) {
+		requestsHtml += '<div class="table-responsive">';
+		requestsHtml += '<table class="table table-sm table-bordered">';
+		requestsHtml += '<thead class="thead-light">';
+		requestsHtml += '<tr>';
+		requestsHtml += '<th>ID</th>';
+		requestsHtml += '<th>Tipo de Cambio</th>';
+		requestsHtml += '<th>Razón</th>';
+		requestsHtml += '<th>Nuevos Valores</th>';
+		requestsHtml += '<th class="text-center">Estado</th>';
+		requestsHtml += '<th class="text-center">Fecha Solicitud</th>';
+		requestsHtml += '<th class="text-center">Acciones</th>';
+		requestsHtml += '</tr>';
+		requestsHtml += '</thead>';
+		requestsHtml += '<tbody>';
+
+		orderChangeRequests.forEach(function(req) {
+			requestsHtml += '<tr>';
+			requestsHtml += '<td><small class="text-muted">' + req.id + '</small></td>';
+			requestsHtml += '<td>' + getRequestTypeBadge(req.requestType) + '</td>';
+			requestsHtml += '<td>' + escapeHtml(req.reason || '-') + '</td>';
+			requestsHtml += '<td>' + (req.newValues ? '<code>' + escapeHtml(req.newValues) + '</code>' : '<span class="text-muted">-</span>') + '</td>';
+			requestsHtml += '<td class="text-center">' + getRequestStatusBadge(req.status) + '</td>';
+			requestsHtml += '<td class="text-center"><small>' + formatDate(req.createdAt) + '</small></td>';
+			requestsHtml += '<td class="text-center">';
+
+			// Show cancel button for pending requests
+			if (req.status === 'Pending') {
+				requestsHtml += '<button class="btn btn-xs btn-outline-danger" onclick="cancelChangeRequest(\'' + req.id + '\', \'' + order.id + '\')"><i class="fa fa-times"></i> Cancelar</button>';
+			} else {
+				requestsHtml += '<span class="text-muted">-</span>';
+			}
+
+			requestsHtml += '</td>';
+			requestsHtml += '</tr>';
+
+			// Show response notes if available
+			if (req.responseNotes) {
+				requestsHtml += '<tr>';
+				requestsHtml += '<td colspan="7" class="bg-light">';
+				requestsHtml += '<strong>Respuesta:</strong> ' + escapeHtml(req.responseNotes);
+				if (req.processedBy) {
+					requestsHtml += '<br><small class="text-muted">Por: ' + req.processedBy + ' - ' + formatDate(req.processedDate) + '</small>';
+				}
+				requestsHtml += '</td>';
+				requestsHtml += '</tr>';
+			}
+		});
+
+		requestsHtml += '</tbody>';
+		requestsHtml += '</table>';
+		requestsHtml += '</div>';
+	} else {
+		requestsHtml += '<div class="alert alert-info mb-0">';
+		requestsHtml += '<i class="fa fa-info-circle"></i> No hay solicitudes de cambio para este pedido. <a href="#" onclick="event.preventDefault(); showChangeRequestModal(\'' + order.id + '\')">Crear una solicitud</a>';
+		requestsHtml += '</div>';
+	}
+
+	requestsHtml += '</div>';
+
+	cell.innerHTML = requestsHtml;
+	row.appendChild(cell);
+
+	return row;
+}
+
 function toggleOrderItems(index) {
 	const itemsRow = document.getElementById('items-row-' + index);
 	const tasksRow = document.getElementById('tasks-row-' + index);
+	const changeRequestsRow = document.getElementById('change-requests-row-' + index);
 	const icon = document.getElementById('expand-icon-' + index);
 
 	if (itemsRow.style.display === 'none') {
 		itemsRow.style.display = 'table-row';
 		tasksRow.style.display = 'table-row';
+		changeRequestsRow.style.display = 'table-row';
 		icon.className = 'fa fa-chevron-down text-primary';
 	} else {
 		itemsRow.style.display = 'none';
 		tasksRow.style.display = 'none';
+		changeRequestsRow.style.display = 'none';
 		icon.className = 'fa fa-chevron-right text-muted';
 	}
 }
@@ -1181,6 +1406,194 @@ function getDepartmentBadge(department) {
 	const label = deptLabels[department] || department;
 
 	return '<span class="badge badge-' + color + '">' + label + '</span>';
+}
+
+function getRequestTypeBadge(requestType) {
+	const typeColors = {
+		'Quantity Change': 'info',
+		'Cancel': 'danger',
+		'Date Change': 'warning'
+	};
+
+	const typeLabels = {
+		'Quantity Change': 'Cambio de Cantidad',
+		'Cancel': 'Cancelación',
+		'Date Change': 'Cambio de Fecha'
+	};
+
+	const color = typeColors[requestType] || 'secondary';
+	const label = typeLabels[requestType] || requestType;
+
+	return '<span class="badge badge-' + color + '">' + label + '</span>';
+}
+
+function getRequestStatusBadge(status) {
+	const statusColors = {
+		'Pending': 'warning',
+		'Approved': 'success',
+		'Rejected': 'danger'
+	};
+
+	const statusLabels = {
+		'Pending': 'Pendiente',
+		'Approved': 'Aprobado',
+		'Rejected': 'Rechazado'
+	};
+
+	const color = statusColors[status] || 'secondary';
+	const label = statusLabels[status] || status;
+
+	return '<span class="badge badge-' + color + '">' + label + '</span>';
+}
+
+// ============================================================
+// ORDER CHANGE REQUESTS
+// ============================================================
+
+let currentRequestOrderId = null;
+
+function showChangeRequestModal(orderId) {
+	currentRequestOrderId = orderId;
+	document.getElementById('change-request-order-id').value = orderId;
+	document.getElementById('change-request-form').reset();
+	document.getElementById('change-request-order-id').value = orderId;
+
+	// Show/hide new values field based on request type
+	updateNewValuesField();
+
+	$('#changeRequestModal').modal('show');
+}
+
+function updateNewValuesField() {
+	const requestType = document.getElementById('change-request-type').value;
+	const newValuesGroup = document.getElementById('new-values-group');
+	const newValuesLabel = document.getElementById('new-values-label');
+	const newValuesInput = document.getElementById('change-request-new-values');
+	const newValuesHelp = document.getElementById('new-values-help');
+
+	if (requestType === 'Cancel') {
+		// Hide new values for cancellation
+		newValuesGroup.style.display = 'none';
+		newValuesInput.required = false;
+	} else {
+		newValuesGroup.style.display = 'block';
+		newValuesInput.required = true;
+
+		if (requestType === 'Quantity Change') {
+			newValuesLabel.textContent = 'Nuevas Cantidades';
+			newValuesHelp.textContent = 'Ejemplo: {"item": "ITEM-001", "qty": 50}';
+			newValuesInput.placeholder = '{"item": "ITEM-001", "qty": 50}';
+		} else if (requestType === 'Date Change') {
+			newValuesLabel.textContent = 'Nueva Fecha';
+			newValuesHelp.textContent = 'Ejemplo: {"delivery_date": "2026-02-15"}';
+			newValuesInput.placeholder = '{"delivery_date": "2026-02-15"}';
+		} else {
+			newValuesLabel.textContent = 'Nuevos Valores';
+			newValuesHelp.textContent = 'JSON con los nuevos valores';
+			newValuesInput.placeholder = '{"campo": "valor"}';
+		}
+	}
+}
+
+function submitChangeRequest(event) {
+	event.preventDefault();
+
+	const orderId = document.getElementById('change-request-order-id').value;
+	const requestType = document.getElementById('change-request-type').value;
+	const reason = document.getElementById('change-request-reason').value.trim();
+	const newValues = document.getElementById('change-request-new-values').value.trim();
+
+	if (!orderId || !requestType || !reason) {
+		frappe.msgprint('Por favor completa todos los campos requeridos.');
+		return;
+	}
+
+	// Validate JSON for new values if provided
+	if (newValues && requestType !== 'Cancel') {
+		try {
+			JSON.parse(newValues);
+		} catch (e) {
+			frappe.msgprint({
+				title: 'Error',
+				message: 'Los nuevos valores deben ser JSON válido.',
+				indicator: 'red'
+			});
+			return;
+		}
+	}
+
+	// Show loading
+	const btn = event.target.querySelector('button[type="submit"]');
+	btn.disabled = true;
+	btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Enviando...';
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.submit_change_request',
+		args: {
+			order_id: orderId,
+			request_type: requestType,
+			reason: reason,
+			new_values: newValues || null
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				$('#changeRequestModal').modal('hide');
+				document.getElementById('change-request-form').reset();
+
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Solicitud de cambio enviada correctamente. ID: ' + r.message.request_id,
+					indicator: 'green'
+				});
+
+				// Reload orders to refresh change requests
+				loadOrders();
+			}
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar Solicitud';
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: err.message || 'Error al enviar solicitud. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar Solicitud';
+		}
+	});
+}
+
+function cancelChangeRequest(requestId, orderId) {
+	if (!confirm('¿Estás seguro de que deseas cancelar esta solicitud?')) {
+		return;
+	}
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.cancel_change_request',
+		args: {
+			request_id: requestId
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Solicitud cancelada correctamente.',
+					indicator: 'green'
+				});
+
+				// Reload orders to refresh change requests
+				loadOrders();
+			}
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: err.message || 'Error al cancelar solicitud.',
+				indicator: 'red'
+			});
+		}
+	});
 }
 
 // ============================================================
