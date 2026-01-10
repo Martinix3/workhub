@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { X, Mic, MicOff, ArrowRight, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { useNLTask } from '../../api/hooks/useNLTask'
 import { useVoiceInput } from '../smart-notepad/useVoiceInput'
+import { TaskConfirmationForm } from './TaskConfirmationForm'
 import type { ParsedTask } from './types'
 
 type ModalStep = 'input' | 'confirm' | 'success' | 'error'
@@ -216,35 +217,11 @@ export function NLTaskInputModal({ isOpen, onClose, onTaskCreated }: NLTaskInput
                 Revisa y ajusta los campos extraídos antes de crear la tarea.
               </p>
 
-              {/* Placeholder for TaskConfirmationForm - will be implemented in subtask 4.2 */}
-              <div className="p-4 border-2 border-stone-200 bg-stone-50">
-                <p className="text-sm text-stone-600 mb-2">
-                  <strong>Título:</strong> {parsedTask.title}
-                </p>
-                {parsedTask.due_date && (
-                  <p className="text-sm text-stone-600 mb-2">
-                    <strong>Fecha límite:</strong> {parsedTask.due_date}
-                  </p>
-                )}
-                <p className="text-sm text-stone-600 mb-2">
-                  <strong>Prioridad:</strong> {parsedTask.priority}
-                </p>
-                {parsedTask.assignee.matched && parsedTask.assignee.user && (
-                  <p className="text-sm text-stone-600 mb-2">
-                    <strong>Asignado a:</strong> {parsedTask.assignee.user.full_name}
-                  </p>
-                )}
-                {parsedTask.project.matched && parsedTask.project.project && (
-                  <p className="text-sm text-stone-600 mb-2">
-                    <strong>Proyecto:</strong> {parsedTask.project.project.title}
-                  </p>
-                )}
-                {parsedTask.description && (
-                  <p className="text-sm text-stone-600">
-                    <strong>Descripción:</strong> {parsedTask.description}
-                  </p>
-                )}
-              </div>
+              {/* Task Confirmation Form */}
+              <TaskConfirmationForm
+                parsedTask={parsedTask}
+                onChange={updateParsedTask}
+              />
 
               {/* Action Buttons */}
               <div className="flex gap-3">
