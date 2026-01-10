@@ -45,6 +45,22 @@ export interface UpdateSettingsData {
   }
 }
 
+export interface UserKPIs {
+  user: string
+  period: 'week' | 'month'
+  completed: number
+  velocity: number
+  work_days: number
+  active_projects: number
+  current: {
+    [status: string]: number
+  }
+  daily_trend: Array<{
+    date: string
+    count: number
+  }>
+}
+
 // API Methods
 const settingsApi = {
   // Get user settings
