@@ -33,10 +33,10 @@ export function NotificationCenter({ onNavigate }: NotificationCenterProps) {
       {/* Bell Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="relative p-2 rounded hover:bg-slate-700 transition-colors"
+        className="relative p-2 rounded hover:bg-slate-700 transition-colors text-slate-300"
         title="Notificaciones"
       >
-        <Bell size={20} className="text-slate-300" />
+        <Bell size={20} />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold font-['Inter'] rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
