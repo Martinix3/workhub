@@ -22,6 +22,8 @@ export interface Task {
   due_date?: string
   actual_start?: string
   actual_end?: string
+  completed_at?: string
+  completion_notes?: string
   is_milestone?: boolean
   is_inbox?: boolean
   blocked_reason?: string
