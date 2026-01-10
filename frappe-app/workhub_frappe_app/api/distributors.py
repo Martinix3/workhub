@@ -1066,3 +1066,122 @@ def cancel_change_request(request_id):
         "request_id": request.name,
         "message": _("Change request cancelled successfully")
     }
+
+
+# ============================================================
+# SELF-SERVICE ORDER CREATION - For approved distributors
+# ============================================================
+
+@frappe.whitelist()
+def create_distributor_order(data):
+    """Create a new Sales Order for the logged-in distributor (self-service).
+
+    Only available to distributors with can_create_orders enabled.
+
+    Args:
+        data: JSON string or dict with order details
+            {
+                "items": [{"item_code": "ITEM-001", "qty": 10, "rate": 100}, ...],
+                "delivery_date": "2026-01-15",  # Optional
+                "notes": "Special instructions"  # Optional
+            }
+
+    Returns: Created order details
+    """
+    require_auth()
+    user = frappe.session.user
+
+    # Parse data if it's a string
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except json.JSONDecodeError:
+            frappe.throw(_("Invalid JSON data"))
+
+    # Get distributor linked to this user
+    distributor = frappe.db.get_value("Customer", {"email_id": user}, "name")
+    if not distributor:
+        distributor = frappe.db.get_value("Portal User", {"user": user}, "parent")
+
+    if not distributor:
+        frappe.throw(_("No distributor account linked to this user"))
+
+    # Validate distributor has permission to create orders
+    can_create = frappe.db.get_value("Customer", distributor, "can_create_orders")
+    if not can_create:
+        frappe.throw(_("Your account is not approved for self-service order creation. Please contact your sales representative."))
+
+    # Validate items
+    if not data.get("items") or len(data["items"]) == 0:
+        frappe.throw(_("At least one item is required"))
+
+    # Validate each item
+    for item in data["items"]:
+        if not item.get("item_code"):
+            frappe.throw(_("Item code is required for all items"))
+
+        # Verify item exists and is a sales item
+        item_exists = frappe.db.get_value("Item",
+            {"name": item["item_code"], "is_sales_item": 1, "disabled": 0},
+            ["name", "item_name", "stock_uom", "standard_rate"]
+        )
+        if not item_exists:
+            frappe.throw(_("Item {0} is not available for sale").format(item.get("item_code")))
+
+        # Validate quantity
+        qty = flt(item.get("qty", 0))
+        if qty <= 0:
+            frappe.throw(_("Quantity must be greater than 0 for item {0}").format(item.get("item_code")))
+
+    try:
+        # Create Sales Order
+        doc = frappe.new_doc("Sales Order")
+        doc.customer = distributor
+        doc.transaction_date = today()
+        doc.delivery_date = data.get("delivery_date") or frappe.utils.add_days(today(), 7)
+        doc.order_type = "Sales"
+
+        # Add custom field value if it exists
+        if hasattr(doc, "sales_type"):
+            doc.sales_type = "Sell In"
+
+        # Company defaults
+        doc.company = frappe.defaults.get_defaults().get("company") or "Santa Brisa"
+        doc.currency = "MXN"
+        doc.conversion_rate = 1.0
+        doc.selling_price_list = "Standard Selling"
+        doc.price_list_currency = "MXN"
+        doc.plc_conversion_rate = 1.0
+
+        # Add notes if provided
+        if data.get("notes"):
+            doc.additional_notes = data["notes"]
+
+        # Add items
+        for item in data["items"]:
+            # Get item rate if not provided
+            rate = flt(item.get("rate", 0))
+            if rate == 0:
+                # Get standard rate from Item master
+                rate = frappe.db.get_value("Item", item["item_code"], "standard_rate") or 0
+
+            doc.append("items", {
+                "item_code": item["item_code"],
+                "qty": flt(item["qty"]),
+                "rate": rate,
+            })
+
+        # Insert the document (ignore_permissions for portal users)
+        doc.insert(ignore_permissions=True)
+
+        return {
+            "success": True,
+            "orderId": doc.name,
+            "orderDate": str(doc.transaction_date),
+            "deliveryDate": str(doc.delivery_date),
+            "total": flt(doc.grand_total),
+            "itemCount": len(doc.items),
+            "message": _("Order created successfully")
+        }
+    except Exception as e:
+        frappe.throw(_(str(e)))
