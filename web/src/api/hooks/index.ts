@@ -81,3 +81,8 @@ export {
   useCustomerSearch,
   useItemSearch
 } from './useNotepad'
+
+// Notifications
+export {
+  useNotifications
+} from './useNotifications'

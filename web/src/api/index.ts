@@ -9,6 +9,7 @@ export { default as distributorsApi } from './services/distributors'
 export { default as productionApi } from './services/production'
 export { default as marketingApi } from './services/marketing'
 export { default as tasksApi } from './services/tasks'
+export { default as notificationsApi } from './services/notifications'
 
 // Sales Hooks
 export {
@@ -25,6 +26,14 @@ export {
 
 // Sales types
 export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem } from './services/sales'
+
+// Notification types
+export type {
+  Notification,
+  NotificationType,
+  NotificationPriority,
+  GetNotificationsResponse
+} from './types/notifications'
 
 // Command Center Hooks
 export {
@@ -103,3 +112,8 @@ export {
   useTaskKPIs,
   useTaskDashboard
 } from './hooks/useTasks'
+
+// Notification Hooks
+export {
+  useNotifications
+} from './hooks/useNotifications'
