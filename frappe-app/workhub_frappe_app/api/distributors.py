@@ -184,35 +184,11 @@ def get_list(filters=None, limit=50, offset=0):
 @frappe.whitelist()
 def get_my_orders(limit=50, offset=0):
     """Get orders for the logged-in distributor (portal) - React expects MyOrder[] interface:
-    {id, deliveryNumber, orderDate, deliveryDate, status, items[], total, invoiceStatus}
+    {id, deliveryNumber, orderDate, deliveryDate, status, items[], total, invoiceStatus,
+     deliveryProgress, itemCount, detailedStatus}
     """
     require_auth()
     user = frappe.session.user
-
-    # Get customer linked to this user (Guest check removed - require_auth handles it)
-    if user == "Guest":  # This won't execute due to require_auth, but kept for safety
-        return [
-            {
-                "id": "SAL-ORD-DEMO-001",
-                "deliveryNumber": "ENT-DEMO-001",
-                "orderDate": str(add_months(today(), -1)),
-                "deliveryDate": str(today()),
-                "status": "delivered",
-                "items": [{"itemCode": "MEZCAL-JOV", "itemName": "Mezcal Joven", "qty": 24, "amount": 28800}],
-                "total": 45000,
-                "invoiceStatus": "pending"
-            },
-            {
-                "id": "SAL-ORD-DEMO-002",
-                "deliveryNumber": "ENT-DEMO-002",
-                "orderDate": str(add_months(today(), -2)),
-                "deliveryDate": str(add_months(today(), -1)),
-                "status": "delivered",
-                "items": [{"itemCode": "MEZCAL-REP", "itemName": "Mezcal Reposado", "qty": 12, "amount": 19200}],
-                "total": 32000,
-                "invoiceStatus": "paid"
-            }
-        ]
 
     # Get customer linked to this user
     customer = frappe.db.get_value("Customer", {"email_id": user}, "name")
@@ -225,7 +201,7 @@ def get_my_orders(limit=50, offset=0):
     raw_orders = frappe.get_list("Sales Order",
         filters={"customer": customer, "docstatus": ["!=", 2]},
         fields=["name", "transaction_date", "delivery_date", "grand_total",
-                "status", "per_delivered", "per_billed", "creation"],
+                "status", "per_delivered", "per_billed", "creation", "docstatus"],
         limit_page_length=int(limit),
         limit_start=int(offset),
         order_by="transaction_date desc",
@@ -233,20 +209,90 @@ def get_my_orders(limit=50, offset=0):
     )
 
     # Transform to MyOrder interface
-    status_map = {"Completed": "delivered", "To Deliver and Bill": "pending", "To Bill": "delivered", "To Deliver": "in_transit"}
-    invoice_map = {"Completed": "paid", "To Bill": "invoiced", "To Deliver and Bill": "pending", "To Deliver": "pending"}
+    status_map = {
+        "Draft": "pending",
+        "To Deliver and Bill": "confirmed",
+        "To Bill": "delivered",
+        "To Deliver": "in_transit",
+        "Completed": "delivered",
+        "Cancelled": "cancelled",
+        "On Hold": "on_hold"
+    }
+    invoice_map = {
+        "Draft": "pending",
+        "To Deliver and Bill": "pending",
+        "To Bill": "invoiced",
+        "To Deliver": "pending",
+        "Completed": "paid",
+        "Cancelled": "cancelled",
+        "On Hold": "pending"
+    }
 
     orders = []
     for order in raw_orders:
+        # Get items for this order
+        items = frappe.get_list("Sales Order Item",
+            filters={"parent": order.name},
+            fields=["item_code", "item_name", "qty", "delivered_qty", "rate", "amount"],
+            order_by="idx asc",
+            ignore_permissions=True
+        )
+
+        # Transform items to match expected format
+        order_items = []
+        total_qty = 0
+        total_delivered_qty = 0
+        for item in items:
+            order_items.append({
+                "itemCode": item.item_code,
+                "itemName": item.item_name,
+                "qty": flt(item.qty),
+                "deliveredQty": flt(item.delivered_qty),
+                "rate": flt(item.rate),
+                "amount": flt(item.amount)
+            })
+            total_qty += flt(item.qty)
+            total_delivered_qty += flt(item.delivered_qty)
+
+        # Calculate delivery progress
+        delivery_progress = flt(order.per_delivered, 2)
+        if delivery_progress == 0 and total_qty > 0 and total_delivered_qty > 0:
+            delivery_progress = round((total_delivered_qty / total_qty) * 100, 2)
+
+        # Get linked delivery notes if any
+        delivery_notes = frappe.db.sql("""
+            SELECT DISTINCT dn.name, dn.posting_date
+            FROM `tabDelivery Note` dn
+            JOIN `tabDelivery Note Item` dni ON dni.parent = dn.name
+            WHERE dni.against_sales_order = %s
+            AND dn.docstatus = 1
+            ORDER BY dn.posting_date DESC
+        """, (order.name,), as_dict=True)
+
+        delivery_number = delivery_notes[0].name if delivery_notes else None
+
+        # Build detailed status
+        detailed_status = {
+            "label": order.status,
+            "isSubmitted": order.docstatus == 1,
+            "deliveryProgress": delivery_progress,
+            "billingProgress": flt(order.per_billed, 2),
+            "hasDeliveryNote": bool(delivery_notes),
+            "deliveryNoteCount": len(delivery_notes)
+        }
+
         orders.append({
             "id": order.name,
-            "deliveryNumber": order.name,
+            "deliveryNumber": delivery_number or order.name,
             "orderDate": str(order.transaction_date) if order.transaction_date else "",
             "deliveryDate": str(order.delivery_date) if order.delivery_date else "",
             "status": status_map.get(order.status, "pending"),
-            "items": [],
+            "items": order_items,
             "total": flt(order.grand_total),
-            "invoiceStatus": invoice_map.get(order.status, "pending")
+            "invoiceStatus": invoice_map.get(order.status, "pending"),
+            "deliveryProgress": delivery_progress,
+            "itemCount": len(order_items),
+            "detailedStatus": detailed_status
         })
 
     return orders
