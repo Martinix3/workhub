@@ -622,3 +622,79 @@ def get_sell_out_order_stats():
             result[key] = row.count
 
     return result
+
+
+@frappe.whitelist()
+def get_order_tasks():
+    """Get WH Tasks related to distributor's orders via WorkLink.
+
+    Returns tasks linked to the distributor's Sales Orders with:
+    - task_id: WH Task ID
+    - task_title: Task title
+    - status: Task status (BACKLOG, NEXT, DOING, BLOCKED, DONE)
+    - due_date: Task due date
+    - department: Department (SALES, OPS, MKT)
+    - order_id: Related Sales Order ID
+    """
+    require_auth()
+    user = frappe.session.user
+
+    # Get distributor linked to this user
+    distributor = frappe.db.get_value("Customer", {"email_id": user}, "name")
+    if not distributor:
+        distributor = frappe.db.get_value("Portal User", {"user": user}, "parent")
+
+    if not distributor:
+        return []
+
+    # Get all Sales Orders for this distributor
+    sales_orders = frappe.get_list("Sales Order",
+        filters={"customer": distributor, "docstatus": ["!=", 2]},
+        fields=["name"],
+        ignore_permissions=True
+    )
+
+    if not sales_orders:
+        return []
+
+    order_ids = [so.name for so in sales_orders]
+
+    # Get WorkLinks for these Sales Orders
+    worklinks = frappe.get_list("WorkLink",
+        filters={
+            "source_doctype": "Sales Order",
+            "source_id": ["in", order_ids]
+        },
+        fields=["name", "source_id", "wh_task", "department", "status", "due_date"],
+        ignore_permissions=True
+    )
+
+    tasks = []
+    for wl in worklinks:
+        # If WorkLink has a WH Task reference, get task details
+        if wl.wh_task:
+            try:
+                task = frappe.get_doc("WH Task", wl.wh_task)
+                tasks.append({
+                    "task_id": task.name,
+                    "task_title": task.title,
+                    "status": task.status,
+                    "due_date": str(task.due_date) if task.due_date else None,
+                    "department": task.department,
+                    "order_id": wl.source_id
+                })
+            except Exception:
+                # Task might not exist or permission issue, skip
+                pass
+        else:
+            # If no WH Task link, use WorkLink data directly
+            tasks.append({
+                "task_id": wl.name,
+                "task_title": f"Task for {wl.source_id}",
+                "status": wl.status,
+                "due_date": str(wl.due_date) if wl.due_date else None,
+                "department": wl.department,
+                "order_id": wl.source_id
+            })
+
+    return tasks
