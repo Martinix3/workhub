@@ -8,7 +8,13 @@ import type {
   OverdueTrendsResponse,
   ManagerDashboardResponse
 } from '../services/manager-analytics'
-import { isInBypassMode } from '../sample-data'
+import {
+  isInBypassMode,
+  sampleTeamWorkload,
+  sampleVelocityTrends,
+  sampleBlockerAnalysis,
+  sampleOverdueTrends
+} from '../sample-data'
 
 interface UseDataState<T> {
   data: T | null
@@ -32,8 +38,7 @@ export function useTeamWorkload(department?: string): UseDataState<TeamWorkloadR
       setData(workload)
     } catch (err) {
       if (isInBypassMode()) {
-        // Sample data will be added in subtask 2.3
-        setData({ workload: [] })
+        setData(sampleTeamWorkload)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch team workload'))
       }
@@ -64,8 +69,7 @@ export function useVelocityTrends(
       setData(velocity)
     } catch (err) {
       if (isInBypassMode()) {
-        // Sample data will be added in subtask 2.3
-        setData({ period, data: [], trend: 'stable', avg_current: 0, avg_previous: 0 })
+        setData(sampleVelocityTrends)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch velocity trends'))
       }
@@ -93,8 +97,7 @@ export function useBlockerAnalysis(department?: string): UseDataState<BlockerAna
       setData(blockers)
     } catch (err) {
       if (isInBypassMode()) {
-        // Sample data will be added in subtask 2.3
-        setData({ blocked_areas: [], avg_blocked_time_days: 0, top_blocked_tasks: [] })
+        setData(sampleBlockerAnalysis)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch blocker analysis'))
       }
@@ -122,8 +125,7 @@ export function useOverdueTrends(weeks: number = 8): UseDataState<OverdueTrendsR
       setData(overdue)
     } catch (err) {
       if (isInBypassMode()) {
-        // Sample data will be added in subtask 2.3
-        setData({ weeks: [], trend: 'stable' })
+        setData(sampleOverdueTrends)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch overdue trends'))
       }
@@ -151,12 +153,11 @@ export function useManagerAnalyticsDashboard(department?: string) {
       setData(dashboard)
     } catch (err) {
       if (isInBypassMode()) {
-        // Sample data will be added in subtask 2.3
         setData({
-          workload: { workload: [] },
-          velocity: { period: 'daily', data: [], trend: 'stable', avg_current: 0, avg_previous: 0 },
-          blockers: { blocked_areas: [], avg_blocked_time_days: 0, top_blocked_tasks: [] },
-          overdue: { weeks: [], trend: 'stable' }
+          workload: sampleTeamWorkload,
+          velocity: sampleVelocityTrends,
+          blockers: sampleBlockerAnalysis,
+          overdue: sampleOverdueTrends
         })
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch manager dashboard'))
