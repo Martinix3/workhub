@@ -93,7 +93,7 @@ export function ProductSelector({ items, onItemsChange }: ProductSelectorProps) 
               border-2 border-stone-900 dark:border-stone-100
               text-sm text-stone-900 dark:text-stone-100
               placeholder:text-stone-400
-              focus:outline-none focus:ring-0
+              focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-300
             "
           />
         </div>
@@ -186,7 +186,7 @@ export function ProductSelector({ items, onItemsChange }: ProductSelectorProps) 
                     bg-white dark:bg-stone-900
                     border border-stone-300 dark:border-stone-600
                     text-sm font-mono
-                    focus:outline-none focus:border-amber-400
+                    focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-300
                   "
                 />
               </div>
@@ -205,7 +205,7 @@ export function ProductSelector({ items, onItemsChange }: ProductSelectorProps) 
                     bg-white dark:bg-stone-900
                     border border-stone-300 dark:border-stone-600
                     text-sm font-mono
-                    focus:outline-none focus:border-amber-400
+                    focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-300
                   "
                 />
               </div>
