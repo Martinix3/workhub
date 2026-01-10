@@ -422,3 +422,90 @@ def quick_add(title, priority="P1", department=None, assigned_to=None):
     doc.is_inbox = 1
     doc.insert()
     return {"success": True, "task_id": doc.name}
+
+
+@frappe.whitelist()
+def quick_create(data):
+    """
+    Quick create task with essential fields and optional WorkLink.
+
+    Args:
+        data: JSON object with fields:
+            - title (required): Task title
+            - priority (optional): P0, P1, or P2. Defaults to P1
+            - due_date (optional): Due date in YYYY-MM-DD format
+            - project (optional): Project ID
+            - assigned_to (optional): User email. Defaults to current user
+            - source_doctype (optional): ERP DocType for WorkLink
+            - source_id (optional): ERP document ID for WorkLink
+            - department (optional): Department (SALES, OPS, MKT)
+
+    Returns:
+        dict with success, task_id, and optionally worklink_id
+    """
+    require_permission("WH Task", "create")
+
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    if not data.get("title"):
+        frappe.throw(_("Title is required"))
+
+    # Validate priority
+    priority = data.get("priority", "P1")
+    if priority not in ["P0", "P1", "P2"]:
+        frappe.throw(_("Invalid priority: {0}. Must be P0, P1, or P2").format(priority))
+
+    # Create task
+    doc = frappe.new_doc("WH Task")
+    doc.title = data["title"]
+    doc.priority = priority
+    doc.status = "BACKLOG"
+    doc.project = data.get("project")
+    doc.department = data.get("department")
+    doc.assigned_to = data.get("assigned_to") or frappe.session.user
+    doc.due_date = data.get("due_date")
+
+    # If no project and no WorkLink data, mark as inbox
+    has_worklink = data.get("source_doctype") and data.get("source_id")
+    if not doc.project and not has_worklink:
+        doc.is_inbox = 1
+
+    doc.insert()
+
+    result = {"success": True, "task_id": doc.name}
+
+    # Create WorkLink if source data provided
+    if has_worklink:
+        source_doctype = data["source_doctype"]
+        source_id = data["source_id"]
+
+        # Check if WorkLink already exists for this ERP doc
+        existing = frappe.db.get_value("WorkLink",
+            {"source_doctype": source_doctype, "source_id": source_id},
+            "name")
+
+        if existing:
+            # Update existing WorkLink
+            frappe.db.set_value("WorkLink", existing, "wh_task", doc.name)
+            worklink_id = existing
+        else:
+            # Create new WorkLink
+            worklink = frappe.new_doc("WorkLink")
+            worklink.source_doctype = source_doctype
+            worklink.source_id = source_id
+            worklink.department = doc.department or "OPS"
+            worklink.wh_task = doc.name
+            worklink.insert()
+            worklink_id = worklink.name
+
+        # Update task with WorkLink reference
+        frappe.db.set_value("WH Task", doc.name, {
+            "worklink": worklink_id,
+            "source_doctype": source_doctype,
+            "source_name": source_id
+        })
+
+        result["worklink_id"] = worklink_id
+
+    return result
