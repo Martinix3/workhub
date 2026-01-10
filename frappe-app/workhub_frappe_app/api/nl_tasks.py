@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate, add_days
+from frappe.utils import nowdate, add_days, now_datetime
 import json
 
 from workhub_frappe_app.api.utils import require_auth
@@ -311,3 +311,158 @@ def search_projects(search: str = "", limit: int = 20) -> list:
     )
 
     return projects
+
+
+@frappe.whitelist()
+def save_correction(original_text: str, llm_output: str, final_output: str) -> dict:
+    """
+    Save user correction record for learning system.
+    Detects differences between LLM output and final user-corrected output.
+
+    Args:
+        original_text: Original natural language input from user
+        llm_output: Initial LLM parsing result (JSON string)
+        final_output: Final task data after user corrections (JSON string)
+
+    Returns:
+        Result with success status and correction ID:
+        {
+            "success": bool,
+            "correction_id": str,
+            "message": str
+        }
+    """
+    require_auth()
+
+    # Validate inputs
+    if not original_text or not original_text.strip():
+        frappe.throw(_("El texto original no puede estar vacío"))
+
+    if not llm_output or not llm_output.strip():
+        frappe.throw(_("La salida del LLM no puede estar vacía"))
+
+    if not final_output or not final_output.strip():
+        frappe.throw(_("La salida final no puede estar vacía"))
+
+    # Parse JSON strings if needed
+    if isinstance(llm_output, str):
+        try:
+            llm_data = json.loads(llm_output)
+        except json.JSONDecodeError:
+            frappe.throw(_("La salida del LLM no es JSON válido"))
+    else:
+        llm_data = llm_output
+
+    if isinstance(final_output, str):
+        try:
+            final_data = json.loads(final_output)
+        except json.JSONDecodeError:
+            frappe.throw(_("La salida final no es JSON válido"))
+    else:
+        final_data = final_output
+
+    # Detect differences between LLM output and final output
+    corrections = _detect_corrections(llm_data, final_data)
+
+    # Only save if there were actual corrections
+    if not corrections:
+        return {
+            "success": True,
+            "correction_id": None,
+            "message": _("No se detectaron correcciones")
+        }
+
+    # Create correction record
+    correction_doc = frappe.get_doc({
+        "doctype": "WH NL Task Correction",
+        "user": frappe.session.user,
+        "timestamp": now_datetime(),
+        "original_text": original_text.strip(),
+        "llm_output": json.dumps(llm_data, ensure_ascii=False, indent=2),
+        "user_corrections": json.dumps(corrections, ensure_ascii=False, indent=2),
+        "final_output": json.dumps(final_data, ensure_ascii=False, indent=2)
+    })
+
+    try:
+        correction_doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "correction_id": correction_doc.name,
+            "message": _("Corrección guardada exitosamente")
+        }
+    except Exception as e:
+        frappe.log_error(f"Error saving correction: {str(e)}", "NL Task Correction")
+        frappe.throw(_("Error al guardar la corrección: {0}").format(str(e)))
+
+
+def _detect_corrections(llm_output: dict, final_output: dict) -> dict:
+    """
+    Detect differences between LLM output and final user-corrected output.
+
+    Args:
+        llm_output: Initial LLM parsing result
+        final_output: Final task data after user corrections
+
+    Returns:
+        Dictionary with detected corrections for each field
+    """
+    corrections = {}
+
+    # Fields to check for corrections
+    fields_to_check = ["title", "due_date", "priority", "assignee", "project", "description"]
+
+    for field in fields_to_check:
+        llm_value = llm_output.get(field)
+        final_value = final_output.get(field)
+
+        # Handle nested assignee structure (from parse_task response)
+        if field == "assignee":
+            if isinstance(llm_value, dict):
+                llm_value = llm_value.get("name")
+            if isinstance(final_value, dict):
+                final_value = final_value.get("name") or (final_value.get("user", {}).get("full_name") if final_value.get("user") else None)
+
+        # Handle nested project structure (from parse_task response)
+        if field == "project":
+            if isinstance(llm_value, dict):
+                llm_value = llm_value.get("name")
+            if isinstance(final_value, dict):
+                final_value = final_value.get("name") or (final_value.get("project", {}).get("title") if final_value.get("project") else None)
+
+        # Normalize values for comparison
+        llm_normalized = _normalize_value(llm_value)
+        final_normalized = _normalize_value(final_value)
+
+        # Detect if there was a correction
+        if llm_normalized != final_normalized:
+            corrections[field] = {
+                "llm_value": llm_value,
+                "final_value": final_value,
+                "changed": True
+            }
+
+    return corrections
+
+
+def _normalize_value(value):
+    """
+    Normalize value for comparison (handle None, empty strings, etc.)
+
+    Args:
+        value: Value to normalize
+
+    Returns:
+        Normalized value for comparison
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, str):
+        value = value.strip()
+        if value.lower() in ["", "null", "none", "n/a"]:
+            return None
+        return value.lower()
+
+    return value
