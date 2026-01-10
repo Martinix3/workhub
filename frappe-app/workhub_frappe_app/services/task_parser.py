@@ -3,8 +3,237 @@
 
 import frappe
 from frappe import _
+from frappe.utils import (
+    today,
+    add_days,
+    add_weeks,
+    add_months,
+    get_last_day,
+    getdate,
+    now_datetime
+)
 import json
 import re
+from datetime import datetime, timedelta
+from typing import Optional
+
+
+# Date parsing utilities for natural language dates
+
+
+def parse_relative_date(date_str: str) -> Optional[str]:
+    """
+    Parse relative date expressions from natural language in English and Spanish.
+
+    Args:
+        date_str: Natural language date string (e.g., "tomorrow", "mañana", "next Friday",
+                 "in 2 days", "by end of week", "próximo viernes")
+
+    Returns:
+        Date string in YYYY-MM-DD format, or None if cannot be parsed
+
+    Examples:
+        >>> parse_relative_date("tomorrow")
+        "2026-01-11"
+        >>> parse_relative_date("mañana")
+        "2026-01-11"
+        >>> parse_relative_date("in 3 days")
+        "2026-01-13"
+        >>> parse_relative_date("next Monday")
+        "2026-01-13"
+    """
+    if not date_str or not isinstance(date_str, str):
+        return None
+
+    date_str = date_str.strip().lower()
+
+    # If empty after strip, return None
+    if not date_str:
+        return None
+
+    # Try to parse as actual date first (YYYY-MM-DD, DD/MM/YYYY, etc.)
+    parsed_date = _try_parse_absolute_date(date_str)
+    if parsed_date:
+        return parsed_date
+
+    # Get today's date
+    base_date = getdate(today())
+
+    # === Today / Hoy ===
+    if date_str in ["today", "hoy", "today's", "de hoy"]:
+        return str(base_date)
+
+    # === Tomorrow / Mañana ===
+    if date_str in ["tomorrow", "mañana", "tmrw", "mañana", "manana"]:
+        return str(add_days(base_date, 1))
+
+    # === Yesterday / Ayer ===
+    if date_str in ["yesterday", "ayer"]:
+        return str(add_days(base_date, -1))
+
+    # === Next week / Próxima semana ===
+    if re.search(r'(next week|próxima semana|proxima semana|la próxima semana|la proxima semana)', date_str):
+        return str(add_weeks(base_date, 1))
+
+    # === This week / Esta semana ===
+    if re.search(r'(this week|esta semana)', date_str):
+        return str(base_date)
+
+    # === End of week / Fin de semana (Friday) ===
+    if re.search(r'(end of week|fin de semana|final de semana|end of the week)', date_str):
+        # Find next Friday
+        days_until_friday = (4 - base_date.weekday()) % 7
+        if days_until_friday == 0:
+            days_until_friday = 7  # If today is Friday, go to next Friday
+        return str(add_days(base_date, days_until_friday))
+
+    # === In N days / En N días ===
+    match = re.search(r'in (\d+) days?|en (\d+) d[ií]as?', date_str)
+    if match:
+        days = int(match.group(1) or match.group(2))
+        return str(add_days(base_date, days))
+
+    # === In N weeks / En N semanas ===
+    match = re.search(r'in (\d+) weeks?|en (\d+) semanas?', date_str)
+    if match:
+        weeks = int(match.group(1) or match.group(2))
+        return str(add_weeks(base_date, weeks))
+
+    # === In N months / En N meses ===
+    match = re.search(r'in (\d+) months?|en (\d+) meses?', date_str)
+    if match:
+        months = int(match.group(1) or match.group(2))
+        return str(add_months(base_date, months))
+
+    # === Next/This <day of week> / Próximo/Este <día> ===
+    weekday_result = _parse_weekday_reference(date_str, base_date)
+    if weekday_result:
+        return weekday_result
+
+    # === End of month / Fin de mes ===
+    if re.search(r'(end of month|fin de mes|final de mes|end of the month)', date_str):
+        return str(get_last_day(base_date))
+
+    # === Next month / Próximo mes ===
+    if re.search(r'(next month|próximo mes|proximo mes)', date_str):
+        return str(add_months(base_date, 1))
+
+    # If we can't parse it, return None
+    return None
+
+
+def _try_parse_absolute_date(date_str: str) -> Optional[str]:
+    """
+    Try to parse absolute date formats.
+
+    Supports:
+    - YYYY-MM-DD
+    - DD/MM/YYYY
+    - DD-MM-YYYY
+    - DD.MM.YYYY
+
+    Returns:
+        Date string in YYYY-MM-DD format, or None
+    """
+    # Try ISO format first (YYYY-MM-DD)
+    try:
+        parsed = datetime.strptime(date_str, "%Y-%m-%d")
+        return parsed.strftime("%Y-%m-%d")
+    except ValueError:
+        pass
+
+    # Try DD/MM/YYYY
+    try:
+        parsed = datetime.strptime(date_str, "%d/%m/%Y")
+        return parsed.strftime("%Y-%m-%d")
+    except ValueError:
+        pass
+
+    # Try DD-MM-YYYY
+    try:
+        parsed = datetime.strptime(date_str, "%d-%m-%Y")
+        return parsed.strftime("%Y-%m-%d")
+    except ValueError:
+        pass
+
+    # Try DD.MM.YYYY
+    try:
+        parsed = datetime.strptime(date_str, "%d.%m.%Y")
+        return parsed.strftime("%Y-%m-%d")
+    except ValueError:
+        pass
+
+    # Try D/M/YYYY (single digit day/month)
+    match = re.match(r'^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$', date_str)
+    if match:
+        try:
+            day, month, year = match.groups()
+            parsed = datetime(int(year), int(month), int(day))
+            return parsed.strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+
+    return None
+
+
+def _parse_weekday_reference(date_str: str, base_date) -> Optional[str]:
+    """
+    Parse references to specific weekdays (e.g., "next Monday", "próximo viernes").
+
+    Returns:
+        Date string in YYYY-MM-DD format, or None
+    """
+    # Weekday mappings (English and Spanish)
+    weekdays = {
+        # English
+        "monday": 0, "mon": 0,
+        "tuesday": 1, "tue": 1, "tues": 1,
+        "wednesday": 2, "wed": 2,
+        "thursday": 3, "thu": 3, "thur": 3, "thurs": 3,
+        "friday": 4, "fri": 4,
+        "saturday": 5, "sat": 5,
+        "sunday": 6, "sun": 6,
+        # Spanish
+        "lunes": 0,
+        "martes": 1,
+        "miércoles": 2, "miercoles": 2,
+        "jueves": 3,
+        "viernes": 4,
+        "sábado": 5, "sabado": 5,
+        "domingo": 6
+    }
+
+    # Check for "next/this/próximo/este <weekday>"
+    for day_name, day_num in weekdays.items():
+        # Patterns: "next friday", "próximo viernes", "this monday", "este lunes"
+        patterns = [
+            rf'(next|próximo|proximo)\s+{day_name}',
+            rf'(this|este|esta)\s+{day_name}',
+            rf'{day_name}\s+(next|próximo|proximo)',
+            # Just the day name alone
+            rf'\b{day_name}\b'
+        ]
+
+        for pattern in patterns:
+            if re.search(pattern, date_str):
+                # Determine if we want "next" occurrence or "this week" occurrence
+                is_next = bool(re.search(r'(next|próximo|proximo)', date_str))
+
+                current_weekday = base_date.weekday()
+                days_ahead = day_num - current_weekday
+
+                if is_next:
+                    # "Next Monday" means the Monday of next week
+                    if days_ahead <= 0:
+                        days_ahead += 7
+                else:
+                    # "This Monday" or just "Monday" means next occurrence
+                    if days_ahead <= 0:
+                        days_ahead += 7
+
+                return str(add_days(base_date, days_ahead))
+
+    return None
 
 
 # Prompt template for task extraction
@@ -144,12 +373,16 @@ def normalize_llm_response(parsed: dict, original_text: str = "") -> dict:
         # Use first part of original text as fallback
         title = original_text[:100].strip() or "New Task"
 
-    # Normalize due_date - keep as string for now (will be parsed in subtask 1.2)
+    # Normalize due_date - parse relative dates to actual dates
     due_date = parsed.get("due_date")
     if due_date and not isinstance(due_date, str):
         due_date = str(due_date).strip()
     if due_date and due_date.lower() in ["null", "none", "n/a", ""]:
         due_date = None
+    if due_date:
+        # Try to parse relative date expression
+        parsed_date = parse_relative_date(due_date)
+        due_date = parsed_date  # Will be None if parsing failed, which is fine
 
     # Normalize assignee
     assignee = parsed.get("assignee")
