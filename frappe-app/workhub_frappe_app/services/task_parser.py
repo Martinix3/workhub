@@ -16,6 +16,7 @@ import json
 import re
 from datetime import datetime, timedelta
 from typing import Optional
+from difflib import SequenceMatcher
 
 
 # Date parsing utilities for natural language dates
@@ -234,6 +235,282 @@ def _parse_weekday_reference(date_str: str, base_date) -> Optional[str]:
                 return str(add_days(base_date, days_ahead))
 
     return None
+
+
+# Entity matching utilities for user and project resolution
+
+
+def match_user(name: str, threshold: float = 0.6) -> dict:
+    """
+    Match user mentions to actual User records using fuzzy matching.
+
+    Args:
+        name: User mention extracted from text (e.g., "@Juan", "Juan Lopez", "Maria")
+        threshold: Minimum similarity score (0-1) to consider a match
+
+    Returns:
+        dict with matched user info or suggestions:
+        {
+            "matched": bool,
+            "user": {"id": str, "full_name": str, "email": str} or None,
+            "suggestions": [list of potential matches with scores]
+        }
+
+    Examples:
+        >>> match_user("Juan")
+        {"matched": True, "user": {"id": "juan@example.com", "full_name": "Juan Perez", ...}, ...}
+        >>> match_user("Maria Lopez")
+        {"matched": True, "user": {"id": "maria.lopez@example.com", "full_name": "Maria Lopez", ...}, ...}
+    """
+    if not name or not isinstance(name, str) or not name.strip():
+        return {
+            "matched": False,
+            "user": None,
+            "suggestions": []
+        }
+
+    # Clean the name (remove @ prefix if present)
+    name = name.strip()
+    if name.startswith("@"):
+        name = name[1:].strip()
+
+    if not name:
+        return {
+            "matched": False,
+            "user": None,
+            "suggestions": []
+        }
+
+    name_lower = name.lower()
+
+    # First try exact match on full_name (case insensitive)
+    exact = frappe.db.get_value(
+        "User",
+        {"full_name": ["like", name]},
+        ["name", "full_name", "email", "user_image"],
+        as_dict=True
+    )
+
+    if exact:
+        return {
+            "matched": True,
+            "user": {
+                "id": exact.name,
+                "full_name": exact.full_name,
+                "email": exact.email or exact.name,
+                "user_image": exact.user_image
+            },
+            "suggestions": []
+        }
+
+    # Get active users for fuzzy matching
+    # Filter out system users (Administrator, Guest, etc.)
+    users = frappe.get_all(
+        "User",
+        filters={
+            "enabled": 1,
+            "name": ["not in", ["Administrator", "Guest"]]
+        },
+        fields=["name", "full_name", "email", "user_image"],
+        limit=200,
+        order_by="modified desc"
+    )
+
+    # Calculate similarity scores
+    matches = []
+    for user in users:
+        if not user.full_name:
+            continue
+
+        # Calculate similarity score
+        score = _calculate_similarity(name_lower, user.full_name.lower())
+
+        # Also check email prefix (before @)
+        if user.email:
+            email_prefix = user.email.split("@")[0].lower()
+            email_score = _calculate_similarity(name_lower, email_prefix)
+            score = max(score, email_score)
+
+        if score >= threshold:
+            matches.append({
+                "id": user.name,
+                "full_name": user.full_name,
+                "email": user.email or user.name,
+                "user_image": user.user_image,
+                "score": score
+            })
+
+    # Sort by score descending
+    matches.sort(key=lambda x: x["score"], reverse=True)
+
+    if matches:
+        # Best match
+        best = matches[0]
+        return {
+            "matched": True,
+            "user": {
+                "id": best["id"],
+                "full_name": best["full_name"],
+                "email": best["email"],
+                "user_image": best["user_image"]
+            },
+            "suggestions": matches[:5]  # Top 5 suggestions
+        }
+
+    # No match found
+    return {
+        "matched": False,
+        "user": None,
+        "suggestions": []
+    }
+
+
+def match_project(hint: str, threshold: float = 0.6) -> dict:
+    """
+    Match project hints to actual WH Project records using fuzzy matching.
+
+    Args:
+        hint: Project hint extracted from text (e.g., "website project", "Marketing campaign", "for client X")
+        threshold: Minimum similarity score (0-1) to consider a match
+
+    Returns:
+        dict with matched project info or suggestions:
+        {
+            "matched": bool,
+            "project": {"id": str, "title": str, "department": str, "status": str} or None,
+            "suggestions": [list of potential matches with scores]
+        }
+
+    Examples:
+        >>> match_project("website project")
+        {"matched": True, "project": {"id": "PROJ-001", "title": "Website Redesign", ...}, ...}
+        >>> match_project("marketing campaign")
+        {"matched": True, "project": {"id": "PROJ-002", "title": "Q1 Marketing Campaign", ...}, ...}
+    """
+    if not hint or not isinstance(hint, str) or not hint.strip():
+        return {
+            "matched": False,
+            "project": None,
+            "suggestions": []
+        }
+
+    hint = hint.strip()
+    hint_lower = hint.lower()
+
+    # First try exact match on title (case insensitive)
+    exact = frappe.db.get_value(
+        "WH Project",
+        {"title": ["like", hint]},
+        ["name", "title", "description", "department", "status"],
+        as_dict=True
+    )
+
+    if exact:
+        return {
+            "matched": True,
+            "project": {
+                "id": exact.name,
+                "title": exact.title,
+                "description": exact.description,
+                "department": exact.department,
+                "status": exact.status
+            },
+            "suggestions": []
+        }
+
+    # Get active projects for fuzzy matching
+    # Prioritize ACTIVE projects
+    projects = frappe.get_all(
+        "WH Project",
+        filters={"status": ["in", ["ACTIVE", "PLANNING"]]},
+        fields=["name", "title", "description", "department", "status"],
+        limit=200,
+        order_by="status asc, modified desc"  # ACTIVE first
+    )
+
+    # Calculate similarity scores
+    matches = []
+    for project in projects:
+        if not project.title:
+            continue
+
+        # Calculate similarity score against title
+        title_score = _calculate_similarity(hint_lower, project.title.lower())
+
+        # Also check description if available
+        desc_score = 0
+        if project.description:
+            desc_score = _calculate_similarity(hint_lower, project.description.lower())
+
+        # Use the better of title or description match
+        score = max(title_score, desc_score * 0.8)  # Weight description slightly lower
+
+        if score >= threshold:
+            matches.append({
+                "id": project.name,
+                "title": project.title,
+                "description": project.description,
+                "department": project.department,
+                "status": project.status,
+                "score": score
+            })
+
+    # Sort by score descending
+    matches.sort(key=lambda x: x["score"], reverse=True)
+
+    if matches:
+        # Best match
+        best = matches[0]
+        return {
+            "matched": True,
+            "project": {
+                "id": best["id"],
+                "title": best["title"],
+                "description": best["description"],
+                "department": best["department"],
+                "status": best["status"]
+            },
+            "suggestions": matches[:5]  # Top 5 suggestions
+        }
+
+    # No match found
+    return {
+        "matched": False,
+        "project": None,
+        "suggestions": []
+    }
+
+
+def _calculate_similarity(a: str, b: str) -> float:
+    """
+    Calculate string similarity using SequenceMatcher.
+    Also considers partial matches and word overlap for better matching.
+
+    Args:
+        a: First string (normalized to lowercase)
+        b: Second string (normalized to lowercase)
+
+    Returns:
+        Similarity score between 0 and 1
+    """
+    # Direct ratio using SequenceMatcher
+    ratio = SequenceMatcher(None, a, b).ratio()
+
+    # Check if one string contains the other (substring match)
+    if a in b or b in a:
+        ratio = max(ratio, 0.8)
+
+    # Check word overlap for multi-word strings
+    words_a = set(a.split())
+    words_b = set(b.split())
+
+    if words_a and words_b:
+        # Calculate Jaccard similarity (intersection over union)
+        overlap = len(words_a & words_b) / max(len(words_a), len(words_b))
+        # Weight word overlap slightly lower than sequence matching
+        ratio = max(ratio, overlap * 0.85)
+
+    return ratio
 
 
 # Prompt template for task extraction
