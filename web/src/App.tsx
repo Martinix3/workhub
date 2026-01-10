@@ -64,7 +64,8 @@ const navigationSections: NavigationSection[] = [
       { label: 'Mi Día', href: '/tareas' },
       { label: 'Proyectos', href: '/tareas/proyectos' },
       { label: 'Kanban', href: '/tareas/kanban' },
-      { label: 'Dashboard', href: '/tareas/dashboard' }
+      { label: 'Dashboard', href: '/tareas/dashboard' },
+      { label: 'Analytics', href: '/tareas/analytics' }
     ]
   },
   {
