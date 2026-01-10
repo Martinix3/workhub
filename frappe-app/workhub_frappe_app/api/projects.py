@@ -610,3 +610,19 @@ def bulk_change_owner(project_ids, new_owner):
         frappe.db.set_value("WH Project", project_id, "owner_user", new_owner)
 
     return {"success": True, "count": len(project_ids)}
+
+
+@frappe.whitelist()
+def bulk_archive(project_ids):
+    """Archive multiple projects by setting status to CANCELLED and actual_end_date to today"""
+    require_permission("WH Project", "write")
+    if isinstance(project_ids, str):
+        project_ids = json.loads(project_ids)
+
+    for project_id in project_ids:
+        frappe.db.set_value("WH Project", project_id, {
+            "status": "CANCELLED",
+            "actual_end_date": nowdate()
+        })
+
+    return {"success": True, "count": len(project_ids)}
