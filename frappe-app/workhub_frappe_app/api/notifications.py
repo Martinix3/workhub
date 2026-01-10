@@ -338,6 +338,95 @@ def get_user_notification_preferences(user=None):
     return result
 
 
+def should_notify_immediately(user, task_priority=None):
+    """
+    Determine if a notification should be sent immediately or queued for digest.
+
+    Decision logic:
+    1. If task is P0/P1 and priority_bypass_enabled -> True (bypasses all other settings)
+    2. If frequency is 'off' -> False
+    3. If frequency is 'realtime':
+       - Check quiet hours if enabled
+       - Return True if outside quiet hours, False if within
+    4. If frequency is 'daily' or 'weekly' -> False (queue for digest)
+
+    Args:
+        user: User email/name. If None, uses current session user.
+        task_priority: Task priority ('P0', 'P1', 'P2', etc.). If None, priority bypass is not considered.
+
+    Returns:
+        bool: True if notification should be sent immediately, False if queued for digest or skipped.
+    """
+    if not user:
+        user = frappe.session.user
+
+    # Get user preferences
+    prefs = get_user_notification_preferences(user)
+
+    # Priority bypass: P0/P1 always notify immediately if enabled
+    if task_priority in ['P0', 'P1'] and prefs.get('priority_bypass_enabled'):
+        return True
+
+    # If frequency is 'off', never notify
+    frequency = prefs.get('frequency', 'daily')
+    if frequency == 'off':
+        return False
+
+    # If frequency is 'daily' or 'weekly', queue for digest
+    if frequency in ['daily', 'weekly']:
+        return False
+
+    # If frequency is 'realtime', check quiet hours
+    if frequency == 'realtime':
+        # If quiet hours not enabled, notify immediately
+        if not prefs.get('quiet_hours_enabled'):
+            return True
+
+        # Check if current time is within quiet hours
+        quiet_start = prefs.get('quiet_hours_start')
+        quiet_end = prefs.get('quiet_hours_end')
+
+        if not quiet_start or not quiet_end:
+            # If quiet hours not properly configured, notify immediately
+            return True
+
+        # Get current time in user's timezone
+        # TODO: Consider user timezone from User doctype or locale settings
+        # For now, use system time
+        from datetime import datetime, time
+        current_time = datetime.now().time()
+
+        # Parse quiet hours times
+        if isinstance(quiet_start, str):
+            quiet_start_time = datetime.strptime(quiet_start, '%H:%M:%S').time()
+        else:
+            quiet_start_time = quiet_start
+
+        if isinstance(quiet_end, str):
+            quiet_end_time = datetime.strptime(quiet_end, '%H:%M:%S').time()
+        else:
+            quiet_end_time = quiet_end
+
+        # Check if current time is within quiet hours
+        # Handle case where quiet hours span midnight (e.g., 22:00 to 06:00)
+        if quiet_start_time <= quiet_end_time:
+            # Normal case: quiet hours within same day (e.g., 09:00 to 17:00)
+            is_quiet_time = quiet_start_time <= current_time <= quiet_end_time
+        else:
+            # Quiet hours span midnight (e.g., 22:00 to 06:00)
+            is_quiet_time = current_time >= quiet_start_time or current_time <= quiet_end_time
+
+        # If within quiet hours, don't notify
+        if is_quiet_time:
+            return False
+
+        # Outside quiet hours, notify immediately
+        return True
+
+    # Default: don't notify immediately
+    return False
+
+
 def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None):
     """Crear una notificacion"""
     doc = frappe.new_doc("WH Notification")
