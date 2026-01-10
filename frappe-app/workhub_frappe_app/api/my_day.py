@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate, add_days
+from frappe.utils import nowdate, getdate, add_days, now_datetime, get_datetime, time_diff_in_seconds
 import json
 
 from workhub_frappe_app.api.utils import require_auth
@@ -93,6 +93,12 @@ def get_my_day():
         order_by="priority asc, creation desc",
         limit=10)
 
+    # Get active timer
+    active_timer = _get_active_timer_internal(user)
+
+    # Get today's tracked time
+    today_time_data = _get_today_time_data(user, today)
+
     # Resumen rapido
     summary = {
         "today_count": len(today_tasks),
@@ -108,7 +114,110 @@ def get_my_day():
         "upcoming": upcoming,
         "blocked": blocked,
         "blocking_others": blocking_others[:5],
-        "inbox": inbox
+        "inbox": inbox,
+        "active_timer": active_timer,
+        "today_tracked_hours": today_time_data["total_hours"],
+        "today_time_by_task": today_time_data["by_task"]
+    }
+
+
+def _get_active_timer_internal(user):
+    """
+    Internal helper to get active timer info for a user.
+    Returns None if no active timer, or timer details dict.
+    """
+    # Find active timer (Running or Paused)
+    active_timer = frappe.db.get_value(
+        "WH Time Timer",
+        {"user": user, "status": ["in", ["Running", "Paused"]]},
+        ["name", "task", "start_time", "status", "accumulated_seconds"],
+        as_dict=True
+    )
+
+    if not active_timer:
+        return None
+
+    # Get task details
+    task = frappe.get_doc("WH Task", active_timer["task"])
+
+    # Calculate running duration
+    if active_timer["status"] == "Running":
+        # Calculate time from start_time to now
+        elapsed_seconds = time_diff_in_seconds(now_datetime(), get_datetime(active_timer["start_time"]))
+        total_seconds = (active_timer["accumulated_seconds"] or 0) + elapsed_seconds
+    else:  # Paused
+        # Just use accumulated_seconds
+        total_seconds = active_timer["accumulated_seconds"] or 0
+
+    # Convert to hours and minutes for display
+    total_minutes = int(total_seconds // 60)
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+
+    return {
+        "name": active_timer["name"],
+        "task": active_timer["task"],
+        "task_title": task.title,
+        "project": task.project,
+        "status": active_timer["status"],
+        "start_time": active_timer["start_time"],
+        "accumulated_seconds": active_timer["accumulated_seconds"],
+        "running_seconds": total_seconds,
+        "running_hours": hours,
+        "running_minutes": minutes
+    }
+
+
+def _get_today_time_data(user, today):
+    """
+    Internal helper to get today's time tracking data for a user.
+    Returns total hours and breakdown by task.
+    """
+    # Query today's work_log entries for this user
+    query = """
+        SELECT
+            wl.parent as task_id,
+            wl.hours,
+            wl.minutes,
+            wl.duration_hours,
+            t.title as task_title,
+            t.status as task_status,
+            t.priority as task_priority,
+            t.project
+        FROM `tabWH Task Work Log` wl
+        INNER JOIN `tabWH Task` t ON wl.parent = t.name
+        WHERE wl.user = %(user)s AND wl.date = %(today)s
+        ORDER BY wl.creation DESC
+    """
+
+    entries = frappe.db.sql(query, {"user": user, "today": today}, as_dict=True)
+
+    # Calculate total hours
+    total_hours = sum(entry.get("duration_hours") or 0 for entry in entries)
+
+    # Group by task
+    by_task = {}
+    for entry in entries:
+        task_id = entry.get("task_id")
+        duration = entry.get("duration_hours") or 0
+
+        if task_id not in by_task:
+            by_task[task_id] = {
+                "task_id": task_id,
+                "task_title": entry.get("task_title"),
+                "task_status": entry.get("task_status"),
+                "task_priority": entry.get("task_priority"),
+                "project": entry.get("project"),
+                "hours": 0
+            }
+        by_task[task_id]["hours"] += duration
+
+    # Convert to list and sort by hours descending
+    by_task_list = sorted(by_task.values(), key=lambda x: x["hours"], reverse=True)
+
+    return {
+        "total_hours": total_hours,
+        "by_task": by_task_list
     }
 
 
