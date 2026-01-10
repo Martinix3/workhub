@@ -28,6 +28,7 @@ const ProjectsPage = lazy(() => import('./pages/tasks/ProjectsPage').then(m => (
 const NewProjectPage = lazy(() => import('./pages/tasks/NewProjectPage').then(m => ({ default: m.NewProjectPage })))
 const KanbanPage = lazy(() => import('./pages/tasks/KanbanPage').then(m => ({ default: m.KanbanPage })))
 const TaskDashboardPage = lazy(() => import('./pages/tasks/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const ManagerAnalyticsPage = lazy(() => import('./pages/tasks/ManagerAnalyticsPage').then(m => ({ default: m.ManagerAnalyticsPage })))
 
 // Settings & Admin (lazy-loaded)
 const SettingsPage = lazy(() => import('./pages/settings').then(m => ({ default: m.SettingsPage })))
@@ -154,6 +155,11 @@ function AppContent() {
             <Route path="/tareas/dashboard" element={
               <RoleGuard roles={['System Manager', 'Sales Manager']}>
                 <TaskDashboardPage />
+              </RoleGuard>
+            } />
+            <Route path="/tareas/analytics" element={
+              <RoleGuard roles={['System Manager', 'Sales Manager']}>
+                <ManagerAnalyticsPage />
               </RoleGuard>
             } />
 
