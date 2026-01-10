@@ -545,6 +545,21 @@ def get_board(project_id=None, filters=None):
     return columns
 
 
+def _get_incomplete_blocked_tasks(task_id):
+    """Get incomplete tasks that are blocked by this task"""
+    # Get all active dependencies where this task is the predecessor
+    successors = frappe.db.sql("""
+        SELECT d.successor, t.title, t.status
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.successor = t.name
+        WHERE d.predecessor = %(task_id)s
+        AND d.is_active = 1
+        AND t.status != 'DONE'
+    """, {"task_id": task_id}, as_dict=True)
+
+    return successors
+
+
 @frappe.whitelist()
 def move_task(task_id, new_status):
     """Move task to new status (Kanban drag)"""
@@ -556,11 +571,22 @@ def move_task(task_id, new_status):
 
     frappe.db.set_value("WH Task", task_id, "status", new_status)
 
-    # If moved to DONE, update actual_end
+    result = {"success": True}
+
+    # If moved to DONE, update actual_end and check for blocked tasks
     if new_status == "DONE":
         frappe.db.set_value("WH Task", task_id, "actual_end", frappe.utils.now_datetime())
 
-    return {"success": True}
+        # Check if completing a task that blocks other incomplete tasks
+        incomplete_blocked_tasks = _get_incomplete_blocked_tasks(task_id)
+        if incomplete_blocked_tasks:
+            result["warning"] = _("This task is blocking {0} incomplete task(s): {1}").format(
+                len(incomplete_blocked_tasks),
+                ", ".join([t["title"] for t in incomplete_blocked_tasks[:3]])
+            )
+            result["blocked_tasks"] = incomplete_blocked_tasks
+
+    return result
 
 
 @frappe.whitelist()

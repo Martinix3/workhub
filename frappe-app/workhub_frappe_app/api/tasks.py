@@ -224,7 +224,20 @@ def change_status(task_id, new_status):
     doc = frappe.get_doc("WH Task", task_id)
     doc.status = new_status
     doc.save()
-    return {"success": True, "status": doc.status}
+
+    result = {"success": True, "status": doc.status}
+
+    # Check if completing a task that blocks other incomplete tasks
+    if new_status == "DONE":
+        incomplete_blocked_tasks = _get_incomplete_blocked_tasks(task_id)
+        if incomplete_blocked_tasks:
+            result["warning"] = _("This task is blocking {0} incomplete task(s): {1}").format(
+                len(incomplete_blocked_tasks),
+                ", ".join([t["title"] for t in incomplete_blocked_tasks[:3]])
+            )
+            result["blocked_tasks"] = incomplete_blocked_tasks
+
+    return result
 
 
 @frappe.whitelist()
@@ -297,6 +310,21 @@ def _has_circular_dependency(predecessor_id, successor_id):
         stack.extend(predecessors)
 
     return False
+
+
+def _get_incomplete_blocked_tasks(task_id):
+    """Get incomplete tasks that are blocked by this task"""
+    # Get all active dependencies where this task is the predecessor
+    successors = frappe.db.sql("""
+        SELECT d.successor, t.title, t.status
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.successor = t.name
+        WHERE d.predecessor = %(task_id)s
+        AND d.is_active = 1
+        AND t.status != 'DONE'
+    """, {"task_id": task_id}, as_dict=True)
+
+    return successors
 
 
 @frappe.whitelist()
