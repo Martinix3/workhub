@@ -765,3 +765,123 @@ def _execute_quality_metrics_data_source(filters, config):
 		frappe.log_error(f"Error fetching quality metrics: {str(e)}")
 
 	return {"success": True, "data": metrics, "total": len(metrics)}
+
+
+@frappe.whitelist()
+def generate_report(report_id, filters=None, config=None):
+	"""Generate a complete report with all section data"""
+	require_auth()
+
+	if isinstance(filters, str):
+		filters = json.loads(filters)
+	if isinstance(config, str):
+		config = json.loads(config)
+
+	if not report_id:
+		frappe.throw(_("Report ID is required"))
+
+	# Get the report definition
+	report_doc = frappe.get_doc("WH Report Definition", report_id)
+
+	if not report_doc.is_active:
+		frappe.throw(_("This report is not active"))
+
+	# Build report metadata
+	report_metadata = {
+		"report_id": report_doc.name,
+		"title": report_doc.title,
+		"description": report_doc.description,
+		"report_type": report_doc.report_type,
+		"category": report_doc.category,
+		"generated_at": nowdate(),
+		"generated_by": frappe.session.user
+	}
+
+	# Get creator info
+	if report_doc.created_by:
+		user_data = frappe.db.get_value("User", report_doc.created_by,
+			["full_name", "email"], as_dict=True)
+		if user_data:
+			report_metadata["created_by"] = report_doc.created_by
+			report_metadata["created_by_name"] = user_data.full_name
+			report_metadata["created_by_email"] = user_data.email
+
+	# Get current user info
+	current_user = frappe.db.get_value("User", frappe.session.user,
+		["full_name", "email"], as_dict=True)
+	if current_user:
+		report_metadata["generated_by_name"] = current_user.full_name
+		report_metadata["generated_by_email"] = current_user.email
+
+	# Get all sections sorted by display order
+	sections = []
+	for section in sorted(report_doc.sections, key=lambda x: x.display_order):
+		# Skip hidden sections
+		if not section.is_visible:
+			continue
+
+		# Build section metadata
+		section_data = {
+			"name": section.name,
+			"section_type": section.section_type,
+			"title": section.title,
+			"display_order": section.display_order,
+			"data_source": section.data_source,
+			"config": section.config
+		}
+
+		# Parse section config if it's a string
+		section_config = section.config
+		if isinstance(section_config, str):
+			try:
+				section_config = json.loads(section_config)
+			except:
+				section_config = {}
+
+		# Execute data source to get section data
+		if section.data_source:
+			try:
+				# Merge filters: report-level filters + section-level filters
+				section_filters = filters.copy() if filters else {}
+				if section_config and section_config.get("filters"):
+					section_filters.update(section_config.get("filters"))
+
+				# Execute the data source
+				result = execute_data_source(
+					section.data_source,
+					section_filters,
+					section_config
+				)
+
+				if result.get("success"):
+					section_data["data"] = result.get("data", [])
+					section_data["total"] = result.get("total", 0)
+					section_data["status"] = "success"
+				else:
+					section_data["data"] = []
+					section_data["total"] = 0
+					section_data["status"] = "error"
+					section_data["error"] = "Failed to fetch data"
+			except Exception as e:
+				frappe.log_error(f"Error executing data source for section {section.name}: {str(e)}")
+				section_data["data"] = []
+				section_data["total"] = 0
+				section_data["status"] = "error"
+				section_data["error"] = str(e)
+		else:
+			# For sections without data sources (like header, text sections)
+			section_data["data"] = None
+			section_data["total"] = 0
+			section_data["status"] = "success"
+
+		sections.append(section_data)
+
+	# Build complete report structure
+	report = {
+		"success": True,
+		"metadata": report_metadata,
+		"sections": sections,
+		"total_sections": len(sections)
+	}
+
+	return report
