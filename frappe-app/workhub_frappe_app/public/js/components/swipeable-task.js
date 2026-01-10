@@ -344,22 +344,79 @@ frappe.workhub.SwipeableTask = class SwipeableTask {
 
 	/**
 	 * Trigger haptic feedback (if supported)
+	 *
+	 * Provides tactile feedback during swipe gestures using the Vibration API.
+	 * Respects user preferences and accessibility settings.
+	 *
+	 * @param {string} intensity - 'light', 'medium', or 'heavy'
 	 */
 	triggerHapticFeedback(intensity = 'medium') {
 		// Check if Vibration API is supported
-		if (!navigator.vibrate) {
+		if (!navigator.vibrate || typeof navigator.vibrate !== 'function') {
 			return;
 		}
 
-		// Map intensity to vibration pattern
+		// Respect reduced motion preference (accessibility)
+		if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			return;
+		}
+
+		// Check user preference for haptic feedback
+		// First check localStorage, then fall back to Frappe user settings
+		const hapticEnabled = this.isHapticEnabled();
+		if (!hapticEnabled) {
+			return;
+		}
+
+		// Map intensity to vibration patterns (in milliseconds)
+		// Using patterns instead of single durations for richer feedback
 		const patterns = {
-			light: 10,
-			medium: 20,
-			heavy: 30
+			light: [15],          // Single short pulse for threshold feedback
+			medium: [25, 10, 25], // Double pulse for significant events
+			heavy: [40, 15, 30]   // Strong pattern for completion
 		};
 
-		const duration = patterns[intensity] || patterns.medium;
-		navigator.vibrate(duration);
+		const pattern = patterns[intensity] || patterns.medium;
+
+		try {
+			navigator.vibrate(pattern);
+		} catch (error) {
+			// Silently fail if vibration API throws error
+			console.warn('Haptic feedback failed:', error);
+		}
+	}
+
+	/**
+	 * Check if haptic feedback is enabled
+	 *
+	 * Checks user preferences in the following order:
+	 * 1. LocalStorage setting (workhub.haptic_feedback)
+	 * 2. Frappe user settings (if available)
+	 * 3. Default to true (enabled)
+	 *
+	 * @returns {boolean}
+	 */
+	isHapticEnabled() {
+		// Check localStorage first (fastest)
+		try {
+			const localPref = localStorage.getItem('workhub.haptic_feedback');
+			if (localPref !== null) {
+				return localPref === 'true';
+			}
+		} catch (error) {
+			// LocalStorage might not be available (privacy mode, etc.)
+		}
+
+		// Check Frappe user settings if available
+		if (frappe && frappe.boot && frappe.boot.user_settings) {
+			const userSettings = frappe.boot.user_settings;
+			if (typeof userSettings.haptic_feedback !== 'undefined') {
+				return userSettings.haptic_feedback;
+			}
+		}
+
+		// Default to enabled
+		return true;
 	}
 
 	/**
@@ -425,5 +482,36 @@ frappe.workhub.SwipeableTask = class SwipeableTask {
 				delete element._swipeableTask;
 			}
 		});
+	}
+
+	/**
+	 * Static method to enable haptic feedback globally
+	 */
+	static enableHapticFeedback() {
+		try {
+			localStorage.setItem('workhub.haptic_feedback', 'true');
+		} catch (error) {
+			console.warn('Failed to save haptic feedback preference:', error);
+		}
+	}
+
+	/**
+	 * Static method to disable haptic feedback globally
+	 */
+	static disableHapticFeedback() {
+		try {
+			localStorage.setItem('workhub.haptic_feedback', 'false');
+		} catch (error) {
+			console.warn('Failed to save haptic feedback preference:', error);
+		}
+	}
+
+	/**
+	 * Static method to check if haptic feedback is supported
+	 *
+	 * @returns {boolean}
+	 */
+	static isHapticSupported() {
+		return !!(navigator.vibrate && typeof navigator.vibrate === 'function');
 	}
 };
