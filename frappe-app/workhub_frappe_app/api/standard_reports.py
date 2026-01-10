@@ -8,6 +8,48 @@ import json
 from workhub_frappe_app.api.utils import require_auth, require_permission
 
 
+def setup_standard_reports():
+	"""
+	Install standard report templates during app setup
+	Called from hooks.py after_install and after_migrate
+	No authentication required - runs in system context
+	"""
+	created_reports = []
+
+	# Create Team Productivity Report
+	try:
+		report_id = create_team_productivity_report()
+		if report_id:
+			created_reports.append({"name": report_id, "title": "Team Productivity Report"})
+			frappe.logger().info(f"Created Team Productivity Report: {report_id}")
+	except Exception as e:
+		frappe.log_error(f"Error creating Team Productivity Report: {str(e)}", "Standard Reports Setup")
+
+	# Create Project Status Report
+	try:
+		report_id = create_project_status_report()
+		if report_id:
+			created_reports.append({"name": report_id, "title": "Project Status Report"})
+			frappe.logger().info(f"Created Project Status Report: {report_id}")
+	except Exception as e:
+		frappe.log_error(f"Error creating Project Status Report: {str(e)}", "Standard Reports Setup")
+
+	# Create HACCP Compliance Report
+	try:
+		report_id = create_haccp_compliance_report()
+		if report_id:
+			created_reports.append({"name": report_id, "title": "HACCP Compliance Report"})
+			frappe.logger().info(f"Created HACCP Compliance Report: {report_id}")
+	except Exception as e:
+		frappe.log_error(f"Error creating HACCP Compliance Report: {str(e)}", "Standard Reports Setup")
+
+	if created_reports:
+		frappe.db.commit()
+		frappe.logger().info(f"Successfully installed {len(created_reports)} standard report(s)")
+
+	return created_reports
+
+
 def create_team_productivity_report():
 	"""
 	Create the Team Productivity standard report template
