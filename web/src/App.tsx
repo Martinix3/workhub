@@ -26,6 +26,7 @@ const MarketingDashboardPage = lazy(() => import('./pages/MarketingDashboardPage
 const MyDayPage = lazy(() => import('./pages/tasks/MyDayPage').then(m => ({ default: m.MyDayPage })))
 const ProjectsPage = lazy(() => import('./pages/tasks/ProjectsPage').then(m => ({ default: m.ProjectsPage })))
 const NewProjectPage = lazy(() => import('./pages/tasks/NewProjectPage').then(m => ({ default: m.NewProjectPage })))
+const TemplatesPage = lazy(() => import('./pages/tasks/TemplatesPage').then(m => ({ default: m.TemplatesPage })))
 const KanbanPage = lazy(() => import('./pages/tasks/KanbanPage').then(m => ({ default: m.KanbanPage })))
 const TaskDashboardPage = lazy(() => import('./pages/tasks/DashboardPage').then(m => ({ default: m.DashboardPage })))
 
@@ -62,6 +63,7 @@ const navigationSections: NavigationSection[] = [
     items: [
       { label: 'Mi Día', href: '/tareas' },
       { label: 'Proyectos', href: '/tareas/proyectos' },
+      { label: 'Plantillas', href: '/tareas/plantillas' },
       { label: 'Kanban', href: '/tareas/kanban' },
       { label: 'Dashboard', href: '/tareas/dashboard' }
     ]
@@ -150,6 +152,7 @@ function AppContent() {
             <Route path="/tareas" element={<MyDayPage />} />
             <Route path="/tareas/proyectos" element={<ProjectsPage />} />
             <Route path="/tareas/proyectos/nuevo" element={<NewProjectPage />} />
+            <Route path="/tareas/plantillas" element={<TemplatesPage />} />
             <Route path="/tareas/kanban" element={<KanbanPage />} />
             <Route path="/tareas/dashboard" element={
               <RoleGuard roles={['System Manager', 'Sales Manager']}>
