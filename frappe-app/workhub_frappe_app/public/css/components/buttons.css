@@ -277,3 +277,127 @@
 .btn-danger:hover:not(:disabled) {
 	background: #b71c1c !important;
 }
+
+/* === MOBILE TOUCH TARGETS === */
+/* Ensure all buttons meet minimum 44px touch target requirement */
+@media (max-width: 767px) {
+	/* Base button - minimum 44px touch target */
+	.btn {
+		min-height: var(--touch-target-min);
+		padding: var(--space-3) var(--space-4);
+	}
+
+	/* Small buttons still meet minimum touch target */
+	.btn-sm {
+		min-height: var(--touch-target-min);
+		padding: var(--space-3) var(--space-4);
+		font-size: var(--mobile-text-sm);
+	}
+
+	/* Large buttons use comfortable touch target */
+	.btn-lg {
+		min-height: var(--touch-target-comfortable);
+		padding: var(--space-4) var(--space-5);
+		font-size: var(--mobile-text-base);
+	}
+
+	/* Extra large buttons */
+	.btn-xl {
+		min-height: var(--touch-target-large);
+		padding: var(--space-5) var(--space-6);
+		font-size: var(--mobile-text-lg);
+	}
+
+	/* Icon buttons - ensure square touch targets */
+	.btn-icon {
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
+		padding: var(--space-3);
+	}
+
+	.btn-icon svg {
+		width: 20px;
+		height: 20px;
+	}
+
+	/* Small icon buttons still meet minimum */
+	.btn-sm.btn-icon {
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
+		padding: var(--space-3);
+	}
+
+	.btn-sm.btn-icon svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	/* Button groups - stack on mobile for easier tapping */
+	.btn-group {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		gap: var(--space-2);
+	}
+
+	.btn-group .btn {
+		width: 100%;
+		margin-left: 0;
+	}
+
+	.btn-group .btn:not(:first-child) {
+		margin-left: 0;
+	}
+
+	/* Horizontal button group variant (opt-in) */
+	.btn-group-horizontal {
+		flex-direction: row;
+		flex-wrap: wrap;
+		width: auto;
+	}
+
+	.btn-group-horizontal .btn {
+		flex: 1 1 auto;
+		min-width: var(--touch-target-min);
+	}
+
+	/* Full width buttons (common on mobile) */
+	.btn-block {
+		width: 100%;
+		min-height: var(--touch-target-min);
+	}
+
+	/* Link buttons still need touch target height */
+	.btn-link {
+		min-height: var(--touch-target-min);
+		padding: var(--space-2);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* Adjust spacing between buttons in mobile contexts */
+	.btn + .btn {
+		margin-top: var(--space-2);
+	}
+
+	/* GPU acceleration for mobile performance */
+	.btn {
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+	}
+
+	/* Better active state feedback on mobile */
+	.btn:active:not(:disabled):not(.btn-link):not(.btn-ghost) {
+		transform: scale(0.98);
+		transition: transform 0.1s ease-out;
+	}
+
+	/* Ghost buttons need visual feedback on mobile */
+	.btn-ghost:active:not(:disabled) {
+		background: var(--surface-2);
+		transform: scale(0.98);
+	}
+}
