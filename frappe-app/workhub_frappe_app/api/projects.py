@@ -162,12 +162,32 @@ def update_project(project_id, data):
 
 
 @frappe.whitelist()
-def get_templates():
-    """Get available project templates"""
+def get_templates(department=None):
+    """Get available project templates with optional department filter"""
     require_auth()
-    return frappe.get_all("WH Project Template",
-        filters={"is_active": 1},
-        fields=["name", "description", "department", "default_duration_days"])
+
+    # Build filters
+    filters = {"is_active": 1}
+    if department:
+        filters["department"] = department
+
+    # Get templates
+    templates = frappe.get_all("WH Project Template",
+        filters=filters,
+        fields=["name", "description", "department", "default_duration_days"],
+        order_by="department asc, name asc")
+
+    # Enrich with task count
+    for template in templates:
+        # Count tasks in this template
+        task_count = frappe.db.count("WH Project Template Task",
+            filters={"parent": template["name"]})
+        template["task_count"] = task_count
+
+        # Rename for clarity
+        template["estimated_duration_days"] = template.pop("default_duration_days")
+
+    return templates
 
 
 @frappe.whitelist()
