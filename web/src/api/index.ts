@@ -26,6 +26,9 @@ export {
 // Sales types
 export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem } from './services/sales'
 
+// Settings types
+export type { UserSettings, UserProfile, Department, UpdateSettingsData, UpdateProfileData } from './services/settings'
+
 // Command Center Hooks
 export {
   useAreaSummaries,
