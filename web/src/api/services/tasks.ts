@@ -207,6 +207,21 @@ export const tasksApi = {
       user_id: userId,
       period
     })
+  },
+
+  // ============== Manager ==============
+
+  async getBlockedTasks(limit: number = 50, offset: number = 0): Promise<{
+    tasks: Task[]
+    total: number
+    limit: number
+    offset: number
+    has_more: boolean
+  }> {
+    return frappe.call('workhub_frappe_app.api.manager.get_blocked_tasks', {
+      limit,
+      offset
+    })
   }
 }
 

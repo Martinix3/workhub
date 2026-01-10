@@ -378,6 +378,42 @@ export function useTaskKPIs(): UseDataState<DashboardKPIs> {
   return { data, loading, error, refetch: fetch }
 }
 
+// ============== Blocked Tasks Hook (Manager View) ==============
+
+export function useBlockedTasks(limit: number = 50, offset: number = 0): UseDataState<{
+  tasks: Task[]
+  total: number
+  limit: number
+  offset: number
+  has_more: boolean
+}> {
+  const [data, setData] = useState<{
+    tasks: Task[]
+    total: number
+    limit: number
+    offset: number
+    has_more: boolean
+  } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await tasksApi.getBlockedTasks(limit, offset)
+      setData(result)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch blocked tasks'))
+    } finally {
+      setLoading(false)
+    }
+  }, [limit, offset])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
+
 // ============== Combined Dashboard Hook ==============
 
 export function useTaskDashboard() {
