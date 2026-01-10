@@ -179,7 +179,7 @@ def delete_task(task_id):
 
 
 @frappe.whitelist()
-def change_status(task_id, new_status):
+def change_status(task_id, new_status, blocked_reason=None):
     """Change task status"""
     require_permission("WH Task", "write")
     valid_statuses = ["BACKLOG", "NEXT", "DOING", "BLOCKED", "DONE"]
@@ -188,8 +188,16 @@ def change_status(task_id, new_status):
 
     doc = frappe.get_doc("WH Task", task_id)
     doc.status = new_status
+
+    # Handle blocked_reason
+    if new_status == "BLOCKED" and blocked_reason:
+        doc.blocked_reason = blocked_reason
+    elif new_status != "BLOCKED":
+        # Clear blocked_reason when moving away from BLOCKED status
+        doc.blocked_reason = None
+
     doc.save()
-    return {"success": True, "status": doc.status}
+    return {"success": True, "status": doc.status, "blocked_reason": doc.blocked_reason}
 
 
 @frappe.whitelist()
