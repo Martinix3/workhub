@@ -483,6 +483,83 @@ def get_customer_distributor(customer_id):
 
 
 @frappe.whitelist()
+def get_order_detail(order_id):
+    """Get full order detail including items, customer, distributor info, and sales_type"""
+    require_auth()
+    if not order_id:
+        frappe.throw(_("Order ID is required"))
+
+    # Check if order exists
+    if not frappe.db.exists("Sales Order", order_id):
+        frappe.throw(_("Order {0} not found").format(order_id))
+
+    # Get order header
+    order = frappe.get_doc("Sales Order", order_id, ignore_permissions=True)
+
+    # Map Frappe status to React status
+    status_map = {
+        "Draft": "draft",
+        "To Deliver and Bill": "confirmed",
+        "To Bill": "delivered",
+        "To Deliver": "invoiced",
+        "Completed": "paid",
+        "Cancelled": "cancelled",
+        "Closed": "paid",
+        "On Hold": "confirmed"
+    }
+
+    # Get order items
+    items = []
+    for item in order.items:
+        items.append({
+            "itemCode": item.item_code,
+            "itemName": item.item_name,
+            "qty": flt(item.qty),
+            "rate": flt(item.rate),
+            "amount": flt(item.amount)
+        })
+
+    # Determine sales_type (sell_in by default, check for custom field)
+    sales_type = "sell_in"
+    if hasattr(order, "sales_type") and order.sales_type:
+        # Map Frappe field to React format
+        if order.sales_type in ["Sell In", "sell_in"]:
+            sales_type = "sell_in"
+        elif order.sales_type in ["Sell Out", "sell_out"]:
+            sales_type = "sell_out"
+
+    # Get assigned distributor
+    assigned_distributor = None
+    if order.customer:
+        distributor_id = frappe.db.get_value("Customer", order.customer, "assigned_distributor")
+        if distributor_id:
+            distributor_name = frappe.db.get_value("Customer", distributor_id, "customer_name")
+            assigned_distributor = {
+                "id": distributor_id,
+                "name": distributor_name
+            }
+
+    # Return format matching OrderDetail interface
+    return {
+        "id": order.name,
+        "orderNumber": order.name,
+        "customerId": order.customer or "",
+        "customerName": order.customer_name or order.customer or "",
+        "orderDate": str(order.transaction_date) if order.transaction_date else "",
+        "deliveryDate": str(order.delivery_date) if order.delivery_date else "",
+        "status": status_map.get(order.status, "draft"),
+        "items": items,
+        "subtotal": flt(order.net_total or order.grand_total),
+        "tax": flt(order.total_taxes_and_charges or 0),
+        "total": flt(order.grand_total),
+        "deliveryProgress": flt(order.per_delivered or 0),
+        "invoiceProgress": flt(order.per_billed or 0),
+        "salesType": sales_type,
+        "assignedDistributor": assigned_distributor
+    }
+
+
+@frappe.whitelist()
 def create_order(data):
     """Create a new order - routes to Sales Order (Sell In) or Distributor Sell Out Order (Sell Out)"""
     require_permission("Sales Order", "create")
