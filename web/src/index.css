@@ -45,6 +45,12 @@
   /* Neobrutal Shadows */
   --shadow-neobrutal: 4px 4px 0px #1e293b;
   --shadow-neobrutal-sm: 2px 2px 0px #1e293b;
+
+  /* Focus Indicators (WCAG 2.1 AA Compliant) */
+  --focus-ring-width: 2px;
+  --focus-ring-color: #fbbf24; /* amber-400 - matches primary accent */
+  --focus-ring-offset: 2px;
+  --focus-ring-color-dark: #fcd34d; /* amber-300 - brighter for dark mode */
 }
 
 /* Base styles */
