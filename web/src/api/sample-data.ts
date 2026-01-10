@@ -5,6 +5,8 @@ import type { KPIs, SalesTrends, Activity, Customer, SalesOrder, Opportunity } f
 import type { NetworkKPIs, Distributor } from '../components/sections/distributor-network/types'
 import type { ProductionKPIs, ProductionOrder, ProductionLine, Lot, HACCPPlan, CCPReading, QualityDocument, DocumentFolder, QualityKPIs, Inspection, NonConformance, WeeklyTrendPoint } from '../components/sections/production-and-quality/types'
 import type { MarketingKPIs, Campaign, SocialPost, PlatformStats } from '../components/sections/marketing-and-growth/types'
+import type { Role } from './services/admin'
+import type { Department } from './services/settings'
 
 // Command Center
 export const sampleAreaSummaries: AreaSummary[] = [
@@ -432,6 +434,21 @@ export const sampleTaskKPIs: DashboardKPIs = {
     trend_delta: 10.5
   }
 }
+
+// Admin & Settings
+export const sampleRoles: Role[] = [
+  { name: 'System Manager', desk_access: 1, is_custom: 0 },
+  { name: 'Sales User', desk_access: 1, is_custom: 0 },
+  { name: 'Production Manager', desk_access: 1, is_custom: 0 },
+  { name: 'Quality Manager', desk_access: 1, is_custom: 0 },
+  { name: 'Distributor', desk_access: 0, is_custom: 1 }
+]
+
+export const sampleDepartments: Department[] = [
+  { id: 'SALES', name: 'Ventas', icon: 'DollarSign' },
+  { id: 'OPS', name: 'Operaciones', icon: 'Factory' },
+  { id: 'MKT', name: 'Marketing', icon: 'TrendingUp' }
+]
 
 // Helper to check if in bypass mode
 export function isInBypassMode(): boolean {
