@@ -178,7 +178,9 @@ scheduler_events = {
 		# Notificar dependencias bloqueadas
 		"workhub_frappe_app.api.notifications.notify_blocked_dependencies",
 		# Recalcular KPIs de proyectos
-		"workhub_frappe_app.doctype.wh_project.wh_project.recalculate_all_projects"
+		"workhub_frappe_app.doctype.wh_project.wh_project.recalculate_all_projects",
+		# Generar alertas de AI para tareas en riesgo
+		"workhub_frappe_app.services.ai_recommendations.generate_at_risk_alerts"
 	],
 }
 

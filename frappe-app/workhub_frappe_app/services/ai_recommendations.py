@@ -850,7 +850,11 @@ def aggregate_task_completion_stats():
 def generate_at_risk_alerts():
     """
     Hourly job to detect at-risk tasks and create alert recommendations.
+    Creates both WH AI Recommendation records and WH Notification records.
     """
+    # Import notification function
+    from workhub_frappe_app.api.notifications import create_notification
+
     at_risk_tasks = detect_at_risk_tasks(user=None, limit=50)
 
     for item in at_risk_tasks:
@@ -868,14 +872,32 @@ def generate_at_risk_alerts():
         if existing:
             continue  # Don't create duplicate alerts
 
-        # Create alert
-        create_recommendation_record(
+        # Create AI recommendation record
+        recommendation_id = create_recommendation_record(
             user=task["assigned_to"],
             recommendation_type="at_risk_alert",
             task_id=task["name"],
             reason=item["reason"],
             confidence_score=item["risk_score"],
             expires_hours=48  # Alerts expire in 48 hours
+        )
+
+        # Also create a notification for the user
+        risk_level = item["risk_level"].upper()
+        priority_map = {
+            "CRITICAL": "HIGH",
+            "HIGH": "HIGH",
+            "MEDIUM": "MEDIUM"
+        }
+
+        create_notification(
+            user=task["assigned_to"],
+            notification_type="AI_ALERT",
+            title=f"⚠️ Tarea en riesgo [{risk_level}]: {task['title']}",
+            message=item["reason"],
+            reference_doctype="WH Task",
+            reference_name=task["name"],
+            priority=priority_map.get(risk_level, "MEDIUM")
         )
 
     frappe.db.commit()
