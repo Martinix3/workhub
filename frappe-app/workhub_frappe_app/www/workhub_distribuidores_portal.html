@@ -447,6 +447,46 @@
 	border-radius: 3px;
 }
 
+/* Tasks section styling - matches items container */
+.tasks-row {
+	border-top: none !important;
+}
+
+.tasks-container {
+	background-color: white;
+	border-radius: 6px;
+	padding: 15px;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+	margin-top: 10px;
+}
+
+.tasks-container h6 {
+	color: #495057;
+	font-weight: 600;
+	border-bottom: 2px solid #e9ecef;
+	padding-bottom: 8px;
+	margin-bottom: 15px;
+}
+
+.tasks-container .table {
+	margin-bottom: 0;
+}
+
+.tasks-container .table thead {
+	background-color: #f8f9fa;
+}
+
+.tasks-container .table td,
+.tasks-container .table th {
+	padding: 8px 12px;
+	font-size: 0.9em;
+}
+
+.tasks-container .alert {
+	font-size: 0.9em;
+	padding: 10px 15px;
+}
+
 /* Progress bar styling */
 .progress {
 	background-color: #e9ecef;
@@ -486,6 +526,7 @@
 
 let itemRowIndex = 1;
 let currentOrders = [];
+let currentTasks = [];
 
 // ============================================================
 // MIS PEDIDOS - Load and Display Orders
@@ -502,33 +543,57 @@ function loadOrders() {
 	document.getElementById('orders-container').style.display = 'none';
 	document.getElementById('orders-empty').style.display = 'none';
 
-	// Call API to get orders
-	frappe.call({
-		method: 'workhub_frappe_app.api.distributors.get_my_orders',
-		args: {
-			limit: 50,
-			offset: 0
-		},
-		callback: function(r) {
-			document.getElementById('orders-loading').style.display = 'none';
-
-			if (r.message && r.message.length > 0) {
-				currentOrders = r.message;
-				renderOrders(currentOrders);
-				document.getElementById('orders-container').style.display = 'block';
-			} else {
-				document.getElementById('orders-empty').style.display = 'block';
-			}
-		},
-		error: function(r) {
-			document.getElementById('orders-loading').style.display = 'none';
-			document.getElementById('orders-empty').style.display = 'block';
-			frappe.msgprint({
-				title: 'Error',
-				message: 'Error al cargar pedidos. Por favor intenta de nuevo.',
-				indicator: 'red'
+	// Call API to get orders and tasks in parallel
+	Promise.all([
+		// Get orders
+		new Promise(function(resolve, reject) {
+			frappe.call({
+				method: 'workhub_frappe_app.api.distributors.get_my_orders',
+				args: {
+					limit: 50,
+					offset: 0
+				},
+				callback: function(r) {
+					resolve(r.message || []);
+				},
+				error: function(err) {
+					reject(err);
+				}
 			});
+		}),
+		// Get tasks
+		new Promise(function(resolve, reject) {
+			frappe.call({
+				method: 'workhub_frappe_app.api.distributors.get_order_tasks',
+				callback: function(r) {
+					resolve(r.message || []);
+				},
+				error: function(err) {
+					// Tasks are optional, don't fail if they error
+					resolve([]);
+				}
+			});
+		})
+	]).then(function(results) {
+		document.getElementById('orders-loading').style.display = 'none';
+
+		currentOrders = results[0];
+		currentTasks = results[1];
+
+		if (currentOrders.length > 0) {
+			renderOrders(currentOrders);
+			document.getElementById('orders-container').style.display = 'block';
+		} else {
+			document.getElementById('orders-empty').style.display = 'block';
 		}
+	}).catch(function(error) {
+		document.getElementById('orders-loading').style.display = 'none';
+		document.getElementById('orders-empty').style.display = 'block';
+		frappe.msgprint({
+			title: 'Error',
+			message: 'Error al cargar pedidos. Por favor intenta de nuevo.',
+			indicator: 'red'
+		});
 	});
 }
 
@@ -544,6 +609,10 @@ function renderOrders(orders) {
 		// Expandable items row (hidden by default)
 		const itemsRow = createItemsRow(order, index);
 		tbody.appendChild(itemsRow);
+
+		// Expandable tasks row (hidden by default)
+		const tasksRow = createTasksRow(order, index);
+		tbody.appendChild(tasksRow);
 	});
 }
 
@@ -649,15 +718,76 @@ function createItemsRow(order, index) {
 	return row;
 }
 
+function createTasksRow(order, index) {
+	const row = document.createElement('tr');
+	row.id = 'tasks-row-' + index;
+	row.className = 'tasks-row';
+	row.style.display = 'none';
+	row.style.backgroundColor = '#f8f9fa';
+
+	const cell = document.createElement('td');
+	cell.colSpan = 8;
+	cell.style.padding = '0 15px 15px 15px';
+
+	// Filter tasks for this specific order
+	const orderTasks = currentTasks.filter(function(task) {
+		return task.order_id === order.id;
+	});
+
+	let tasksHtml = '<div class="tasks-container">';
+	tasksHtml += '<h6 class="mb-3"><i class="fa fa-tasks"></i> Tareas Relacionadas (' + orderTasks.length + ')</h6>';
+
+	if (orderTasks.length > 0) {
+		tasksHtml += '<div class="table-responsive">';
+		tasksHtml += '<table class="table table-sm table-bordered">';
+		tasksHtml += '<thead class="thead-light">';
+		tasksHtml += '<tr>';
+		tasksHtml += '<th>Tarea</th>';
+		tasksHtml += '<th class="text-center">Departamento</th>';
+		tasksHtml += '<th class="text-center">Estado</th>';
+		tasksHtml += '<th class="text-center">Fecha Vencimiento</th>';
+		tasksHtml += '</tr>';
+		tasksHtml += '</thead>';
+		tasksHtml += '<tbody>';
+
+		orderTasks.forEach(function(task) {
+			tasksHtml += '<tr>';
+			tasksHtml += '<td><strong>' + task.task_title + '</strong><br><small class="text-muted">' + task.task_id + '</small></td>';
+			tasksHtml += '<td class="text-center">' + getDepartmentBadge(task.department) + '</td>';
+			tasksHtml += '<td class="text-center">' + getTaskStatusBadge(task.status) + '</td>';
+			tasksHtml += '<td class="text-center">' + (task.due_date ? formatDate(task.due_date) : '<span class="text-muted">-</span>') + '</td>';
+			tasksHtml += '</tr>';
+		});
+
+		tasksHtml += '</tbody>';
+		tasksHtml += '</table>';
+		tasksHtml += '</div>';
+	} else {
+		tasksHtml += '<div class="alert alert-info mb-0">';
+		tasksHtml += '<i class="fa fa-info-circle"></i> No hay tareas relacionadas con este pedido.';
+		tasksHtml += '</div>';
+	}
+
+	tasksHtml += '</div>';
+
+	cell.innerHTML = tasksHtml;
+	row.appendChild(cell);
+
+	return row;
+}
+
 function toggleOrderItems(index) {
 	const itemsRow = document.getElementById('items-row-' + index);
+	const tasksRow = document.getElementById('tasks-row-' + index);
 	const icon = document.getElementById('expand-icon-' + index);
 
 	if (itemsRow.style.display === 'none') {
 		itemsRow.style.display = 'table-row';
+		tasksRow.style.display = 'table-row';
 		icon.className = 'fa fa-chevron-down text-primary';
 	} else {
 		itemsRow.style.display = 'none';
+		tasksRow.style.display = 'none';
 		icon.className = 'fa fa-chevron-right text-muted';
 	}
 }
@@ -722,6 +852,48 @@ function formatDate(dateStr) {
 
 function viewOrder(orderId) {
 	window.open('/app/sales-order/' + orderId, '_blank');
+}
+
+function getTaskStatusBadge(status) {
+	const statusColors = {
+		'BACKLOG': 'secondary',
+		'NEXT': 'info',
+		'DOING': 'primary',
+		'BLOCKED': 'danger',
+		'DONE': 'success'
+	};
+
+	const statusLabels = {
+		'BACKLOG': 'Backlog',
+		'NEXT': 'Siguiente',
+		'DOING': 'En Proceso',
+		'BLOCKED': 'Bloqueado',
+		'DONE': 'Completado'
+	};
+
+	const color = statusColors[status] || 'secondary';
+	const label = statusLabels[status] || status;
+
+	return '<span class="badge badge-' + color + '">' + label + '</span>';
+}
+
+function getDepartmentBadge(department) {
+	const deptColors = {
+		'SALES': 'success',
+		'OPS': 'warning',
+		'MKT': 'info'
+	};
+
+	const deptLabels = {
+		'SALES': 'Ventas',
+		'OPS': 'Operaciones',
+		'MKT': 'Marketing'
+	};
+
+	const color = deptColors[department] || 'secondary';
+	const label = deptLabels[department] || department;
+
+	return '<span class="badge badge-' + color + '">' + label + '</span>';
 }
 
 // ============================================================
