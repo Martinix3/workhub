@@ -1,0 +1,419 @@
+[
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Logistics Integration",
+    "description": "Complete workflow for integrating a new logistics provider or shipping method into operations systems",
+    "department": "OPS",
+    "default_duration_days": 35,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Evaluate logistics provider requirements",
+        "description": "Review provider's API documentation, integration requirements, and service levels",
+        "offset_days": 0,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Negotiate rates and service agreement",
+        "description": "Finalize pricing structure, service levels, zones covered, and contractual terms",
+        "offset_days": 2,
+        "duration_days": 5,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 1,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 3,
+        "title": "Set up provider account and credentials",
+        "description": "Create account, obtain API keys, configure authentication in ERPNext",
+        "offset_days": 7,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Configure shipping rules in ERPNext",
+        "description": "Set up shipping rules for zones, weights, and service types. Map to provider services",
+        "offset_days": 8,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 5,
+        "title": "Develop API integration",
+        "description": "Build integration for rate calculation, label generation, and tracking updates",
+        "offset_days": 11,
+        "duration_days": 7,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Test integration in sandbox environment",
+        "description": "Test rate calculations, label printing, tracking updates, and error handling",
+        "offset_days": 18,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 5,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 7,
+        "title": "Train warehouse staff on new provider",
+        "description": "Train team on label printing, packing requirements, pickup procedures, and troubleshooting",
+        "offset_days": 21,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 6,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Set up monitoring and alerts",
+        "description": "Configure alerts for failed shipments, tracking delays, and API errors",
+        "offset_days": 23,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 6,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Pilot launch with limited orders",
+        "description": "Process first 10-20 shipments, monitor for issues, gather feedback from warehouse team",
+        "offset_days": 25,
+        "duration_days": 5,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 7,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 10,
+        "title": "Address pilot issues and refine",
+        "description": "Fix any bugs, adjust workflows, update documentation based on pilot feedback",
+        "offset_days": 30,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 9,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Full production rollout",
+        "description": "Enable provider for all applicable shipments, monitor performance closely",
+        "offset_days": 33,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 10,
+        "is_milestone": 1
+      }
+    ]
+  },
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Inventory Audit",
+    "description": "Complete physical inventory count, reconciliation, and variance analysis process",
+    "department": "OPS",
+    "default_duration_days": 21,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Schedule audit and prepare plan",
+        "description": "Set audit date, assign count teams, define zones, prepare count sheets and equipment",
+        "offset_days": 0,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Freeze inventory transactions",
+        "description": "Stop all receiving, picking, and transfers during count period. Notify all stakeholders",
+        "offset_days": 3,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 1,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 3,
+        "title": "Generate system inventory snapshot",
+        "description": "Export current inventory balances from ERPNext as baseline for comparison",
+        "offset_days": 4,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Conduct physical count - Zone A",
+        "description": "First count team performs physical count of Zone A items, record on count sheets",
+        "offset_days": 5,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 5,
+        "title": "Conduct physical count - Zone B",
+        "description": "Second count team performs physical count of Zone B items, record on count sheets",
+        "offset_days": 5,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Conduct physical count - Zone C",
+        "description": "Third count team performs physical count of Zone C items, record on count sheets",
+        "offset_days": 5,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 7,
+        "title": "Enter count data into system",
+        "description": "Input all physical count quantities into ERPNext inventory audit module",
+        "offset_days": 7,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Generate variance report",
+        "description": "Compare physical counts to system balances, identify discrepancies by item and location",
+        "offset_days": 9,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 7,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 9,
+        "title": "Investigate significant variances",
+        "description": "Research high-value discrepancies, check recent transactions, look for data entry errors",
+        "offset_days": 10,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 8,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 10,
+        "title": "Conduct recount for disputed items",
+        "description": "Physical recount of items with significant variances to confirm accuracy",
+        "offset_days": 13,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 9,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Approve and post adjustments",
+        "description": "Management approval of variances, post stock adjustments to correct system balances",
+        "offset_days": 15,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 10,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 12,
+        "title": "Resume normal operations",
+        "description": "Unfreeze inventory transactions, notify all teams that audit is complete",
+        "offset_days": 16,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 11,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 13,
+        "title": "Analyze root causes of variances",
+        "description": "Identify patterns in discrepancies, determine if process improvements are needed",
+        "offset_days": 17,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 12,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 14,
+        "title": "Prepare audit report for management",
+        "description": "Compile final report with variance analysis, financial impact, and recommendations",
+        "offset_days": 20,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 13,
+        "is_milestone": 1
+      }
+    ]
+  },
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Supplier Onboarding",
+    "description": "Complete workflow for vetting, approving, and integrating a new supplier into operations",
+    "department": "OPS",
+    "default_duration_days": 40,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Initial supplier evaluation",
+        "description": "Review supplier capabilities, product range, certifications, and references",
+        "offset_days": 0,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Request and review supplier documentation",
+        "description": "Collect business licenses, insurance certificates, quality certifications, financial statements",
+        "offset_days": 3,
+        "duration_days": 5,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 1,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 3,
+        "title": "Conduct supplier site visit or virtual audit",
+        "description": "Visit facility to assess quality controls, production capacity, and working conditions",
+        "offset_days": 8,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 2,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 4,
+        "title": "Request product samples for testing",
+        "description": "Order samples of key products for quality evaluation and compatibility testing",
+        "offset_days": 10,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 5,
+        "title": "Evaluate samples and provide feedback",
+        "description": "Test samples for quality, specifications, packaging. Document any issues or concerns",
+        "offset_days": 13,
+        "duration_days": 5,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Negotiate pricing and payment terms",
+        "description": "Discuss volume discounts, payment terms, minimum orders, delivery schedules",
+        "offset_days": 18,
+        "duration_days": 7,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 5,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 7,
+        "title": "Draft and review supplier agreement",
+        "description": "Prepare contract covering terms, quality standards, delivery requirements, warranties",
+        "offset_days": 25,
+        "duration_days": 4,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 6,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Obtain legal and management approval",
+        "description": "Route agreement through legal review and get final sign-off from management",
+        "offset_days": 29,
+        "duration_days": 3,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 7,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Execute supplier agreement",
+        "description": "Sign contract with supplier, obtain countersignature, distribute copies to stakeholders",
+        "offset_days": 32,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 8,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 10,
+        "title": "Create supplier record in ERPNext",
+        "description": "Set up supplier master with contact info, payment terms, shipping addresses, tax details",
+        "offset_days": 34,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 9,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Configure items and pricing in system",
+        "description": "Add supplier's products to item master, input negotiated prices, set reorder levels",
+        "offset_days": 35,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Admin",
+        "depends_on_sequence": 10,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 12,
+        "title": "Place trial purchase order",
+        "description": "Create first PO for limited quantity to test ordering and receiving process",
+        "offset_days": 37,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 11,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 13,
+        "title": "Receive and inspect trial order",
+        "description": "Verify order accuracy, inspect quality, test receiving workflow, document any issues",
+        "offset_days": 38,
+        "duration_days": 2,
+        "default_assignee_role": "Operations Coordinator",
+        "depends_on_sequence": 12,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 14,
+        "title": "Approve supplier for regular ordering",
+        "description": "Final approval to add supplier to approved vendor list for ongoing purchasing",
+        "offset_days": 40,
+        "duration_days": 1,
+        "default_assignee_role": "Operations Manager",
+        "depends_on_sequence": 13,
+        "is_milestone": 1
+      }
+    ]
+  }
+]
