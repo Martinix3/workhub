@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "014-manager-analytics-dashboard",
+  "state": "building",
+  "subtasks": {
+    "completed": 11,
+    "total": 26,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Dashboard UI Components",
+    "id": null,
+    "total": 6
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 132,
+    "started_at": "2026-01-10T21:23:48.864081"
+  },
+  "last_update": "2026-01-10T22:11:13.276551"
+}
