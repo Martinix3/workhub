@@ -230,12 +230,91 @@ def get_active_timer():
 	}
 
 
+@frappe.whitelist()
+def add_time_entry(task_id, hours=0, minutes=0, date=None, notes=None):
+	"""
+	Add manual time entry without using timer.
+
+	Args:
+		task_id: ID of the WH Task to log time for
+		hours: Hours worked (Float, >= 0)
+		minutes: Minutes worked (Int, 0-59)
+		date: Date of work (defaults to today)
+		notes: Optional notes for the time entry
+
+	Returns:
+		dict with success flag and time entry details
+	"""
+	require_permission("WH Task", "write")
+
+	# Validate task_id
+	if not task_id:
+		frappe.throw(_("Task ID is required"))
+
+	if not frappe.db.exists("WH Task", task_id):
+		frappe.throw(_("Task {0} not found").format(task_id))
+
+	# Parse and validate hours
+	try:
+		hours = float(hours) if hours else 0
+	except (ValueError, TypeError):
+		frappe.throw(_("Hours must be a valid number"))
+
+	if hours < 0:
+		frappe.throw(_("Hours must be greater than or equal to 0"))
+
+	# Parse and validate minutes
+	try:
+		minutes = int(minutes) if minutes else 0
+	except (ValueError, TypeError):
+		frappe.throw(_("Minutes must be a valid integer"))
+
+	if minutes < 0 or minutes >= 60:
+		frappe.throw(_("Minutes must be between 0 and 59"))
+
+	# Ensure at least some time is being logged
+	if hours == 0 and minutes == 0:
+		frappe.throw(_("Hours and minutes cannot both be zero"))
+
+	# Default date to today if not provided
+	if not date:
+		date = nowdate()
+
+	# Get task and add work_log entry
+	task = frappe.get_doc("WH Task", task_id)
+	user = frappe.session.user
+
+	work_log_entry = {
+		"date": date,
+		"user": user,
+		"hours": hours,
+		"minutes": minutes,
+		"notes": notes or _("Manual time entry")
+	}
+	task.append("work_log", work_log_entry)
+	task.save()
+
+	# Calculate duration for response
+	duration_hours = hours + (minutes / 60)
+
+	return {
+		"success": True,
+		"time_entry": {
+			"task": task_id,
+			"task_title": task.title,
+			"hours": hours,
+			"minutes": minutes,
+			"duration_hours": duration_hours,
+			"date": date,
+			"user": user,
+			"notes": notes or _("Manual time entry")
+		}
+	}
+
+
 # These will be implemented in subsequent subtasks:
 # - pause_timer()
 # - resume_timer()
-
-# Manual time entry
-# - add_time_entry(task_id, hours, minutes, date=None, notes=None)
 
 # Time reports
 # - get_time_report(user=None, project=None, from_date=None, to_date=None)
