@@ -19,39 +19,13 @@ import {
   sampleOrders,
   sampleOpportunities
 } from '../sample-data'
+import { createDataHook, type UseDataState } from './createDataHook'
 
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
-
-export function useSalesKPIs(): UseDataState<KPIs> {
-  const [data, setData] = useState<KPIs | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const kpis = await salesApi.getKPIs()
-      setData(kpis)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleSalesKPIs)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch KPIs'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useSalesKPIs = createDataHook<KPIs>({
+  apiMethod: salesApi.getKPIs,
+  sampleData: sampleSalesKPIs,
+  errorMessage: 'Failed to fetch KPIs'
+})
 
 export function useCustomers(filters?: { type?: string; status?: string; search?: string }): UseDataState<Customer[]> {
   const [data, setData] = useState<Customer[] | null>(null)
@@ -105,83 +79,23 @@ export function useOrders(filters?: { status?: string; customerId?: string; sear
   return { data, loading, error, refetch: fetch }
 }
 
-export function useOpportunities(): UseDataState<Opportunity[]> {
-  const [data, setData] = useState<Opportunity[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+export const useOpportunities = createDataHook<Opportunity[]>({
+  apiMethod: salesApi.getOpportunities,
+  sampleData: sampleOpportunities,
+  errorMessage: 'Failed to fetch opportunities'
+})
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const opps = await salesApi.getOpportunities()
-      setData(opps)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleOpportunities)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch opportunities'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+export const useRecentActivity = createDataHook<Activity[]>({
+  apiMethod: salesApi.getRecentActivity,
+  sampleData: sampleRecentActivity as Activity[],
+  errorMessage: 'Failed to fetch activity'
+})
 
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useRecentActivity(): UseDataState<Activity[]> {
-  const [data, setData] = useState<Activity[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const activity = await salesApi.getRecentActivity()
-      setData(activity)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleRecentActivity as Activity[])
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch activity'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useSalesTrends(): UseDataState<SalesTrends> {
-  const [data, setData] = useState<SalesTrends | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const trends = await salesApi.getSalesTrends()
-      setData(trends)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleSalesTrends as SalesTrends)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch trends'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useSalesTrends = createDataHook<SalesTrends>({
+  apiMethod: salesApi.getSalesTrends,
+  sampleData: sampleSalesTrends as SalesTrends,
+  errorMessage: 'Failed to fetch trends'
+})
 
 export function useSalesDashboard() {
   const kpis = useSalesKPIs()
