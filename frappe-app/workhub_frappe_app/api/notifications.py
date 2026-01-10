@@ -37,6 +37,26 @@ def get_notifications(unread_only=False, limit=50):
 
 
 @frappe.whitelist()
+def get_unread_count():
+    """Obtener contadores de notificaciones no leidas (optimizado para polling)"""
+    require_auth()
+    user = frappe.session.user
+
+    # Total de notificaciones no leidas
+    unread_count = frappe.db.count("WH Notification",
+        {"user": user, "read": 0})
+
+    # Notificaciones no leidas de alta prioridad (HIGH)
+    high_priority_count = frappe.db.count("WH Notification",
+        {"user": user, "read": 0, "priority": "HIGH"})
+
+    return {
+        "unread_count": unread_count,
+        "high_priority_count": high_priority_count
+    }
+
+
+@frappe.whitelist()
 def mark_read(notification_id):
     """Marcar notificacion como leida"""
     require_auth()
