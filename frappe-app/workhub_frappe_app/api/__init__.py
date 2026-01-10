@@ -8,3 +8,4 @@ from . import production
 from . import quality
 from . import marketing
 from . import notepad
+from . import time_tracking
