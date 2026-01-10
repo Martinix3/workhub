@@ -86,6 +86,8 @@ def clear_old_notifications(days=30):
 
 def send_daily_emails():
     """Scheduler: Enviar email diario a las 8am"""
+    import datetime
+
     # Obtener usuarios con email diario activado
     # Por ahora, todos los usuarios con tareas asignadas
     users = frappe.db.sql("""
@@ -93,6 +95,10 @@ def send_daily_emails():
         FROM `tabWH Task`
         WHERE status NOT IN ('DONE')
     """, as_dict=True)
+
+    # Check if today is Monday (for weekly digest)
+    today_weekday = datetime.datetime.now().weekday()  # Monday = 0, Sunday = 6
+    is_monday = today_weekday == 0
 
     for user_row in users:
         user = user_row.get("user")
@@ -104,6 +110,19 @@ def send_daily_emails():
             continue
 
         try:
+            # Check user's digest preference
+            preferences = _get_user_notification_preferences(user)
+            digest_frequency = preferences.get("digest_frequency", "daily")
+
+            # Skip if digest is disabled
+            if digest_frequency == "none":
+                continue
+
+            # Skip if weekly digest and today is not Monday
+            if digest_frequency == "weekly" and not is_monday:
+                continue
+
+            # Send digest (daily users get it every day, weekly users only on Monday)
             _send_daily_digest(user, user_email)
         except Exception as e:
             frappe.log_error(f"Error sending daily email to {user}: {e}")
