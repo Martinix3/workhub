@@ -122,6 +122,8 @@ export interface SellInDashboardProps {
   onKpiClick?: (kpiKey: keyof KPIs) => void
   /** Called when user wants to create a new order */
   onCreateOrder?: () => void
+  /** Called when user exports KPIs data */
+  onExport?: (format: 'json' | 'csv') => Promise<void> | void
 }
 
 export interface PipelineProps {

@@ -2,6 +2,7 @@ import type { SellInDashboardProps, KPIs } from './types'
 import { KPICard } from './KPICard'
 import { MiniBarChart } from './MiniBarChart'
 import { ActivityFeed } from './ActivityFeed'
+import { ExportKPIsButton } from '../../ui'
 import { Plus } from 'lucide-react'
 
 export function SellInDashboard({
@@ -9,7 +10,8 @@ export function SellInDashboard({
   recentActivity,
   salesTrends,
   onKpiClick,
-  onCreateOrder
+  onCreateOrder,
+  onExport
 }: SellInDashboardProps) {
   const kpiKeys: (keyof KPIs)[] = ['salesThisMonth', 'activeOrders', 'newCustomers', 'avgOrderValue']
 
@@ -27,22 +29,25 @@ export function SellInDashboard({
         </div>
 
         {/* Quick Actions */}
-        <button
-          onClick={onCreateOrder}
-          className="
-            inline-flex items-center gap-2 px-4 py-2
-            bg-amber-400 hover:bg-amber-500
-            text-stone-900 font-medium text-sm uppercase tracking-wider
-            border-2 border-stone-900
-            shadow-[4px_4px_0_#1c1917]
-            hover:shadow-[2px_2px_0_#1c1917]
-            hover:translate-x-[2px] hover:translate-y-[2px]
-            transition-all duration-75
-          "
-        >
-          <Plus size={18} />
-          Nuevo Pedido
-        </button>
+        <div className="flex items-center gap-2">
+          {onExport && <ExportKPIsButton onExport={onExport} />}
+          <button
+            onClick={onCreateOrder}
+            className="
+              inline-flex items-center gap-2 px-4 py-2
+              bg-amber-400 hover:bg-amber-500
+              text-stone-900 font-medium text-sm uppercase tracking-wider
+              border-2 border-stone-900
+              shadow-[4px_4px_0_#1c1917]
+              hover:shadow-[2px_2px_0_#1c1917]
+              hover:translate-x-[2px] hover:translate-y-[2px]
+              transition-all duration-75
+            "
+          >
+            <Plus size={18} />
+            Nuevo Pedido
+          </button>
+        </div>
       </div>
 
       {/* KPI Grid */}
