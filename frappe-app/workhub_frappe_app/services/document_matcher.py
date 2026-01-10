@@ -3,6 +3,7 @@
 
 import frappe
 from frappe import _
+from frappe.utils import add_days, nowdate
 from difflib import SequenceMatcher
 import re
 from typing import List, Dict, Optional, Tuple
@@ -27,6 +28,31 @@ SUPPORTED_DOCTYPES = [
     "CalendarEvent",
     "Account"
 ]
+
+# Department to DocType mapping for context filtering
+DEPARTMENT_DOCTYPES = {
+    "SALES": [
+        "Sales Order",
+        "Sales Invoice",
+        "Delivery Note",
+        "Payment Entry",
+        "Opportunity",
+        "Campaign"
+    ],
+    "OPS": [
+        "Work Order",
+        "Batch",
+        "Stock Entry",
+        "Quality Inspection",
+        "Purchase Order",
+        "Purchase Receipt",
+        "Purchase Invoice"
+    ],
+    "MKT": [
+        "Campaign",
+        "Opportunity"
+    ]
+}
 
 # Document number patterns
 # Matches formats like: SO-12345, DN-001, WO-2024-001, BATCH-ABC, etc.
@@ -234,18 +260,183 @@ def _extract_general_keywords(text: str) -> List[str]:
     return unique_keywords[:10]  # Limit to 10 unique keywords
 
 
+def get_user_context(user: Optional[str] = None) -> Dict:
+    """
+    Get user context for filtering suggestions.
+
+    Args:
+        user: User email (defaults to current session user)
+
+    Returns:
+        dict with:
+        - departments: List of user's departments
+        - recent_documents: List of recently accessed document types and IDs
+        - assigned_projects: List of project IDs the user is assigned to
+    """
+    if not user:
+        user = frappe.session.user
+
+    context = {
+        "departments": [],
+        "recent_documents": [],
+        "assigned_projects": []
+    }
+
+    try:
+        # Get user departments from roles (reuse logic from settings.py)
+        user_roles = set(frappe.get_roles(user))
+
+        # System Manager and Administrator have access to all
+        if "System Manager" in user_roles or "Administrator" in user_roles:
+            context["departments"] = ["SALES", "OPS", "MKT"]
+        else:
+            # Check department access based on roles
+            department_roles = {
+                "SALES": ["Sales Manager", "Sales User", "Sales Master Manager"],
+                "OPS": ["Manufacturing Manager", "Manufacturing User", "Stock Manager", "Stock User"],
+                "MKT": ["Marketing Manager", "Marketing User"],
+            }
+
+            departments = []
+            for dept, roles in department_roles.items():
+                if any(role in user_roles for role in roles):
+                    departments.append(dept)
+
+            context["departments"] = departments if departments else ["SALES", "OPS", "MKT"]
+
+        # Get recent documents from WorkLinks created/modified by this user
+        # Look at last 30 days of activity
+        recent_worklinks = frappe.get_all(
+            "WorkLink",
+            filters={
+                "modified": [">", add_days(nowdate(), -30)]
+            },
+            fields=["source_doctype", "source_id", "modified"],
+            order_by="modified desc",
+            limit=50
+        )
+
+        # Build list of recent document references
+        recent_docs = []
+        seen_docs = set()
+        for wl in recent_worklinks:
+            key = (wl.source_doctype, wl.source_id)
+            if key not in seen_docs:
+                seen_docs.add(key)
+                recent_docs.append({
+                    "doctype": wl.source_doctype,
+                    "doc_id": wl.source_id,
+                    "accessed_at": wl.modified
+                })
+
+        context["recent_documents"] = recent_docs[:20]  # Keep top 20
+
+        # Get assigned projects for the user
+        assigned_tasks = frappe.get_all(
+            "WH Task",
+            filters={
+                "assigned_to": user,
+                "status": ["!=", "DONE"]
+            },
+            fields=["project"],
+            distinct=True
+        )
+
+        context["assigned_projects"] = [t.project for t in assigned_tasks if t.project]
+
+    except Exception as e:
+        frappe.log_error(f"Error getting user context for {user}: {str(e)}")
+
+    return context
+
+
+def apply_context_filter(
+    suggestions: List[Dict],
+    user_context: Optional[Dict] = None,
+    department: Optional[str] = None
+) -> List[Dict]:
+    """
+    Filter and boost suggestions based on user context.
+
+    Args:
+        suggestions: List of document suggestions
+        user_context: User context dict from get_user_context()
+        department: Override department (e.g., from task or project)
+
+    Returns:
+        Filtered and re-scored suggestions
+    """
+    if not suggestions:
+        return []
+
+    # If no context provided, get it now
+    if not user_context:
+        user_context = get_user_context()
+
+    # Determine which departments to prioritize
+    priority_departments = user_context.get("departments", [])
+    if department and department in ["SALES", "OPS", "MKT"]:
+        # Task/project department takes precedence
+        priority_departments = [department]
+
+    # Build set of recent document keys for fast lookup
+    recent_doc_keys = set()
+    if user_context.get("recent_documents"):
+        for doc in user_context["recent_documents"]:
+            recent_doc_keys.add((doc["doctype"], doc["doc_id"]))
+
+    filtered_suggestions = []
+
+    for suggestion in suggestions:
+        doctype = suggestion["doctype"]
+        doc_id = suggestion["doc_id"]
+        confidence = suggestion["confidence"]
+
+        # Apply department boost
+        department_boost = 1.0
+        for dept in priority_departments:
+            if dept in DEPARTMENT_DOCTYPES and doctype in DEPARTMENT_DOCTYPES[dept]:
+                department_boost = 1.15  # 15% boost for department match
+                break
+
+        # Apply recent document boost
+        recent_boost = 1.0
+        if (doctype, doc_id) in recent_doc_keys:
+            recent_boost = 1.25  # 25% boost for recently accessed documents
+
+        # Calculate adjusted confidence
+        adjusted_confidence = min(confidence * department_boost * recent_boost, 0.99)
+
+        suggestion["confidence"] = adjusted_confidence
+        suggestion["boosted"] = department_boost > 1.0 or recent_boost > 1.0
+
+        filtered_suggestions.append(suggestion)
+
+    # Re-sort by adjusted confidence
+    filtered_suggestions.sort(key=lambda x: x["confidence"], reverse=True)
+
+    return filtered_suggestions
+
+
 def match_documents(
     task_title: str,
     task_description: str = "",
+    department: Optional[str] = None,
+    project_id: Optional[str] = None,
+    user: Optional[str] = None,
     threshold: float = 0.6,
     limit: int = 5
 ) -> List[Dict]:
     """
     Match task text against ERP documents using keyword extraction and fuzzy matching.
+    Applies context-based filtering to prioritize relevant suggestions.
 
     Args:
         task_title: Task title
         task_description: Task description (optional)
+        department: Task department (SALES, OPS, MKT)
+        project_id: Project ID (for additional context)
+        user: User email (defaults to current session user)
         threshold: Minimum similarity score (0-1) to consider a match
         limit: Maximum number of suggestions to return
 
@@ -297,10 +488,15 @@ def match_documents(
             seen.add(key)
             unique_suggestions.append(suggestion)
 
-    # Sort by confidence descending
-    unique_suggestions.sort(key=lambda x: x["confidence"], reverse=True)
+    # Apply context-based filtering and boosting
+    user_context = get_user_context(user)
+    filtered_suggestions = apply_context_filter(
+        unique_suggestions,
+        user_context,
+        department
+    )
 
-    return unique_suggestions[:limit]
+    return filtered_suggestions[:limit]
 
 
 def _match_by_document_number(doc_number: str, doctype: str) -> List[Dict]:
