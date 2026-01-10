@@ -81,3 +81,10 @@ export {
   useCustomerSearch,
   useItemSearch
 } from './useNotepad'
+
+// Templates
+export {
+  useTemplates,
+  useTemplatePreview,
+  useTemplateMutations
+} from './useTemplates'

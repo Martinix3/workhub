@@ -7,6 +7,7 @@ export { default as marketingApi } from './marketing'
 export { default as settingsApi } from './settings'
 export { default as adminApi } from './admin'
 export { default as notepadApi } from './notepad'
+export { default as templatesApi } from './templates'
 
 // Re-export types
 export type {
@@ -25,3 +26,15 @@ export type {
   CreateUserData,
   UpdateUserData
 } from './admin'
+
+export type {
+  TemplateListItem,
+  TemplatePreview,
+  TemplateTask,
+  TemplateMilestone,
+  TemplateDependency,
+  CreateTemplateData,
+  UpdateTemplateData,
+  CreateFromTemplateData,
+  SaveProjectAsTemplateData
+} from './templates'
