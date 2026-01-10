@@ -1,5 +1,5 @@
 // React hooks for Sales data
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import salesApi from '../services/sales'
 import type { Product, CreateOrderData, CreateOrderResponse } from '../services/sales'
 import type {
@@ -27,57 +27,17 @@ export const useSalesKPIs = createDataHook<KPIs>({
   errorMessage: 'Failed to fetch KPIs'
 })
 
-export function useCustomers(filters?: { type?: string; status?: string; search?: string }): UseDataState<Customer[]> {
-  const [data, setData] = useState<Customer[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+export const useCustomers = createDataHook<Customer[], { type?: string; status?: string; search?: string }>({
+  apiMethod: salesApi.getCustomers,
+  sampleData: sampleCustomers,
+  errorMessage: 'Failed to fetch customers'
+})
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const customers = await salesApi.getCustomers(filters)
-      setData(customers)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleCustomers)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch customers'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [filters?.type, filters?.status, filters?.search])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useOrders(filters?: { status?: string; customerId?: string; search?: string }): UseDataState<SalesOrder[]> {
-  const [data, setData] = useState<SalesOrder[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const orders = await salesApi.getOrders(filters)
-      setData(orders)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleOrders as SalesOrder[])
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch orders'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [filters?.status, filters?.customerId, filters?.search])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useOrders = createDataHook<SalesOrder[], { status?: string; customerId?: string; search?: string }>({
+  apiMethod: salesApi.getOrders,
+  sampleData: sampleOrders as SalesOrder[],
+  errorMessage: 'Failed to fetch orders'
+})
 
 export const useOpportunities = createDataHook<Opportunity[]>({
   apiMethod: salesApi.getOpportunities,
@@ -122,35 +82,13 @@ const sampleProducts: Product[] = [
   { name: 'MEZCAL-ESP-750', item_name: 'Mezcal Edición Especial 750ml', item_code: 'MEZCAL-ESP-750', stock_uom: 'Nos', standard_rate: 2500, image: null, available_stock: 20 }
 ]
 
-export function useProducts(search?: string): UseDataState<Product[]> {
-  const [data, setData] = useState<Product[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const products = await salesApi.getProducts(search)
-      setData(products)
-    } catch (err) {
-      if (isInBypassMode()) {
-        // Filter sample products by search term
-        const filtered = search
-          ? sampleProducts.filter(p => p.item_name.toLowerCase().includes(search.toLowerCase()))
-          : sampleProducts
-        setData(filtered)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch products'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [search])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useProducts = createDataHook<Product[], string>({
+  apiMethod: salesApi.getProducts,
+  sampleData: sampleProducts,
+  errorMessage: 'Failed to fetch products',
+  bypassTransformer: (data, search) =>
+    search ? data.filter(p => p.item_name.toLowerCase().includes(search.toLowerCase())) : data
+})
 
 export function useCreateOrder() {
   const [loading, setLoading] = useState(false)
