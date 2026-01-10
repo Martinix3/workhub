@@ -898,3 +898,93 @@ def export_to_excel(report_id, filters=None):
 
 		frappe.log_error(f"Excel export failed for report {report_id}: {str(e)}")
 		frappe.throw(_("Failed to export Excel: {0}").format(str(e)))
+
+
+# ========================================
+# PDF Export
+# ========================================
+
+def export_to_pdf(report_id, filters=None):
+	"""
+	Export report to PDF format using Frappe's PDF generation
+
+	Creates an executive-ready PDF with:
+	- Cover page with report metadata
+	- Formatted sections with tables and KPI displays
+	- Professional styling with company branding
+
+	Args:
+		report_id: Report definition ID
+		filters: Optional filters to apply
+
+	Returns:
+		File URL of the generated PDF file
+	"""
+	from frappe.utils.pdf import get_pdf
+
+	# Get report data
+	report_data = get_report_generation_data(report_id, filters)
+
+	metadata = report_data.get("metadata", {})
+	sections = report_data.get("sections", [])
+
+	# Prepare template context
+	context = {
+		"metadata": metadata,
+		"sections": sections,
+		"format_date": format_report_date,
+		"format_number": format_report_number,
+		"format_currency": format_report_currency,
+		"format_percentage": format_report_percentage,
+		"extract_table_data": extract_table_data,
+		"format_table_cell_value": format_table_cell_value,
+		"json": json  # For parsing JSON config
+	}
+
+	# Generate filename
+	filename = get_export_filename(metadata.get("title", "report"), "PDF", timestamp=metadata.get("generated_at"))
+
+	# Create generated report record
+	generated_report = create_generated_report_record(
+		report_id=report_id,
+		export_format="PDF",
+		data_snapshot=report_data
+	)
+
+	try:
+		# Render HTML template
+		html_content = frappe.render_template(
+			"workhub_frappe_app/templates/report_pdf_template.html",
+			context
+		)
+
+		# Convert HTML to PDF
+		pdf_content = get_pdf(html_content)
+
+		# Save to Frappe file system
+		file_url = save_export_file(pdf_content, filename, is_private=1)
+
+		# Update generated report record
+		update_generated_report_status(
+			generated_report.name,
+			status="Completed",
+			file_url=file_url
+		)
+
+		return {
+			"success": True,
+			"file_url": file_url,
+			"generated_report_id": generated_report.name,
+			"message": _("PDF export completed successfully")
+		}
+
+	except Exception as e:
+		# Update generated report record with error
+		update_generated_report_status(
+			generated_report.name,
+			status="Failed",
+			error_message=str(e)
+		)
+
+		frappe.log_error(f"PDF export failed for report {report_id}: {str(e)}")
+		frappe.throw(_("Failed to export PDF: {0}").format(str(e)))
