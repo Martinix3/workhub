@@ -1,5 +1,6 @@
 import type { MarketingDashboardProps, MarketingKPIs, Campaign, PlatformStats } from './types'
 import { TrendingUp, TrendingDown, Minus, Plus, Pause, Instagram, Facebook } from 'lucide-react'
+import { ExportKPIsButton } from '../../ui'
 
 interface KPICardProps {
   kpi: { value: number; previousValue: number; change: number; label: string }
@@ -213,7 +214,8 @@ export function MarketingDashboard({
   onViewCampaign,
   onViewPost: _onViewPost,
   onNewCampaign,
-  onNewPost
+  onNewPost,
+  onExport
 }: MarketingDashboardProps) {
   const kpiConfig: { key: keyof MarketingKPIs; format: 'number' | 'percent' | 'roi' }[] = [
     { key: 'leadsGenerated', format: 'number' },
@@ -236,6 +238,7 @@ export function MarketingDashboard({
         </div>
 
         <div className="flex items-center gap-2">
+          {onExport && <ExportKPIsButton onExport={onExport} />}
           <button
             onClick={onNewPost}
             className="

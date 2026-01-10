@@ -1,0 +1,34 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/002-add-kpi-export-buttons-to-dashboards/**)",
+      "Write(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/002-add-kpi-export-buttons-to-dashboards/**)",
+      "Edit(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/002-add-kpi-export-buttons-to-dashboards/**)",
+      "Glob(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/002-add-kpi-export-buttons-to-dashboards/**)",
+      "Grep(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/002-add-kpi-export-buttons-to-dashboards/**)",
+      "Read(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/002-add-kpi-export-buttons-to-dashboards/.auto-claude/specs/002-add-kpi-export-buttons-to-dashboards/**)",
+      "Write(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/002-add-kpi-export-buttons-to-dashboards/.auto-claude/specs/002-add-kpi-export-buttons-to-dashboards/**)",
+      "Edit(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/002-add-kpi-export-buttons-to-dashboards/.auto-claude/specs/002-add-kpi-export-buttons-to-dashboards/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}
