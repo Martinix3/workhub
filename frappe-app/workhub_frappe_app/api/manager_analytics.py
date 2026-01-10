@@ -541,8 +541,91 @@ def export_analytics(format="csv", department=None):
     if format != "csv":
         frappe.throw(_("Solo formato CSV es soportado actualmente"))
 
-    # TODO: Implement CSV export logic
+    # Fetch all analytics data
+    workload = get_team_workload(department)
+    velocity = get_velocity_trends()
+    blockers = get_blocker_analysis(department)
+    overdue = get_overdue_trends()
+
+    # Build CSV content
+    lines = []
+
+    # Section 1: Team Workload Distribution
+    lines.append("=== DISTRIBUCION DE CARGA DE TRABAJO ===")
+    lines.append("Usuario,Nombre,Backlog,Siguiente,En Progreso,Bloqueadas,Completadas (30d),Total")
+    for member in workload.get("workload", []):
+        lines.append(f"{member.get('user', '')},{member.get('full_name', '')},"
+                    f"{member.get('backlog', 0)},{member.get('next', 0)},"
+                    f"{member.get('doing', 0)},{member.get('blocked', 0)},"
+                    f"{member.get('done_recent', 0)},{member.get('total', 0)}")
+
+    lines.append("")
+
+    # Section 2: Velocity Trends
+    lines.append("=== TENDENCIAS DE VELOCIDAD ===")
+    lines.append(f"Periodo: {velocity.get('period', 'daily')}")
+    lines.append(f"Promedio Actual: {velocity.get('avg_current', 0)}")
+    lines.append(f"Promedio Anterior: {velocity.get('avg_previous', 0)}")
+    lines.append(f"Tendencia: {velocity.get('trend', 'stable')}")
+    lines.append("")
+    lines.append("Fecha,Completadas,Periodo Anterior")
+    for data_point in velocity.get("data", []):
+        lines.append(f"{data_point.get('date', '')},{data_point.get('completed', 0)},"
+                    f"{data_point.get('previous_period', 0)}")
+
+    lines.append("")
+
+    # Section 3: Blocker Analysis
+    lines.append("=== ANALISIS DE BLOQUEOS ===")
+    lines.append(f"Tiempo Promedio Bloqueado: {blockers.get('avg_blocked_time_days', 0)} dias")
+    lines.append("")
+    lines.append("Areas Bloqueadas:")
+    lines.append("Nombre,Tipo,Cantidad Bloqueadas")
+    for area in blockers.get("blocked_areas", []):
+        lines.append(f"{area.get('name', '')},{area.get('type', '')},"
+                    f"{area.get('blocked_count', 0)}")
+
+    lines.append("")
+    lines.append("Top Tareas Bloqueadas:")
+    lines.append("ID Tarea,Titulo,Razon Bloqueo,Dias Bloqueada,Asignado A,Nombre Asignado,Proyecto,Departamento")
+    for task in blockers.get("top_blocked_tasks", []):
+        # Escape commas in title and blocked_reason
+        title = str(task.get('title', '')).replace(',', ';')
+        blocked_reason = str(task.get('blocked_reason', '')).replace(',', ';')
+        lines.append(f"{task.get('task_id', '')},{title},{blocked_reason},"
+                    f"{task.get('blocked_days', 0)},{task.get('assigned_to', '')},"
+                    f"{task.get('assigned_name', '')},{task.get('project', '')},"
+                    f"{task.get('department', '')}")
+
+    lines.append("")
+
+    # Section 4: Overdue Trends
+    lines.append("=== TENDENCIAS DE VENCIMIENTO ===")
+    lines.append(f"Tendencia General: {overdue.get('trend', 'stable')}")
+    lines.append("")
+    lines.append("Semana Inicio,Semana Fin,Total Tareas,Tareas Vencidas,Ratio Vencimiento (%)")
+    for week in overdue.get("weeks", []):
+        lines.append(f"{week.get('week_start', '')},{week.get('week_end', '')},"
+                    f"{week.get('total_tasks', 0)},{week.get('overdue_tasks', 0)},"
+                    f"{week.get('overdue_ratio', 0)}")
+
+    lines.append("")
+    lines.append("Desglose por Departamento (ultima semana):")
+    if overdue.get("weeks"):
+        last_week = overdue["weeks"][-1]
+        lines.append("Departamento,Total,Vencidas,Ratio (%)")
+        for dept, stats in last_week.get("by_department", {}).items():
+            lines.append(f"{dept},{stats.get('total', 0)},{stats.get('overdue', 0)},"
+                        f"{stats.get('ratio', 0)}")
+
+    # Join all lines with newline
+    csv_content = "\n".join(lines)
+
+    # Generate filename with department filter if applicable
+    dept_suffix = f"_{department}" if department else ""
+    filename = f"manager_analytics{dept_suffix}_{nowdate()}.csv"
+
     return {
-        "content": "",
-        "filename": f"analytics_export_{nowdate()}.csv"
+        "content": csv_content,
+        "filename": filename
     }
