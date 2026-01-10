@@ -9,6 +9,7 @@ export { default as distributorsApi } from './services/distributors'
 export { default as productionApi } from './services/production'
 export { default as marketingApi } from './services/marketing'
 export { default as tasksApi } from './services/tasks'
+export { default as managerAnalyticsApi } from './services/manager-analytics'
 
 // Sales Hooks
 export {
@@ -103,3 +104,12 @@ export {
   useTaskKPIs,
   useTaskDashboard
 } from './hooks/useTasks'
+
+// Manager Analytics Hooks
+export {
+  useTeamWorkload,
+  useVelocityTrends,
+  useBlockerAnalysis,
+  useOverdueTrends,
+  useManagerAnalyticsDashboard
+} from './hooks/useManagerAnalytics'
