@@ -426,3 +426,155 @@ def format_table_cell_value(value, column_config=None):
 		return "Yes" if value else "No"
 	else:
 		return str(value)
+
+
+# ========================================
+# CSV Export
+# ========================================
+
+def export_to_csv(report_id, filters=None):
+	"""
+	Export report to CSV format
+
+	For table sections, exports as standard CSV.
+	For multi-section reports, creates a combined CSV with section headers separating data blocks.
+
+	Args:
+		report_id: Report definition ID
+		filters: Optional filters to apply
+
+	Returns:
+		File URL of the generated CSV file
+	"""
+	import csv
+	from io import StringIO
+
+	# Get report data
+	report_data = get_report_generation_data(report_id, filters)
+
+	metadata = report_data.get("metadata", {})
+	sections = report_data.get("sections", [])
+
+	# Create CSV output
+	csv_output = StringIO()
+	csv_writer = csv.writer(csv_output, quoting=csv.QUOTE_MINIMAL)
+
+	# Write report header
+	csv_writer.writerow([metadata.get("title", "Report")])
+	csv_writer.writerow([f"Generated: {format_report_date(metadata.get('generated_at'), include_time=True)}"])
+	csv_writer.writerow([])  # Blank line
+
+	# Process each section
+	for section_idx, section in enumerate(sections):
+		section_type = section.get("section_type", "")
+		section_title = section.get("title", "Untitled Section")
+
+		# Only export sections with tabular data
+		if section_type not in ["Table", "KPI"]:
+			# For non-table sections, just add a comment line
+			csv_writer.writerow([f"# {section_title} ({section_type})"])
+			csv_writer.writerow([])
+			continue
+
+		# Write section header
+		csv_writer.writerow([f"## {section_title}"])
+		csv_writer.writerow([])
+
+		# Handle table sections
+		if section_type == "Table":
+			columns, rows = extract_table_data(section)
+
+			if not columns:
+				csv_writer.writerow(["No data available"])
+				csv_writer.writerow([])
+				continue
+
+			# Write column headers
+			column_labels = [col.get("label", col.get("field", "")) for col in columns]
+			csv_writer.writerow(column_labels)
+
+			# Write data rows
+			for row in rows:
+				csv_row = []
+				for col in columns:
+					field_name = col.get("field", "")
+					cell_value = row.get(field_name)
+					formatted_value = format_table_cell_value(cell_value, col)
+					csv_row.append(formatted_value)
+				csv_writer.writerow(csv_row)
+
+			# Blank line after section
+			csv_writer.writerow([])
+
+		# Handle KPI sections
+		elif section_type == "KPI":
+			data = section.get("data", [])
+
+			if not data:
+				csv_writer.writerow(["No data available"])
+				csv_writer.writerow([])
+				continue
+
+			# KPI format: Label, Value
+			csv_writer.writerow(["Metric", "Value"])
+
+			for kpi_item in data:
+				label = kpi_item.get("label", "")
+				value = kpi_item.get("value", "")
+
+				# Format value based on type
+				kpi_config = section.get("config", {})
+				if isinstance(kpi_config, str):
+					try:
+						kpi_config = json.loads(kpi_config)
+					except:
+						kpi_config = {}
+
+				formatted_value = format_table_cell_value(value, kpi_config)
+				csv_writer.writerow([label, formatted_value])
+
+			# Blank line after section
+			csv_writer.writerow([])
+
+	# Get CSV content
+	csv_content = csv_output.getvalue()
+	csv_output.close()
+
+	# Generate filename
+	filename = get_export_filename(metadata.get("title", "report"), "CSV", timestamp=metadata.get("generated_at"))
+
+	# Create generated report record
+	generated_report = create_generated_report_record(
+		report_id=report_id,
+		export_format="CSV",
+		data_snapshot=report_data
+	)
+
+	try:
+		# Save the file
+		file_url = save_export_file(csv_content, filename, is_private=1)
+
+		# Update generated report record
+		update_generated_report_status(
+			generated_report.name,
+			status="Completed",
+			file_url=file_url
+		)
+
+		return {
+			"success": True,
+			"file_url": file_url,
+			"generated_report_id": generated_report.name,
+			"message": _("CSV export completed successfully")
+		}
+
+	except Exception as e:
+		# Update generated report record with error
+		update_generated_report_status(
+			generated_report.name,
+			status="Failed",
+			error_message=str(e)
+		)
+
+		frappe.log_error(f"CSV export failed for report {report_id}: {str(e)}")
+		frappe.throw(_("Failed to export CSV: {0}").format(str(e)))
