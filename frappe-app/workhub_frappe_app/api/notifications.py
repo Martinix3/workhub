@@ -158,8 +158,33 @@ def _send_daily_digest(user, email):
         fields=["title", "blocked_reason"],
         limit=5)
 
+    # Check if user has Sales role for distributor orders section
+    has_sales_role = frappe.db.exists("Has Role", {
+        "parent": user,
+        "role": "Sales User",
+        "parenttype": "User"
+    })
+
+    pending_orders = []
+    issue_orders = []
+
+    if has_sales_role:
+        # Get pending orders
+        pending_orders = frappe.get_all("Distributor Sell Out Order",
+            filters={"status": "Pending"},
+            fields=["name", "customer_name", "distributor_name", "total_amount", "order_date"],
+            order_by="order_date desc",
+            limit=10)
+
+        # Get orders with issues
+        issue_orders = frappe.get_all("Distributor Sell Out Order",
+            filters={"status": "Issue"},
+            fields=["name", "customer_name", "distributor_name", "total_amount", "issue_notes"],
+            order_by="modified desc",
+            limit=5)
+
     # Si no hay nada relevante, no enviar
-    if not today_tasks and not overdue and not blocked:
+    if not today_tasks and not overdue and not blocked and not pending_orders and not issue_orders:
         return
 
     # Construir mensaje
@@ -191,6 +216,33 @@ def _send_daily_digest(user, email):
         <ul>
         {"".join([f"<li>{t['title']} - {t.get('blocked_reason', 'Sin razon')}</li>" for t in blocked])}
         </ul>
+        """
+
+    # Add distributor orders section for sales users
+    if has_sales_role and (pending_orders or issue_orders):
+        message += """
+        <hr style="margin: 20px 0;">
+        <h2>Ordenes de Distribuidores</h2>
+        """
+
+        if pending_orders:
+            message += f"""
+            <h3>Pendientes ({len(pending_orders)})</h3>
+            <ul>
+            {"".join([f"<li><strong>{o['name']}</strong> - {o['customer_name']} (via {o['distributor_name']}) - {frappe.utils.fmt_money(o['total_amount'])} - {o['order_date']}</li>" for o in pending_orders])}
+            </ul>
+            """
+
+        if issue_orders:
+            message += f"""
+            <h3 style="color: red;">Con Incidencias ({len(issue_orders)}) - ¡Requieren Atencion!</h3>
+            <ul>
+            {"".join([f"<li><strong>{o['name']}</strong> - {o['customer_name']} (via {o['distributor_name']}) - {frappe.utils.fmt_money(o['total_amount'])}<br><em>Incidencia: {o.get('issue_notes', 'Sin detalles')}</em></li>" for o in issue_orders])}
+            </ul>
+            """
+
+        message += """
+        <p><a href="/app/distributor-sell-out-order">Ver todas las ordenes</a></p>
         """
 
     message += """
