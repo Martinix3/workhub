@@ -1,7 +1,7 @@
 // Kanban Board Page - Enhanced with priority bars, avatars, drag effects, FAB
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, CheckCircle } from 'lucide-react'
+import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, CheckCircle, Check, FileText } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { useKanban, useTaskMutations } from '../../api'
@@ -380,6 +380,7 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, onComplete, isDraggin
         border-2 border-stone-900
         cursor-grab active:cursor-grabbing
         transition-all duration-75
+        ${isDone ? 'opacity-60' : ''}
         ${isDragging
           ? 'opacity-50 rotate-2 shadow-[8px_8px_0_#1c1917]'
           : 'hover:shadow-[4px_4px_0_#1c1917]'
@@ -405,7 +406,17 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, onComplete, isDraggin
             {task.status === 'BLOCKED' && (
               <AlertTriangle size={14} className="text-red-500" />
             )}
-            {!isDone && (
+            {isDone ? (
+              <div
+                className="
+                  w-5 h-5 flex items-center justify-center
+                  bg-green-500 border-2 border-stone-900
+                "
+                title="Tarea completada"
+              >
+                <Check size={12} className="text-white" />
+              </div>
+            ) : (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -478,6 +489,14 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, onComplete, isDraggin
           <div className="mt-2 flex items-center gap-1 text-xs text-amber-600">
             <Flag size={10} />
             <span>{task.total_work_days} días trabajados</span>
+          </div>
+        )}
+
+        {/* Completion notes indicator */}
+        {isDone && task.completion_notes && (
+          <div className="mt-2 flex items-center gap-1 text-xs text-green-600" title={task.completion_notes}>
+            <FileText size={10} />
+            <span className="truncate">Notas de cierre</span>
           </div>
         )}
       </div>

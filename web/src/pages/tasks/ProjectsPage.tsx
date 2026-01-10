@@ -13,6 +13,7 @@ import {
   ExternalLink,
   List,
   BarChart2,
+  FileText,
 } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
@@ -607,6 +608,16 @@ function TaskRow({ task, onClick, onComplete }: TaskRowProps) {
       {task.blocked_reason && (
         <span className="text-xs text-red-500 truncate max-w-32" title={task.blocked_reason}>
           {task.blocked_reason}
+        </span>
+      )}
+
+      {/* Completion notes indicator */}
+      {isDone && task.completion_notes && (
+        <span
+          className="text-xs text-green-600 flex items-center gap-1"
+          title={task.completion_notes}
+        >
+          <FileText size={12} />
         </span>
       )}
     </div>

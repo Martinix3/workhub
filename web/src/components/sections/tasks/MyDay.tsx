@@ -1,6 +1,6 @@
 // MyDay Component - TDAH-friendly task view
 import { useState, useMemo } from 'react'
-import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import type { Task, TaskStatus, TaskPriority, MyDayData } from './types'
 
 interface MyDayProps {
@@ -399,6 +399,7 @@ interface TaskCardProps {
 
 function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoing }: TaskCardProps) {
   const priority = priorityConfig[task.priority]
+  const isDone = task.status === 'DONE'
 
   return (
     <div
@@ -406,6 +407,7 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
         bg-white
         border-2 border-stone-900
         border-t-4 ${statusBorderTop[task.status]}
+        ${isDone ? 'opacity-60' : ''}
         ${highlighted
           ? 'shadow-[4px_4px_0_#1c1917]'
           : 'shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]'
@@ -421,15 +423,18 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
               e.stopPropagation()
               onComplete?.()
             }}
-            className="
+            className={`
               w-6 h-6 flex-shrink-0 mt-0.5
               border-2 border-stone-900
-              hover:bg-green-100
               flex items-center justify-center
-              transition-colors group/check
-            "
+              transition-colors
+              ${isDone
+                ? 'bg-green-500'
+                : 'hover:bg-green-100 group/check'
+              }
+            `}
           >
-            <Check size={14} className="text-green-600 opacity-0 group-hover/check:opacity-100" />
+            <Check size={14} className={`${isDone ? 'text-white' : 'text-green-600 opacity-0 group-hover/check:opacity-100'}`} />
           </button>
         )}
 
@@ -448,7 +453,7 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
               </span>
             )}
           </div>
-          <h3 className="font-medium text-stone-900 hover:underline">
+          <h3 className={`font-medium hover:underline ${isDone ? 'line-through text-stone-400' : 'text-stone-900'}`}>
             {task.title}
           </h3>
           {task.blocked_reason && (
@@ -458,6 +463,13 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
             <p className="text-xs text-stone-500 mt-1 flex items-center gap-1">
               <Clock size={12} />
               {new Date(task.due_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+            </p>
+          )}
+          {/* Completion notes indicator */}
+          {isDone && task.completion_notes && (
+            <p className="text-xs text-green-600 mt-1 flex items-center gap-1" title={task.completion_notes}>
+              <FileText size={12} />
+              Notas de cierre
             </p>
           )}
         </div>
