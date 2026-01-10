@@ -20,5 +20,6 @@ class WHReportDefinition(Document):
 
 	def on_trash(self):
 		"""Cleanup when deleting report definition"""
-		# Delete related sections if any (will be implemented in later subtasks)
+		# Child table records are automatically deleted by Frappe
+		# No additional cleanup needed for sections
 		pass

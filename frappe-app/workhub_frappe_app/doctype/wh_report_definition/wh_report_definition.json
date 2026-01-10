@@ -11,6 +11,8 @@
   "column_break_1",
   "report_type",
   "category",
+  "section_break_sections",
+  "sections",
   "section_break_2",
   "is_active",
   "created_by"
@@ -53,6 +55,17 @@
    "label": "Category",
    "options": "Team\nProject\nHACCP\nCustom",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_sections",
+   "fieldtype": "Section Break",
+   "label": "Report Sections"
+  },
+  {
+   "fieldname": "sections",
+   "fieldtype": "Table",
+   "label": "Sections",
+   "options": "WH Report Section"
   },
   {
    "fieldname": "section_break_2",

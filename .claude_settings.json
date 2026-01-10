@@ -1,0 +1,34 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/020-advanced-reporting-export/**)",
+      "Write(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/020-advanced-reporting-export/**)",
+      "Edit(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/020-advanced-reporting-export/**)",
+      "Glob(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/020-advanced-reporting-export/**)",
+      "Grep(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/020-advanced-reporting-export/**)",
+      "Read(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/020-advanced-reporting-export/.auto-claude/specs/020-advanced-reporting-export/**)",
+      "Write(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/020-advanced-reporting-export/.auto-claude/specs/020-advanced-reporting-export/**)",
+      "Edit(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/020-advanced-reporting-export/.auto-claude/specs/020-advanced-reporting-export/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}
