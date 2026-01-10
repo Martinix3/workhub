@@ -1,0 +1,138 @@
+<!-- Page: Operaciones - Recepciones -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Operaciones - Recepciones") }}{% endblock %}
+{% block breadcrumb %}Recepciones{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>📥 Operaciones - Recepciones</h1>
+		<p class="text-muted">Gestión de recepciones y albaranes (RECEPCION + ALBARAN)</p>
+	</div>
+
+	<!-- Toggle View -->
+	<div class="btn-group mt-4" role="group">
+		<a href="?view=receipts" class="btn btn-{% if view_type == 'receipts' %}primary{% else %}outline-primary{% endif %}">
+			📥 Recepciones ({{ stats.total_receipts }})
+		</a>
+		<a href="?view=deliveries" class="btn btn-{% if view_type == 'deliveries' %}primary{% else %}outline-primary{% endif %}">
+			📤 Envíos ({{ stats.total_deliveries }})
+		</a>
+	</div>
+
+	{% if view_type == 'receipts' %}
+	<!-- Purchase Receipts -->
+	<div class="card mt-4">
+		<div class="card-header d-flex justify-content-between">
+			<h5>Recepciones de Compra</h5>
+			<a href="/app/purchase-receipt/new" class="btn btn-sm btn-primary">+ Nueva Recepción</a>
+		</div>
+		<div class="card-body">
+			{% if receipts %}
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th>Recepción</th>
+						<th>Proveedor</th>
+						<th>Fecha</th>
+						<th>Estado</th>
+						<th class="text-right">Total</th>
+						<th class="text-center">Facturado</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for r in receipts %}
+					<tr>
+						<td><strong>{{ r.name }}</strong></td>
+						<td>{{ r.supplier_name }}</td>
+						<td>{{ r.posting_date }}</td>
+						<td><span class="badge badge-{{ 'success' if r.status == 'Completed' else 'info' }}">{{ r.status }}</span></td>
+						<td class="text-right">${{ "%.2f"|format(r.grand_total) }}</td>
+						<td class="text-center">{{ "%.0f"|format(r.per_billed) }}%</td>
+						<td><a href="/app/purchase-receipt/{{ r.name }}" class="btn btn-sm btn-outline-primary" target="_blank">Ver</a></td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			{% else %}
+			<div class="alert alert-info">Sin recepciones registradas.</div>
+			{% endif %}
+		</div>
+	</div>
+	{% else %}
+	<!-- Delivery Notes -->
+	<div class="card mt-4">
+		<div class="card-header d-flex justify-content-between">
+			<h5>Notas de Entrega (Albaranes)</h5>
+			<a href="/app/delivery-note/new" class="btn btn-sm btn-primary">+ Nueva Entrega</a>
+		</div>
+		<div class="card-body">
+			{% if deliveries %}
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th>Albarán</th>
+						<th>Cliente</th>
+						<th>Fecha</th>
+						<th>Estado</th>
+						<th class="text-right">Total</th>
+						<th class="text-center">Facturado</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for d in deliveries %}
+					<tr>
+						<td><strong>{{ d.name }}</strong></td>
+						<td>{{ d.customer_name }}</td>
+						<td>{{ d.posting_date }}</td>
+						<td><span class="badge badge-{{ 'success' if d.status == 'Completed' else 'info' }}">{{ d.status }}</span></td>
+						<td class="text-right">${{ "%.2f"|format(d.grand_total) }}</td>
+						<td class="text-center">{{ "%.0f"|format(d.per_billed) }}%</td>
+						<td><a href="/app/delivery-note/{{ d.name }}" class="btn btn-sm btn-outline-primary" target="_blank">Ver</a></td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			{% else %}
+			<div class="alert alert-info">Sin entregas registradas.</div>
+			{% endif %}
+		</div>
+	</div>
+	{% endif %}
+
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.btn-block {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+}
+</style>
+{% endblock %}

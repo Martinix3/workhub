@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "projectName": "workhub",
+  "createdAt": "2026-01-02T10:05:17.158Z",
+  "streaming": {
+    "enabled": true,
+    "format": "jsonl",
+    "cursorIntegration": true
+  },
+  "ui": {
+    "autoShowMoat": true,
+    "confirmBeforeSend": false
+  }
+}

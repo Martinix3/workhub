@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════════════
+#  WORKHUB - Acceso INFALIBLE a la UI
+# ═══════════════════════════════════════════════════════════════════════════
+#
+#  Este script SIEMPRE funciona:
+#    1. Si el servidor está corriendo → abre el navegador
+#    2. Si NO está corriendo → lo arranca, espera, y abre el navegador
+#
+#  Uso:
+#    workhub          → Abre WorkHub (arranca servidor si es necesario)
+#    workhub start    → Solo arranca el servidor (sin abrir navegador)
+#    workhub stop     → Detiene el servidor
+#    workhub status   → Muestra si está corriendo
+#    workhub url      → Solo muestra la URL
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+set -e
+
+# ══════════════════════════════════════════════════════════════════════════
+# CONFIGURACIÓN - ESTOS VALORES SON FIJOS Y NO CAMBIAN
+# ══════════════════════════════════════════════════════════════════════════
+WORKHUB_PORT=5177
+WORKHUB_URL="http://localhost:${WORKHUB_PORT}"
+WORKHUB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WEB_DIR="${WORKHUB_DIR}/web"
+LOG_FILE="${WORKHUB_DIR}/.workhub-server.log"
+PID_FILE="${WORKHUB_DIR}/.workhub-server.pid"
+
+# Colores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# ══════════════════════════════════════════════════════════════════════════
+# FUNCIONES
+# ══════════════════════════════════════════════════════════════════════════
+
+is_server_running() {
+    curl -s --max-time 2 "${WORKHUB_URL}" > /dev/null 2>&1
+}
+
+get_server_pid() {
+    lsof -ti:${WORKHUB_PORT} 2>/dev/null | head -1
+}
+
+wait_for_server() {
+    local max_attempts=30
+    local attempt=0
+
+    echo -ne "${YELLOW}Esperando servidor"
+    while [ $attempt -lt $max_attempts ]; do
+        if is_server_running; then
+            echo -e "${NC}"
+            return 0
+        fi
+        echo -n "."
+        sleep 1
+        ((attempt++))
+    done
+    echo -e "${NC}"
+    return 1
+}
+
+start_server() {
+    if is_server_running; then
+        echo -e "${GREEN}✓ Servidor ya está corriendo${NC}"
+        return 0
+    fi
+
+    echo -e "${BLUE}Arrancando servidor WorkHub...${NC}"
+
+    cd "${WEB_DIR}"
+
+    # Arrancar en background y guardar logs
+    nohup npm run dev > "${LOG_FILE}" 2>&1 &
+    local pid=$!
+    echo $pid > "${PID_FILE}"
+
+    if wait_for_server; then
+        echo -e "${GREEN}✓ Servidor listo en ${WORKHUB_URL}${NC}"
+        return 0
+    else
+        echo -e "${RED}✗ Error: El servidor no arrancó${NC}"
+        echo -e "${YELLOW}Ver logs: cat ${LOG_FILE}${NC}"
+        return 1
+    fi
+}
+
+stop_server() {
+    local pid=$(get_server_pid)
+
+    if [ -z "$pid" ]; then
+        echo -e "${YELLOW}Servidor no está corriendo${NC}"
+        return 0
+    fi
+
+    echo -e "${BLUE}Deteniendo servidor (PID: ${pid})...${NC}"
+    kill $pid 2>/dev/null || true
+    sleep 1
+
+    # Verificar que se detuvo
+    if is_server_running; then
+        echo -e "${YELLOW}Forzando cierre...${NC}"
+        kill -9 $pid 2>/dev/null || true
+    fi
+
+    rm -f "${PID_FILE}"
+    echo -e "${GREEN}✓ Servidor detenido${NC}"
+}
+
+show_status() {
+    if is_server_running; then
+        local pid=$(get_server_pid)
+        echo -e "${GREEN}✓ WorkHub está CORRIENDO${NC}"
+        echo -e "  URL: ${WORKHUB_URL}"
+        echo -e "  PID: ${pid:-desconocido}"
+    else
+        echo -e "${RED}✗ WorkHub está DETENIDO${NC}"
+        echo -e "  Usa 'workhub' para arrancarlo"
+    fi
+}
+
+open_browser() {
+    echo -e "${BLUE}Abriendo navegador...${NC}"
+
+    # macOS
+    if command -v open &> /dev/null; then
+        open "${WORKHUB_URL}"
+    # Linux
+    elif command -v xdg-open &> /dev/null; then
+        xdg-open "${WORKHUB_URL}"
+    # Windows (WSL)
+    elif command -v wslview &> /dev/null; then
+        wslview "${WORKHUB_URL}"
+    else
+        echo -e "${YELLOW}No se pudo abrir navegador automáticamente${NC}"
+        echo -e "Abre manualmente: ${WORKHUB_URL}"
+    fi
+}
+
+show_banner() {
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║                                           ║${NC}"
+    echo -e "${GREEN}║   🌐  WORKHUB: ${WORKHUB_URL}          ║${NC}"
+    echo -e "${GREEN}║                                           ║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════╝${NC}"
+    echo ""
+}
+
+# ══════════════════════════════════════════════════════════════════════════
+# COMANDO PRINCIPAL
+# ══════════════════════════════════════════════════════════════════════════
+
+case "${1:-open}" in
+    start|dev)
+        start_server
+        ;;
+    stop)
+        stop_server
+        ;;
+    restart)
+        stop_server
+        sleep 1
+        start_server
+        open_browser
+        ;;
+    status)
+        show_status
+        ;;
+    url)
+        echo "${WORKHUB_URL}"
+        ;;
+    port)
+        echo "${WORKHUB_PORT}"
+        ;;
+    logs)
+        if [ -f "${LOG_FILE}" ]; then
+            tail -f "${LOG_FILE}"
+        else
+            echo "No hay logs disponibles"
+        fi
+        ;;
+    open|"")
+        # COMANDO POR DEFECTO - INFALIBLE
+        show_banner
+        start_server
+        open_browser
+        ;;
+    help|--help|-h)
+        echo "WorkHub - Acceso a la UI"
+        echo ""
+        echo "Uso: workhub [comando]"
+        echo ""
+        echo "Comandos:"
+        echo "  (sin args)  Abre WorkHub (arranca servidor si es necesario)"
+        echo "  start       Solo arranca el servidor"
+        echo "  stop        Detiene el servidor"
+        echo "  restart     Reinicia el servidor y abre navegador"
+        echo "  status      Muestra si está corriendo"
+        echo "  url         Muestra la URL"
+        echo "  logs        Muestra logs del servidor"
+        echo "  help        Muestra esta ayuda"
+        ;;
+    *)
+        echo -e "${RED}Comando desconocido: $1${NC}"
+        echo "Usa 'workhub help' para ver opciones"
+        exit 1
+        ;;
+esac

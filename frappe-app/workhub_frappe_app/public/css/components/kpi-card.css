@@ -1,0 +1,187 @@
+/**
+ * KPI Card - Neobrutalismo Editorial
+ * Paleta Santa Brisa
+ *
+ * Cards con borde duro 2px, sombra solida 5px, sin border-radius
+ * Hover: translate(3px, 3px) con sombra reducida
+ */
+
+.kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: var(--gap-grid);
+}
+
+.kpi-card {
+	background: var(--surface-1);
+	border: var(--border-width) solid var(--border-1);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: var(--padding-card);
+	transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+	position: relative;
+	overflow: hidden;
+}
+
+.kpi-card:hover {
+	transform: var(--hover-shift);
+	box-shadow: var(--shadow-hover);
+}
+
+/* Value - Large monospace number */
+.kpi-card__value {
+	font-family: var(--font-mono);
+	font-size: var(--text-5xl);
+	font-weight: var(--weight-bold);
+	line-height: 1;
+	color: var(--text-1);
+	margin-bottom: var(--space-3);
+}
+
+/* Separator line - Dorado Santa Brisa */
+.kpi-card__separator {
+	width: 50px;
+	height: 3px;
+	background: var(--primary);
+	margin: var(--space-4) 0;
+}
+
+/* Label - Uppercase */
+.kpi-card__label {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	color: var(--text-2);
+	margin-bottom: var(--space-2);
+}
+
+/* Change indicator */
+.kpi-card__change {
+	font-family: var(--font-mono);
+	font-size: var(--text-base);
+	font-weight: var(--weight-medium);
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.kpi-card__change--positive {
+	color: var(--success);
+}
+
+.kpi-card__change--negative {
+	color: var(--danger);
+}
+
+.kpi-card__change--neutral {
+	color: var(--text-3);
+}
+
+/* Arrow indicators */
+.kpi-card__change::before {
+	font-size: var(--text-xs);
+}
+
+.kpi-card__change--positive::before {
+	content: '\2191'; /* Up arrow */
+}
+
+.kpi-card__change--negative::before {
+	content: '\2193'; /* Down arrow */
+}
+
+/* === Variants === */
+
+/* Compact KPI */
+.kpi-card--compact {
+	padding: var(--space-4);
+}
+
+.kpi-card--compact .kpi-card__value {
+	font-size: var(--text-3xl);
+}
+
+/* Hero KPI - Extra large for dashboard highlights */
+.kpi-card--hero {
+	padding: var(--space-8);
+	grid-column: span 2;
+}
+
+.kpi-card--hero .kpi-card__value {
+	font-size: 4rem;
+}
+
+/* Clickable KPI */
+.kpi-card--clickable {
+	cursor: pointer;
+}
+
+.kpi-card--clickable:active {
+	transform: translate(4px, 4px);
+	box-shadow: var(--shadow-none);
+}
+
+/* === With Sparkline === */
+.kpi-card--with-chart {
+	padding-bottom: var(--space-4);
+}
+
+.kpi-card__chart {
+	height: 48px;
+	margin-top: var(--space-4);
+	display: flex;
+	align-items: flex-end;
+	gap: 2px;
+}
+
+.kpi-card__chart-bar {
+	flex: 1;
+	background: var(--border-2);
+	border-radius: var(--radius-sm);
+	min-height: 4px;
+	transition: background var(--transition-fast);
+}
+
+.kpi-card__chart-bar--current {
+	background: var(--primary);
+}
+
+/* Santa Brisa color variants for sparklines */
+.kpi-card__chart-bar--accent {
+	background: var(--accent);
+}
+
+.kpi-card__chart-bar--turquoise {
+	background: var(--secondary);
+}
+
+.kpi-card__chart-bar:hover {
+	background: var(--text-1);
+}
+
+/* === Semantic Colors === */
+.kpi-card--success {
+	border-color: var(--success);
+}
+
+.kpi-card--success .kpi-card__value {
+	color: var(--success);
+}
+
+.kpi-card--danger {
+	border-color: var(--danger);
+}
+
+.kpi-card--danger .kpi-card__value {
+	color: var(--danger);
+}
+
+.kpi-card--warning {
+	border-color: var(--warning);
+}
+
+.kpi-card--warning .kpi-card__value {
+	color: var(--warning);
+}

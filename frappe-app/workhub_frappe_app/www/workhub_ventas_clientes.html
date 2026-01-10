@@ -1,0 +1,208 @@
+<!-- Page: Ventas - Clientes -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Ventas - Clientes") }}{% endblock %}
+{% block breadcrumb %}Clientes{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>👥 Ventas - Clientes</h1>
+		<p class="text-muted">Gestión de clientes directos (SELL IN)</p>
+	</div>
+
+	<!-- Estadísticas -->
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Total Clientes</h5>
+					<h2 class="mt-2">{{ stats.total_customers }}</h2>
+					<small class="text-muted">activos</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Activos este Mes</h5>
+					<h2 class="mt-2">{{ stats.active_this_month }}</h2>
+					<small class="text-muted">con ventas</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Por Cobrar</h5>
+					<h2 class="mt-2">${{ "%.0f"|format(stats.total_outstanding) }}</h2>
+					<small class="text-muted">pendiente</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Distribuidores</h5>
+					<h2 class="mt-2">{{ stats.distributors }}</h2>
+					<small class="text-muted">vs {{ stats.direct_customers }} directos</small>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Filtros y Búsqueda -->
+	<div class="card mt-4">
+		<div class="card-header">
+			<h5>Filtrar Clientes</h5>
+		</div>
+		<div class="card-body">
+			<form method="get" action="">
+				<div class="row">
+					<div class="col-md-4">
+						<label>Buscar</label>
+						<input type="text" class="form-control" name="search" placeholder="Nombre o código..." value="{{ current_search }}">
+					</div>
+					<div class="col-md-3">
+						<label>Grupo de Cliente</label>
+						<select class="form-control" name="customer_group">
+							<option value="">Todos los grupos</option>
+							{% for group in customer_groups %}
+							<option value="{{ group }}" {% if current_group == group %}selected{% endif %}>
+								{{ group }}
+							</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div class="col-md-3">
+						<label>Territorio</label>
+						<select class="form-control" name="territory">
+							<option value="">Todos los territorios</option>
+							{% for terr in territories %}
+							<option value="{{ terr }}" {% if current_territory == terr %}selected{% endif %}>
+								{{ terr }}
+							</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div class="col-md-2">
+						<label>&nbsp;</label>
+						<button type="submit" class="btn btn-primary btn-block">
+							<i class="octicon octicon-search"></i> Filtrar
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Listado de Clientes -->
+	<div class="card mt-4">
+		<div class="card-header d-flex justify-content-between align-items-center">
+			<h5>Clientes ({{ customers|length }})</h5>
+			<a href="/app/customer/new" class="btn btn-sm btn-primary">
+				<i class="octicon octicon-plus"></i> Nuevo Cliente
+			</a>
+		</div>
+		<div class="card-body">
+			{% if customers %}
+			<div class="table-responsive">
+				<table class="table table-hover">
+					<thead>
+						<tr>
+							<th>Cliente</th>
+							<th>Tipo</th>
+							<th>Grupo</th>
+							<th>Territorio</th>
+							<th class="text-right">Total Ventas</th>
+							<th class="text-right">Por Cobrar</th>
+							<th>Última Orden</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for customer in customers %}
+						<tr>
+							<td>
+								<strong>{{ customer.customer_name }}</strong><br>
+								<small class="text-muted">{{ customer.name }}</small>
+							</td>
+							<td>
+								<span class="badge badge-{% if customer.customer_type == 'Company' %}info{% else %}secondary{% endif %}">
+									{{ customer.customer_type }}
+								</span>
+							</td>
+							<td>{{ customer.customer_group }}</td>
+							<td>{{ customer.territory }}</td>
+							<td class="text-right">
+								<strong>${{ "%.0f"|format(customer.stats.total_amount) }}</strong><br>
+								<small class="text-muted">{{ customer.stats.total_orders }} pedidos</small>
+							</td>
+							<td class="text-right">
+								{% if customer.stats.outstanding > 0 %}
+								<span class="text-danger">
+									<strong>${{ "%.0f"|format(customer.stats.outstanding) }}</strong>
+								</span>
+								{% else %}
+								<span class="text-success">$0</span>
+								{% endif %}
+							</td>
+							<td>
+								{% if customer.stats.last_order_date %}
+								{{ customer.stats.last_order_date }}<br>
+								<small class="text-muted">{{ customer.stats.last_order_name }}</small>
+								{% else %}
+								<span class="text-muted">Sin órdenes</span>
+								{% endif %}
+							</td>
+							<td>
+								<a href="/app/customer/{{ customer.name }}" class="btn btn-sm btn-outline-primary" target="_blank">
+									Ver Detalle
+								</a>
+							</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% else %}
+			<div class="alert alert-info">
+				<strong>No se encontraron clientes</strong> con los filtros seleccionados.
+			</div>
+			{% endif %}
+		</div>
+	</div>
+
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.btn-block {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+}
+</style>
+{% endblock %}

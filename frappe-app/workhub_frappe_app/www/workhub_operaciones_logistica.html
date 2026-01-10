@@ -1,0 +1,118 @@
+<!-- Page: Operaciones - Logística -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Operaciones - Logística") }}{% endblock %}
+{% block breadcrumb %}Logistica{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>🚛 Operaciones - Logística</h1>
+		<p class="text-muted">Planificación de envíos y logística (LOGISTICA)</p>
+	</div>
+
+	<!-- Estadísticas -->
+	<div class="row mt-4">
+		<div class="col-md-4">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Total Viajes</h5>
+					<h2>{{ stats.total_trips }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<div class="card border-warning">
+				<div class="card-body text-center">
+					<h5 class="text-muted">En Tránsito</h5>
+					<h2 class="text-warning">{{ stats.in_transit }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<div class="card bg-success text-white">
+				<div class="card-body text-center">
+					<h5>Completados</h5>
+					<h2>{{ stats.completed }}</h2>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Listado de Viajes -->
+	<div class="card mt-4">
+		<div class="card-header d-flex justify-content-between">
+			<h5>Viajes de Entrega</h5>
+			<a href="/app/delivery-trip/new" class="btn btn-sm btn-primary">+ Nuevo Viaje</a>
+		</div>
+		<div class="card-body">
+			{% if trips %}
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th>Viaje</th>
+						<th>Fecha</th>
+						<th>Conductor</th>
+						<th>Vehículo</th>
+						<th>Distancia</th>
+						<th>Estado</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for trip in trips %}
+					<tr>
+						<td><strong>{{ trip.name }}</strong></td>
+						<td>{{ trip.date }}</td>
+						<td>{{ trip.driver or '-' }}</td>
+						<td>{{ trip.vehicle or '-' }}</td>
+						<td>{{ trip.total_distance or 0 }} {{ trip.uom or 'km' }}</td>
+						<td>
+							<span class="badge badge-{% if trip.status == 'Completed' %}success{% elif trip.status == 'In Transit' %}warning{% else %}secondary{% endif %}">
+								{{ trip.status }}
+							</span>
+						</td>
+						<td><a href="/app/delivery-trip/{{ trip.name }}" class="btn btn-sm btn-outline-primary" target="_blank">Ver</a></td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			{% else %}
+			<div class="alert alert-info">Sin viajes de entrega registrados.</div>
+			{% endif %}
+		</div>
+	</div>
+
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.btn-block {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+}
+</style>
+{% endblock %}

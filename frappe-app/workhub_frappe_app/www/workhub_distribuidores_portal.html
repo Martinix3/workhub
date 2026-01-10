@@ -1,0 +1,621 @@
+<!-- Page: Portal de Distribuidores -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Portal Distribuidor") }}{% endblock %}
+{% block breadcrumb %}Portal{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>🌐 Portal Distribuidor</h1>
+		<p class="text-muted">Gestión de pedidos y reporte de SELL OUT</p>
+	</div>
+
+	<!-- Tabs de navegación -->
+	<ul class="nav nav-tabs" role="tablist">
+		<li class="nav-item">
+			<a class="nav-link active" data-toggle="tab" href="#mis-pedidos">📦 Mis Pedidos</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" data-toggle="tab" href="#subir-sellout">📤 Subir SELL OUT</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" data-toggle="tab" href="#inventario">📊 Mi Inventario</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" data-toggle="tab" href="#analytics">📈 Analytics</a>
+		</li>
+	</ul>
+
+	<div class="tab-content mt-4">
+		<!-- Tab: Mis Pedidos -->
+		<div id="mis-pedidos" class="tab-pane fade show active">
+			<div class="card">
+				<div class="card-header">
+					<h5>Mis Pedidos (SELL IN)</h5>
+				</div>
+				<div class="card-body">
+					<p class="text-muted">Entregas realizadas por Santa Brisa para tu distribución</p>
+
+					{% if delivery_notes %}
+					<div class="table-responsive">
+						<table class="table table-hover">
+							<thead>
+								<tr>
+									<th>Nota de Entrega</th>
+									<th>Fecha</th>
+									<th>Estado</th>
+									<th class="text-right">Total</th>
+									<th class="text-center">Facturado</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for dn in delivery_notes %}
+								<tr>
+									<td><strong>{{ dn.name }}</strong></td>
+									<td>{{ dn.posting_date }}</td>
+									<td>
+										<span class="badge badge-{% if dn.status == 'Completed' %}success{% elif dn.status == 'To Bill' %}warning{% else %}info{% endif %}">
+											{{ dn.status }}
+										</span>
+									</td>
+									<td class="text-right">
+										<strong>{{ "%.2f"|format(dn.grand_total) }} {{ dn.currency }}</strong>
+									</td>
+									<td class="text-center">
+										<div class="progress" style="height: 20px; min-width: 60px;">
+											<div class="progress-bar bg-success" role="progressbar"
+												style="width: {{ dn.per_billed }}%">
+												{{ "%.0f"|format(dn.per_billed) }}%
+											</div>
+										</div>
+									</td>
+									<td>
+										<button class="btn btn-sm btn-outline-primary" onclick="viewDeliveryNote('{{ dn.name }}')">
+											Ver Detalle
+										</button>
+									</td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+					{% else %}
+					<div class="alert alert-info">
+						<strong>No hay entregas registradas.</strong> Cuando Santa Brisa te envíe productos, aparecerán aquí.
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		<!-- Tab: Subir SELL OUT -->
+		<div id="subir-sellout" class="tab-pane fade">
+			<div class="card">
+				<div class="card-header">
+					<h5>Subir SELL OUT</h5>
+				</div>
+				<div class="card-body">
+					<p class="text-muted">Reporta tus ventas a clientes finales</p>
+
+					<div class="row">
+						<div class="col-md-6">
+							<h6>Opción 1: Formulario Manual</h6>
+							<form id="sellout-form" onsubmit="submitSellOut(event)">
+								<div class="form-group">
+									<label>Fecha de Venta *</label>
+									<input type="date" class="form-control" id="sale_date" required value="{{ frappe.utils.today() }}">
+								</div>
+
+								<div id="items-container">
+									<div class="item-row border p-3 mb-2" data-index="0">
+										<div class="row">
+											<div class="col-md-5">
+												<label>Producto *</label>
+												<select class="form-control item-select" required>
+													<option value="">Seleccionar...</option>
+													{% for item in items %}
+													<option value="{{ item.name }}" data-rate="{{ item.standard_rate }}">
+														{{ item.item_name }}
+													</option>
+													{% endfor %}
+												</select>
+											</div>
+											<div class="col-md-2">
+												<label>Cantidad *</label>
+												<input type="number" class="form-control item-qty" required min="0.01" step="0.01">
+											</div>
+											<div class="col-md-3">
+												<label>Precio</label>
+												<input type="number" class="form-control item-rate" step="0.01" min="0">
+											</div>
+											<div class="col-md-2">
+												<label>&nbsp;</label>
+												<button type="button" class="btn btn-sm btn-danger btn-block" onclick="removeItemRow(this)">
+													<i class="octicon octicon-trash"></i>
+												</button>
+											</div>
+										</div>
+										<div class="row mt-2">
+											<div class="col-md-12">
+												<label>Cliente Final (opcional)</label>
+												<input type="text" class="form-control item-customer" placeholder="Nombre del cliente final">
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="addItemRow()">
+									<i class="octicon octicon-plus"></i> Agregar Producto
+								</button>
+
+								<div class="form-group">
+									<label>Notas (opcional)</label>
+									<textarea class="form-control" id="notes" rows="2"></textarea>
+								</div>
+
+								<button type="submit" class="btn btn-primary">
+									<i class="octicon octicon-check"></i> Guardar SELL OUT
+								</button>
+							</form>
+						</div>
+
+						<div class="col-md-6">
+							<h6>Opción 2: Importar CSV</h6>
+							<div class="upload-area" id="upload-area" onclick="document.getElementById('csv-file').click()">
+								<p class="text-center text-muted">
+									<i class="octicon octicon-upload" style="font-size: 48px;"></i>
+									<br><br>
+									Arrastra un archivo CSV aquí
+									<br>
+									o haz click para seleccionar
+								</p>
+								<input type="file" id="csv-file" class="d-none" accept=".csv" onchange="handleCSVUpload(event)">
+							</div>
+							<small class="text-muted">
+								<strong>Formato CSV esperado:</strong><br>
+								item_code,qty,rate,customer,customer_name<br>
+								PROD-001,10,25.50,CLI-123,Juan Perez<br>
+								PROD-002,5,18.00,CLI-456,Maria Garcia
+							</small>
+
+							<div class="alert alert-warning mt-3">
+								<strong>Importante:</strong> El CSV debe tener estas columnas:
+								<ul class="mb-0">
+									<li><code>item_code</code>: Código del producto</li>
+									<li><code>qty</code>: Cantidad vendida</li>
+									<li><code>rate</code>: Precio de venta</li>
+									<li><code>customer</code>: Código del cliente (opcional)</li>
+									<li><code>customer_name</code>: Nombre del cliente (opcional)</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Tab: Mi Inventario -->
+		<div id="inventario" class="tab-pane fade">
+			<div class="card">
+				<div class="card-header">
+					<h5>Mi Inventario</h5>
+				</div>
+				<div class="card-body">
+					<p class="text-muted">Stock actual calculado: SELL IN - SELL OUT</p>
+					<div class="row">
+						<div class="col-md-4">
+							<div class="card bg-light">
+								<div class="card-body text-center">
+									<h6 class="text-muted">SELL IN Total</h6>
+									<h3>{{ "%.0f"|format(inventory_summary.total_sell_in) }}</h3>
+									<small>Unidades recibidas</small>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="card bg-light">
+								<div class="card-body text-center">
+									<h6 class="text-muted">SELL OUT Total</h6>
+									<h3>{{ "%.0f"|format(inventory_summary.total_sell_out) }}</h3>
+									<small>Unidades vendidas</small>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="card bg-success text-white">
+								<div class="card-body text-center">
+									<h6>Stock Actual</h6>
+									<h3>{{ "%.0f"|format(inventory_summary.total_stock) }}</h3>
+									<small>Unidades disponibles</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{% if inventory %}
+					<div class="mt-4">
+						<h6>Detalle por Producto</h6>
+						<div class="table-responsive">
+							<table class="table table-sm table-hover">
+								<thead>
+									<tr>
+										<th>Producto</th>
+										<th class="text-right">SELL IN</th>
+										<th class="text-right">SELL OUT</th>
+										<th class="text-right">Stock Actual</th>
+										<th class="text-center">Rotación</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for item in inventory %}
+									<tr>
+										<td>
+											<strong>{{ item.item_name }}</strong><br>
+											<small class="text-muted">{{ item.item_code }}</small>
+										</td>
+										<td class="text-right">{{ "%.0f"|format(item.sell_in_qty) }}</td>
+										<td class="text-right">{{ "%.0f"|format(item.sell_out_qty) }}</td>
+										<td class="text-right">
+											<strong class="{% if item.current_stock < 10 %}text-warning{% elif item.current_stock < 0 %}text-danger{% endif %}">
+												{{ "%.0f"|format(item.current_stock) }}
+											</strong>
+										</td>
+										<td class="text-center">
+											{% set rotation = (item.sell_out_qty / item.sell_in_qty * 100) if item.sell_in_qty > 0 else 0 %}
+											<span class="badge badge-{% if rotation > 80 %}success{% elif rotation > 50 %}warning{% else %}danger{% endif %}">
+												{{ "%.0f"|format(rotation) }}%
+											</span>
+										</td>
+									</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+					</div>
+					{% else %}
+					<div class="alert alert-info mt-4">
+						<strong>Sin datos de inventario.</strong> Cuando recibas productos y reportes SELL OUT, verás el detalle aquí.
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		<!-- Tab: Analytics -->
+		<div id="analytics" class="tab-pane fade">
+			<div class="card">
+				<div class="card-header">
+					<h5>Analytics</h5>
+				</div>
+				<div class="card-body">
+					<p class="text-muted">Mis ventas SELL OUT y tendencias</p>
+					<div class="row">
+						<div class="col-md-3">
+							<div class="card bg-light">
+								<div class="card-body text-center">
+									<h6 class="text-muted">SELL OUT del Mes</h6>
+									<h3>{{ "%.0f"|format(analytics.sell_out_month_qty) }}</h3>
+									<small class="text-muted">unidades</small>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="card bg-light">
+								<div class="card-body text-center">
+									<h6 class="text-muted">Rotación</h6>
+									<h3 class="{% if analytics.rotation > 80 %}text-success{% elif analytics.rotation > 50 %}text-warning{% else %}text-danger{% endif %}">
+										{{ "%.1f"|format(analytics.rotation) }}%
+									</h3>
+									<small class="text-muted">sell out / sell in</small>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="card bg-light">
+								<div class="card-body text-center">
+									<h6 class="text-muted">Días de Stock</h6>
+									<h3 class="{% if analytics.days_of_stock < 7 %}text-danger{% elif analytics.days_of_stock < 15 %}text-warning{% else %}text-success{% endif %}">
+										{{ "%.0f"|format(analytics.days_of_stock) }}
+									</h3>
+									<small class="text-muted">días estimados</small>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="card bg-light">
+								<div class="card-body text-center">
+									<h6 class="text-muted">Producto Top</h6>
+									<h3>
+										{% if analytics.top_product %}
+										{{ analytics.top_product.item_name[:15] }}...
+										{% else %}
+										-
+										{% endif %}
+									</h3>
+									<small class="text-muted">
+										{% if analytics.top_product %}
+										{{ "%.0f"|format(analytics.top_product.total_qty) }} unidades
+										{% else %}
+										sin datos
+										{% endif %}
+									</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="alert alert-success mt-4">
+						<h6><i class="octicon octicon-info"></i> Interpretación de métricas</h6>
+						<ul class="mb-0">
+							<li><strong>SELL OUT del Mes:</strong> Cantidad de unidades vendidas a clientes finales este mes</li>
+							<li><strong>Rotación:</strong> Porcentaje del stock recibido que ya vendiste (>80% = excelente)</li>
+							<li><strong>Días de Stock:</strong> Cuántos días te durará el inventario actual al ritmo de venta actual</li>
+							<li><strong>Producto Top:</strong> Tu producto más vendido del mes</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.upload-area {
+	border: 2px dashed #ccc;
+	border-radius: 8px;
+	padding: 40px 20px;
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.3s;
+}
+
+.upload-area:hover {
+	border-color: #999;
+	background-color: #f9f9f9;
+}
+
+.nav-tabs .nav-link {
+	border: none;
+	border-bottom: 3px solid transparent;
+	color: #6c757d;
+}
+
+.nav-tabs .nav-link.active {
+	border-bottom-color: #007bff;
+	color: #007bff;
+	font-weight: 600;
+}
+</style>
+
+<script>
+// Portal de Distribuidores - JavaScript
+
+let itemRowIndex = 1;
+
+// Agregar nueva fila de item al formulario
+function addItemRow() {
+	const container = document.getElementById('items-container');
+	const newRow = document.querySelector('.item-row').cloneNode(true);
+
+	newRow.setAttribute('data-index', itemRowIndex);
+	newRow.querySelectorAll('input, select').forEach(input => {
+		input.value = '';
+	});
+
+	container.appendChild(newRow);
+	itemRowIndex++;
+}
+
+// Remover fila de item
+function removeItemRow(button) {
+	const container = document.getElementById('items-container');
+	const rows = container.querySelectorAll('.item-row');
+
+	if (rows.length > 1) {
+		button.closest('.item-row').remove();
+	} else {
+		frappe.msgprint('Debe haber al menos un producto en el SELL OUT');
+	}
+}
+
+// Enviar formulario de SELL OUT
+function submitSellOut(event) {
+	event.preventDefault();
+
+	const saleDate = document.getElementById('sale_date').value;
+	const notes = document.getElementById('notes').value;
+	const distributor = "{{ distributor }}";
+
+	// Recoger items del formulario
+	const items = [];
+	document.querySelectorAll('.item-row').forEach(row => {
+		const itemCode = row.querySelector('.item-select').value;
+		const qty = parseFloat(row.querySelector('.item-qty').value);
+		const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+		const customer = row.querySelector('.item-customer').value;
+
+		if (itemCode && qty > 0) {
+			items.push({
+				item_code: itemCode,
+				qty: qty,
+				rate: rate,
+				customer: customer || '',
+				customer_name: customer || ''
+			});
+		}
+	});
+
+	if (items.length === 0) {
+		frappe.msgprint('Debe agregar al menos un producto');
+		return;
+	}
+
+	// Llamar al API
+	frappe.call({
+		method: 'workhub_frappe_app.www.workhub-distribuidores-portal.create_sell_out',
+		args: {
+			distributor: distributor,
+			sale_date: saleDate,
+			items_json: JSON.stringify(items)
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'SELL OUT creado: ' + r.message.document,
+					indicator: 'green'
+				});
+
+				// Limpiar formulario
+				document.getElementById('sellout-form').reset();
+
+				// Recargar página después de 2 segundos
+				setTimeout(function() {
+					location.reload();
+				}, 2000);
+			}
+		},
+		error: function(r) {
+			frappe.msgprint({
+				title: 'Error',
+				message: 'Error al crear SELL OUT. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+// Manejar subida de CSV
+function handleCSVUpload(event) {
+	const file = event.target.files[0];
+
+	if (!file) {
+		return;
+	}
+
+	if (!file.name.endsWith('.csv')) {
+		frappe.msgprint('Por favor sube un archivo CSV');
+		return;
+	}
+
+	const reader = new FileReader();
+
+	reader.onload = function(e) {
+		const csvContent = e.target.result;
+		const distributor = "{{ distributor }}";
+
+		// Llamar al API para importar CSV
+		frappe.call({
+			method: 'workhub_frappe_app.www.workhub-distribuidores-portal.upload_sell_out_csv',
+			args: {
+				distributor: distributor,
+				csv_content: csvContent
+			},
+			callback: function(r) {
+				if (r.message && r.message.success) {
+					frappe.msgprint({
+						title: 'Éxito',
+						message: 'CSV importado: ' + r.message.total_items + ' items. Documento: ' + r.message.document,
+						indicator: 'green'
+					});
+
+					// Recargar página después de 2 segundos
+					setTimeout(function() {
+						location.reload();
+					}, 2000);
+				}
+			},
+			error: function(r) {
+				frappe.msgprint({
+					title: 'Error',
+					message: 'Error al importar CSV. Verifica el formato.',
+					indicator: 'red'
+				});
+			}
+		});
+	};
+
+	reader.readAsText(file);
+}
+
+// Ver detalle de Delivery Note
+function viewDeliveryNote(name) {
+	// Abrir en nueva pestaña
+	window.open('/app/delivery-note/' + name, '_blank');
+}
+
+// Drag and drop para CSV
+document.addEventListener('DOMContentLoaded', function() {
+	const uploadArea = document.getElementById('upload-area');
+
+	if (uploadArea) {
+		uploadArea.addEventListener('dragover', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			uploadArea.style.borderColor = '#007bff';
+			uploadArea.style.backgroundColor = '#f0f8ff';
+		});
+
+		uploadArea.addEventListener('dragleave', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			uploadArea.style.borderColor = '#ccc';
+			uploadArea.style.backgroundColor = 'transparent';
+		});
+
+		uploadArea.addEventListener('drop', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			uploadArea.style.borderColor = '#ccc';
+			uploadArea.style.backgroundColor = 'transparent';
+
+			const files = e.dataTransfer.files;
+			if (files.length > 0) {
+				document.getElementById('csv-file').files = files;
+				handleCSVUpload({ target: { files: files } });
+			}
+		});
+	}
+
+	// Auto-fill rate cuando se selecciona un producto
+	document.addEventListener('change', function(e) {
+		if (e.target.classList.contains('item-select')) {
+			const selectedOption = e.target.options[e.target.selectedIndex];
+			const rate = selectedOption.getAttribute('data-rate');
+			const row = e.target.closest('.item-row');
+
+			if (rate && row) {
+				const rateInput = row.querySelector('.item-rate');
+				if (rateInput && !rateInput.value) {
+					rateInput.value = rate;
+				}
+			}
+		}
+	});
+});
+</script>
+{% endblock %}

@@ -1,0 +1,261 @@
+{
+  "_meta": {
+    "models": {
+      "networkKpis": "Metricas agregadas de toda la red de distribuidores.",
+      "distributors": "Lista de distribuidores con metricas individuales.",
+      "myOrders": "Pedidos (SELL IN) recibidos por el distribuidor desde Santa Brisa.",
+      "myInventory": "Inventario calculado del distribuidor: SELL IN - SELL OUT.",
+      "sellOutRecords": "Registros de ventas SELL OUT reportados por el distribuidor."
+    },
+    "relationships": [
+      "Cada Distributor tiene multiples MyOrders (entregas de Santa Brisa)",
+      "Cada Distributor reporta multiples SellOutRecords",
+      "MyInventory se calcula automaticamente: SELL IN - SELL OUT por producto"
+    ]
+  },
+  "networkKpis": {
+    "totalSellIn": {
+      "value": 2450000,
+      "previousValue": 2180000,
+      "change": 12.4,
+      "label": "SELL IN Total"
+    },
+    "totalSellOut": {
+      "value": 1890000,
+      "previousValue": 1720000,
+      "change": 9.9,
+      "label": "SELL OUT Reportado"
+    },
+    "avgRotation": {
+      "value": 77,
+      "previousValue": 79,
+      "change": -2.5,
+      "label": "Rotacion Promedio"
+    },
+    "activeDistributors": {
+      "value": 12,
+      "previousValue": 11,
+      "change": 9.1,
+      "label": "Distribuidores Activos"
+    }
+  },
+  "distributors": [
+    {
+      "id": "dist-001",
+      "name": "Distribuciones Noreste SA",
+      "zone": "Norte",
+      "status": "active",
+      "sellInTotal": 892000,
+      "sellOutTotal": 756000,
+      "rotation": 85,
+      "lastReportDate": "2024-12-30",
+      "daysWithoutReport": 1,
+      "stockValue": 136000,
+      "alerts": []
+    },
+    {
+      "id": "dist-002",
+      "name": "Alimentos del Pacifico",
+      "zone": "Oeste",
+      "status": "active",
+      "sellInTotal": 1560000,
+      "sellOutTotal": 1134000,
+      "rotation": 73,
+      "lastReportDate": "2024-12-28",
+      "daysWithoutReport": 3,
+      "stockValue": 426000,
+      "alerts": ["stock_alto"]
+    },
+    {
+      "id": "dist-003",
+      "name": "Comercializadora Sur",
+      "zone": "Sur",
+      "status": "warning",
+      "sellInTotal": 450000,
+      "sellOutTotal": 234000,
+      "rotation": 52,
+      "lastReportDate": "2024-12-20",
+      "daysWithoutReport": 11,
+      "stockValue": 216000,
+      "alerts": ["sin_reporte", "baja_rotacion"]
+    },
+    {
+      "id": "dist-004",
+      "name": "Mayoristas Centro",
+      "zone": "Centro",
+      "status": "active",
+      "sellInTotal": 678000,
+      "sellOutTotal": 589000,
+      "rotation": 87,
+      "lastReportDate": "2024-12-29",
+      "daysWithoutReport": 2,
+      "stockValue": 89000,
+      "alerts": []
+    },
+    {
+      "id": "dist-005",
+      "name": "Red Distribuidora Peninsula",
+      "zone": "Sureste",
+      "status": "inactive",
+      "sellInTotal": 120000,
+      "sellOutTotal": 45000,
+      "rotation": 38,
+      "lastReportDate": "2024-11-15",
+      "daysWithoutReport": 46,
+      "stockValue": 75000,
+      "alerts": ["inactivo", "sin_reporte"]
+    }
+  ],
+  "myOrders": [
+    {
+      "id": "dn-001",
+      "deliveryNumber": "DN-2024-00892",
+      "orderDate": "2024-12-28",
+      "deliveryDate": "2024-12-30",
+      "status": "delivered",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 500, "amount": 21000 },
+        { "itemCode": "SAL-003", "itemName": "Salsa Verde 500ml", "qty": 300, "amount": 12000 }
+      ],
+      "total": 33000,
+      "invoiceStatus": "pending"
+    },
+    {
+      "id": "dn-002",
+      "deliveryNumber": "DN-2024-00856",
+      "orderDate": "2024-12-20",
+      "deliveryDate": "2024-12-22",
+      "status": "delivered",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 400, "amount": 16800 },
+        { "itemCode": "SAL-002", "itemName": "Salsa Habanero 250ml", "qty": 250, "amount": 8750 }
+      ],
+      "total": 25550,
+      "invoiceStatus": "paid"
+    },
+    {
+      "id": "dn-003",
+      "deliveryNumber": "DN-2024-00801",
+      "orderDate": "2024-12-10",
+      "deliveryDate": "2024-12-12",
+      "status": "delivered",
+      "items": [
+        { "itemCode": "ADR-001", "itemName": "Aderezo Ranch 1L", "qty": 200, "amount": 12400 }
+      ],
+      "total": 12400,
+      "invoiceStatus": "paid"
+    }
+  ],
+  "myInventory": [
+    {
+      "itemCode": "SAL-001",
+      "itemName": "Salsa Chipotle 500ml",
+      "sellIn": 1200,
+      "sellOut": 980,
+      "stockActual": 220,
+      "rotation": 82,
+      "avgDailySales": 12,
+      "daysOfStock": 18,
+      "status": "normal",
+      "trend": [45, 52, 48, 55, 60, 58, 62]
+    },
+    {
+      "itemCode": "SAL-002",
+      "itemName": "Salsa Habanero 250ml",
+      "sellIn": 800,
+      "sellOut": 720,
+      "stockActual": 80,
+      "rotation": 90,
+      "avgDailySales": 8,
+      "daysOfStock": 10,
+      "status": "normal",
+      "trend": [30, 35, 32, 38, 40, 42, 38]
+    },
+    {
+      "itemCode": "SAL-003",
+      "itemName": "Salsa Verde 500ml",
+      "sellIn": 600,
+      "sellOut": 350,
+      "stockActual": 250,
+      "rotation": 58,
+      "avgDailySales": 4,
+      "daysOfStock": 62,
+      "status": "slow",
+      "trend": [15, 12, 18, 14, 16, 15, 14]
+    },
+    {
+      "itemCode": "ADR-001",
+      "itemName": "Aderezo Ranch 1L",
+      "sellIn": 400,
+      "sellOut": 380,
+      "stockActual": 20,
+      "rotation": 95,
+      "avgDailySales": 5,
+      "daysOfStock": 4,
+      "status": "low",
+      "trend": [18, 22, 20, 25, 24, 28, 26]
+    },
+    {
+      "itemCode": "ADR-002",
+      "itemName": "Aderezo Cesar 500ml",
+      "sellIn": 300,
+      "sellOut": 120,
+      "stockActual": 180,
+      "rotation": 40,
+      "avgDailySales": 2,
+      "daysOfStock": 90,
+      "status": "stagnant",
+      "trend": [8, 6, 7, 5, 6, 4, 5]
+    }
+  ],
+  "sellOutRecords": [
+    {
+      "id": "so-001",
+      "date": "2024-12-30",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 45, "customer": "Tienda Abarrotes Norte" },
+        { "itemCode": "SAL-002", "itemName": "Salsa Habanero 250ml", "qty": 30, "customer": "Tienda Abarrotes Norte" }
+      ],
+      "totalUnits": 75,
+      "status": "confirmed"
+    },
+    {
+      "id": "so-002",
+      "date": "2024-12-29",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 60, "customer": "Supermercado Express" },
+        { "itemCode": "ADR-001", "itemName": "Aderezo Ranch 1L", "qty": 25, "customer": "Supermercado Express" }
+      ],
+      "totalUnits": 85,
+      "status": "confirmed"
+    },
+    {
+      "id": "so-003",
+      "date": "2024-12-28",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 80, "customer": "Restaurante La Fogata" },
+        { "itemCode": "SAL-003", "itemName": "Salsa Verde 500ml", "qty": 40, "customer": "Restaurante La Fogata" }
+      ],
+      "totalUnits": 120,
+      "status": "confirmed"
+    }
+  ],
+  "portalAnalytics": {
+    "sellOutThisMonth": 156000,
+    "rotationPercent": 85,
+    "daysOfStockAvg": 22,
+    "topProduct": {
+      "name": "Salsa Chipotle 500ml",
+      "units": 980,
+      "percentage": 42
+    },
+    "monthlyTrend": [
+      { "period": "Jul", "sellIn": 85000, "sellOut": 72000 },
+      { "period": "Ago", "sellIn": 92000, "sellOut": 78000 },
+      { "period": "Sep", "sellIn": 88000, "sellOut": 82000 },
+      { "period": "Oct", "sellIn": 95000, "sellOut": 85000 },
+      { "period": "Nov", "sellIn": 102000, "sellOut": 92000 },
+      { "period": "Dic", "sellIn": 110000, "sellOut": 98000 }
+    ]
+  }
+}

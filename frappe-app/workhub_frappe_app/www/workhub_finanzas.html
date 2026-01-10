@@ -1,0 +1,129 @@
+<!-- Page: Finanzas -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Finanzas") }}{% endblock %}
+{% block breadcrumb %}Finanzas{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>💰 Finanzas</h1>
+		<p class="text-muted">Dashboard de Finanzas - Facturación, Cobros y Pagos</p>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Por Cobrar</h5>
+					<h2 class="text-primary">${{ "%.0f"|format(kpis.total_receivable) }}</h2>
+					<small class="text-danger">Vencido: ${{ "%.0f"|format(kpis.overdue_receivable) }}</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Por Pagar</h5>
+					<h2 class="text-danger">${{ "%.0f"|format(kpis.total_payable) }}</h2>
+					<small class="text-danger">Vencido: ${{ "%.0f"|format(kpis.overdue_payable) }}</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card {% if kpis.cash_position >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white">
+				<div class="card-body text-center">
+					<h5>Posición de Caja</h5>
+					<h2>${{ "%.0f"|format(kpis.cash_position) }}</h2>
+					<small>Cobrar - Pagar</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card border-danger">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Total Vencido</h5>
+					<h2 class="text-danger">${{ "%.0f"|format(kpis.overdue_receivable + kpis.overdue_payable) }}</h2>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card border-danger">
+				<div class="card-header"><h5>⚠️ Facturas Vencidas (Cuentas por Cobrar)</h5></div>
+				<div class="card-body">
+					{% if overdue_invoices %}
+					<table class="table table-sm">
+						<thead>
+							<tr>
+								<th>Factura</th>
+								<th>Cliente</th>
+								<th>Vencimiento</th>
+								<th class="text-right">Pendiente</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for inv in overdue_invoices %}
+							<tr>
+								<td><a href="/app/sales-invoice/{{ inv.name }}" target="_blank">{{ inv.name }}</a></td>
+								<td>{{ inv.customer_name }}</td>
+								<td class="text-danger">{{ inv.due_date }}</td>
+								<td class="text-right"><strong class="text-danger">${{ "%.2f"|format(inv.outstanding_amount) }}</strong></td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+					{% else %}
+					<p class="text-center text-success">Sin facturas vencidas</p>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header"><h5>Accesos Rápidos</h5></div>
+				<div class="card-body"><div class="row">
+					<div class="col-md-3 mb-3"><a href="/app/workhub-finanzas-cobros" class="btn btn-light btn-block">💵 Cobros</a></div>
+					<div class="col-md-3 mb-3"><a href="/app/workhub-finanzas-pagos" class="btn btn-light btn-block">💸 Pagos</a></div>
+				</div></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.btn-block {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+}
+</style>
+{% endblock %}

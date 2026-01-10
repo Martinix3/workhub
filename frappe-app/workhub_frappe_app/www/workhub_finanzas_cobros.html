@@ -1,0 +1,243 @@
+<!-- Page: Finanzas - Cobros -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Finanzas - Cobros") }}{% endblock %}
+{% block breadcrumb %}Cobros{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>💵 Finanzas - Cobros</h1>
+		<p class="text-muted">Seguimiento de facturas y cobros pendientes (FACTURA)</p>
+	</div>
+
+	<!-- Estadísticas -->
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Total por Cobrar</h5>
+					<h2 class="mt-2 text-primary">${{ "%.0f"|format(stats.total_outstanding) }}</h2>
+					<small class="text-muted">{{ stats.total_invoices }} facturas</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card border-danger">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Vencido</h5>
+					<h2 class="mt-2 text-danger">${{ "%.0f"|format(stats.overdue) }}</h2>
+					<small class="text-muted">requiere acción</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card border-warning">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Por Vencer (7 días)</h5>
+					<h2 class="mt-2 text-warning">${{ "%.0f"|format(stats.upcoming) }}</h2>
+					<small class="text-muted">próximo</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card bg-success text-white">
+				<div class="card-body text-center">
+					<h5>Cobrado este Mes</h5>
+					<h2 class="mt-2">${{ "%.0f"|format(stats.collected_this_month) }}</h2>
+					<small>recibido</small>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Análisis de Antigüedad -->
+	<div class="card mt-4">
+		<div class="card-header">
+			<h5>Análisis de Antigüedad (Aging)</h5>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				<div class="col-md-3">
+					<div class="aging-bucket">
+						<h6>0-30 días</h6>
+						<h4 class="text-success">${{ "%.0f"|format(aging["0-30"]) }}</h4>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="aging-bucket">
+						<h6>31-60 días</h6>
+						<h4 class="text-info">${{ "%.0f"|format(aging["31-60"]) }}</h4>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="aging-bucket">
+						<h6>61-90 días</h6>
+						<h4 class="text-warning">${{ "%.0f"|format(aging["61-90"]) }}</h4>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="aging-bucket">
+						<h6>Más de 90 días</h6>
+						<h4 class="text-danger">${{ "%.0f"|format(aging["90+"]) }}</h4>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Filtros -->
+	<div class="card mt-4">
+		<div class="card-header">
+			<h5>Filtrar Facturas</h5>
+		</div>
+		<div class="card-body">
+			<form method="get" action="">
+				<div class="row">
+					<div class="col-md-4">
+						<label>Estado</label>
+						<select class="form-control" name="status">
+							<option value="">Todas</option>
+							<option value="unpaid" {% if current_status == 'unpaid' %}selected{% endif %}>Pendientes de Pago</option>
+							<option value="overdue" {% if current_status == 'overdue' %}selected{% endif %}>Vencidas</option>
+							<option value="paid" {% if current_status == 'paid' %}selected{% endif %}>Pagadas</option>
+						</select>
+					</div>
+					<div class="col-md-6">
+						<label>Cliente</label>
+						<select class="form-control" name="customer">
+							<option value="">Todos los clientes</option>
+							{% for cust in customers %}
+							<option value="{{ cust }}" {% if current_customer == cust %}selected{% endif %}>
+								{{ cust }}
+							</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div class="col-md-2">
+						<label>&nbsp;</label>
+						<button type="submit" class="btn btn-primary btn-block">
+							<i class="octicon octicon-search"></i> Filtrar
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Listado de Facturas -->
+	<div class="card mt-4">
+		<div class="card-header d-flex justify-content-between align-items-center">
+			<h5>Facturas de Venta ({{ invoices|length }})</h5>
+			<a href="/app/sales-invoice/new" class="btn btn-sm btn-primary">
+				<i class="octicon octicon-plus"></i> Nueva Factura
+			</a>
+		</div>
+		<div class="card-body">
+			{% if invoices %}
+			<div class="table-responsive">
+				<table class="table table-hover">
+					<thead>
+						<tr>
+							<th>Factura</th>
+							<th>Cliente</th>
+							<th>Fecha</th>
+							<th>Vencimiento</th>
+							<th class="text-right">Total</th>
+							<th class="text-right">Pendiente</th>
+							<th class="text-center">Estado</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for invoice in invoices %}
+						<tr class="{% if invoice.days_overdue > 0 %}table-danger{% endif %}">
+							<td><strong>{{ invoice.name }}</strong></td>
+							<td>{{ invoice.customer_name }}</td>
+							<td>{{ invoice.posting_date }}</td>
+							<td>
+								{{ invoice.due_date }}
+								{% if invoice.days_overdue > 0 %}
+								<br><small class="text-danger"><strong>{{ invoice.days_overdue }} días vencido</strong></small>
+								{% endif %}
+							</td>
+							<td class="text-right">${{ "%.2f"|format(invoice.grand_total) }}</td>
+							<td class="text-right">
+								{% if invoice.outstanding_amount > 0 %}
+								<strong class="text-danger">${{ "%.2f"|format(invoice.outstanding_amount) }}</strong>
+								{% else %}
+								<span class="text-success">$0.00</span>
+								{% endif %}
+							</td>
+							<td class="text-center">
+								{% if invoice.outstanding_amount == 0 %}
+								<span class="badge badge-success">Pagado</span>
+								{% elif invoice.days_overdue > 0 %}
+								<span class="badge badge-danger">Vencido</span>
+								{% else %}
+								<span class="badge badge-warning">Pendiente</span>
+								{% endif %}
+							</td>
+							<td>
+								<a href="/app/sales-invoice/{{ invoice.name }}" class="btn btn-sm btn-outline-primary" target="_blank">
+									Ver Detalle
+								</a>
+							</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% else %}
+			<div class="alert alert-info">
+				<strong>No se encontraron facturas</strong> con los filtros seleccionados.
+			</div>
+			{% endif %}
+		</div>
+	</div>
+
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.btn-block {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+}
+
+.aging-bucket {
+	text-align: center;
+	padding: 20px;
+	background-color: #f8f9fa;
+	border-radius: 8px;
+}
+
+.aging-bucket h6 {
+	margin-bottom: 10px;
+	font-weight: 600;
+}
+</style>
+{% endblock %}

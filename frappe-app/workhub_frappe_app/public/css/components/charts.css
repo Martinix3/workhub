@@ -1,0 +1,298 @@
+/**
+ * Charts - Neobrutalismo Editorial
+ * Paleta Santa Brisa
+ *
+ * Bar charts, horizontal bars, donuts, sparklines
+ * Bordes duros 2px, colores Santa Brisa
+ */
+
+/* === Bar Chart - Vertical === */
+.chart-bar-container {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	height: 160px;
+	padding: 16px 0;
+	gap: 8px;
+}
+
+.chart-bar-item {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	height: 100%;
+}
+
+.chart-bar {
+	width: 100%;
+	max-width: 50px;
+	background: #1a1a1a;
+	border: 2px solid #1a1a1a;
+	margin-top: auto;
+	transition: background 0.15s ease;
+}
+
+.chart-bar--current {
+	background: #f5ce3e;
+}
+
+.chart-bar--accent {
+	background: #df6a2e;
+}
+
+.chart-bar--turquoise {
+	background: #99d9d9;
+}
+
+.chart-bar:hover {
+	background: #e5be2e;
+}
+
+.chart-bar-label {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	color: #4a4a4a;
+	margin-top: 8px;
+	text-transform: uppercase;
+}
+
+.chart-bar-value {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 12px;
+	font-weight: 700;
+	color: #1a1a1a;
+	margin-top: 4px;
+}
+
+/* === Horizontal Bar Chart === */
+.chart-hbar-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.chart-hbar-item {
+	display: grid;
+	grid-template-columns: 140px 1fr 50px;
+	align-items: center;
+	gap: 12px;
+}
+
+.chart-hbar-label {
+	font-family: 'Inter', sans-serif;
+	font-size: 13px;
+	color: #1a1a1a;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.chart-hbar-track {
+	height: 20px;
+	background: #f0ebe0;
+	border: 2px solid #1a1a1a;
+}
+
+.chart-hbar {
+	height: 100%;
+	transition: width 0.3s ease;
+}
+
+.chart-hbar--primary { background: #f5ce3e; }
+.chart-hbar--secondary { background: #99d9d9; }
+.chart-hbar--accent { background: #df6a2e; }
+.chart-hbar--earth { background: #996b1d; }
+
+.chart-hbar-value {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 13px;
+	font-weight: 700;
+	color: #1a1a1a;
+	text-align: right;
+}
+
+/* === Donut Chart === */
+.chart-donut-container {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+}
+
+.chart-donut {
+	position: relative;
+	width: 120px;
+	height: 120px;
+}
+
+.chart-donut-svg {
+	width: 100%;
+	height: 100%;
+	transform: rotate(0deg);
+}
+
+.chart-donut-center {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+}
+
+.chart-donut-value {
+	display: block;
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 24px;
+	font-weight: 700;
+	color: #1a1a1a;
+}
+
+.chart-donut-label {
+	font-family: 'Inter', sans-serif;
+	font-size: 11px;
+	color: #4a4a4a;
+	text-transform: uppercase;
+}
+
+/* === Chart Legend === */
+.chart-legend {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.chart-legend-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-family: 'Inter', sans-serif;
+	font-size: 13px;
+	color: #1a1a1a;
+}
+
+.chart-legend-dot {
+	width: 12px;
+	height: 12px;
+	border: 2px solid #1a1a1a;
+	flex-shrink: 0;
+}
+
+/* === Sparklines === */
+.chart-sparklines {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.sparkline-row {
+	display: grid;
+	grid-template-columns: 70px 1fr 50px;
+	align-items: center;
+	gap: 12px;
+}
+
+.sparkline-label {
+	font-family: 'Inter', sans-serif;
+	font-size: 13px;
+	color: #1a1a1a;
+}
+
+.sparkline {
+	display: flex;
+	align-items: flex-end;
+	height: 32px;
+	gap: 2px;
+}
+
+.sparkline-bar {
+	flex: 1;
+	background: #d0d0d0;
+	min-height: 4px;
+	border: 1px solid #1a1a1a;
+}
+
+.sparkline-bar--current {
+	background: #f5ce3e;
+}
+
+.sparkline-bar--success {
+	background: #2e8b57;
+}
+
+.sparkline-bar--danger {
+	background: #c62828;
+}
+
+.sparkline-value {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 14px;
+	font-weight: 700;
+	text-align: right;
+}
+
+/* === Progress Bars === */
+.progress-bar {
+	height: 8px;
+	background: #f0ebe0;
+	border: 2px solid #1a1a1a;
+	overflow: hidden;
+}
+
+.progress-bar__fill {
+	height: 100%;
+	background: #1a1a1a;
+	transition: width 0.3s ease;
+}
+
+.progress-bar--success .progress-bar__fill {
+	background: #2e8b57;
+}
+
+.progress-bar--warning .progress-bar__fill {
+	background: #f5ce3e;
+}
+
+.progress-bar--danger .progress-bar__fill {
+	background: #c62828;
+}
+
+.progress-bar--accent .progress-bar__fill {
+	background: #df6a2e;
+}
+
+/* === Status Dots === */
+.status-dot {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-family: 'Inter', sans-serif;
+	font-size: 13px;
+}
+
+.status-dot::before {
+	content: '';
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+.status-dot--success { color: #2e8b57; }
+.status-dot--danger { color: #c62828; }
+.status-dot--warning { color: #f5ce3e; }
+.status-dot--muted { color: #6a6a6a; }
+
+.status-dot--pulse::before {
+	animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.4; }
+}
+
+/* === Text Color Utilities === */
+.text-success { color: #2e8b57 !important; }
+.text-danger { color: #c62828 !important; }
+.text-warning { color: #f5ce3e !important; }
+.text-muted { color: #6a6a6a !important; }

@@ -1,0 +1,186 @@
+/**
+ * Bottom Navigation - Mobile Only
+ */
+
+/* === Bottom Nav Container === */
+.wh-bottom-nav {
+    display: none; /* Hidden by default (desktop) */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: #ffffff;
+    border-top: 2px solid #0f172a;
+    z-index: 1000;
+    padding: 0 8px;
+}
+
+/* === Nav Items Container === */
+.wh-bottom-nav-items {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* === Nav Item === */
+.wh-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    color: #64748b;
+    text-decoration: none;
+    position: relative;
+}
+
+.wh-bottom-nav-item:active {
+    transform: scale(0.95);
+}
+
+.wh-bottom-nav-item.active {
+    color: #f5ce3e;
+}
+
+/* === Nav Item Icon === */
+.wh-bottom-nav-item-icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 4px;
+}
+
+/* === Nav Item Label === */
+.wh-bottom-nav-item-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* === Nav Item Badge === */
+.wh-bottom-nav-item-badge {
+    position: absolute;
+    top: 4px;
+    right: 50%;
+    transform: translateX(12px);
+    background: #df6a2e;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 0;
+    min-width: 16px;
+    text-align: center;
+    border: 1px solid #0f172a;
+}
+
+/* === Mobile Overlay === */
+.wh-mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+    transition: opacity 0.3s ease;
+}
+
+.wh-mobile-overlay.active {
+    display: block;
+}
+
+/* === Hamburger Menu (shows in mobile header) === */
+.wh-header-menu-toggle {
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 0;
+    transition: background 0.1s ease;
+    background: transparent;
+    border: 2px solid transparent;
+}
+
+.wh-header-menu-toggle:hover {
+    background: #f5f5f0;
+    border-color: #0f172a;
+}
+
+.wh-header-menu-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* === Mobile Media Query === */
+@media (max-width: 768px) {
+    /* Show bottom nav on mobile */
+    .wh-bottom-nav {
+        display: block;
+    }
+
+    /* Hide sidebar on mobile by default */
+    .wh-sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    /* Show sidebar when mobile-open class is added */
+    .wh-sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Adjust main content for mobile */
+    .main-section {
+        margin-left: 0 !important;
+        padding-bottom: 80px; /* Space for bottom nav */
+    }
+
+    /* Adjust header for mobile */
+    .wh-header {
+        margin-left: 0 !important;
+    }
+
+    /* Show hamburger menu in header */
+    .wh-header-menu-toggle {
+        display: flex !important;
+    }
+
+    /* Hide desktop-only header elements on mobile */
+    .wh-header-search {
+        display: none !important;
+    }
+
+    /* Make breadcrumbs more compact on mobile */
+    .wh-breadcrumbs {
+        font-size: 13px;
+    }
+
+    .wh-breadcrumb-separator {
+        margin: 0 4px;
+    }
+}
+
+/* === Tablet (768px - 1024px) === */
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* Keep bottom nav hidden on tablet */
+    .wh-bottom-nav {
+        display: none;
+    }
+
+    /* Sidebar visible but can be collapsed */
+    .wh-sidebar {
+        transform: translateX(0);
+    }
+}

@@ -1,0 +1,6 @@
+nombre,email,telefono,zona,tipo,distribuidor_asignado
+Restaurante El Sol,contacto@elsol.mx,+52 555 123 4567,CDMX Norte,directo,
+Bar Luna Azul,luna@azul.mx,+52 555 234 5678,CDMX Sur,directo,DIST-001
+Hotel Premium,reservas@premium.mx,+52 555 345 6789,Guadalajara,directo,DIST-002
+Licoreria Central,central@licores.mx,+52 555 456 7890,Monterrey,directo,DIST-003
+Cantina La Gloria,gloria@cantina.mx,+52 555 567 8901,CDMX Centro,directo,DIST-001

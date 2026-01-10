@@ -1,0 +1,241 @@
+<!-- Page: Operaciones - Inventario -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Operaciones - Inventario") }}{% endblock %}
+{% block breadcrumb %}Inventario{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>📦 Operaciones - Inventario</h1>
+		<p class="text-muted">Consulta de Stock - Verificación de inventario disponible</p>
+	</div>
+
+	<!-- Estadísticas -->
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Items en Stock</h5>
+					<h2 class="mt-2">{{ stats.total_items }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Valor Total</h5>
+					<h2 class="mt-2 text-success">${{ "%.2f"|format(stats.total_value) }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Stock Bajo</h5>
+					<h2 class="mt-2 text-warning">{{ stats.low_stock_items }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Almacenes</h5>
+					<h2 class="mt-2">{{ stats.warehouses }}</h2>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Filtros -->
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-body">
+					<div class="row">
+						<div class="col-md-5">
+							<label>Filtrar por Almacén</label>
+							<select class="form-control" id="warehouse-filter" onchange="filterStock()">
+								<option value="">Todos los almacenes</option>
+								{% for warehouse in warehouses %}
+								<option value="{{ warehouse.name }}" {% if current_warehouse == warehouse.name %}selected{% endif %}>
+									{{ warehouse.warehouse_name }}
+								</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="col-md-5">
+							<label>Filtrar por Grupo</label>
+							<select class="form-control" id="group-filter" onchange="filterStock()">
+								<option value="">Todos los grupos</option>
+								{% for group in item_groups %}
+								<option value="{{ group.name }}" {% if current_item_group == group.name %}selected{% endif %}>
+									{{ group.name }}
+								</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="col-md-2">
+							<label>&nbsp;</label>
+							<a href="/app/stock-entry/new" class="btn btn-primary btn-block">
+								+ Movimiento
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Tabla de Stock -->
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header d-flex justify-content-between align-items-center">
+					<h5 class="mb-0">Balance de Stock</h5>
+					<span class="badge badge-secondary">{{ stock_data|length }} items</span>
+				</div>
+				<div class="card-body p-0">
+					{% if stock_data %}
+					<div class="table-responsive">
+						<table class="table table-hover mb-0">
+							<thead>
+								<tr>
+									<th>Código</th>
+									<th>Producto</th>
+									<th>Grupo</th>
+									<th>Almacén</th>
+									<th class="text-right">Stock Actual</th>
+									<th class="text-right">Reservado</th>
+									<th class="text-right">Proyectado</th>
+									<th>UOM</th>
+									<th class="text-right">Valor Unit.</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for item in stock_data %}
+								<tr>
+									<td>
+										<a href="/app/item/{{ item.item_code }}" class="font-weight-bold">
+											{{ item.item_code }}
+										</a>
+									</td>
+									<td>{{ item.item_name }}</td>
+									<td>
+										<span class="badge badge-light">{{ item.item_group }}</span>
+									</td>
+									<td>{{ item.warehouse or "-" }}</td>
+									<td class="text-right">
+										<strong class="{% if item.actual_qty and item.actual_qty < 10 %}text-warning{% endif %}">
+											{{ item.actual_qty or 0 }}
+										</strong>
+									</td>
+									<td class="text-right text-muted">
+										{{ item.reserved_qty or 0 }}
+									</td>
+									<td class="text-right">
+										<span class="{% if item.projected_qty and item.projected_qty < 0 %}text-danger{% endif %}">
+											{{ item.projected_qty or 0 }}
+										</span>
+									</td>
+									<td>{{ item.stock_uom }}</td>
+									<td class="text-right">
+										${{ "%.2f"|format(item.valuation_rate or 0) }}
+									</td>
+									<td>
+										<a href="/app/item/{{ item.item_code }}" class="btn btn-sm btn-light">
+											Ver
+										</a>
+									</td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+					{% else %}
+					<div class="text-center py-5">
+						<p class="text-muted">No hay items en stock que coincidan con los filtros</p>
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Leyenda -->
+	<div class="row mt-3">
+		<div class="col-md-12">
+			<div class="alert alert-info">
+				<strong>Leyenda:</strong>
+				<ul class="mb-0 mt-2">
+					<li><strong>Stock Actual</strong>: Cantidad física en almacén</li>
+					<li><strong>Reservado</strong>: Cantidad reservada para pedidos</li>
+					<li><strong>Proyectado</strong>: Stock Actual - Reservado (disponible para venta)</li>
+					<li class="text-warning"><strong>Amarillo</strong>: Stock bajo (< 10 unidades)</li>
+					<li class="text-danger"><strong>Rojo</strong>: Stock proyectado negativo</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.table th {
+	font-weight: 600;
+	border-top: none;
+	border-bottom: 2px solid #dee2e6;
+	font-size: 13px;
+}
+
+.table td {
+	vertical-align: middle;
+	font-size: 14px;
+}
+
+.table tbody tr:hover {
+	background-color: #f8f9fa;
+}
+</style>
+
+<script>
+function filterStock() {
+	const warehouse = document.getElementById('warehouse-filter').value;
+	const group = document.getElementById('group-filter').value;
+
+	let url = window.location.pathname;
+	const params = new URLSearchParams();
+
+	if (warehouse) params.append('warehouse', warehouse);
+	if (group) params.append('item_group', group);
+
+	if (params.toString()) {
+		url += '?' + params.toString();
+	}
+
+	window.location.href = url;
+}
+</script>
+{% endblock %}

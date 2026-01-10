@@ -1,0 +1,337 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:WHT-{YYYY}-{#####}",
+ "creation": "2026-01-03 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "description",
+  "column_break_main",
+  "status",
+  "priority",
+  "blocked_reason",
+  "section_break_organization",
+  "project",
+  "department",
+  "column_break_organization",
+  "is_inbox",
+  "parent_task",
+  "section_break_assignment",
+  "assigned_to",
+  "column_break_assignment",
+  "created_by",
+  "section_break_dates",
+  "start_date",
+  "due_date",
+  "column_break_dates",
+  "actual_start",
+  "actual_end",
+  "column_break_dates2",
+  "estimated_hours",
+  "is_milestone",
+  "section_break_time_tracking",
+  "worked_today",
+  "total_work_days",
+  "work_log",
+  "section_break_erp",
+  "worklink",
+  "column_break_erp",
+  "source_doctype",
+  "source_name",
+  "section_break_email",
+  "source_email",
+  "email_thread_id",
+  "auto_created",
+  "section_break_ai",
+  "ai_suggested",
+  "ai_confidence",
+  "trigger_rule"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Titulo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Descripcion"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "BACKLOG",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Estado",
+   "options": "BACKLOG\nNEXT\nDOING\nBLOCKED\nDONE",
+   "reqd": 1
+  },
+  {
+   "default": "P1",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Prioridad",
+   "options": "P0\nP1\nP2",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.status=='BLOCKED'",
+   "fieldname": "blocked_reason",
+   "fieldtype": "Text",
+   "label": "Razon de Bloqueo"
+  },
+  {
+   "fieldname": "section_break_organization",
+   "fieldtype": "Section Break",
+   "label": "Organizacion"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Proyecto",
+   "options": "WH Project"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Departamento",
+   "options": "\nSALES\nOPS\nMKT"
+  },
+  {
+   "fieldname": "column_break_organization",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_inbox",
+   "fieldtype": "Check",
+   "label": "Tarea Suelta (Inbox)"
+  },
+  {
+   "fieldname": "parent_task",
+   "fieldtype": "Link",
+   "label": "Tarea Padre",
+   "options": "WH Task"
+  },
+  {
+   "fieldname": "section_break_assignment",
+   "fieldtype": "Section Break",
+   "label": "Asignacion"
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Asignado a",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_assignment",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Creado por",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_break_dates",
+   "fieldtype": "Section Break",
+   "label": "Fechas"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Fecha Inicio"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Fecha Limite"
+  },
+  {
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "actual_start",
+   "fieldtype": "Datetime",
+   "label": "Inicio Real"
+  },
+  {
+   "fieldname": "actual_end",
+   "fieldtype": "Datetime",
+   "label": "Fin Real"
+  },
+  {
+   "fieldname": "column_break_dates2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "estimated_hours",
+   "fieldtype": "Float",
+   "label": "Horas Estimadas"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_milestone",
+   "fieldtype": "Check",
+   "label": "Es Hito"
+  },
+  {
+   "fieldname": "section_break_time_tracking",
+   "fieldtype": "Section Break",
+   "label": "Registro de Trabajo"
+  },
+  {
+   "default": "0",
+   "fieldname": "worked_today",
+   "fieldtype": "Check",
+   "label": "Trabaje Hoy"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_work_days",
+   "fieldtype": "Int",
+   "label": "Dias Trabajados",
+   "read_only": 1
+  },
+  {
+   "fieldname": "work_log",
+   "fieldtype": "Table",
+   "label": "Historial de Trabajo",
+   "options": "WH Task Work Log"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_erp",
+   "fieldtype": "Section Break",
+   "label": "Vinculacion ERP"
+  },
+  {
+   "fieldname": "worklink",
+   "fieldtype": "Link",
+   "label": "WorkLink",
+   "options": "WorkLink"
+  },
+  {
+   "fieldname": "column_break_erp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source_doctype",
+   "fieldtype": "Data",
+   "label": "DocType Origen"
+  },
+  {
+   "fieldname": "source_name",
+   "fieldtype": "Data",
+   "label": "ID Origen"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_email",
+   "fieldtype": "Section Break",
+   "label": "Email"
+  },
+  {
+   "fieldname": "source_email",
+   "fieldtype": "Link",
+   "label": "Email Origen",
+   "options": "Communication"
+  },
+  {
+   "fieldname": "email_thread_id",
+   "fieldtype": "Data",
+   "label": "Thread ID"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_created",
+   "fieldtype": "Check",
+   "label": "Creada Automaticamente"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_ai",
+   "fieldtype": "Section Break",
+   "label": "IA Metadata"
+  },
+  {
+   "default": "0",
+   "fieldname": "ai_suggested",
+   "fieldtype": "Check",
+   "label": "Sugerida por IA"
+  },
+  {
+   "fieldname": "ai_confidence",
+   "fieldtype": "Percent",
+   "label": "Confianza IA"
+  },
+  {
+   "fieldname": "trigger_rule",
+   "fieldtype": "Data",
+   "label": "Regla Trigger"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-03 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Workhub Frappe App",
+ "name": "WH Task",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

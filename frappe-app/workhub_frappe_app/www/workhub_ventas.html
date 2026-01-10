@@ -1,0 +1,257 @@
+<!-- Page: WorkHub Ventas - Neobrutalismo Editorial -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Ventas") }}{% endblock %}
+{% block breadcrumb %}Ventas{% endblock %}
+
+{% block page_content %}
+<div class="wh-container">
+	<!-- Page Header -->
+	<div class="wh-page-header">
+		<h1 class="wh-page-title">Ventas</h1>
+		<p class="wh-page-subtitle">Dashboard de Ventas (SELL IN directo)</p>
+	</div>
+
+	<!-- Quick Actions Bar -->
+	<div class="wh-quick-actions">
+		<span class="wh-quick-actions__title">Acciones</span>
+		<a href="/app/sales-order/new-sales-order-1" class="btn btn-primary">Nuevo Pedido</a>
+		<a href="/app/customer/new-customer-1" class="btn btn-secondary">Nuevo Cliente</a>
+		<a href="/workhub_ventas_pipeline" class="btn btn-ghost">Ver Pipeline</a>
+	</div>
+
+	<!-- KPIs Grid -->
+	<div class="kpi-grid mb-6">
+		<div class="kpi-card">
+			<div class="kpi-card__value">${{ "%.0f"|format(kpis.sales_this_month / 1000) }}k</div>
+			<div class="kpi-card__separator"></div>
+			<div class="kpi-card__label">Ventas del Mes</div>
+			<div class="kpi-card__change {% if kpis.growth_percent >= 0 %}kpi-card__change--positive{% else %}kpi-card__change--negative{% endif %}">
+				{{ "%.1f"|format(kpis.growth_percent|abs) }}%
+			</div>
+		</div>
+
+		<div class="kpi-card">
+			<div class="kpi-card__value">${{ "%.0f"|format(kpis.pipeline_value / 1000) }}k</div>
+			<div class="kpi-card__separator"></div>
+			<div class="kpi-card__label">Pipeline Activo</div>
+			<div class="kpi-card__change kpi-card__change--neutral">
+				{{ pipeline.opportunities }} oportunidades
+			</div>
+		</div>
+
+		<div class="kpi-card">
+			<div class="kpi-card__value">{{ kpis.active_customers }}</div>
+			<div class="kpi-card__separator"></div>
+			<div class="kpi-card__label">Clientes Activos</div>
+			<div class="kpi-card__change kpi-card__change--neutral">este mes</div>
+		</div>
+
+		<div class="kpi-card">
+			<div class="kpi-card__value">{{ kpis.pending_orders }}</div>
+			<div class="kpi-card__separator"></div>
+			<div class="kpi-card__label">Pedidos Pendientes</div>
+			<div class="kpi-card__change kpi-card__change--neutral">
+				{{ kpis.total_orders }} total
+			</div>
+		</div>
+	</div>
+
+	<!-- Two Column Layout -->
+	<div class="wh-grid wh-grid-2 mb-6">
+		<!-- Top Clientes -->
+		<div class="wh-section">
+			<div class="wh-section-header">
+				<h2 class="wh-section-title">Top Clientes</h2>
+				<a href="/workhub_ventas_clientes" class="btn btn-ghost btn-sm">Ver todos</a>
+			</div>
+			{% if top_customers %}
+			<div class="data-table-wrapper">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Cliente</th>
+							<th class="text-center">Pedidos</th>
+							<th class="text-right">Total</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for customer in top_customers %}
+						<tr>
+							<td class="cell-primary">
+								<a href="/app/customer/{{ customer.name }}">{{ customer.customer_name }}</a>
+							</td>
+							<td class="cell-mono text-center">{{ customer.orders }}</td>
+							<td class="cell-currency">${{ "%.0f"|format(customer.total) }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% else %}
+			<div class="wh-card wh-card--flat">
+				<div class="data-table-empty">
+					<div class="data-table-empty__title">Sin datos</div>
+					<div class="data-table-empty__text">No hay clientes este mes</div>
+				</div>
+			</div>
+			{% endif %}
+		</div>
+
+		<!-- Ordenes Recientes -->
+		<div class="wh-section">
+			<div class="wh-section-header">
+				<h2 class="wh-section-title">Ordenes Recientes</h2>
+				<a href="/workhub_ventas_pedidos" class="btn btn-ghost btn-sm">Ver todas</a>
+			</div>
+			{% if recent_orders %}
+			<div class="data-table-wrapper">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Orden</th>
+							<th>Cliente</th>
+							<th>Fecha</th>
+							<th class="text-right">Total</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for order in recent_orders[:5] %}
+						<tr>
+							<td class="cell-mono">
+								<a href="/app/sales-order/{{ order.name }}">{{ order.name }}</a>
+							</td>
+							<td class="cell-truncate">{{ order.customer_name }}</td>
+							<td class="cell-mono">{{ order.transaction_date }}</td>
+							<td class="cell-currency">${{ "%.0f"|format(order.grand_total) }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% else %}
+			<div class="wh-card wh-card--flat">
+				<div class="data-table-empty">
+					<div class="data-table-empty__title">Sin ordenes</div>
+					<div class="data-table-empty__text">No hay ordenes recientes</div>
+				</div>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+
+	<!-- Tendencia de Ventas -->
+	<div class="wh-section">
+		<div class="wh-section-header">
+			<h2 class="wh-section-title">Tendencia de Ventas</h2>
+			<span class="text-muted text-sm">Ultimos 6 meses</span>
+		</div>
+		<div class="wh-card">
+			<div class="trend-chart">
+				{% for month in monthly_trend %}
+				<div class="trend-bar">
+					<div class="bar-container">
+						{% set max_value = monthly_trend|map(attribute='total')|max %}
+						{% set height = (month.total / max_value * 100) if max_value > 0 else 0 %}
+						<div class="bar {% if loop.last %}bar--current{% endif %}" style="height: {{ height }}%"></div>
+					</div>
+					<div class="bar-value">${{ "%.0f"|format(month.total / 1000) }}k</div>
+					<div class="bar-label">{{ month.month }}</div>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+
+	<!-- Quick Navigation Cards -->
+	<div class="wh-section mt-8">
+		<div class="wh-section-header">
+			<h2 class="wh-section-title">Navegacion Rapida</h2>
+		</div>
+		<div class="wh-grid wh-grid-4">
+			<a href="/workhub_ventas_pipeline" class="wh-card" style="text-decoration: none;">
+				<div class="font-mono text-2xl mb-2">{{ pipeline.opportunities }}</div>
+				<div class="font-semibold">Pipeline</div>
+				<div class="text-muted text-sm">Oportunidades activas</div>
+			</a>
+			<a href="/workhub_ventas_clientes" class="wh-card" style="text-decoration: none;">
+				<div class="font-mono text-2xl mb-2">{{ kpis.active_customers }}</div>
+				<div class="font-semibold">Clientes</div>
+				<div class="text-muted text-sm">Gestion de clientes</div>
+			</a>
+			<a href="/workhub_ventas_pedidos" class="wh-card" style="text-decoration: none;">
+				<div class="font-mono text-2xl mb-2">{{ kpis.total_orders }}</div>
+				<div class="font-semibold">Pedidos</div>
+				<div class="text-muted text-sm">Ordenes del mes</div>
+			</a>
+			<a href="/workhub_ventas_analytics" class="wh-card" style="text-decoration: none;">
+				<div class="font-mono text-2xl mb-2">+{{ "%.0f"|format(kpis.growth_percent) }}%</div>
+				<div class="font-semibold">Analytics</div>
+				<div class="text-muted text-sm">Reportes y metricas</div>
+			</a>
+		</div>
+	</div>
+</div>
+
+<style>
+/* Trend Chart - Neobrutal Style */
+.trend-chart {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--space-2);
+	height: 200px;
+	padding: var(--space-4) 0;
+}
+
+.trend-bar {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	height: 100%;
+}
+
+.bar-container {
+	flex: 1;
+	width: 100%;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+}
+
+.bar {
+	width: 100%;
+	max-width: 40px;
+	background: var(--text-1);
+	border: var(--border-width) solid var(--border-1);
+	border-radius: var(--radius-sm);
+	min-height: 4px;
+	transition: background var(--transition-fast);
+}
+
+.bar--current {
+	background: var(--accent);
+}
+
+.bar:hover {
+	background: var(--accent-2);
+}
+
+.bar-value {
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-bold);
+	margin-top: var(--space-2);
+	color: var(--text-1);
+}
+
+.bar-label {
+	font-family: var(--font-ui);
+	font-size: var(--text-xs);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	color: var(--text-3);
+	margin-top: var(--space-1);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "creation": "2026-01-03 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sequence",
+  "title",
+  "description",
+  "column_break_1",
+  "offset_days",
+  "duration_days",
+  "column_break_2",
+  "default_assignee_role",
+  "depends_on_sequence",
+  "is_milestone"
+ ],
+ "fields": [
+  {
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Secuencia",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Titulo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Descripcion"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "offset_days",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Dias desde Inicio"
+  },
+  {
+   "default": "1",
+   "fieldname": "duration_days",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Duracion (dias)"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "default_assignee_role",
+   "fieldtype": "Data",
+   "label": "Rol Asignado"
+  },
+  {
+   "fieldname": "depends_on_sequence",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Depende de (secuencia)"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_milestone",
+   "fieldtype": "Check",
+   "label": "Es Hito"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-03 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Workhub Frappe App",
+ "name": "WH Project Template Task",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "sequence",
+ "sort_order": "ASC",
+ "states": []
+}

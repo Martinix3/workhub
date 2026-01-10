@@ -1,0 +1,20 @@
+{% extends "templates/web.html" %}
+
+{% block title %}Autenticando...{% endblock %}
+
+{% block page_content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+    <h2>Autenticando...</h2>
+    <p>Redirigiendo a WorkHub...</p>
+</div>
+
+<script>
+    // Auto-redirect to frontend with token
+    (function() {
+        var redirectUrl = "{{ redirect_url }}";
+        if (redirectUrl) {
+            window.location.href = redirectUrl;
+        }
+    })();
+</script>
+{% endblock %}

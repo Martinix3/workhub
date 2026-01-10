@@ -1,0 +1,275 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:WHP-{YYYY}-{#####}",
+ "creation": "2026-01-03 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "description",
+  "column_break_identification",
+  "owner_user",
+  "department",
+  "template_used",
+  "section_break_dates",
+  "start_date",
+  "target_date",
+  "column_break_dates",
+  "actual_end_date",
+  "duration_days",
+  "section_break_status",
+  "status",
+  "column_break_status",
+  "health",
+  "health_reason",
+  "section_break_kpis",
+  "progress_pct",
+  "total_tasks",
+  "completed_tasks",
+  "column_break_kpis",
+  "blocked_tasks",
+  "overdue_tasks",
+  "column_break_kpis2",
+  "avg_task_duration",
+  "velocity",
+  "estimated_completion",
+  "section_break_gantt",
+  "critical_path",
+  "slack_days"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Titulo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Descripcion"
+  },
+  {
+   "fieldname": "column_break_identification",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "owner_user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Responsable",
+   "options": "User"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Departamento",
+   "options": "SALES\nOPS\nMKT",
+   "reqd": 1
+  },
+  {
+   "fieldname": "template_used",
+   "fieldtype": "Link",
+   "label": "Template Usado",
+   "options": "WH Project Template"
+  },
+  {
+   "fieldname": "section_break_dates",
+   "fieldtype": "Section Break",
+   "label": "Fechas"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Fecha Inicio",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Fecha Objetivo"
+  },
+  {
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "actual_end_date",
+   "fieldtype": "Date",
+   "label": "Fecha Fin Real"
+  },
+  {
+   "fieldname": "duration_days",
+   "fieldtype": "Int",
+   "label": "Duracion (dias)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_status",
+   "fieldtype": "Section Break",
+   "label": "Estado"
+  },
+  {
+   "default": "ACTIVE",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Estado",
+   "options": "ACTIVE\nPAUSED\nCOMPLETED\nCANCELLED",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "GREEN",
+   "fieldname": "health",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Salud",
+   "options": "GREEN\nYELLOW\nRED"
+  },
+  {
+   "fieldname": "health_reason",
+   "fieldtype": "Data",
+   "label": "Razon Salud",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_kpis",
+   "fieldtype": "Section Break",
+   "label": "Metricas"
+  },
+  {
+   "default": "0",
+   "fieldname": "progress_pct",
+   "fieldtype": "Percent",
+   "label": "Progreso %",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "total_tasks",
+   "fieldtype": "Int",
+   "label": "Total Tareas",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "completed_tasks",
+   "fieldtype": "Int",
+   "label": "Tareas Completadas",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_kpis",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "blocked_tasks",
+   "fieldtype": "Int",
+   "label": "Tareas Bloqueadas",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "overdue_tasks",
+   "fieldtype": "Int",
+   "label": "Tareas Vencidas",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_kpis2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "avg_task_duration",
+   "fieldtype": "Float",
+   "label": "Duracion Media (dias)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "velocity",
+   "fieldtype": "Float",
+   "label": "Velocity (tareas/semana)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "estimated_completion",
+   "fieldtype": "Date",
+   "label": "Fin Estimado",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_gantt",
+   "fieldtype": "Section Break",
+   "label": "Gantt (avanzado)"
+  },
+  {
+   "fieldname": "critical_path",
+   "fieldtype": "Text",
+   "label": "Ruta Critica (JSON)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "slack_days",
+   "fieldtype": "Int",
+   "label": "Holgura Total (dias)",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-03 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Workhub Frappe App",
+ "name": "WH Project",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

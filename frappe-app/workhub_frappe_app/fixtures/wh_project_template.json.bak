@@ -1,0 +1,514 @@
+[
+    {
+        "doctype": "WH Project Template",
+        "template_name": "Onboarding Cliente Nuevo",
+        "description": "Template para onboarding completo de un nuevo cliente. Incluye configuracion inicial, capacitacion y seguimiento.",
+        "department": "SALES",
+        "default_duration_days": 14,
+        "is_active": 1,
+        "tasks": [
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Reunion de kick-off con cliente",
+                "description": "Primera reunion para conocer necesidades y establecer expectativas",
+                "sequence": 1,
+                "offset_days": 0,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 0,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Recopilar informacion del cliente",
+                "description": "Obtener datos de contacto, preferencias, historial si aplica",
+                "sequence": 2,
+                "offset_days": 1,
+                "duration_days": 2,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 1,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Configurar cuenta en sistema",
+                "description": "Crear cliente en ERP, configurar precios especiales si aplica",
+                "sequence": 3,
+                "offset_days": 3,
+                "duration_days": 1,
+                "default_assignee_role": "Operations",
+                "depends_on_sequence": 2,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Capacitacion sobre productos/servicios",
+                "description": "Presentar catalogo completo y condiciones comerciales",
+                "sequence": 4,
+                "offset_days": 4,
+                "duration_days": 2,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 3,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Primer pedido de prueba",
+                "description": "Acompanar al cliente en su primer pedido",
+                "sequence": 5,
+                "offset_days": 7,
+                "duration_days": 2,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 4,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Seguimiento post-entrega",
+                "description": "Verificar satisfaccion con primera entrega",
+                "sequence": 6,
+                "offset_days": 10,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 5,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Cierre de onboarding",
+                "description": "Reunion de cierre y feedback",
+                "sequence": 7,
+                "offset_days": 14,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 6,
+                "is_milestone": 1
+            }
+        ]
+    },
+    {
+        "doctype": "WH Project Template",
+        "template_name": "Campana de Marketing Digital",
+        "description": "Template para campanas de marketing digital con redes sociales, email y contenido.",
+        "department": "MKT",
+        "default_duration_days": 30,
+        "is_active": 1,
+        "tasks": [
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Definir objetivos y KPIs",
+                "description": "Establecer metas medibles: reach, engagement, conversiones",
+                "sequence": 1,
+                "offset_days": 0,
+                "duration_days": 2,
+                "default_assignee_role": "Marketing Manager",
+                "depends_on_sequence": 0,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Investigacion de audiencia",
+                "description": "Analizar target, competencia y tendencias",
+                "sequence": 2,
+                "offset_days": 2,
+                "duration_days": 3,
+                "default_assignee_role": "Marketing Executive",
+                "depends_on_sequence": 1,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Crear calendario de contenidos",
+                "description": "Planificar posts, stories, emails para todo el periodo",
+                "sequence": 3,
+                "offset_days": 5,
+                "duration_days": 2,
+                "default_assignee_role": "Content Manager",
+                "depends_on_sequence": 2,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Disenar creativos",
+                "description": "Imagenes, videos, banners para todas las plataformas",
+                "sequence": 4,
+                "offset_days": 7,
+                "duration_days": 5,
+                "default_assignee_role": "Designer",
+                "depends_on_sequence": 3,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Redactar copys",
+                "description": "Textos para posts, emails, ads",
+                "sequence": 5,
+                "offset_days": 7,
+                "duration_days": 3,
+                "default_assignee_role": "Content Manager",
+                "depends_on_sequence": 3,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Configurar campanas de ads",
+                "description": "Facebook Ads, Google Ads, segmentacion",
+                "sequence": 6,
+                "offset_days": 12,
+                "duration_days": 2,
+                "default_assignee_role": "Marketing Executive",
+                "depends_on_sequence": 4,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Lanzamiento de campana",
+                "description": "Activar todas las piezas",
+                "sequence": 7,
+                "offset_days": 14,
+                "duration_days": 1,
+                "default_assignee_role": "Marketing Manager",
+                "depends_on_sequence": 6,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Monitoreo diario",
+                "description": "Revisar metricas y ajustar si necesario",
+                "sequence": 8,
+                "offset_days": 15,
+                "duration_days": 14,
+                "default_assignee_role": "Marketing Executive",
+                "depends_on_sequence": 7,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Reporte final y learnings",
+                "description": "Documentar resultados y aprendizajes",
+                "sequence": 9,
+                "offset_days": 30,
+                "duration_days": 2,
+                "default_assignee_role": "Marketing Manager",
+                "depends_on_sequence": 8,
+                "is_milestone": 1
+            }
+        ]
+    },
+    {
+        "doctype": "WH Project Template",
+        "template_name": "Evento Corporativo",
+        "description": "Template para organizacion de eventos corporativos: ferias, conferencias, reuniones de equipo.",
+        "department": "OPS",
+        "default_duration_days": 45,
+        "is_active": 1,
+        "tasks": [
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Definir concepto y objetivos",
+                "description": "Tipo de evento, audiencia, mensaje clave",
+                "sequence": 1,
+                "offset_days": 0,
+                "duration_days": 3,
+                "default_assignee_role": "Operations Manager",
+                "depends_on_sequence": 0,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Establecer presupuesto",
+                "description": "Definir recursos disponibles y prioridades",
+                "sequence": 2,
+                "offset_days": 3,
+                "duration_days": 2,
+                "default_assignee_role": "Operations Manager",
+                "depends_on_sequence": 1,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Seleccionar y reservar venue",
+                "description": "Buscar, comparar y confirmar lugar",
+                "sequence": 3,
+                "offset_days": 5,
+                "duration_days": 7,
+                "default_assignee_role": "Operations Executive",
+                "depends_on_sequence": 2,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Contratar proveedores",
+                "description": "Catering, AV, decoracion, fotografia",
+                "sequence": 4,
+                "offset_days": 12,
+                "duration_days": 7,
+                "default_assignee_role": "Operations Executive",
+                "depends_on_sequence": 3,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Crear y enviar invitaciones",
+                "description": "Disenar invitacion y enviar a lista de invitados",
+                "sequence": 5,
+                "offset_days": 15,
+                "duration_days": 3,
+                "default_assignee_role": "Marketing",
+                "depends_on_sequence": 3,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Seguimiento de confirmaciones",
+                "description": "Tracking de RSVPs y ajuste de numeros",
+                "sequence": 6,
+                "offset_days": 20,
+                "duration_days": 10,
+                "default_assignee_role": "Operations Executive",
+                "depends_on_sequence": 5,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Preparar materiales",
+                "description": "Presentaciones, handouts, senaletica",
+                "sequence": 7,
+                "offset_days": 30,
+                "duration_days": 5,
+                "default_assignee_role": "Marketing",
+                "depends_on_sequence": 4,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Ensayo general",
+                "description": "Revisar venue, probar AV, confirmar timeline",
+                "sequence": 8,
+                "offset_days": 42,
+                "duration_days": 1,
+                "default_assignee_role": "Operations Manager",
+                "depends_on_sequence": 7,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Ejecucion del evento",
+                "description": "Dia del evento",
+                "sequence": 9,
+                "offset_days": 44,
+                "duration_days": 1,
+                "default_assignee_role": "Operations Manager",
+                "depends_on_sequence": 8,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Seguimiento post-evento",
+                "description": "Agradecer asistencia, enviar materiales, recoger feedback",
+                "sequence": 10,
+                "offset_days": 45,
+                "duration_days": 3,
+                "default_assignee_role": "Operations Executive",
+                "depends_on_sequence": 9,
+                "is_milestone": 0
+            }
+        ]
+    },
+    {
+        "doctype": "WH Project Template",
+        "template_name": "Lanzamiento de Producto",
+        "description": "Template para lanzar un nuevo producto al mercado. Coordina ventas, marketing y operaciones.",
+        "department": "SALES",
+        "default_duration_days": 60,
+        "is_active": 1,
+        "tasks": [
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Kick-off de lanzamiento",
+                "description": "Reunion inicial con todos los stakeholders",
+                "sequence": 1,
+                "offset_days": 0,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 0,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Analisis de mercado",
+                "description": "Estudiar competencia, pricing, posicionamiento",
+                "sequence": 2,
+                "offset_days": 1,
+                "duration_days": 7,
+                "default_assignee_role": "Marketing",
+                "depends_on_sequence": 1,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Definir pricing y condiciones",
+                "description": "Establecer precios, descuentos, condiciones de venta",
+                "sequence": 3,
+                "offset_days": 8,
+                "duration_days": 5,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 2,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Crear materiales de venta",
+                "description": "Fichas tecnicas, presentaciones, FAQs",
+                "sequence": 4,
+                "offset_days": 13,
+                "duration_days": 7,
+                "default_assignee_role": "Marketing",
+                "depends_on_sequence": 3,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Capacitar equipo de ventas",
+                "description": "Training sobre producto, objeciones, argumentos",
+                "sequence": 5,
+                "offset_days": 20,
+                "duration_days": 3,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 4,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Configurar producto en ERP",
+                "description": "Alta en sistema, stock inicial, precios",
+                "sequence": 6,
+                "offset_days": 20,
+                "duration_days": 2,
+                "default_assignee_role": "Operations",
+                "depends_on_sequence": 3,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Campana de pre-lanzamiento",
+                "description": "Teaser en redes, email a clientes VIP",
+                "sequence": 7,
+                "offset_days": 30,
+                "duration_days": 14,
+                "default_assignee_role": "Marketing",
+                "depends_on_sequence": 4,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Lanzamiento oficial",
+                "description": "Dia de lanzamiento al mercado",
+                "sequence": 8,
+                "offset_days": 45,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 7,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Seguimiento primeras ventas",
+                "description": "Monitorear adopcion, resolver problemas",
+                "sequence": 9,
+                "offset_days": 46,
+                "duration_days": 14,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 8,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Revision y ajustes",
+                "description": "Evaluar resultados y ajustar estrategia",
+                "sequence": 10,
+                "offset_days": 60,
+                "duration_days": 2,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 9,
+                "is_milestone": 1
+            }
+        ]
+    },
+    {
+        "doctype": "WH Project Template",
+        "template_name": "Recuperacion de Cliente Inactivo",
+        "description": "Template para reactivar clientes que dejaron de comprar.",
+        "department": "SALES",
+        "default_duration_days": 21,
+        "is_active": 1,
+        "tasks": [
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Analizar historial del cliente",
+                "description": "Revisar ultima compra, productos habituales, problemas previos",
+                "sequence": 1,
+                "offset_days": 0,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 0,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Primer contacto telefonico",
+                "description": "Llamar para entender situacion",
+                "sequence": 2,
+                "offset_days": 1,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 1,
+                "is_milestone": 1
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Preparar propuesta de reactivacion",
+                "description": "Descuento especial, producto nuevo, solucion a problema",
+                "sequence": 3,
+                "offset_days": 2,
+                "duration_days": 2,
+                "default_assignee_role": "Sales Manager",
+                "depends_on_sequence": 2,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Enviar propuesta al cliente",
+                "description": "Email o reunion con oferta personalizada",
+                "sequence": 4,
+                "offset_days": 4,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 3,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Seguimiento a 7 dias",
+                "description": "Si no hay respuesta, segundo contacto",
+                "sequence": 5,
+                "offset_days": 11,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 4,
+                "is_milestone": 0
+            },
+            {
+                "doctype": "WH Project Template Task",
+                "title": "Cerrar o escalar",
+                "description": "Lograr pedido o escalar a gerencia",
+                "sequence": 6,
+                "offset_days": 21,
+                "duration_days": 1,
+                "default_assignee_role": "Sales Executive",
+                "depends_on_sequence": 5,
+                "is_milestone": 1
+            }
+        ]
+    }
+]

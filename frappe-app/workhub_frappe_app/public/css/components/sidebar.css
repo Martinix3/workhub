@@ -1,0 +1,398 @@
+/**
+ * Sidebar - Neobrutalismo Editorial
+ * Paleta Santa Brisa
+ *
+ * Fondo oscuro slate, items con bordes duros
+ * Active state con barra dorada lateral
+ */
+
+/* === Ocultar sidebar nativo de Frappe === */
+.body-sidebar-container {
+	display: none !important;
+}
+
+.layout-side-section {
+	display: none !important;
+}
+
+.overlay {
+	display: none !important;
+}
+
+/* === Sidebar Container === */
+.wh-sidebar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: 256px;
+	background: #1e293b;
+	border-right: 2px solid #0f172a;
+	display: flex;
+	flex-direction: column;
+	z-index: 1000;
+	transition: width 0.15s ease-out;
+}
+
+.wh-sidebar.collapsed {
+	width: 64px;
+}
+
+/* === Sidebar Header === */
+.wh-sidebar-header {
+	padding: 16px;
+	border-bottom: 2px solid #334155;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 64px;
+}
+
+.wh-sidebar-logo {
+	height: 28px;
+	display: flex;
+	align-items: center;
+}
+
+.wh-sidebar-logo img {
+	height: 100%;
+	width: auto;
+	max-width: 160px;
+	filter: brightness(0) invert(1);
+}
+
+.wh-sidebar.collapsed .wh-sidebar-logo {
+	display: none;
+}
+
+.wh-sidebar-toggle {
+	cursor: pointer;
+	padding: 8px;
+	border: none;
+	background: transparent;
+	color: #94a3b8;
+	transition: color 0.1s ease;
+}
+
+.wh-sidebar-toggle:hover {
+	color: #f8fafc;
+}
+
+.wh-sidebar-toggle svg {
+	width: 20px;
+	height: 20px;
+}
+
+/* === Sidebar Navigation === */
+.wh-sidebar-nav {
+	flex: 1;
+	overflow-y: auto;
+	padding: 12px 8px;
+}
+
+/* Scrollbar styling */
+.wh-sidebar-nav::-webkit-scrollbar {
+	width: 4px;
+}
+
+.wh-sidebar-nav::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.wh-sidebar-nav::-webkit-scrollbar-thumb {
+	background: #475569;
+	border-radius: 2px;
+}
+
+/* === Nav Items === */
+.wh-nav-item {
+	display: flex;
+	align-items: center;
+	padding: 10px 12px;
+	margin-bottom: 2px;
+	border-radius: 0;
+	cursor: pointer;
+	transition: all 0.1s ease;
+	position: relative;
+	color: #94a3b8;
+	text-decoration: none;
+	font-family: 'Inter', -apple-system, sans-serif;
+	font-size: 14px;
+	font-weight: 500;
+	border: 2px solid transparent;
+}
+
+.wh-nav-item:hover {
+	background: #334155;
+	color: #f8fafc;
+}
+
+/* Active state - Neobrutal con barra dorada */
+.wh-nav-item.active {
+	background: #334155;
+	color: #f8fafc;
+	font-weight: 600;
+	border-left: 4px solid #f5ce3e;
+	padding-left: 10px;
+}
+
+/* === Nav Item Icon === */
+.wh-nav-item-icon {
+	width: 20px;
+	height: 20px;
+	margin-right: 12px;
+	flex-shrink: 0;
+	opacity: 0.8;
+}
+
+.wh-nav-item:hover .wh-nav-item-icon,
+.wh-nav-item.active .wh-nav-item-icon {
+	opacity: 1;
+}
+
+.wh-sidebar.collapsed .wh-nav-item-icon {
+	margin-right: 0;
+}
+
+/* === Nav Item Label === */
+.wh-nav-item-label {
+	flex: 1;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wh-sidebar.collapsed .wh-nav-item-label {
+	display: none;
+}
+
+/* === Nav Item Badge - Accent Santa Brisa === */
+.wh-nav-item-badge {
+	background: #df6a2e;
+	color: white;
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 0;
+	min-width: 18px;
+	text-align: center;
+	margin-left: auto;
+	border: 1px solid #0f172a;
+}
+
+.wh-sidebar.collapsed .wh-nav-item-badge {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	padding: 1px 4px;
+	font-size: 10px;
+}
+
+/* === Nav Item Chevron === */
+.wh-nav-item-chevron {
+	width: 16px;
+	height: 16px;
+	margin-left: 8px;
+	flex-shrink: 0;
+	transition: transform 0.15s ease;
+	opacity: 0.6;
+}
+
+.wh-nav-item:hover .wh-nav-item-chevron {
+	opacity: 1;
+}
+
+.wh-nav-item-chevron.expanded {
+	transform: rotate(90deg);
+}
+
+.wh-sidebar.collapsed .wh-nav-item-chevron {
+	display: none;
+}
+
+/* === Nav Section === */
+.wh-nav-section {
+	margin-bottom: 2px;
+}
+
+/* === Sub-items Container === */
+.wh-nav-subitems {
+	margin-left: 20px;
+	margin-top: 2px;
+	padding-left: 12px;
+	border-left: 2px solid #475569;
+}
+
+.wh-sidebar.collapsed .wh-nav-subitems {
+	display: none;
+}
+
+/* === Sub-item === */
+.wh-nav-subitem {
+	display: block;
+	padding: 8px 12px;
+	font-family: 'Inter', -apple-system, sans-serif;
+	font-size: 13px;
+	font-weight: 400;
+	color: #94a3b8;
+	text-decoration: none;
+	border-radius: 0;
+	margin-bottom: 1px;
+	transition: all 0.1s ease;
+}
+
+.wh-nav-subitem:hover {
+	background: #334155;
+	color: #f8fafc;
+}
+
+.wh-nav-subitem.active {
+	background: #475569;
+	color: #f5ce3e;
+	font-weight: 600;
+}
+
+/* === Sidebar Footer === */
+.wh-sidebar-footer {
+	padding: 12px;
+	border-top: 2px solid #334155;
+}
+
+.wh-sidebar-user {
+	display: flex;
+	align-items: center;
+	padding: 10px 12px;
+	border-radius: 0;
+	cursor: pointer;
+	transition: background 0.1s ease;
+}
+
+.wh-sidebar-user:hover {
+	background: #334155;
+}
+
+.wh-sidebar-user-avatar {
+	width: 32px;
+	height: 32px;
+	background: #f5ce3e;
+	color: #1e293b;
+	font-family: 'Inter', sans-serif;
+	font-size: 12px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-right: 12px;
+	border: 2px solid #0f172a;
+}
+
+.wh-sidebar-user-info {
+	flex: 1;
+	overflow: hidden;
+}
+
+.wh-sidebar-user-name {
+	font-family: 'Inter', sans-serif;
+	font-size: 13px;
+	font-weight: 600;
+	color: #f8fafc;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wh-sidebar-user-role {
+	font-family: 'Inter', sans-serif;
+	font-size: 11px;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.wh-sidebar.collapsed .wh-sidebar-user-info {
+	display: none;
+}
+
+/* === Section Divider === */
+.wh-nav-divider {
+	height: 1px;
+	background: #334155;
+	margin: 12px 8px;
+}
+
+.wh-nav-section-title {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 10px;
+	font-weight: 600;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	padding: 8px 12px 4px;
+	margin-top: 8px;
+}
+
+.wh-sidebar.collapsed .wh-nav-section-title {
+	display: none;
+}
+
+/* === Ajustar contenido principal === */
+.main-section {
+	margin-left: 256px !important;
+	transition: margin-left 0.15s ease-out;
+}
+
+body:has(.wh-sidebar.collapsed) .main-section {
+	margin-left: 64px !important;
+}
+
+.layout-main-section-wrapper {
+	max-width: 100%;
+}
+
+/* === Mobile === */
+@media (max-width: 768px) {
+	.wh-sidebar {
+		transform: translateX(-100%);
+		box-shadow: none;
+	}
+
+	.wh-sidebar.mobile-open {
+		transform: translateX(0);
+		box-shadow: 8px 0 24px rgba(0, 0, 0, 0.3);
+	}
+
+	.main-section {
+		margin-left: 0 !important;
+	}
+}
+
+/* === Tooltip for collapsed state === */
+.wh-sidebar.collapsed .wh-nav-item {
+	position: relative;
+}
+
+.wh-sidebar.collapsed .wh-nav-item::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	left: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	background: #0f172a;
+	color: #f8fafc;
+	font-size: 12px;
+	font-weight: 500;
+	padding: 6px 12px;
+	white-space: nowrap;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.1s ease, visibility 0.1s ease;
+	margin-left: 8px;
+	border: 2px solid #334155;
+	z-index: 1001;
+}
+
+.wh-sidebar.collapsed .wh-nav-item:hover::after {
+	opacity: 1;
+	visibility: visible;
+}

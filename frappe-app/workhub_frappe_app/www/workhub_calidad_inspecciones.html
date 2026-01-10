@@ -1,0 +1,92 @@
+<!-- Page: Calidad - Inspecciones -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Calidad - Inspecciones") }}{% endblock %}
+{% block breadcrumb %}Inspecciones{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>🔍 Calidad - Inspecciones</h1>
+		<p class="text-muted">Inspecciones de calidad</p>
+	</div>
+
+	<!-- KPIs -->
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Total</h5>
+					<h2>{{ kpis.total }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Activos</h5>
+					<h2>{{ kpis.active }}</h2>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Listado -->
+	<div class="card mt-4">
+		<div class="card-header d-flex justify-content-between">
+			<h5>Listado</h5>
+			<a href="/app/quality-inspection/new" class="btn btn-sm btn-primary">+ Nuevo</a>
+		</div>
+		<div class="card-body">
+			{% if items %}
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th>Nombre</th>
+						<th>Estado</th>
+						<th>Fecha</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in items %}
+					<tr>
+						<td><strong>{{ item.name }}</strong></td>
+						<td>{{ item.status or '-' }}</td>
+						<td>{{ item.creation.strftime('%Y-%m-%d') if item.creation else '-' }}</td>
+						<td><a href="/app/quality-inspection/{{ item.name }}" class="btn btn-sm btn-outline-primary" target="_blank">Ver</a></td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			{% else %}
+			<p class="text-center text-muted">Sin datos</p>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+</style>
+{% endblock %}

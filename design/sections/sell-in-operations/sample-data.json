@@ -1,0 +1,316 @@
+{
+  "_meta": {
+    "models": {
+      "kpis": "Metricas clave del dashboard de ventas: ventas del mes, pedidos activos, clientes nuevos.",
+      "opportunities": "Oportunidades comerciales en el pipeline de ventas, con etapas desde nuevo hasta ganado/perdido.",
+      "customers": "Clientes de Santa Brisa, tanto directos como distribuidores.",
+      "salesOrders": "Pedidos de venta (SELL IN) con items, estados de entrega y facturacion.",
+      "salesTrends": "Datos de tendencias para graficos de analytics."
+    },
+    "relationships": [
+      "Cada Opportunity pertenece a un Customer",
+      "Cada SalesOrder pertenece a un Customer y contiene multiples items",
+      "Los KPIs se calculan a partir de SalesOrders y Customers"
+    ]
+  },
+  "kpis": {
+    "salesThisMonth": {
+      "value": 847000,
+      "previousValue": 752000,
+      "change": 12.6,
+      "label": "Ventas del Mes"
+    },
+    "activeOrders": {
+      "value": 156,
+      "previousValue": 161,
+      "change": -3.1,
+      "label": "Pedidos Activos"
+    },
+    "newCustomers": {
+      "value": 89,
+      "previousValue": 89,
+      "change": 0,
+      "label": "Clientes Nuevos"
+    },
+    "avgOrderValue": {
+      "value": 5430,
+      "previousValue": 4890,
+      "change": 11.0,
+      "label": "Ticket Promedio"
+    }
+  },
+  "opportunities": [
+    {
+      "id": "opp-001",
+      "title": "Expansion Zona Norte",
+      "customerName": "Distribuciones Noreste SA",
+      "customerId": "cust-001",
+      "value": 125000,
+      "stage": "negotiation",
+      "daysInStage": 3,
+      "assignee": "Carlos Mendez",
+      "nextContactDate": "2025-01-05",
+      "notes": "Interesados en 3 SKUs nuevos"
+    },
+    {
+      "id": "opp-002",
+      "title": "Contrato Anual Supermercados",
+      "customerName": "Cadena SuperMax",
+      "customerId": "cust-002",
+      "value": 450000,
+      "stage": "proposal",
+      "daysInStage": 12,
+      "assignee": "Maria Lopez",
+      "nextContactDate": "2025-01-03",
+      "notes": "Enviada propuesta con descuento por volumen"
+    },
+    {
+      "id": "opp-003",
+      "title": "Tiendas Gourmet Centro",
+      "customerName": "Gourmet Express",
+      "customerId": "cust-003",
+      "value": 28000,
+      "stage": "contacted",
+      "daysInStage": 5,
+      "assignee": "Carlos Mendez",
+      "nextContactDate": "2025-01-04",
+      "notes": ""
+    },
+    {
+      "id": "opp-004",
+      "title": "Restaurantes Cadena Sur",
+      "customerName": "Grupo Gastro Sur",
+      "customerId": "cust-004",
+      "value": 85000,
+      "stage": "new",
+      "daysInStage": 1,
+      "assignee": "Ana Torres",
+      "nextContactDate": null,
+      "notes": "Lead de feria Alimentaria 2024"
+    },
+    {
+      "id": "opp-005",
+      "title": "Mayorista Alimentos Premium",
+      "customerName": "Alimentos del Pacifico",
+      "customerId": "cust-005",
+      "value": 320000,
+      "stage": "won",
+      "daysInStage": 0,
+      "assignee": "Maria Lopez",
+      "nextContactDate": null,
+      "notes": "Cerrado! Primer pedido en proceso"
+    },
+    {
+      "id": "opp-006",
+      "title": "Hoteles Costa Este",
+      "customerName": "Hotelera Playa Dorada",
+      "customerId": "cust-006",
+      "value": 67000,
+      "stage": "lost",
+      "daysInStage": 0,
+      "assignee": "Carlos Mendez",
+      "nextContactDate": null,
+      "notes": "Perdido: eligieron competidor por precio"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cust-001",
+      "name": "Distribuciones Noreste SA",
+      "type": "distributor",
+      "zone": "Norte",
+      "status": "active",
+      "contactName": "Roberto Garza",
+      "contactEmail": "rgarza@distnoreste.com",
+      "contactPhone": "+52 81 1234 5678",
+      "totalOrders": 45,
+      "totalRevenue": 892000,
+      "lastOrderDate": "2024-12-28"
+    },
+    {
+      "id": "cust-002",
+      "name": "Cadena SuperMax",
+      "type": "direct",
+      "zone": "Centro",
+      "status": "active",
+      "contactName": "Patricia Vega",
+      "contactEmail": "pvega@supermax.com",
+      "contactPhone": "+52 55 9876 5432",
+      "totalOrders": 128,
+      "totalRevenue": 2340000,
+      "lastOrderDate": "2024-12-30"
+    },
+    {
+      "id": "cust-003",
+      "name": "Gourmet Express",
+      "type": "direct",
+      "zone": "Centro",
+      "status": "active",
+      "contactName": "Fernando Reyes",
+      "contactEmail": "freyes@gourmetexp.mx",
+      "contactPhone": "+52 55 5555 1234",
+      "totalOrders": 12,
+      "totalRevenue": 78000,
+      "lastOrderDate": "2024-12-15"
+    },
+    {
+      "id": "cust-004",
+      "name": "Grupo Gastro Sur",
+      "type": "direct",
+      "zone": "Sur",
+      "status": "prospect",
+      "contactName": "Alejandra Ruiz",
+      "contactEmail": "aruiz@gastrosur.com",
+      "contactPhone": "+52 33 4444 5555",
+      "totalOrders": 0,
+      "totalRevenue": 0,
+      "lastOrderDate": null
+    },
+    {
+      "id": "cust-005",
+      "name": "Alimentos del Pacifico",
+      "type": "distributor",
+      "zone": "Oeste",
+      "status": "active",
+      "contactName": "Miguel Ochoa",
+      "contactEmail": "mochoa@alimpacifico.com",
+      "contactPhone": "+52 664 123 4567",
+      "totalOrders": 67,
+      "totalRevenue": 1560000,
+      "lastOrderDate": "2024-12-29"
+    },
+    {
+      "id": "cust-006",
+      "name": "Hotelera Playa Dorada",
+      "type": "direct",
+      "zone": "Sureste",
+      "status": "inactive",
+      "contactName": "Carmen Solis",
+      "contactEmail": "csolis@playadarada.com",
+      "contactPhone": "+52 998 765 4321",
+      "totalOrders": 3,
+      "totalRevenue": 45000,
+      "lastOrderDate": "2024-06-20"
+    }
+  ],
+  "salesOrders": [
+    {
+      "id": "so-001",
+      "orderNumber": "SAL-ORD-2025-00015",
+      "customerId": "cust-002",
+      "customerName": "Cadena SuperMax",
+      "orderDate": "2024-12-30",
+      "deliveryDate": "2025-01-05",
+      "status": "confirmed",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 200, "rate": 45.00, "amount": 9000 },
+        { "itemCode": "SAL-002", "itemName": "Salsa Habanero 250ml", "qty": 150, "rate": 38.00, "amount": 5700 },
+        { "itemCode": "ADR-001", "itemName": "Aderezo Ranch 1L", "qty": 100, "rate": 62.00, "amount": 6200 }
+      ],
+      "subtotal": 20900,
+      "tax": 3344,
+      "total": 24244,
+      "deliveryProgress": 0,
+      "invoiceProgress": 0
+    },
+    {
+      "id": "so-002",
+      "orderNumber": "SAL-ORD-2025-00014",
+      "customerId": "cust-001",
+      "customerName": "Distribuciones Noreste SA",
+      "orderDate": "2024-12-28",
+      "deliveryDate": "2025-01-03",
+      "status": "in_transit",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 500, "rate": 42.00, "amount": 21000 },
+        { "itemCode": "SAL-003", "itemName": "Salsa Verde 500ml", "qty": 300, "rate": 40.00, "amount": 12000 }
+      ],
+      "subtotal": 33000,
+      "tax": 5280,
+      "total": 38280,
+      "deliveryProgress": 60,
+      "invoiceProgress": 0
+    },
+    {
+      "id": "so-003",
+      "orderNumber": "SAL-ORD-2025-00013",
+      "customerId": "cust-005",
+      "customerName": "Alimentos del Pacifico",
+      "orderDate": "2024-12-27",
+      "deliveryDate": "2024-12-31",
+      "status": "delivered",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 1000, "rate": 40.00, "amount": 40000 },
+        { "itemCode": "SAL-002", "itemName": "Salsa Habanero 250ml", "qty": 800, "rate": 35.00, "amount": 28000 },
+        { "itemCode": "ADR-002", "itemName": "Aderezo Cesar 500ml", "qty": 400, "rate": 55.00, "amount": 22000 }
+      ],
+      "subtotal": 90000,
+      "tax": 14400,
+      "total": 104400,
+      "deliveryProgress": 100,
+      "invoiceProgress": 50
+    },
+    {
+      "id": "so-004",
+      "orderNumber": "SAL-ORD-2025-00012",
+      "customerId": "cust-003",
+      "customerName": "Gourmet Express",
+      "orderDate": "2024-12-26",
+      "deliveryDate": "2024-12-28",
+      "status": "invoiced",
+      "items": [
+        { "itemCode": "SAL-004", "itemName": "Salsa Especial Gourmet 250ml", "qty": 50, "rate": 85.00, "amount": 4250 }
+      ],
+      "subtotal": 4250,
+      "tax": 680,
+      "total": 4930,
+      "deliveryProgress": 100,
+      "invoiceProgress": 100
+    },
+    {
+      "id": "so-005",
+      "orderNumber": "SAL-ORD-2025-00011",
+      "customerId": "cust-002",
+      "customerName": "Cadena SuperMax",
+      "orderDate": "2024-12-20",
+      "deliveryDate": "2024-12-24",
+      "status": "paid",
+      "items": [
+        { "itemCode": "SAL-001", "itemName": "Salsa Chipotle 500ml", "qty": 300, "rate": 45.00, "amount": 13500 },
+        { "itemCode": "SAL-002", "itemName": "Salsa Habanero 250ml", "qty": 200, "rate": 38.00, "amount": 7600 }
+      ],
+      "subtotal": 21100,
+      "tax": 3376,
+      "total": 24476,
+      "deliveryProgress": 100,
+      "invoiceProgress": 100
+    }
+  ],
+  "salesTrends": {
+    "monthly": [
+      { "period": "Jul", "value": 620000 },
+      { "period": "Ago", "value": 580000 },
+      { "period": "Sep", "value": 710000 },
+      { "period": "Oct", "value": 690000 },
+      { "period": "Nov", "value": 752000 },
+      { "period": "Dic", "value": 847000 }
+    ],
+    "byProduct": [
+      { "product": "Salsa Chipotle", "value": 340000, "percentage": 40 },
+      { "product": "Salsa Habanero", "value": 212000, "percentage": 25 },
+      { "product": "Salsa Verde", "value": 127000, "percentage": 15 },
+      { "product": "Aderezos", "value": 168000, "percentage": 20 }
+    ],
+    "byCustomerType": [
+      { "type": "Distribuidores", "value": 508000, "percentage": 60 },
+      { "type": "Directos", "value": 339000, "percentage": 40 }
+    ]
+  },
+  "recentActivity": [
+    { "id": "act-001", "type": "order_created", "description": "Nuevo pedido SAL-ORD-2025-00015 de Cadena SuperMax", "timestamp": "2024-12-30T14:23:00Z", "user": "Maria Lopez" },
+    { "id": "act-002", "type": "opportunity_moved", "description": "Oportunidad 'Expansion Zona Norte' movida a Negociacion", "timestamp": "2024-12-30T11:45:00Z", "user": "Carlos Mendez" },
+    { "id": "act-003", "type": "delivery_completed", "description": "Entrega completada para pedido SAL-ORD-2025-00013", "timestamp": "2024-12-29T16:30:00Z", "user": "Sistema" },
+    { "id": "act-004", "type": "customer_created", "description": "Nuevo cliente: Grupo Gastro Sur", "timestamp": "2024-12-29T10:15:00Z", "user": "Ana Torres" },
+    { "id": "act-005", "type": "payment_received", "description": "Pago recibido de Cadena SuperMax por $24,476", "timestamp": "2024-12-28T09:00:00Z", "user": "Sistema" }
+  ]
+}

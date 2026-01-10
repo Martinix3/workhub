@@ -1,0 +1,202 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:SOO-{YYYY}-{#####}",
+  "creation": "2026-01-02 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "customer",
+    "customer_name",
+    "column_break_1",
+    "distributor",
+    "distributor_name",
+    "section_break_dates",
+    "order_date",
+    "expected_delivery_date",
+    "column_break_2",
+    "actual_delivery_date",
+    "status",
+    "section_break_items",
+    "items",
+    "section_break_totals",
+    "total_qty",
+    "column_break_3",
+    "total_amount",
+    "section_break_notes",
+    "issue_notes",
+    "internal_notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Cliente Final",
+      "options": "Customer",
+      "reqd": 1
+    },
+    {
+      "fetch_from": "customer.customer_name",
+      "fieldname": "customer_name",
+      "fieldtype": "Data",
+      "label": "Nombre del Cliente",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "distributor",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Distribuidor Asignado",
+      "options": "Customer",
+      "reqd": 1
+    },
+    {
+      "fetch_from": "distributor.customer_name",
+      "fieldname": "distributor_name",
+      "fieldtype": "Data",
+      "label": "Nombre del Distribuidor",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_break_dates",
+      "fieldtype": "Section Break",
+      "label": "Fechas y Estado"
+    },
+    {
+      "default": "Today",
+      "fieldname": "order_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Fecha de Pedido",
+      "reqd": 1
+    },
+    {
+      "fieldname": "expected_delivery_date",
+      "fieldtype": "Date",
+      "label": "Fecha de Entrega Esperada"
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "actual_delivery_date",
+      "fieldtype": "Date",
+      "label": "Fecha de Entrega Real"
+    },
+    {
+      "default": "Pending",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Estado",
+      "options": "Pending\nIn Progress\nDelivered\nIssue\nCancelled",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_break_items",
+      "fieldtype": "Section Break",
+      "label": "Items del Pedido"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Items",
+      "options": "Distributor Sell Out Order Item",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_break_totals",
+      "fieldtype": "Section Break",
+      "label": "Totales"
+    },
+    {
+      "fieldname": "total_qty",
+      "fieldtype": "Float",
+      "label": "Total Unidades",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_3",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "total_amount",
+      "fieldtype": "Currency",
+      "label": "Monto Total",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_break_notes",
+      "fieldtype": "Section Break",
+      "label": "Notas"
+    },
+    {
+      "depends_on": "eval:doc.status=='Issue'",
+      "fieldname": "issue_notes",
+      "fieldtype": "Text",
+      "label": "Notas de Incidencia"
+    },
+    {
+      "fieldname": "internal_notes",
+      "fieldtype": "Text",
+      "label": "Notas Internas"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "is_submittable": 0,
+  "links": [],
+  "modified": "2026-01-02 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Workhub Frappe App",
+  "name": "Distributor Sell Out Order",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Sales User",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Customer",
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "title_field": "customer_name",
+  "track_changes": 1
+}

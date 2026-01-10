@@ -1,0 +1,375 @@
+/**
+ * Header Custom Styles
+ */
+
+/* === Header Container === */
+.wh-header {
+    position: sticky;
+    top: 0;
+    left: 256px;
+    right: 0;
+    height: 56px;
+    background: #ffffff;
+    border-bottom: 2px solid #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 999;
+    margin-left: 256px;
+    transition: margin-left 0.2s ease;
+}
+
+/* Ajustar cuando sidebar está colapsado */
+body:has(.wh-sidebar.collapsed) .wh-header {
+    margin-left: 64px;
+}
+
+/* === Header Left (Logo + Breadcrumbs) === */
+.wh-header-left {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.wh-header-logo {
+    height: 32px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.wh-header-logo img {
+    height: 100%;
+    width: auto;
+}
+
+/* === Header Center (Search) === */
+.wh-header-center {
+    flex: 0 1 600px;
+    max-width: 600px;
+}
+
+/* === Header Right (Actions) === */
+.wh-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* === Breadcrumbs === */
+.wh-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.wh-breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wh-breadcrumb-link {
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.wh-breadcrumb-link:hover {
+    color: #0a0a0a;
+}
+
+.wh-breadcrumb-separator {
+    color: #d0d0d0;
+}
+
+.wh-breadcrumb-current {
+    color: #0a0a0a;
+    font-weight: 600;
+}
+
+/* === Search Bar === */
+.wh-search-bar {
+    position: relative;
+    width: 100%;
+}
+
+.wh-search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 40px 0 12px;
+    border: 2px solid #0f172a;
+    border-radius: 0;
+    font-size: 14px;
+    background: #ffffff;
+    color: #0a0a0a;
+    transition: all 0.2s;
+}
+
+.wh-search-input:focus {
+    outline: none;
+    border-color: #f5ce3e;
+    box-shadow: 4px 4px 0 #0f172a;
+}
+
+.wh-search-input::placeholder {
+    color: #64748b;
+}
+
+.wh-search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+}
+
+/* === Header Actions === */
+.wh-header-action {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: #64748b;
+    border: 2px solid transparent;
+}
+
+.wh-header-action:hover {
+    background: #f5f5f0;
+    color: #0a0a0a;
+    border-color: #0f172a;
+}
+
+/* === Notifications Badge === */
+.wh-notification-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background: #df6a2e;
+    border-radius: 0;
+    border: 1px solid #0f172a;
+}
+
+.wh-notification-badge.has-count {
+    width: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+}
+
+/* === Notifications Panel === */
+.wh-notifications-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 400px;
+    max-height: 500px;
+    background: #ffffff;
+    border: 2px solid #0f172a;
+    border-radius: 0;
+    box-shadow: 4px 4px 0 #0f172a;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.wh-notifications-panel.open {
+    display: flex;
+}
+
+.wh-notifications-header {
+    padding: 16px;
+    border-bottom: 2px solid #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.wh-notifications-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0a0a0a;
+}
+
+.wh-notifications-mark-read {
+    font-size: 12px;
+    color: #f5ce3e;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.wh-notifications-mark-read:hover {
+    text-decoration: underline;
+}
+
+.wh-notifications-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.wh-notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #d0d0d0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.wh-notification-item:last-child {
+    border-bottom: none;
+}
+
+.wh-notification-item:hover {
+    background: #f5f5f0;
+}
+
+.wh-notification-item.unread {
+    background: #fffce8;
+    border-left: 4px solid #f5ce3e;
+}
+
+.wh-notification-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #0a0a0a;
+    margin-bottom: 4px;
+}
+
+.wh-notification-message {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.wh-notification-time {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.wh-notifications-empty {
+    padding: 16px;
+    text-align: center;
+    color: #64748b;
+}
+
+/* === User Menu === */
+.wh-user-menu {
+    position: relative;
+}
+
+.wh-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 0;
+    background: #f5ce3e;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    border: 2px solid #0f172a;
+}
+
+.wh-user-avatar:hover {
+    transform: translate(2px, 2px);
+}
+
+.wh-user-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 240px;
+    background: #ffffff;
+    border: 2px solid #0f172a;
+    border-radius: 0;
+    box-shadow: 4px 4px 0 #0f172a;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.wh-user-dropdown.open {
+    display: flex;
+}
+
+.wh-user-info {
+    padding: 16px;
+    border-bottom: 2px solid #0f172a;
+}
+
+.wh-user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0a0a0a;
+    margin-bottom: 2px;
+}
+
+.wh-user-email {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.wh-user-actions {
+    padding: 8px;
+}
+
+.wh-user-action-item {
+    padding: 8px 12px;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #0a0a0a;
+}
+
+.wh-user-action-item:hover {
+    background: #f5f5f0;
+}
+
+/* === Mobile === */
+@media (max-width: 768px) {
+    .wh-header {
+        margin-left: 0;
+        left: 0;
+    }
+
+    .wh-header-center {
+        display: none;
+    }
+
+    .wh-breadcrumbs {
+        display: none;
+    }
+
+    .wh-notifications-panel,
+    .wh-user-dropdown {
+        width: calc(100vw - 32px);
+        right: 16px;
+        box-shadow: 4px 4px 0 #0f172a;
+    }
+}

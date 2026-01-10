@@ -1,0 +1,134 @@
+<!-- Page: Distribuidores -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Distribuidores") }}{% endblock %}
+{% block breadcrumb %}Distribuidores{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>🏢 Distribuidores</h1>
+		<p class="text-muted">Dashboard de Distribuidores - Visión global de SELL IN y SELL OUT</p>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-2">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Distribuidores</h5>
+					<h2>{{ kpis.total_distributors }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">SELL IN</h5>
+					<h2>{{ "%.0f"|format(kpis.sell_in_qty) }}</h2>
+					<small class="text-muted">unidades</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">SELL OUT</h5>
+					<h2>{{ "%.0f"|format(kpis.sell_out_qty) }}</h2>
+					<small class="text-muted">unidades</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Stock</h5>
+					<h2>{{ "%.0f"|format(kpis.current_stock) }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card bg-success text-white">
+				<div class="card-body text-center">
+					<h5>Rotación</h5>
+					<h2>{{ "%.1f"|format(kpis.rotation) }}%</h2>
+					<small>SELL OUT / SELL IN</small>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header"><h5>Top Distribuidores por SELL OUT</h5></div>
+				<div class="card-body">
+					{% if top_distributors %}
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Distribuidor</th>
+								<th class="text-right">Unidades</th>
+								<th class="text-right">Monto</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for dist in top_distributors %}
+							<tr>
+								<td>{{ dist.customer_name }}</td>
+								<td class="text-right">{{ "%.0f"|format(dist.sell_out_qty) }}</td>
+								<td class="text-right"><strong>${{ "%.0f"|format(dist.sell_out_amount) }}</strong></td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+					{% else %}
+					<p class="text-center text-muted">Sin datos de SELL OUT</p>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header"><h5>Accesos Rápidos</h5></div>
+				<div class="card-body"><div class="row">
+					<div class="col-md-3 mb-3"><a href="/app/workhub-distribuidores-portal" class="btn btn-light btn-block">🌐 Portal</a></div>
+				</div></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.btn-block {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+}
+</style>
+{% endblock %}

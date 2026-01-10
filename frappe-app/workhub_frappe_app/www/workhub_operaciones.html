@@ -1,0 +1,135 @@
+<!-- Page: Operaciones -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Operaciones") }}{% endblock %}
+{% block breadcrumb %}Operaciones{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>🚚 Operaciones</h1>
+		<p class="text-muted">Dashboard de Operaciones - Inventario, Logística y Recepciones</p>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Items en Stock</h5>
+					<h2>{{ kpis.total_items }}</h2>
+					<small class="text-muted">productos</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Valor Inventario</h5>
+					<h2>${{ "%.0f"|format(kpis.total_value) }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card border-warning">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Stock Bajo</h5>
+					<h2 class="text-warning">{{ kpis.low_stock }}</h2>
+					<small class="text-muted">< 10 unidades</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">En Tránsito</h5>
+					<h2>{{ kpis.trips_transit }}</h2>
+					<small class="text-muted">viajes</small>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-6">
+			<div class="card border-warning">
+				<div class="card-header"><h5>⚠️ Productos con Stock Bajo</h5></div>
+				<div class="card-body">
+					{% if low_stock_items %}
+					<table class="table table-sm">
+						{% for item in low_stock_items %}
+						<tr>
+							<td>{{ item.item_name }}</td>
+							<td class="text-right"><span class="badge badge-warning">{{ "%.0f"|format(item.qty) }} unidades</span></td>
+						</tr>
+						{% endfor %}
+					</table>
+					{% else %}
+					<p class="text-center text-muted">Sin productos con stock bajo</p>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header"><h5>📋 Operaciones Pendientes</h5></div>
+				<div class="card-body">
+					<div class="list-group">
+						<div class="list-group-item d-flex justify-content-between">
+							<span>Recepciones por aprobar</span>
+							<strong>{{ kpis.receipts_pending }}</strong>
+						</div>
+						<div class="list-group-item d-flex justify-content-between">
+							<span>Envíos por procesar</span>
+							<strong>{{ kpis.deliveries_pending }}</strong>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header"><h5>Accesos Rápidos</h5></div>
+				<div class="card-body"><div class="row">
+					<div class="col-md-3 mb-3"><a href="/app/workhub-operaciones-inventario" class="btn btn-light btn-block">📦 Inventario</a></div>
+					<div class="col-md-3 mb-3"><a href="/app/workhub-operaciones-recepciones" class="btn btn-light btn-block">📥 Recepciones</a></div>
+					<div class="col-md-3 mb-3"><a href="/app/workhub-operaciones-logistica" class="btn btn-light btn-block">🚛 Logística</a></div>
+				</div></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.btn-block {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+}
+</style>
+{% endblock %}

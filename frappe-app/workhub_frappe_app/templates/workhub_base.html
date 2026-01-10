@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{% block title %}WorkHub{% endblock %} - Santa Brisa</title>
+
+	<!-- Google Fonts: Neobrutalismo Editorial -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+	<!-- Bootstrap only (frappe-web.bundle.css not needed for www pages) -->
+	<link rel="stylesheet" href="/assets/frappe/css/bootstrap.css">
+
+	<!-- WorkHub Design System CSS -->
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/system/variables.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/system/typography.css">
+
+	<!-- WorkHub Shell Components -->
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/sidebar.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/header.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/bottom_nav.css">
+
+	<!-- WorkHub UI Components -->
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/buttons.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/badges.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/kpi-card.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/data-table.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/command-palette.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/charts.css">
+
+	<!-- WorkHub Bundle (layout utilities) -->
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/workhub.bundle.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/pages/workhub-pages.css">
+
+	<style>
+		/* Neobrutalismo Editorial Design System */
+		:root {
+			/* Layout */
+			--wh-sidebar-width: 256px;
+			--wh-sidebar-collapsed-width: 64px;
+			--wh-header-height: 56px;
+
+			/* Typography */
+			--font-display: 'Playfair Display', serif;
+			--font-ui: 'Inter', system-ui, sans-serif;
+			--font-mono: 'JetBrains Mono', monospace;
+
+			/* Colors - Neobrutal Palette */
+			--bg: #f5f5f0;
+			--surface-1: #ffffff;
+			--surface-2: #fafafa;
+			--grid: #e8e8e0;
+
+			--text-1: #0a0a0a;
+			--text-2: #4a4a4a;
+			--text-3: #7a7a7a;
+
+			--border-1: #000000;
+			--border-2: #d0d0d0;
+
+			/* Santa Brisa Palette */
+			--primary: #f5ce3e;
+			--primary-hover: #e5be2e;
+			--secondary: #99d9d9;
+			--secondary-hover: #7cc9c9;
+			--accent: #df6a2e;
+			--accent-hover: #cf5a1e;
+			--earth: #996b1d;
+
+			--success: #008040;
+			--success-soft: #e6f5ec;
+			--danger: #c62828;
+			--danger-soft: #fdeaea;
+			--warning: #f9a825;
+			--warning-soft: #fff8e1;
+
+			/* Neobrutal Tokens */
+			--radius: 0px;
+			--radius-sm: 2px;
+			--shadow: 4px 4px 0px var(--border-1);
+			--shadow-hover: 2px 2px 0px var(--border-1);
+			--hover-shift: translate(2px, 2px);
+			--transition: 80ms ease-out;
+
+			/* Spacing */
+			--space-1: 0.25rem;
+			--space-2: 0.5rem;
+			--space-3: 0.75rem;
+			--space-4: 1rem;
+			--space-6: 1.5rem;
+			--space-8: 2rem;
+			--space-12: 3rem;
+
+			/* Type Scale */
+			--text-5xl: 3rem;
+			--text-4xl: 2.25rem;
+			--text-3xl: 1.875rem;
+			--text-2xl: 1.5rem;
+			--text-xl: 1.25rem;
+			--text-lg: 1.125rem;
+			--text-base: 1rem;
+			--text-sm: 0.875rem;
+			--text-xs: 0.75rem;
+
+			/* Legacy aliases for compatibility */
+			--wh-bg: var(--bg);
+			--wh-sidebar-bg: #1e293b;
+			--wh-text: var(--text-1);
+			--wh-text-muted: var(--text-3);
+		}
+
+		body {
+			margin: 0;
+			padding: 0;
+			background: var(--bg);
+			font-family: var(--font-ui);
+			color: var(--text-1);
+		}
+
+		.wh-shell {
+			display: flex;
+			min-height: 100vh;
+		}
+
+		.wh-main {
+			flex: 1;
+			margin-left: var(--wh-sidebar-width);
+			transition: margin-left 0.3s ease;
+		}
+
+		.wh-main.sidebar-collapsed {
+			margin-left: var(--wh-sidebar-collapsed-width);
+		}
+
+		.wh-content {
+			padding: 20px;
+			padding-top: calc(var(--wh-header-height) + 20px);
+			min-height: calc(100vh - var(--wh-header-height));
+		}
+
+		/* Mobile */
+		@media (max-width: 768px) {
+			.wh-main {
+				margin-left: 0;
+			}
+
+			.wh-content {
+				padding-bottom: 80px; /* Space for bottom nav */
+			}
+		}
+	</style>
+
+	{% block head %}{% endblock %}
+</head>
+<body>
+	<div class="wh-shell">
+		<!-- Sidebar se inyecta via JS -->
+
+		<div class="wh-main" id="wh-main">
+			<!-- Header se inyecta via JS -->
+
+			<div class="wh-content">
+				{% block page_content %}{% endblock %}
+			</div>
+		</div>
+	</div>
+
+	<!-- Frappe mock for www pages (no frappe-web.bundle needed) -->
+	<script>
+		// Mock frappe object for www pages
+		window.frappe = window.frappe || {};
+		frappe.session = frappe.session || {
+			user: '{{ frappe.session.user }}',
+			user_fullname: '{{ frappe.session.user_fullname or frappe.session.user }}'
+		};
+		frappe.user_roles = {{ user_roles | default([]) | tojson }};
+		frappe.datetime = frappe.datetime || {
+			comment_when: function(d) { return d; }
+		};
+		frappe.router = frappe.router || {
+			on: function() {}
+		};
+		frappe.get_route = function() {
+			return window.location.pathname.split('/').filter(Boolean);
+		};
+		frappe.set_route = function(route) {
+			window.location.href = '/' + route;
+		};
+		frappe.call = frappe.call || function(opts) {
+			if (opts.callback) opts.callback({ message: [] });
+		};
+		frappe.realtime = frappe.realtime || { on: function() {} };
+	</script>
+
+	<!-- WorkHub Shell JS -->
+	<script src="/assets/workhub_frappe_app/js/workhub.bundle.js"></script>
+
+	<script>
+		// Initialize shell when DOM ready
+		document.addEventListener('DOMContentLoaded', function() {
+			// Init sidebar
+			if (frappe.workhub && frappe.workhub.sidebar) {
+				frappe.workhub.sidebar.init();
+			}
+
+			// Init header (custom for www pages)
+			initWwwHeader();
+
+			// Init bottom nav
+			if (frappe.workhub && frappe.workhub.bottomNav) {
+				frappe.workhub.bottomNav.init();
+			}
+		});
+
+		function initWwwHeader() {
+			const main = document.getElementById('wh-main');
+			if (!main) return;
+
+			const header = document.createElement('div');
+			header.className = 'wh-header';
+			header.innerHTML = `
+				<div class="wh-header-left">
+					<button class="wh-header-menu-toggle" onclick="frappe.workhub.bottomNav && frappe.workhub.bottomNav.openMobileSidebar()">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+						</svg>
+					</button>
+					<nav class="wh-breadcrumbs">
+						<div class="wh-breadcrumb-item">
+							<a href="/app" class="wh-breadcrumb-link">Home</a>
+						</div>
+						<div class="wh-breadcrumb-separator">/</div>
+						<div class="wh-breadcrumb-item">
+							<span class="wh-breadcrumb-current">{% block breadcrumb %}{% endblock %}</span>
+						</div>
+					</nav>
+				</div>
+				<div class="wh-header-right">
+					<div class="wh-user-menu">
+						<div class="wh-user-avatar">
+							{{ (frappe.session.user_fullname or frappe.session.user)[:2] | upper }}
+						</div>
+					</div>
+				</div>
+			`;
+
+			main.insertBefore(header, main.firstChild);
+		}
+	</script>
+
+	{% block script %}{% endblock %}
+</body>
+</html>

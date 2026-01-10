@@ -1,0 +1,632 @@
+{
+  "_meta": {
+    "models": {
+      "productionKpis": "KPIs de produccion del dia.",
+      "productionOrders": "Ordenes de manufactura activas y recientes.",
+      "formulations": "Recetas/BOM para cada producto.",
+      "productionLines": "Estado de lineas de produccion.",
+      "qualityKpis": "KPIs de control de calidad.",
+      "inspections": "Inspecciones de producto realizadas.",
+      "nonConformances": "No-conformidades abiertas.",
+      "lots": "Lotes de produccion con trazabilidad completa.",
+      "haccpPlans": "Planes HACCP por producto con PCCs.",
+      "ccpReadings": "Lecturas de puntos criticos de control.",
+      "documents": "Documentos de calidad (SOPs, specs, certs).",
+      "documentFolders": "Carpetas para organizar documentos."
+    },
+    "relationships": [
+      "ProductionOrder usa una Formulation para definir ingredientes",
+      "Cada Inspection evalua un lote de ProductionOrder",
+      "Inspection rechazada genera NonConformance automaticamente",
+      "Lot vincula materias primas consumidas con producto terminado",
+      "CCPReading registra monitoreo de PCCs del plan HACCP",
+      "Document tiene versiones y puede requerir aprobacion"
+    ]
+  },
+  "productionKpis": {
+    "activeOrders": {
+      "value": 8,
+      "previousValue": 6,
+      "change": 33.3,
+      "label": "Ordenes Activas"
+    },
+    "oeePercent": {
+      "value": 82,
+      "previousValue": 78,
+      "change": 5.1,
+      "label": "OEE Promedio"
+    },
+    "completedToday": {
+      "value": 12,
+      "previousValue": 10,
+      "change": 20.0,
+      "label": "Completadas Hoy"
+    },
+    "unitsProduced": {
+      "value": 4850,
+      "previousValue": 4200,
+      "change": 15.5,
+      "label": "Unidades Producidas"
+    }
+  },
+  "productionOrders": [
+    {
+      "id": "po-001",
+      "orderNumber": "PO-2024-00156",
+      "productCode": "SAL-001",
+      "productName": "Salsa Chipotle 500ml",
+      "formulationId": "form-001",
+      "lotNumber": "L2024-1230-A",
+      "qtyTarget": 500,
+      "qtyProduced": 320,
+      "uom": "unidades",
+      "status": "in_progress",
+      "lineId": "line-01",
+      "lineName": "Linea Salsas A",
+      "scheduledDate": "2024-12-30",
+      "startTime": "06:00",
+      "progress": 64
+    },
+    {
+      "id": "po-002",
+      "orderNumber": "PO-2024-00157",
+      "productCode": "SAL-002",
+      "productName": "Salsa Habanero 250ml",
+      "formulationId": "form-002",
+      "lotNumber": "L2024-1230-B",
+      "qtyTarget": 300,
+      "qtyProduced": 300,
+      "uom": "unidades",
+      "status": "completed",
+      "lineId": "line-02",
+      "lineName": "Linea Salsas B",
+      "scheduledDate": "2024-12-30",
+      "startTime": "06:00",
+      "endTime": "10:30",
+      "progress": 100
+    },
+    {
+      "id": "po-003",
+      "orderNumber": "PO-2024-00158",
+      "productCode": "ADR-001",
+      "productName": "Aderezo Ranch 1L",
+      "formulationId": "form-003",
+      "lotNumber": "L2024-1230-C",
+      "qtyTarget": 200,
+      "qtyProduced": 0,
+      "uom": "unidades",
+      "status": "scheduled",
+      "lineId": "line-03",
+      "lineName": "Linea Aderezos",
+      "scheduledDate": "2024-12-30",
+      "progress": 0
+    },
+    {
+      "id": "po-004",
+      "orderNumber": "PO-2024-00159",
+      "productCode": "SAL-003",
+      "productName": "Salsa Verde 500ml",
+      "formulationId": "form-004",
+      "lotNumber": "L2024-1230-D",
+      "qtyTarget": 400,
+      "qtyProduced": 180,
+      "uom": "unidades",
+      "status": "in_progress",
+      "lineId": "line-01",
+      "lineName": "Linea Salsas A",
+      "scheduledDate": "2024-12-30",
+      "startTime": "11:00",
+      "progress": 45
+    }
+  ],
+  "formulations": [
+    {
+      "id": "form-001",
+      "name": "Salsa Chipotle 500ml",
+      "version": "2.1",
+      "productCode": "SAL-001",
+      "productName": "Salsa Chipotle 500ml",
+      "status": "active",
+      "ingredients": [
+        { "itemCode": "MP-001", "itemName": "Chile Chipotle Seco", "qty": 120, "uom": "kg", "tolerance": 2 },
+        { "itemCode": "MP-002", "itemName": "Tomate", "qty": 200, "uom": "kg", "tolerance": 5 },
+        { "itemCode": "MP-003", "itemName": "Vinagre", "qty": 50, "uom": "L", "tolerance": 2 },
+        { "itemCode": "MP-004", "itemName": "Sal", "qty": 8, "uom": "kg", "tolerance": 0.5 }
+      ],
+      "yield": 500,
+      "yieldUom": "unidades"
+    },
+    {
+      "id": "form-002",
+      "name": "Salsa Habanero 250ml",
+      "version": "1.3",
+      "productCode": "SAL-002",
+      "productName": "Salsa Habanero 250ml",
+      "status": "active",
+      "ingredients": [
+        { "itemCode": "MP-005", "itemName": "Chile Habanero", "qty": 80, "uom": "kg", "tolerance": 2 },
+        { "itemCode": "MP-006", "itemName": "Zanahoria", "qty": 60, "uom": "kg", "tolerance": 3 },
+        { "itemCode": "MP-003", "itemName": "Vinagre", "qty": 30, "uom": "L", "tolerance": 2 }
+      ],
+      "yield": 300,
+      "yieldUom": "unidades"
+    },
+    {
+      "id": "form-003",
+      "name": "Aderezo Ranch 1L",
+      "version": "3.0",
+      "productCode": "ADR-001",
+      "productName": "Aderezo Ranch 1L",
+      "status": "active",
+      "ingredients": [
+        { "itemCode": "MP-010", "itemName": "Mayonesa Base", "qty": 150, "uom": "kg", "tolerance": 3 },
+        { "itemCode": "MP-011", "itemName": "Buttermilk", "qty": 80, "uom": "L", "tolerance": 2 },
+        { "itemCode": "MP-012", "itemName": "Mezcla Especias Ranch", "qty": 5, "uom": "kg", "tolerance": 0.2 }
+      ],
+      "yield": 200,
+      "yieldUom": "unidades"
+    }
+  ],
+  "productionLines": [
+    {
+      "id": "line-01",
+      "name": "Linea Salsas A",
+      "status": "running",
+      "currentOrder": "PO-2024-00156",
+      "oee": 85,
+      "uptime": 94,
+      "lastMaintenance": "2024-12-15",
+      "nextMaintenance": "2025-01-15"
+    },
+    {
+      "id": "line-02",
+      "name": "Linea Salsas B",
+      "status": "idle",
+      "oee": 78,
+      "uptime": 88,
+      "lastMaintenance": "2024-12-20",
+      "nextMaintenance": "2025-01-20"
+    },
+    {
+      "id": "line-03",
+      "name": "Linea Aderezos",
+      "status": "maintenance",
+      "oee": 72,
+      "uptime": 82,
+      "lastMaintenance": "2024-12-28",
+      "nextMaintenance": "2025-01-28"
+    },
+    {
+      "id": "line-04",
+      "name": "Linea Empaque",
+      "status": "running",
+      "currentOrder": "PO-2024-00159",
+      "oee": 90,
+      "uptime": 96,
+      "lastMaintenance": "2024-12-10",
+      "nextMaintenance": "2025-01-10"
+    }
+  ],
+  "qualityKpis": {
+    "approvalRate": {
+      "value": 96.5,
+      "previousValue": 95.2,
+      "change": 1.4,
+      "label": "Tasa Aprobacion"
+    },
+    "openNCs": {
+      "value": 3,
+      "previousValue": 5,
+      "change": -40.0,
+      "label": "NCs Abiertas"
+    },
+    "pendingInspections": {
+      "value": 4,
+      "previousValue": 6,
+      "change": -33.3,
+      "label": "Inspecciones Pendientes"
+    },
+    "avgCloseTime": {
+      "value": 4.2,
+      "previousValue": 5.8,
+      "change": -27.6,
+      "label": "Dias Promedio Cierre NC"
+    }
+  },
+  "inspections": [
+    {
+      "id": "insp-001",
+      "lotNumber": "L2024-1230-B",
+      "productCode": "SAL-002",
+      "productName": "Salsa Habanero 250ml",
+      "inspectionDate": "2024-12-30",
+      "inspector": "Maria Garcia",
+      "criteria": [
+        { "id": "c1", "name": "pH", "specification": "3.8-4.2", "actualValue": "4.0", "result": "pass" },
+        { "id": "c2", "name": "Viscosidad", "specification": "800-1200 cP", "actualValue": "950 cP", "result": "pass" },
+        { "id": "c3", "name": "Color", "specification": "Rojo-Naranja", "actualValue": "Conforme", "result": "pass" }
+      ],
+      "result": "approved",
+      "notes": "Lote conforme a especificaciones"
+    },
+    {
+      "id": "insp-002",
+      "lotNumber": "L2024-1229-A",
+      "productCode": "SAL-001",
+      "productName": "Salsa Chipotle 500ml",
+      "inspectionDate": "2024-12-29",
+      "inspector": "Carlos Lopez",
+      "criteria": [
+        { "id": "c1", "name": "pH", "specification": "3.8-4.2", "actualValue": "4.1", "result": "pass" },
+        { "id": "c2", "name": "Viscosidad", "specification": "800-1200 cP", "actualValue": "1100 cP", "result": "pass" },
+        { "id": "c3", "name": "Particulas Extranas", "specification": "Ausente", "actualValue": "Presente", "result": "fail" }
+      ],
+      "result": "rejected",
+      "notes": "Se detectaron particulas metalicas. Lote retenido."
+    },
+    {
+      "id": "insp-003",
+      "lotNumber": "L2024-1228-C",
+      "productCode": "ADR-001",
+      "productName": "Aderezo Ranch 1L",
+      "inspectionDate": "2024-12-28",
+      "inspector": "Maria Garcia",
+      "criteria": [
+        { "id": "c1", "name": "pH", "specification": "4.0-4.5", "actualValue": "4.3", "result": "pass" },
+        { "id": "c2", "name": "Consistencia", "specification": "Cremosa", "actualValue": "Conforme", "result": "pass" }
+      ],
+      "result": "approved"
+    }
+  ],
+  "nonConformances": [
+    {
+      "id": "nc-001",
+      "ncNumber": "NC-2024-0089",
+      "lotNumber": "L2024-1229-A",
+      "productCode": "SAL-001",
+      "productName": "Salsa Chipotle 500ml",
+      "dateOpened": "2024-12-29",
+      "daysOpen": 2,
+      "severity": "major",
+      "status": "investigation",
+      "description": "Particulas metalicas detectadas en inspeccion de producto terminado.",
+      "rootCause": "Posible desgaste de aspas de mezclador Linea A.",
+      "correctiveActions": [
+        {
+          "id": "ca-001",
+          "description": "Inspeccion de aspas del mezclador",
+          "responsible": "Juan Martinez",
+          "dueDate": "2024-12-31",
+          "status": "in_progress"
+        },
+        {
+          "id": "ca-002",
+          "description": "Revision de lotes anteriores de Linea A",
+          "responsible": "Maria Garcia",
+          "dueDate": "2024-12-31",
+          "status": "pending"
+        }
+      ],
+      "responsible": "Carlos Lopez"
+    },
+    {
+      "id": "nc-002",
+      "ncNumber": "NC-2024-0088",
+      "lotNumber": "L2024-1225-B",
+      "productCode": "SAL-003",
+      "productName": "Salsa Verde 500ml",
+      "dateOpened": "2024-12-25",
+      "daysOpen": 6,
+      "severity": "minor",
+      "status": "action",
+      "description": "pH fuera de especificacion (4.5 vs 3.8-4.2).",
+      "rootCause": "Error de dosificacion de vinagre por calibracion incorrecta.",
+      "correctiveActions": [
+        {
+          "id": "ca-003",
+          "description": "Recalibracion de bomba dosificadora",
+          "responsible": "Tecnico Mantenimiento",
+          "dueDate": "2024-12-28",
+          "status": "completed",
+          "completedDate": "2024-12-27"
+        },
+        {
+          "id": "ca-004",
+          "description": "Capacitacion a operadores sobre verificacion de calibracion",
+          "responsible": "Supervisor Produccion",
+          "dueDate": "2025-01-05",
+          "status": "pending"
+        }
+      ],
+      "responsible": "Maria Garcia"
+    },
+    {
+      "id": "nc-003",
+      "ncNumber": "NC-2024-0085",
+      "lotNumber": "L2024-1220-A",
+      "productCode": "ADR-001",
+      "productName": "Aderezo Ranch 1L",
+      "dateOpened": "2024-12-20",
+      "daysOpen": 11,
+      "severity": "critical",
+      "status": "open",
+      "description": "Reclamo de cliente por producto con mal olor. Posible contaminacion.",
+      "correctiveActions": [],
+      "responsible": "Director Calidad"
+    }
+  ],
+  "weeklyTrend": [
+    { "day": "Lun", "approved": 18, "rejected": 1 },
+    { "day": "Mar", "approved": 22, "rejected": 0 },
+    { "day": "Mie", "approved": 20, "rejected": 2 },
+    { "day": "Jue", "approved": 25, "rejected": 1 },
+    { "day": "Vie", "approved": 19, "rejected": 0 },
+    { "day": "Sab", "approved": 12, "rejected": 1 },
+    { "day": "Dom", "approved": 0, "rejected": 0 }
+  ],
+  "lots": [
+    {
+      "id": "lot-001",
+      "lotNumber": "L2024-1230-B",
+      "productCode": "SAL-002",
+      "productName": "Salsa Habanero 250ml",
+      "productionOrderId": "po-002",
+      "status": "released",
+      "qtyProduced": 300,
+      "uom": "unidades",
+      "productionDate": "2024-12-30",
+      "expirationDate": "2025-12-30",
+      "location": "Almacen PT-A3",
+      "materials": [
+        { "itemCode": "MP-005", "itemName": "Chile Habanero", "lotNumber": "MP-2024-1220-01", "supplier": "Agricola La Esperanza", "qty": 80, "uom": "kg" },
+        { "itemCode": "MP-006", "itemName": "Zanahoria", "lotNumber": "MP-2024-1225-03", "supplier": "Horticola del Valle", "qty": 60, "uom": "kg" }
+      ],
+      "events": [
+        { "timestamp": "2024-12-30T06:00:00Z", "type": "created", "description": "Lote creado al iniciar orden PO-2024-00157", "user": "Sistema" },
+        { "timestamp": "2024-12-30T06:15:00Z", "type": "material_added", "description": "Chile Habanero lote MP-2024-1220-01", "user": "Operador Martinez" },
+        { "timestamp": "2024-12-30T10:30:00Z", "type": "inspection", "description": "Inspeccion aprobada por Maria Garcia", "user": "Maria Garcia" },
+        { "timestamp": "2024-12-30T11:00:00Z", "type": "released", "description": "Lote liberado para venta", "user": "Jefe de Calidad" }
+      ]
+    },
+    {
+      "id": "lot-002",
+      "lotNumber": "L2024-1229-A",
+      "productCode": "SAL-001",
+      "productName": "Salsa Chipotle 500ml",
+      "productionOrderId": "po-005",
+      "status": "held",
+      "qtyProduced": 450,
+      "uom": "unidades",
+      "productionDate": "2024-12-29",
+      "expirationDate": "2025-12-29",
+      "location": "Cuarentena Q-1",
+      "materials": [
+        { "itemCode": "MP-001", "itemName": "Chile Chipotle Seco", "lotNumber": "MP-2024-1215-02", "supplier": "Chiles del Norte", "qty": 120, "uom": "kg" },
+        { "itemCode": "MP-002", "itemName": "Tomate", "lotNumber": "MP-2024-1228-01", "supplier": "Agricola Sonora", "qty": 200, "uom": "kg" }
+      ],
+      "events": [
+        { "timestamp": "2024-12-29T06:00:00Z", "type": "created", "description": "Lote creado", "user": "Sistema" },
+        { "timestamp": "2024-12-29T14:00:00Z", "type": "inspection", "description": "Inspeccion rechazada - particulas metalicas", "user": "Carlos Lopez" },
+        { "timestamp": "2024-12-29T14:30:00Z", "type": "held", "description": "Lote retenido para investigacion", "user": "Jefe de Calidad" }
+      ]
+    },
+    {
+      "id": "lot-003",
+      "lotNumber": "L2024-1230-A",
+      "productCode": "SAL-001",
+      "productName": "Salsa Chipotle 500ml",
+      "productionOrderId": "po-001",
+      "status": "in_production",
+      "qtyProduced": 320,
+      "uom": "unidades",
+      "productionDate": "2024-12-30",
+      "expirationDate": "2025-12-30",
+      "location": "Linea Salsas A",
+      "materials": [
+        { "itemCode": "MP-001", "itemName": "Chile Chipotle Seco", "lotNumber": "MP-2024-1218-01", "supplier": "Chiles del Norte", "qty": 120, "uom": "kg" }
+      ],
+      "events": [
+        { "timestamp": "2024-12-30T06:00:00Z", "type": "created", "description": "Lote creado al iniciar orden PO-2024-00156", "user": "Sistema" },
+        { "timestamp": "2024-12-30T06:30:00Z", "type": "material_added", "description": "Materiales consumidos", "user": "Operador Ramirez" }
+      ]
+    }
+  ],
+  "haccpPlans": [
+    {
+      "id": "haccp-001",
+      "productCode": "SAL-001",
+      "productName": "Salsa Chipotle 500ml",
+      "version": "2.0",
+      "effectiveDate": "2024-01-15",
+      "ccps": [
+        {
+          "id": "ccp-001",
+          "name": "Pasteurizacion",
+          "hazardType": "biological",
+          "hazardDescription": "Supervivencia de patogenos por temperatura insuficiente",
+          "criticalLimit": "85C minimo por 2 minutos",
+          "monitoringMethod": "Sensor de temperatura en linea",
+          "frequency": "Continuo",
+          "correctiveAction": "Detener linea, reprocesar lote, verificar equipo",
+          "currentValue": "87.5C",
+          "lastReading": "2024-12-30T14:30:00Z",
+          "status": "normal"
+        },
+        {
+          "id": "ccp-002",
+          "name": "Detector de Metales",
+          "hazardType": "physical",
+          "hazardDescription": "Presencia de particulas metalicas",
+          "criticalLimit": "Fe 1.5mm, Non-Fe 2.0mm, SS 2.5mm",
+          "monitoringMethod": "Detector de metales en linea",
+          "frequency": "Cada producto",
+          "correctiveAction": "Rechazar producto, revisar lote, calibrar detector",
+          "currentValue": "OK",
+          "lastReading": "2024-12-30T14:28:00Z",
+          "status": "normal"
+        },
+        {
+          "id": "ccp-003",
+          "name": "pH Final",
+          "hazardType": "biological",
+          "hazardDescription": "Crecimiento microbiano por pH inadecuado",
+          "criticalLimit": "pH <= 4.2",
+          "monitoringMethod": "Medicion con pHmetro calibrado",
+          "frequency": "Cada lote",
+          "correctiveAction": "Ajustar pH con vinagre, retener lote si no corrige",
+          "currentValue": "4.0",
+          "lastReading": "2024-12-30T10:15:00Z",
+          "status": "normal"
+        }
+      ]
+    },
+    {
+      "id": "haccp-002",
+      "productCode": "ADR-001",
+      "productName": "Aderezo Ranch 1L",
+      "version": "1.5",
+      "effectiveDate": "2024-03-01",
+      "ccps": [
+        {
+          "id": "ccp-004",
+          "name": "Temperatura Refrigeracion",
+          "hazardType": "biological",
+          "hazardDescription": "Crecimiento de patogenos por temperatura inadecuada",
+          "criticalLimit": "4C maximo",
+          "monitoringMethod": "Sensor de temperatura en camara",
+          "frequency": "Continuo",
+          "correctiveAction": "Verificar sistema de frio, mover producto a camara alternativa",
+          "currentValue": "5.2C",
+          "lastReading": "2024-12-30T14:25:00Z",
+          "status": "warning"
+        }
+      ]
+    }
+  ],
+  "ccpReadings": [
+    {
+      "id": "read-001",
+      "ccpId": "ccp-001",
+      "ccpName": "Pasteurizacion",
+      "value": "87.5C",
+      "timestamp": "2024-12-30T14:30:00Z",
+      "operator": "Juan Martinez",
+      "status": "normal",
+      "lotNumber": "L2024-1230-A"
+    },
+    {
+      "id": "read-002",
+      "ccpId": "ccp-004",
+      "ccpName": "Temperatura Refrigeracion",
+      "value": "5.2C",
+      "timestamp": "2024-12-30T14:25:00Z",
+      "operator": "Sistema Automatico",
+      "status": "warning",
+      "correctiveActionTaken": "Tecnico notificado, verificando compresor"
+    },
+    {
+      "id": "read-003",
+      "ccpId": "ccp-002",
+      "ccpName": "Detector de Metales",
+      "value": "Alerta Fe",
+      "timestamp": "2024-12-29T13:45:00Z",
+      "operator": "Operador Linea",
+      "status": "critical",
+      "lotNumber": "L2024-1229-A",
+      "correctiveActionTaken": "Producto rechazado, lote retenido, NC-2024-0089 creada"
+    }
+  ],
+  "documentFolders": [
+    { "id": "folder-sop", "name": "Procedimientos (SOP)", "documentCount": 24 },
+    { "id": "folder-spec", "name": "Especificaciones", "documentCount": 18 },
+    { "id": "folder-cert", "name": "Certificados", "documentCount": 12 },
+    { "id": "folder-training", "name": "Capacitacion", "documentCount": 8 },
+    { "id": "folder-haccp", "name": "HACCP", "documentCount": 6 }
+  ],
+  "documents": [
+    {
+      "id": "doc-001",
+      "code": "SOP-PRD-001",
+      "title": "Procedimiento de Produccion de Salsas",
+      "type": "sop",
+      "category": "Produccion",
+      "status": "approved",
+      "currentVersion": "3.2",
+      "effectiveDate": "2024-06-15",
+      "expirationDate": "2025-06-15",
+      "author": "Ing. Roberto Sanchez",
+      "approver": "Director Produccion",
+      "approvalDate": "2024-06-10",
+      "versions": [
+        { "version": "3.2", "date": "2024-06-15", "author": "Roberto Sanchez", "changes": "Actualizacion de temperaturas de pasteurizacion" },
+        { "version": "3.1", "date": "2024-01-10", "author": "Roberto Sanchez", "changes": "Inclusion de nuevo producto Salsa Verde" }
+      ],
+      "fileUrl": "/docs/SOP-PRD-001-v3.2.pdf"
+    },
+    {
+      "id": "doc-002",
+      "code": "SPEC-SAL-001",
+      "title": "Especificacion Salsa Chipotle 500ml",
+      "type": "specification",
+      "category": "Producto",
+      "status": "approved",
+      "currentVersion": "2.1",
+      "effectiveDate": "2024-03-01",
+      "author": "Dra. Maria Garcia",
+      "approver": "Director Calidad",
+      "approvalDate": "2024-02-25",
+      "versions": [
+        { "version": "2.1", "date": "2024-03-01", "author": "Maria Garcia", "changes": "Ajuste de rango de viscosidad" }
+      ],
+      "fileUrl": "/docs/SPEC-SAL-001-v2.1.pdf"
+    },
+    {
+      "id": "doc-003",
+      "code": "HACCP-001",
+      "title": "Plan HACCP Linea Salsas",
+      "type": "sop",
+      "category": "HACCP",
+      "status": "approved",
+      "currentVersion": "2.0",
+      "effectiveDate": "2024-01-15",
+      "author": "Equipo HACCP",
+      "approver": "Director Calidad",
+      "approvalDate": "2024-01-10",
+      "versions": [
+        { "version": "2.0", "date": "2024-01-15", "author": "Equipo HACCP", "changes": "Revision anual, actualizacion de PCCs" }
+      ],
+      "fileUrl": "/docs/HACCP-001-v2.0.pdf"
+    },
+    {
+      "id": "doc-004",
+      "code": "CERT-ISO-2024",
+      "title": "Certificado ISO 22000:2018",
+      "type": "certificate",
+      "category": "Certificaciones",
+      "status": "approved",
+      "currentVersion": "1.0",
+      "effectiveDate": "2024-03-15",
+      "expirationDate": "2027-03-15",
+      "author": "Bureau Veritas",
+      "versions": [
+        { "version": "1.0", "date": "2024-03-15", "author": "Bureau Veritas", "changes": "Certificacion inicial" }
+      ],
+      "fileUrl": "/docs/CERT-ISO22000-2024.pdf"
+    },
+    {
+      "id": "doc-005",
+      "code": "SOP-QC-005",
+      "title": "Procedimiento de Inspeccion de Producto Terminado",
+      "type": "sop",
+      "category": "Calidad",
+      "status": "pending_approval",
+      "currentVersion": "1.3",
+      "effectiveDate": "2025-01-01",
+      "author": "Carlos Lopez",
+      "versions": [
+        { "version": "1.3", "date": "2024-12-28", "author": "Carlos Lopez", "changes": "Adicion de criterio de particulas extranas" }
+      ],
+      "fileUrl": "/docs/SOP-QC-005-v1.3-draft.pdf"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+tipo,fecha,cliente,producto,cantidad,precio_unitario,distribuidor
+sell_in,2025-12-01,DIST-001,MEZCAL-JOV-750,48,1200,
+sell_in,2025-12-01,DIST-001,MEZCAL-REP-750,24,1600,
+sell_in,2025-12-05,DIST-002,MEZCAL-JOV-750,36,1200,
+sell_in,2025-12-05,DIST-002,MEZCAL-ANE-750,12,2200,
+sell_out,2025-12-10,Restaurante El Sol,MEZCAL-JOV-750,6,1200,DIST-001
+sell_out,2025-12-10,Restaurante El Sol,MEZCAL-REP-750,6,1600,DIST-001
+sell_out,2025-12-12,Bar Luna Azul,MEZCAL-JOV-750,12,1200,DIST-001
+sell_out,2025-12-15,Hotel Premium,MEZCAL-ANE-750,4,2200,DIST-002

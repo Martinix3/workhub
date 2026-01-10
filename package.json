@@ -1,0 +1,6 @@
+{
+  "name": "@vibe/workhub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WorkHub - Frappe/ERPNext integration app for Santa Brisa"
+}

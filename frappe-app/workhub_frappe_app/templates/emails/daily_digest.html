@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .greeting {
+            color: #666;
+            margin-bottom: 24px;
+        }
+        .section {
+            margin-bottom: 24px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #eee;
+        }
+        .section-title.urgent {
+            color: #dc3545;
+            border-bottom-color: #dc3545;
+        }
+        .section-title.warning {
+            color: #fd7e14;
+            border-bottom-color: #fd7e14;
+        }
+        .section-title.normal {
+            color: #28a745;
+            border-bottom-color: #28a745;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .task-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #ddd;
+        }
+        .task-item.p0 {
+            border-left-color: #dc3545;
+        }
+        .task-item.p1 {
+            border-left-color: #fd7e14;
+        }
+        .task-item.p2 {
+            border-left-color: #28a745;
+        }
+        .task-title {
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+        .task-meta {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        .priority-badge.p0 {
+            background: #dc3545;
+            color: white;
+        }
+        .priority-badge.p1 {
+            background: #fd7e14;
+            color: white;
+        }
+        .priority-badge.p2 {
+            background: #28a745;
+            color: white;
+        }
+        .blocked-reason {
+            font-style: italic;
+            color: #dc3545;
+            font-size: 13px;
+        }
+        .overdue-date {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .stat-box {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #0066cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-top: 16px;
+        }
+        .cta-button:hover {
+            background: #0052a3;
+        }
+        .footer {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+        .empty-message {
+            color: #666;
+            font-style: italic;
+            padding: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Buenos dias, {{ user_name }}!</h1>
+        <p class="greeting">Aqui esta tu resumen para hoy, {{ today_formatted }}</p>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number">{{ today_count }}</div>
+                <div class="stat-label">Para hoy</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" style="color: {% if overdue_count > 0 %}#dc3545{% else %}#28a745{% endif %}">{{ overdue_count }}</div>
+                <div class="stat-label">Vencidas</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" style="color: {% if blocked_count > 0 %}#fd7e14{% else %}#28a745{% endif %}">{{ blocked_count }}</div>
+                <div class="stat-label">Bloqueadas</div>
+            </div>
+        </div>
+
+        {% if today_tasks %}
+        <div class="section">
+            <div class="section-title normal">Para Hoy ({{ today_tasks|length }})</div>
+            <ul class="task-list">
+                {% for task in today_tasks %}
+                <li class="task-item {{ task.priority|lower }}">
+                    <span class="priority-badge {{ task.priority|lower }}">{{ task.priority }}</span>
+                    <span class="task-title">{{ task.title }}</span>
+                    {% if task.project_title %}
+                    <div class="task-meta">{{ task.project_title }}</div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if overdue_tasks %}
+        <div class="section">
+            <div class="section-title urgent">Vencidas ({{ overdue_tasks|length }})</div>
+            <ul class="task-list">
+                {% for task in overdue_tasks %}
+                <li class="task-item p0">
+                    <span class="task-title">{{ task.title }}</span>
+                    <div class="task-meta">
+                        <span class="overdue-date">Vencio: {{ task.due_date }}</span>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if blocked_tasks %}
+        <div class="section">
+            <div class="section-title warning">Bloqueadas ({{ blocked_tasks|length }})</div>
+            <ul class="task-list">
+                {% for task in blocked_tasks %}
+                <li class="task-item">
+                    <span class="task-title">{{ task.title }}</span>
+                    {% if task.blocked_reason %}
+                    <div class="blocked-reason">{{ task.blocked_reason }}</div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if not today_tasks and not overdue_tasks and not blocked_tasks %}
+        <p class="empty-message">No tienes tareas pendientes para hoy. Buen trabajo!</p>
+        {% endif %}
+
+        <a href="{{ frappe_url }}/app/wh-task" class="cta-button">Ver todas mis tareas</a>
+
+        <div class="footer">
+            <p>Este email fue enviado automaticamente por WorkHub</p>
+            <p>Puedes desactivar estos emails en tu perfil de usuario</p>
+        </div>
+    </div>
+</body>
+</html>

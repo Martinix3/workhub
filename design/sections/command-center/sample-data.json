@@ -1,0 +1,313 @@
+{
+  "_meta": {
+    "models": {
+      "areas": "Resumen de cada area del negocio con status y KPIs.",
+      "alerts": "Alertas prioritarias que requieren atencion.",
+      "financialSummary": "Resumen financiero consolidado.",
+      "receivables": "Cuentas por cobrar.",
+      "payables": "Cuentas por pagar.",
+      "cashFlowProjection": "Proyeccion de flujo de caja.",
+      "reportTemplates": "Plantillas de reportes disponibles."
+    }
+  },
+  "areas": [
+    {
+      "id": "sales",
+      "name": "Ventas",
+      "icon": "TrendingUp",
+      "status": "green",
+      "mainKPI": {
+        "value": 2450000,
+        "previousValue": 2180000,
+        "change": 12.4,
+        "label": "Ventas del Mes",
+        "target": 2300000
+      },
+      "secondaryKPIs": [
+        { "value": 47, "previousValue": 42, "change": 11.9, "label": "Pedidos Hoy" },
+        { "value": 85, "previousValue": 78, "change": 9.0, "label": "Conversion %" }
+      ]
+    },
+    {
+      "id": "operations",
+      "name": "Operaciones",
+      "icon": "Package",
+      "status": "yellow",
+      "mainKPI": {
+        "value": 94,
+        "previousValue": 96,
+        "change": -2.1,
+        "label": "Fill Rate %",
+        "target": 98
+      },
+      "secondaryKPIs": [
+        { "value": 3, "previousValue": 1, "change": 200, "label": "Pedidos Pendientes" },
+        { "value": 12500000, "previousValue": 11800000, "change": 5.9, "label": "Inventario $" }
+      ]
+    },
+    {
+      "id": "production",
+      "name": "Produccion",
+      "icon": "Factory",
+      "status": "green",
+      "mainKPI": {
+        "value": 82,
+        "previousValue": 78,
+        "change": 5.1,
+        "label": "OEE %",
+        "target": 85
+      },
+      "secondaryKPIs": [
+        { "value": 8, "previousValue": 6, "change": 33.3, "label": "Ordenes Activas" },
+        { "value": 4850, "previousValue": 4200, "change": 15.5, "label": "Unidades Hoy" }
+      ]
+    },
+    {
+      "id": "quality",
+      "name": "Calidad",
+      "icon": "CheckCircle",
+      "status": "yellow",
+      "mainKPI": {
+        "value": 96.5,
+        "previousValue": 95.2,
+        "change": 1.4,
+        "label": "Aprobacion %",
+        "target": 98
+      },
+      "secondaryKPIs": [
+        { "value": 3, "previousValue": 5, "change": -40, "label": "NCs Abiertas" },
+        { "value": 4.2, "previousValue": 5.8, "change": -27.6, "label": "Dias Cierre NC" }
+      ]
+    },
+    {
+      "id": "finance",
+      "name": "Finanzas",
+      "icon": "DollarSign",
+      "status": "red",
+      "mainKPI": {
+        "value": 1850000,
+        "previousValue": 1200000,
+        "change": 54.2,
+        "label": "CxC Vencidas",
+        "target": 500000
+      },
+      "secondaryKPIs": [
+        { "value": 45, "previousValue": 38, "change": 18.4, "label": "Dias Promedio Cobro" },
+        { "value": 3200000, "previousValue": 2800000, "change": 14.3, "label": "Flujo Mes" }
+      ]
+    },
+    {
+      "id": "marketing",
+      "name": "Marketing",
+      "icon": "Megaphone",
+      "status": "green",
+      "mainKPI": {
+        "value": 245,
+        "previousValue": 198,
+        "change": 23.7,
+        "label": "Leads Generados",
+        "target": 200
+      },
+      "secondaryKPIs": [
+        { "value": 4.8, "previousValue": 4.2, "change": 14.3, "label": "Engagement %" },
+        { "value": 320, "previousValue": 280, "change": 14.3, "label": "ROI Campanas %" }
+      ]
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-001",
+      "title": "CxC Cliente Distribuciones Norte vencida 45 dias",
+      "description": "$450,000 pendientes. Ultimo contacto hace 15 dias.",
+      "category": "finance",
+      "priority": "high",
+      "timestamp": "2024-12-30T08:00:00Z",
+      "actionUrl": "/finanzas/cobros/dist-001"
+    },
+    {
+      "id": "alert-002",
+      "title": "NC Critica en Aderezo Ranch",
+      "description": "Posible contaminacion reportada por cliente. Requiere investigacion urgente.",
+      "category": "quality",
+      "priority": "high",
+      "timestamp": "2024-12-30T07:30:00Z",
+      "actionUrl": "/calidad/ncs/nc-003"
+    },
+    {
+      "id": "alert-003",
+      "title": "Stock bajo de Chile Chipotle Seco",
+      "description": "Solo 5 dias de inventario. Proveedor principal sin stock hasta enero.",
+      "category": "operations",
+      "priority": "high",
+      "timestamp": "2024-12-30T06:00:00Z",
+      "actionUrl": "/operaciones/inventario/mp-001"
+    },
+    {
+      "id": "alert-004",
+      "title": "Distribuidor Comercializadora Sur sin reporte 11 dias",
+      "description": "No ha reportado SELL OUT. Posible inactividad.",
+      "category": "sales",
+      "priority": "medium",
+      "timestamp": "2024-12-29T14:00:00Z",
+      "actionUrl": "/distribuidores/dist-003"
+    },
+    {
+      "id": "alert-005",
+      "title": "Linea Aderezos en mantenimiento",
+      "description": "Mantenimiento programado. Retorna operacion manana.",
+      "category": "production",
+      "priority": "low",
+      "timestamp": "2024-12-30T05:00:00Z",
+      "actionUrl": "/produccion/lineas/line-03"
+    }
+  ],
+  "financialSummary": {
+    "revenue": {
+      "value": 4850000,
+      "previousValue": 4200000,
+      "change": 15.5,
+      "label": "Ingresos del Mes"
+    },
+    "expenses": {
+      "value": 3650000,
+      "previousValue": 3400000,
+      "change": 7.4,
+      "label": "Egresos del Mes"
+    },
+    "cashFlow": {
+      "value": 1200000,
+      "previousValue": 800000,
+      "change": 50.0,
+      "label": "Flujo Neto"
+    },
+    "receivables": {
+      "value": 2850000,
+      "previousValue": 2400000,
+      "change": 18.8,
+      "label": "Cuentas por Cobrar"
+    },
+    "payables": {
+      "value": 1450000,
+      "previousValue": 1600000,
+      "change": -9.4,
+      "label": "Cuentas por Pagar"
+    }
+  },
+  "receivables": [
+    {
+      "id": "ar-001",
+      "customerName": "Distribuciones Noreste SA",
+      "amount": 450000,
+      "dueDate": "2024-11-15",
+      "daysOverdue": 46,
+      "status": "critical"
+    },
+    {
+      "id": "ar-002",
+      "customerName": "Alimentos del Pacifico",
+      "amount": 280000,
+      "dueDate": "2024-12-15",
+      "daysOverdue": 16,
+      "status": "overdue"
+    },
+    {
+      "id": "ar-003",
+      "customerName": "Mayoristas Centro",
+      "amount": 156000,
+      "dueDate": "2024-12-28",
+      "daysOverdue": 3,
+      "status": "overdue"
+    },
+    {
+      "id": "ar-004",
+      "customerName": "Supermercados Nacionales",
+      "amount": 520000,
+      "dueDate": "2025-01-05",
+      "daysOverdue": 0,
+      "status": "current"
+    }
+  ],
+  "payables": [
+    {
+      "id": "ap-001",
+      "vendorName": "Agricola La Esperanza",
+      "amount": 380000,
+      "dueDate": "2025-01-05",
+      "daysUntilDue": 6
+    },
+    {
+      "id": "ap-002",
+      "vendorName": "Envases del Norte",
+      "amount": 210000,
+      "dueDate": "2025-01-10",
+      "daysUntilDue": 11
+    },
+    {
+      "id": "ap-003",
+      "vendorName": "Transportes Rapidos",
+      "amount": 95000,
+      "dueDate": "2025-01-03",
+      "daysUntilDue": 4
+    }
+  ],
+  "cashFlowProjection": [
+    { "period": "Sem 1 Ene", "inflow": 1200000, "outflow": 850000, "balance": 2550000 },
+    { "period": "Sem 2 Ene", "inflow": 980000, "outflow": 920000, "balance": 2610000 },
+    { "period": "Sem 3 Ene", "inflow": 1100000, "outflow": 780000, "balance": 2930000 },
+    { "period": "Sem 4 Ene", "inflow": 1350000, "outflow": 1100000, "balance": 3180000 }
+  ],
+  "reportTemplates": [
+    {
+      "id": "rpt-001",
+      "name": "Ventas Mensual",
+      "description": "Resumen de ventas por cliente, producto y zona.",
+      "type": "sales",
+      "formats": ["pdf", "excel"],
+      "lastGenerated": "2024-12-01",
+      "scheduled": {
+        "frequency": "monthly",
+        "recipients": ["director@santabrisa.com", "ventas@santabrisa.com"]
+      }
+    },
+    {
+      "id": "rpt-002",
+      "name": "Inventario Valorizado",
+      "description": "Estado de inventario con costo y rotacion por producto.",
+      "type": "inventory",
+      "formats": ["excel"],
+      "lastGenerated": "2024-12-28"
+    },
+    {
+      "id": "rpt-003",
+      "name": "Produccion Semanal",
+      "description": "Ordenes completadas, OEE y eficiencia por linea.",
+      "type": "production",
+      "formats": ["pdf"],
+      "lastGenerated": "2024-12-29",
+      "scheduled": {
+        "frequency": "weekly",
+        "recipients": ["produccion@santabrisa.com"]
+      }
+    },
+    {
+      "id": "rpt-004",
+      "name": "Calidad Mensual",
+      "description": "Tasa de aprobacion, NCs y acciones correctivas.",
+      "type": "quality",
+      "formats": ["pdf", "excel"],
+      "lastGenerated": "2024-12-01"
+    },
+    {
+      "id": "rpt-005",
+      "name": "Estado Financiero",
+      "description": "Ingresos, egresos, flujo de caja y cuentas pendientes.",
+      "type": "financial",
+      "formats": ["pdf", "excel"],
+      "lastGenerated": "2024-12-01",
+      "scheduled": {
+        "frequency": "monthly",
+        "recipients": ["finanzas@santabrisa.com", "director@santabrisa.com"]
+      }
+    }
+  ]
+}

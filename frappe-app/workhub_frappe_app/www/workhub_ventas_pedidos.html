@@ -1,0 +1,230 @@
+<!-- Page: Ventas - Pedidos -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Ventas - Pedidos") }}{% endblock %}
+{% block breadcrumb %}Pedidos{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>📋 Ventas - Pedidos</h1>
+		<p class="text-muted">Gestión de Pedidos de Venta (SELL IN)</p>
+	</div>
+
+	<!-- Estadísticas -->
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Total Pedidos</h5>
+					<h2 class="mt-2">{{ stats.total }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Borrador</h5>
+					<h2 class="mt-2 text-warning">{{ stats.draft }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Confirmados</h5>
+					<h2 class="mt-2 text-primary">{{ stats.confirmed }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Monto Activo</h5>
+					<h2 class="mt-2 text-success">${{ "%.2f"|format(stats.total_amount) }}</h2>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Filtros y Acciones -->
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-body">
+					<div class="row">
+						<div class="col-md-4">
+							<label>Filtrar por Cliente</label>
+							<select class="form-control" id="customer-filter" onchange="filterOrders()">
+								<option value="">Todos los clientes</option>
+								{% for customer in customers %}
+								<option value="{{ customer.name }}" {% if current_customer == customer.name %}selected{% endif %}>
+									{{ customer.customer_name }}
+								</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="col-md-4">
+							<label>Filtrar por Estado</label>
+							<select class="form-control" id="status-filter" onchange="filterOrders()">
+								<option value="">Todos los estados</option>
+								{% for status in statuses %}
+								<option value="{{ status }}" {% if current_status == status %}selected{% endif %}>
+									{{ status }}
+								</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="col-md-4">
+							<label>&nbsp;</label>
+							<a href="/app/sales-order/new" class="btn btn-primary btn-block">
+								+ Nuevo Pedido
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Tabla de Pedidos -->
+	<div class="row mt-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header d-flex justify-content-between align-items-center">
+					<h5 class="mb-0">Pedidos de Venta</h5>
+					<span class="badge badge-secondary">{{ sales_orders|length }} pedidos</span>
+				</div>
+				<div class="card-body p-0">
+					{% if sales_orders %}
+					<div class="table-responsive">
+						<table class="table table-hover mb-0">
+							<thead>
+								<tr>
+									<th>Pedido</th>
+									<th>Cliente</th>
+									<th>Fecha</th>
+									<th>Entrega</th>
+									<th>Estado</th>
+									<th class="text-right">Total</th>
+									<th class="text-center">% Entregado</th>
+									<th class="text-center">% Facturado</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for order in sales_orders %}
+								<tr>
+									<td>
+										<a href="/app/sales-order/{{ order.name }}" class="font-weight-bold">
+											{{ order.name }}
+										</a>
+									</td>
+									<td>{{ order.customer_name }}</td>
+									<td>{{ frappe.format_date(order.transaction_date, "dd/MM/yyyy") }}</td>
+									<td>{{ frappe.format_date(order.delivery_date, "dd/MM/yyyy") if order.delivery_date else "-" }}</td>
+									<td>
+										<span class="badge badge-{% if order.status == 'Completed' %}success{% elif order.status == 'Draft' %}warning{% elif order.status == 'Cancelled' %}danger{% else %}primary{% endif %}">
+											{{ order.status }}
+										</span>
+									</td>
+									<td class="text-right">
+										<strong>{{ order.currency }} {{ "%.2f"|format(order.grand_total) }}</strong>
+									</td>
+									<td class="text-center">
+										<div class="progress" style="height: 20px;">
+											<div class="progress-bar bg-info" role="progressbar"
+												style="width: {{ order.per_delivered }}%">
+												{{ "%.0f"|format(order.per_delivered) }}%
+											</div>
+										</div>
+									</td>
+									<td class="text-center">
+										<div class="progress" style="height: 20px;">
+											<div class="progress-bar bg-success" role="progressbar"
+												style="width: {{ order.per_billed }}%">
+												{{ "%.0f"|format(order.per_billed) }}%
+											</div>
+										</div>
+									</td>
+									<td>
+										<a href="/app/sales-order/{{ order.name }}" class="btn btn-sm btn-light">
+											Ver
+										</a>
+									</td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+					{% else %}
+					<div class="text-center py-5">
+						<p class="text-muted">No hay pedidos que coincidan con los filtros seleccionados</p>
+						<a href="/app/sales-order/new" class="btn btn-primary">
+							Crear Primer Pedido
+						</a>
+					</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.table th {
+	font-weight: 600;
+	border-top: none;
+	border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+	vertical-align: middle;
+}
+
+.progress {
+	border-radius: 4px;
+}
+</style>
+
+<script>
+function filterOrders() {
+	const customer = document.getElementById('customer-filter').value;
+	const status = document.getElementById('status-filter').value;
+
+	let url = window.location.pathname;
+	const params = new URLSearchParams();
+
+	if (customer) params.append('customer', customer);
+	if (status) params.append('status', status);
+
+	if (params.toString()) {
+		url += '?' + params.toString();
+	}
+
+	window.location.href = url;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,273 @@
+<!-- Page: Ventas - Pipeline -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Ventas - Pipeline") }}{% endblock %}
+{% block breadcrumb %}Pipeline{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<h1>📈 Ventas - Pipeline</h1>
+		<p class="text-muted">CRM/KANVAN - Gestión de oportunidades y visitas comerciales</p>
+	</div>
+
+	<!-- Estadísticas -->
+	<div class="row mt-4">
+		<div class="col-md-2">
+			<div class="card">
+				<div class="card-body text-center">
+					<h6 class="text-muted">Leads Activos</h6>
+					<h3>{{ stats.total_leads }}</h3>
+					<small class="text-success">+{{ stats.leads_this_month }} este mes</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<div class="card">
+				<div class="card-body text-center">
+					<h6 class="text-muted">Oportunidades</h6>
+					<h3>{{ stats.total_opportunities }}</h3>
+					<small class="text-muted">abiertas</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card">
+				<div class="card-body text-center">
+					<h6 class="text-muted">Valor Pipeline</h6>
+					<h3>${{ "%.0f"|format(stats.opportunity_value) }}</h3>
+					<small class="text-muted">{{ "%.0f"|format(stats.avg_probability) }}% prob. promedio</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<div class="card">
+				<div class="card-body text-center">
+					<h6 class="text-muted">Convertidos</h6>
+					<h3>{{ stats.converted_this_month }}</h3>
+					<small class="text-muted">este mes</small>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card bg-success text-white">
+				<div class="card-body text-center">
+					<h6>Cerrados este Mes</h6>
+					<h3>{{ stats.won_this_month }}</h3>
+					<small>${{ "%.0f"|format(stats.won_value) }}</small>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Toggle View -->
+	<div class="btn-group mt-4" role="group">
+		<a href="?view=opportunities" class="btn btn-{% if view_type == 'opportunities' %}primary{% else %}outline-primary{% endif %}">
+			📊 Oportunidades
+		</a>
+		<a href="?view=leads" class="btn btn-{% if view_type == 'leads' %}primary{% else %}outline-primary{% endif %}">
+			👤 Leads
+		</a>
+	</div>
+
+	{% if view_type == 'opportunities' %}
+	<!-- Vista Kanban de Oportunidades -->
+	<div class="pipeline-board mt-4">
+		{% for stage, opps in opportunities.items() %}
+		<div class="pipeline-column">
+			<div class="pipeline-header">
+				<h6>{{ stage }}</h6>
+				<span class="badge badge-secondary">{{ opps|length }}</span>
+			</div>
+			<div class="pipeline-cards">
+				{% for opp in opps %}
+				<div class="pipeline-card" onclick="window.open('/app/opportunity/{{ opp.name }}', '_blank')">
+					<div class="card-title">
+						<strong>{{ opp.customer_name or opp.party_name }}</strong>
+					</div>
+					<div class="card-amount">
+						${{ "%.0f"|format(opp.opportunity_amount or 0) }}
+					</div>
+					<div class="card-meta">
+						<small class="text-muted">{{ opp.name }}</small><br>
+						<span class="badge badge-{% if opp.probability >= 80 %}success{% elif opp.probability >= 50 %}warning{% else %}secondary{% endif %}">
+							{{ opp.probability or 0 }}% prob.
+						</span>
+						{% if opp.expected_closing %}
+						<br><small>Cierre: {{ opp.expected_closing }}</small>
+						{% endif %}
+					</div>
+				</div>
+				{% endfor %}
+				{% if opps|length == 0 %}
+				<div class="text-center text-muted p-3">
+					<small>Sin oportunidades</small>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+	{% else %}
+	<!-- Vista Kanban de Leads -->
+	<div class="pipeline-board mt-4">
+		{% for status, lead_list in leads.items() %}
+		<div class="pipeline-column">
+			<div class="pipeline-header">
+				<h6>{{ status }}</h6>
+				<span class="badge badge-secondary">{{ lead_list|length }}</span>
+			</div>
+			<div class="pipeline-cards">
+				{% for lead in lead_list %}
+				<div class="pipeline-card" onclick="window.open('/app/lead/{{ lead.name }}', '_blank')">
+					<div class="card-title">
+						<strong>{{ lead.lead_name }}</strong>
+					</div>
+					{% if lead.company_name %}
+					<div class="card-company">
+						{{ lead.company_name }}
+					</div>
+					{% endif %}
+					<div class="card-meta">
+						<small class="text-muted">{{ lead.name }}</small><br>
+						{% if lead.mobile_no %}
+						<small>📱 {{ lead.mobile_no }}</small><br>
+						{% endif %}
+						{% if lead.source %}
+						<span class="badge badge-info">{{ lead.source }}</span>
+						{% endif %}
+					</div>
+				</div>
+				{% endfor %}
+				{% if lead_list|length == 0 %}
+				<div class="text-center text-muted p-3">
+					<small>Sin leads</small>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+	{% endif %}
+
+	<!-- Botones de acción -->
+	<div class="mt-4">
+		<a href="/app/lead/new" class="btn btn-primary mr-2">
+			<i class="octicon octicon-plus"></i> Nuevo Lead
+		</a>
+		<a href="/app/opportunity/new" class="btn btn-success">
+			<i class="octicon octicon-plus"></i> Nueva Oportunidad
+		</a>
+	</div>
+
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+}
+
+.btn-block {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+}
+
+/* Kanban Board Styles */
+.pipeline-board {
+	display: flex;
+	gap: 16px;
+	overflow-x: auto;
+	padding-bottom: 20px;
+}
+
+.pipeline-column {
+	min-width: 280px;
+	flex-shrink: 0;
+	background-color: #f8f9fa;
+	border-radius: 8px;
+	padding: 12px;
+}
+
+.pipeline-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 12px;
+	padding-bottom: 8px;
+	border-bottom: 2px solid #dee2e6;
+}
+
+.pipeline-header h6 {
+	margin: 0;
+	font-weight: 600;
+	font-size: 14px;
+}
+
+.pipeline-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-height: 600px;
+	overflow-y: auto;
+}
+
+.pipeline-card {
+	background: white;
+	border-radius: 6px;
+	padding: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.pipeline-card:hover {
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+	transform: translateY(-2px);
+}
+
+.pipeline-card .card-title {
+	font-size: 14px;
+	margin-bottom: 4px;
+}
+
+.pipeline-card .card-amount {
+	font-size: 18px;
+	font-weight: 600;
+	color: #28a745;
+	margin-bottom: 8px;
+}
+
+.pipeline-card .card-company {
+	font-size: 13px;
+	color: #6c757d;
+	margin-bottom: 8px;
+}
+
+.pipeline-card .card-meta {
+	font-size: 12px;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid #e9ecef;
+}
+</style>
+{% endblock %}

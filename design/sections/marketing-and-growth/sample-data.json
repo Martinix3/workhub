@@ -1,0 +1,204 @@
+{
+  "_meta": {
+    "models": {
+      "marketingKpis": "KPIs principales de marketing.",
+      "campaigns": "Campanas promocionales activas y recientes.",
+      "socialPosts": "Posts de redes sociales.",
+      "platformStats": "Estadisticas por plataforma social.",
+      "funnel": "Funnel de conversion.",
+      "channelAttribution": "Atribucion por canal.",
+      "monthlyTrend": "Tendencia mensual de leads y conversiones."
+    }
+  },
+  "marketingKpis": {
+    "leadsGenerated": {
+      "value": 245,
+      "previousValue": 198,
+      "change": 23.7,
+      "label": "Leads Generados"
+    },
+    "engagementRate": {
+      "value": 4.8,
+      "previousValue": 4.2,
+      "change": 14.3,
+      "label": "Engagement Rate"
+    },
+    "campaignROI": {
+      "value": 320,
+      "previousValue": 280,
+      "change": 14.3,
+      "label": "ROI Campanas"
+    },
+    "followerGrowth": {
+      "value": 1250,
+      "previousValue": 980,
+      "change": 27.6,
+      "label": "Nuevos Seguidores"
+    }
+  },
+  "campaigns": [
+    {
+      "id": "camp-001",
+      "name": "Promo Navidad 2024",
+      "objective": "Aumentar ventas Q4 en 25%",
+      "status": "active",
+      "channels": ["instagram", "facebook", "email"],
+      "budget": 50000,
+      "spent": 32500,
+      "startDate": "2024-12-01",
+      "endDate": "2024-12-31",
+      "metrics": {
+        "impressions": 125000,
+        "clicks": 4500,
+        "leads": 180,
+        "conversions": 45,
+        "spent": 32500
+      }
+    },
+    {
+      "id": "camp-002",
+      "name": "Lanzamiento Salsa Verde",
+      "objective": "Awareness nuevo producto",
+      "status": "active",
+      "channels": ["instagram", "tiktok"],
+      "budget": 25000,
+      "spent": 18000,
+      "startDate": "2024-12-15",
+      "endDate": "2025-01-15",
+      "metrics": {
+        "impressions": 85000,
+        "clicks": 3200,
+        "leads": 95,
+        "conversions": 0,
+        "spent": 18000
+      }
+    },
+    {
+      "id": "camp-003",
+      "name": "Email Reactivacion Q4",
+      "objective": "Reactivar clientes inactivos",
+      "status": "completed",
+      "channels": ["email"],
+      "budget": 5000,
+      "spent": 4800,
+      "startDate": "2024-11-15",
+      "endDate": "2024-11-30",
+      "metrics": {
+        "impressions": 12000,
+        "clicks": 2400,
+        "leads": 45,
+        "conversions": 28,
+        "spent": 4800
+      }
+    },
+    {
+      "id": "camp-004",
+      "name": "Programa Distribuidores 2025",
+      "objective": "Reclutar nuevos distribuidores",
+      "status": "draft",
+      "channels": ["facebook", "email", "pos"],
+      "budget": 30000,
+      "spent": 0,
+      "startDate": "2025-01-15",
+      "endDate": "2025-02-28",
+      "metrics": {
+        "impressions": 0,
+        "clicks": 0,
+        "leads": 0,
+        "conversions": 0,
+        "spent": 0
+      }
+    }
+  ],
+  "socialPosts": [
+    {
+      "id": "post-001",
+      "platforms": ["instagram", "facebook"],
+      "content": "Felices fiestas! Usa codigo NAVIDAD24 para 20% de descuento en tu pedido.",
+      "mediaType": "image",
+      "status": "published",
+      "publishedDate": "2024-12-24",
+      "metrics": {
+        "likes": 456,
+        "comments": 32,
+        "shares": 28,
+        "reach": 8500
+      }
+    },
+    {
+      "id": "post-002",
+      "platforms": ["instagram", "tiktok"],
+      "content": "Nueva Salsa Verde! El sabor autentico de Mexico en cada gota.",
+      "mediaType": "video",
+      "status": "published",
+      "publishedDate": "2024-12-20",
+      "metrics": {
+        "likes": 892,
+        "comments": 67,
+        "shares": 45,
+        "reach": 15200
+      }
+    },
+    {
+      "id": "post-003",
+      "platforms": ["instagram"],
+      "content": "Detras de camaras: Como preparamos nuestra Salsa Chipotle artesanal.",
+      "mediaType": "carousel",
+      "status": "scheduled",
+      "scheduledDate": "2024-12-31"
+    },
+    {
+      "id": "post-004",
+      "platforms": ["facebook", "instagram"],
+      "content": "Ano nuevo, sabores nuevos! Descubre nuestra coleccion 2025.",
+      "mediaType": "image",
+      "status": "scheduled",
+      "scheduledDate": "2025-01-01"
+    }
+  ],
+  "platformStats": [
+    {
+      "platform": "instagram",
+      "followers": 12500,
+      "followersChange": 850,
+      "engagementRate": 5.2,
+      "postsThisMonth": 18
+    },
+    {
+      "platform": "facebook",
+      "followers": 8200,
+      "followersChange": 320,
+      "engagementRate": 3.8,
+      "postsThisMonth": 12
+    },
+    {
+      "platform": "tiktok",
+      "followers": 4500,
+      "followersChange": 680,
+      "engagementRate": 8.1,
+      "postsThisMonth": 8
+    }
+  ],
+  "funnel": [
+    { "name": "Impresiones", "value": 250000, "conversionRate": 100 },
+    { "name": "Clicks", "value": 12500, "conversionRate": 5.0 },
+    { "name": "Leads", "value": 450, "conversionRate": 3.6 },
+    { "name": "Oportunidades", "value": 180, "conversionRate": 40.0 },
+    { "name": "Clientes", "value": 45, "conversionRate": 25.0 }
+  ],
+  "channelAttribution": [
+    { "channel": "Instagram", "leads": 180, "conversions": 22, "revenue": 156000, "roi": 280 },
+    { "channel": "Facebook", "leads": 120, "conversions": 15, "revenue": 98000, "roi": 220 },
+    { "channel": "TikTok", "leads": 85, "conversions": 8, "revenue": 45000, "roi": 180 },
+    { "channel": "Email", "leads": 45, "conversions": 28, "revenue": 124000, "roi": 520 },
+    { "channel": "POS", "leads": 20, "conversions": 12, "revenue": 78000, "roi": 340 }
+  ],
+  "monthlyTrend": [
+    { "period": "Jul", "leads": 120, "conversions": 25, "revenue": 180000 },
+    { "period": "Ago", "leads": 145, "conversions": 32, "revenue": 210000 },
+    { "period": "Sep", "leads": 160, "conversions": 38, "revenue": 245000 },
+    { "period": "Oct", "leads": 185, "conversions": 42, "revenue": 280000 },
+    { "period": "Nov", "leads": 210, "conversions": 48, "revenue": 320000 },
+    { "period": "Dic", "leads": 245, "conversions": 55, "revenue": 380000 }
+  ]
+}

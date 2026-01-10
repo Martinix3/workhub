@@ -1,0 +1,7 @@
+codigo,nombre,grupo,unidad,precio_unitario,es_item_venta,tiene_lote
+MEZCAL-JOV-750,Mezcal Joven 750ml,Mezcal,Botella,1200,si,si
+MEZCAL-REP-750,Mezcal Reposado 750ml,Mezcal,Botella,1600,si,si
+MEZCAL-ANE-750,Mezcal Anejo 750ml,Mezcal,Botella,2200,si,si
+MEZCAL-ESP-750,Edicion Especial 750ml,Mezcal,Botella,3500,si,si
+MEZCAL-JOV-375,Mezcal Joven 375ml,Mezcal,Botella,650,si,si
+MEZCAL-REP-375,Mezcal Reposado 375ml,Mezcal,Botella,850,si,si

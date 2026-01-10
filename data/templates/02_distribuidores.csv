@@ -1,0 +1,5 @@
+codigo,nombre,email,telefono,territorio,comision_porcentaje
+DIST-001,Distribuidora CDMX,ventas@distcdmx.mx,+52 555 111 2222,CDMX,15
+DIST-002,Distribuidora Jalisco,contacto@distjalisco.mx,+52 333 111 2222,Guadalajara,12
+DIST-003,Distribuidora Norte,ventas@distnorte.mx,+52 818 111 2222,Monterrey,14
+DIST-004,Distribuidora Oaxaca,oaxaca@dist.mx,+52 951 111 2222,Oaxaca,10

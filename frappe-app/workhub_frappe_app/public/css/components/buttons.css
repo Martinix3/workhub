@@ -1,0 +1,279 @@
+/**
+ * Buttons - Neobrutalismo Editorial
+ * Paleta Santa Brisa
+ *
+ * Bordes duros 2px, sombra solida, uppercase
+ * Primary: Dorado Santa Brisa (#f5ce3e)
+ * Accent: Naranja Vibrante (#df6a2e)
+ */
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-5);
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	text-decoration: none;
+	border: var(--border-width) solid var(--border-1);
+	border-radius: var(--radius);
+	cursor: pointer;
+	transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+	user-select: none;
+	white-space: nowrap;
+}
+
+.btn:focus {
+	outline: var(--border-width) solid var(--primary);
+	outline-offset: 2px;
+}
+
+.btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none !important;
+	box-shadow: none !important;
+}
+
+/* === Primary - Dorado Santa Brisa === */
+.btn-primary {
+	background: var(--primary);
+	color: var(--text-1);
+	box-shadow: var(--shadow);
+}
+
+.btn-primary:hover:not(:disabled) {
+	transform: var(--hover-shift);
+	box-shadow: var(--shadow-hover);
+	background: var(--primary-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+	transform: translate(5px, 5px);
+	box-shadow: var(--shadow-none);
+}
+
+/* === Accent - Naranja Vibrante Santa Brisa === */
+.btn-accent {
+	background: var(--accent);
+	color: var(--surface-1);
+	box-shadow: var(--shadow);
+}
+
+.btn-accent:hover:not(:disabled) {
+	transform: var(--hover-shift);
+	box-shadow: var(--shadow-hover);
+	background: var(--accent-hover);
+}
+
+.btn-accent:active:not(:disabled) {
+	transform: translate(5px, 5px);
+	box-shadow: var(--shadow-none);
+}
+
+/* === Secondary - Outline === */
+.btn-secondary {
+	background: var(--surface-1);
+	color: var(--text-1);
+	box-shadow: var(--shadow);
+}
+
+.btn-secondary:hover:not(:disabled) {
+	transform: var(--hover-shift);
+	box-shadow: var(--shadow-hover);
+	background: var(--surface-2);
+}
+
+.btn-secondary:active:not(:disabled) {
+	transform: translate(5px, 5px);
+	box-shadow: var(--shadow-none);
+}
+
+/* === Turquesa - Secondary Color === */
+.btn-turquoise {
+	background: var(--secondary);
+	color: var(--text-1);
+	box-shadow: var(--shadow);
+}
+
+.btn-turquoise:hover:not(:disabled) {
+	transform: var(--hover-shift);
+	box-shadow: var(--shadow-hover);
+	background: var(--secondary-hover);
+}
+
+/* === Ghost - No fill === */
+.btn-ghost {
+	background: transparent;
+	color: var(--text-1);
+	border-color: transparent;
+	box-shadow: none;
+}
+
+.btn-ghost:hover:not(:disabled) {
+	background: var(--surface-2);
+	border-color: var(--border-2);
+}
+
+.btn-ghost:active:not(:disabled) {
+	background: var(--grid);
+}
+
+/* === Danger === */
+.btn-danger {
+	background: var(--danger);
+	color: var(--surface-1);
+	box-shadow: var(--shadow);
+}
+
+.btn-danger:hover:not(:disabled) {
+	transform: var(--hover-shift);
+	box-shadow: var(--shadow-hover);
+}
+
+/* === Sizes === */
+.btn-sm {
+	padding: var(--space-2) var(--space-4);
+	font-size: var(--text-xs);
+}
+
+.btn-lg {
+	padding: var(--space-4) var(--space-6);
+	font-size: var(--text-base);
+}
+
+.btn-xl {
+	padding: var(--space-5) var(--space-8);
+	font-size: var(--text-lg);
+}
+
+/* === Icon Only === */
+.btn-icon {
+	padding: var(--space-3);
+	min-width: 40px;
+}
+
+.btn-icon svg {
+	width: 20px;
+	height: 20px;
+}
+
+.btn-sm.btn-icon {
+	padding: var(--space-2);
+	min-width: 32px;
+}
+
+.btn-sm.btn-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* === Button Group === */
+.btn-group {
+	display: inline-flex;
+}
+
+.btn-group .btn {
+	border-radius: var(--radius);
+}
+
+.btn-group .btn:not(:first-child) {
+	margin-left: calc(var(--border-width) * -1);
+}
+
+.btn-group .btn:hover {
+	z-index: 1;
+}
+
+/* === Full Width === */
+.btn-block {
+	width: 100%;
+}
+
+/* === Loading State === */
+.btn-loading {
+	position: relative;
+	color: transparent;
+	pointer-events: none;
+}
+
+.btn-loading::after {
+	content: '';
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	border: 2px solid var(--text-1);
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: btn-spin 0.6s linear infinite;
+}
+
+.btn-danger.btn-loading::after {
+	border-color: var(--surface-1);
+	border-top-color: transparent;
+}
+
+@keyframes btn-spin {
+	to { transform: rotate(360deg); }
+}
+
+/* === Link Style Button === */
+.btn-link {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+	padding: 0;
+	font-weight: var(--weight-medium);
+	text-transform: none;
+	letter-spacing: normal;
+	color: var(--text-1);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.btn-link:hover:not(:disabled) {
+	text-decoration-thickness: 2px;
+}
+
+/* === HARDCODED COLORS - Fix para Frappe CSS Override === */
+/* Frappe's base CSS puede sobreescribir las variables, forzamos colores directos */
+
+.btn-primary {
+	background: #f5ce3e !important;
+	color: #1a1a1a !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+	background: #e5be2e !important;
+}
+
+.btn-accent {
+	background: #df6a2e !important;
+	color: white !important;
+}
+
+.btn-accent:hover:not(:disabled) {
+	background: #cf5a1e !important;
+}
+
+.btn-turquoise {
+	background: #99d9d9 !important;
+	color: #1a1a1a !important;
+}
+
+.btn-turquoise:hover:not(:disabled) {
+	background: #7cc9c9 !important;
+}
+
+.btn-danger {
+	background: #c62828 !important;
+	color: white !important;
+}
+
+.btn-danger:hover:not(:disabled) {
+	background: #b71c1c !important;
+}

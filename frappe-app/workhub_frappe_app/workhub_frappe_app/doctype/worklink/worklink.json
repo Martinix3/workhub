@@ -1,0 +1,225 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "hash",
+ "creation": "2025-12-27 17:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "source_section",
+  "source_doctype",
+  "source_id",
+  "origin_section",
+  "origin_doctype",
+  "origin_id",
+  "idempotency_key",
+  "column_break_1",
+  "department",
+  "erp_section",
+  "erp_gate",
+  "erp_done",
+  "erp_state",
+  "erp_last_checked_at",
+  "erp_error",
+  "leantime_section",
+  "leantime_task_id",
+  "status",
+  "priority",
+  "due_date",
+  "sync_section",
+  "last_sync_at",
+  "sync_state",
+  "sync_error",
+  "wh_task_section",
+  "wh_task"
+ ],
+ "fields": [
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source (Frappe)"
+  },
+  {
+   "fieldname": "source_doctype",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Source DocType",
+   "options": "Account\nOpportunity\nCampaign\nOpsCase\nCalendarEvent\nSales Order\nDelivery Note\nSales Invoice\nPayment Entry\nPurchase Order\nPurchase Receipt\nPurchase Invoice\nWork Order\nStock Entry\nBatch\nQuality Inspection",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Source ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "origin_section",
+   "fieldtype": "Section Break",
+   "label": "Origen (workflow)"
+  },
+  {
+   "fieldname": "origin_doctype",
+   "fieldtype": "Select",
+   "label": "Origen DocType",
+   "options": "Account\nOpportunity\nCampaign\nOpsCase\nCalendarEvent\nSales Order\nDelivery Note\nSales Invoice\nPayment Entry\nPurchase Order\nPurchase Receipt\nPurchase Invoice\nWork Order\nStock Entry\nBatch\nQuality Inspection"
+  },
+  {
+   "fieldname": "origin_id",
+   "fieldtype": "Data",
+   "label": "Origen ID"
+  },
+  {
+   "fieldname": "idempotency_key",
+   "fieldtype": "Data",
+   "label": "Idempotency Key"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Department",
+   "options": "SALES\nOPS\nMKT",
+   "reqd": 1
+  },
+  {
+   "fieldname": "erp_section",
+   "fieldtype": "Section Break",
+   "label": "ERP (gate)"
+  },
+  {
+   "fieldname": "erp_gate",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "ERP Gate",
+   "options": "\nVENTAS_PEDIDO\nVENTAS_ENTREGA\nVENTAS_FACTURA\nVENTAS_COBRO\nPROD_ORDEN\nPROD_CONSUMO\nPROD_LOTE\nPROD_QC\nPROD_SALIDA\nCOMPRAS_PEDIDO\nCOMPRAS_RECEPCION\nCOMPRAS_ENTRADA_STOCK\nCOMPRAS_FACTURA"
+  },
+  {
+   "default": "0",
+   "fieldname": "erp_done",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "ERP Done"
+  },
+  {
+   "fieldname": "erp_state",
+   "fieldtype": "Data",
+   "label": "ERP State"
+  },
+  {
+   "fieldname": "erp_last_checked_at",
+   "fieldtype": "Datetime",
+   "label": "ERP Last Checked At"
+  },
+  {
+   "fieldname": "erp_error",
+   "fieldtype": "Small Text",
+   "label": "ERP Error"
+  },
+  {
+   "fieldname": "leantime_section",
+   "fieldtype": "Section Break",
+   "label": "Leantime"
+  },
+  {
+   "fieldname": "leantime_task_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Leantime Task ID"
+  },
+  {
+   "default": "BACKLOG",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "BACKLOG\nNEXT\nDOING\nBLOCKED\nDONE",
+   "reqd": 1
+  },
+  {
+   "default": "P1",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Priority",
+   "options": "P0\nP1\nP2",
+   "reqd": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Due Date"
+  },
+  {
+   "fieldname": "sync_section",
+   "fieldtype": "Section Break",
+   "label": "Sync"
+  },
+  {
+   "fieldname": "last_sync_at",
+   "fieldtype": "Datetime",
+   "label": "Last Sync At"
+  },
+  {
+   "default": "OK",
+   "fieldname": "sync_state",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Sync State",
+   "options": "OK\nERROR",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sync_error",
+   "fieldtype": "Small Text",
+   "label": "Sync Error"
+  },
+  {
+   "fieldname": "wh_task_section",
+   "fieldtype": "Section Break",
+   "label": "WH Task"
+  },
+  {
+   "fieldname": "wh_task",
+   "fieldtype": "Link",
+   "label": "WH Task",
+   "options": "WH Task"
+  }
+ ],
+ "modified": "2025-12-27 17:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WorkHub Frappe App",
+ "name": "WorkLink",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

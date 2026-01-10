@@ -1,0 +1,112 @@
+[
+  {
+    "id": "4ea76ddb-e235-4af9-93f5-9c0111822ef1",
+    "title": "Colored Container",
+    "comment": "#f5ce3e",
+    "selector": "div.wh-card:nth-child(2) > div.stylepack-colors.stylepack-colors--large > div.color-swatch.color-swatch--tall:nth-child(4)",
+    "boundingRect": {
+      "x": 1219,
+      "y": 250,
+      "w": 304,
+      "h": 435
+    },
+    "screenshotPath": "./screenshots/moat-1767348486980-920q0fps2.png",
+    "status": "to do",
+    "timestamp": 1767348486988
+  },
+  {
+    "id": "66b10553-1603-4ed1-8924-8af0f560d30a",
+    "title": "Colored Container",
+    "comment": "el color debería ser este: #df6a2e  ahora mismo aparece verde lima.",
+    "selector": "div.wh-card:nth-child(2) > div.stylepack-colors.stylepack-colors--large > div.color-swatch.color-swatch--tall:nth-child(5)",
+    "boundingRect": {
+      "x": 1534,
+      "y": 250,
+      "w": 304,
+      "h": 435
+    },
+    "screenshotPath": "./screenshots/moat-1767348519107-mdkdz565f.png",
+    "status": "to do",
+    "timestamp": 1767348519118
+  },
+  {
+    "id": "8127b669-84dc-4916-81b9-2ef058bbd94c",
+    "title": "Freeform Rectangle Task",
+    "comment": "los textos siguen extremandametne pequeños, comparalos con el sidebar",
+    "selector": "freeform",
+    "boundingRect": {
+      "x": 18,
+      "y": 127,
+      "w": 652,
+      "h": 603
+    },
+    "screenshotPath": "./screenshots/moat-1767348563295-h005jwtb5.png",
+    "status": "to do",
+    "timestamp": 1767348563304,
+    "boundingBox": {
+      "xyxy": {
+        "x1": 18,
+        "y1": 127,
+        "x2": 670,
+        "y2": 730
+      },
+      "xywh": {
+        "x": 18,
+        "y": 127,
+        "width": 652,
+        "height": 603
+      },
+      "normalized": {
+        "x": 0.00968783638320775,
+        "y": 0.10250201775625505,
+        "width": 0.35091496232508074,
+        "height": 0.48668280871670705
+      },
+      "viewport": {
+        "width": 1858,
+        "height": 1239
+      },
+      "type": "freeform"
+    }
+  },
+  {
+    "id": "24380373-f748-42bd-8304-6c7cc5acda0b",
+    "title": "Freeform Rectangle Task",
+    "comment": "ojo con los espaciados",
+    "selector": "freeform",
+    "boundingRect": {
+      "x": 268,
+      "y": 113,
+      "w": 439,
+      "h": 311
+    },
+    "screenshotPath": "./screenshots/moat-1767348637620-brb92ig02.png",
+    "status": "to do",
+    "timestamp": 1767348637631,
+    "boundingBox": {
+      "xyxy": {
+        "x1": 268,
+        "y1": 113,
+        "x2": 707,
+        "y2": 424
+      },
+      "xywh": {
+        "x": 268,
+        "y": 113,
+        "width": 439,
+        "height": 311
+      },
+      "normalized": {
+        "x": 0.1442411194833154,
+        "y": 0.09120258272800645,
+        "width": 0.23627556512378903,
+        "height": 0.2510088781275222
+      },
+      "viewport": {
+        "width": 1858,
+        "height": 1239
+      },
+      "type": "freeform"
+    }
+  }
+]
