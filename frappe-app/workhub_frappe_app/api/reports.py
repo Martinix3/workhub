@@ -240,3 +240,528 @@ def duplicate_report(report_id, new_title=None):
 		"report_id": new_report.name,
 		"title": new_report.title
 	}
+
+
+@frappe.whitelist()
+def get_report_data_sources():
+	"""List available data sources for reports"""
+	require_auth()
+
+	# Define available data sources with metadata
+	data_sources = [
+		{
+			"id": "tasks",
+			"name": "Tasks",
+			"description": "Task data with status, priority, assignments, and completion metrics",
+			"category": "Team",
+			"fields": [
+				{"name": "name", "label": "Task ID", "type": "string"},
+				{"name": "title", "label": "Title", "type": "string"},
+				{"name": "status", "label": "Status", "type": "string"},
+				{"name": "priority", "label": "Priority", "type": "string"},
+				{"name": "department", "label": "Department", "type": "string"},
+				{"name": "assigned_to", "label": "Assigned To", "type": "string"},
+				{"name": "project", "label": "Project", "type": "string"},
+				{"name": "due_date", "label": "Due Date", "type": "date"},
+				{"name": "start_date", "label": "Start Date", "type": "date"},
+				{"name": "is_overdue", "label": "Is Overdue", "type": "boolean"}
+			],
+			"filters": [
+				{"name": "status", "label": "Status", "type": "select", "options": ["BACKLOG", "NEXT", "DOING", "BLOCKED", "DONE"]},
+				{"name": "priority", "label": "Priority", "type": "select", "options": ["P0", "P1", "P2"]},
+				{"name": "department", "label": "Department", "type": "select", "options": ["SALES", "OPS", "MKT"]},
+				{"name": "date_range", "label": "Date Range", "type": "daterange"}
+			]
+		},
+		{
+			"id": "projects",
+			"name": "Projects",
+			"description": "Project health, progress, task counts, and timeline data",
+			"category": "Project",
+			"fields": [
+				{"name": "name", "label": "Project ID", "type": "string"},
+				{"name": "title", "label": "Title", "type": "string"},
+				{"name": "status", "label": "Status", "type": "string"},
+				{"name": "health", "label": "Health", "type": "string"},
+				{"name": "department", "label": "Department", "type": "string"},
+				{"name": "owner_user", "label": "Owner", "type": "string"},
+				{"name": "progress_pct", "label": "Progress %", "type": "number"},
+				{"name": "total_tasks", "label": "Total Tasks", "type": "number"},
+				{"name": "completed_tasks", "label": "Completed Tasks", "type": "number"},
+				{"name": "blocked_tasks", "label": "Blocked Tasks", "type": "number"},
+				{"name": "target_date", "label": "Target Date", "type": "date"}
+			],
+			"filters": [
+				{"name": "status", "label": "Status", "type": "select", "options": ["ACTIVE", "COMPLETED", "PAUSED"]},
+				{"name": "health", "label": "Health", "type": "select", "options": ["GREEN", "YELLOW", "RED"]},
+				{"name": "department", "label": "Department", "type": "select", "options": ["SALES", "OPS", "MKT"]}
+			]
+		},
+		{
+			"id": "team_metrics",
+			"name": "Team Metrics",
+			"description": "Team productivity, velocity, completion rates, and trends",
+			"category": "Team",
+			"fields": [
+				{"name": "metric_name", "label": "Metric", "type": "string"},
+				{"name": "value", "label": "Value", "type": "number"},
+				{"name": "change", "label": "Change %", "type": "number"},
+				{"name": "trend", "label": "Trend", "type": "string"}
+			],
+			"filters": [
+				{"name": "period", "label": "Period", "type": "select", "options": ["week", "month", "quarter"]}
+			]
+		},
+		{
+			"id": "haccp_inspections",
+			"name": "HACCP Inspections",
+			"description": "Quality inspection data with approval rates and status",
+			"category": "HACCP",
+			"fields": [
+				{"name": "id", "label": "Inspection ID", "type": "string"},
+				{"name": "item_code", "label": "Item Code", "type": "string"},
+				{"name": "item_name", "label": "Item Name", "type": "string"},
+				{"name": "status", "label": "Status", "type": "string"},
+				{"name": "report_date", "label": "Inspection Date", "type": "date"},
+				{"name": "inspected_by", "label": "Inspector", "type": "string"},
+				{"name": "result", "label": "Result", "type": "string"}
+			],
+			"filters": [
+				{"name": "status", "label": "Status", "type": "select", "options": ["Accepted", "Rejected", "Pending"]},
+				{"name": "date_range", "label": "Date Range", "type": "daterange"}
+			]
+		},
+		{
+			"id": "quality_metrics",
+			"name": "Quality Metrics",
+			"description": "Quality KPIs including approval rates, non-conformances, and trends",
+			"category": "HACCP",
+			"fields": [
+				{"name": "metric_name", "label": "Metric", "type": "string"},
+				{"name": "value", "label": "Current Value", "type": "number"},
+				{"name": "previous_value", "label": "Previous Value", "type": "number"},
+				{"name": "change", "label": "Change %", "type": "number"},
+				{"name": "label", "label": "Label", "type": "string"}
+			],
+			"filters": [
+				{"name": "period", "label": "Period", "type": "select", "options": ["current_month", "previous_month"]}
+			]
+		}
+	]
+
+	return {"success": True, "data_sources": data_sources}
+
+
+@frappe.whitelist()
+def execute_data_source(data_source_id, filters=None, config=None):
+	"""Execute a data source query and return formatted data"""
+	require_auth()
+
+	if isinstance(filters, str):
+		filters = json.loads(filters)
+	if isinstance(config, str):
+		config = json.loads(config)
+
+	if not data_source_id:
+		frappe.throw(_("Data source ID is required"))
+
+	# Execute the appropriate data source
+	if data_source_id == "tasks":
+		return _execute_tasks_data_source(filters or {}, config or {})
+	elif data_source_id == "projects":
+		return _execute_projects_data_source(filters or {}, config or {})
+	elif data_source_id == "team_metrics":
+		return _execute_team_metrics_data_source(filters or {}, config or {})
+	elif data_source_id == "haccp_inspections":
+		return _execute_haccp_inspections_data_source(filters or {}, config or {})
+	elif data_source_id == "quality_metrics":
+		return _execute_quality_metrics_data_source(filters or {}, config or {})
+	else:
+		frappe.throw(_("Unknown data source: {0}").format(data_source_id))
+
+
+def _execute_tasks_data_source(filters, config):
+	"""Execute tasks data source query"""
+	from frappe.utils import getdate, nowdate, add_days
+
+	filter_conditions = {}
+
+	# Apply filters
+	if filters.get("status"):
+		if isinstance(filters["status"], list):
+			filter_conditions["status"] = ["in", filters["status"]]
+		else:
+			filter_conditions["status"] = filters["status"]
+
+	if filters.get("priority"):
+		if isinstance(filters["priority"], list):
+			filter_conditions["priority"] = ["in", filters["priority"]]
+		else:
+			filter_conditions["priority"] = filters["priority"]
+
+	if filters.get("department"):
+		filter_conditions["department"] = filters["department"]
+
+	if filters.get("project"):
+		filter_conditions["project"] = filters["project"]
+
+	if filters.get("assigned_to"):
+		filter_conditions["assigned_to"] = filters["assigned_to"]
+
+	# Date range filter
+	if filters.get("date_range"):
+		date_range = filters["date_range"]
+		if isinstance(date_range, dict) and date_range.get("from") and date_range.get("to"):
+			filter_conditions["due_date"] = ["between", [date_range["from"], date_range["to"]]]
+
+	# Get tasks
+	tasks = frappe.get_list("WH Task",
+		filters=filter_conditions,
+		fields=[
+			"name", "title", "description", "status", "priority",
+			"project", "department", "assigned_to", "created_by",
+			"start_date", "due_date", "is_milestone",
+			"worked_today", "total_work_days",
+			"creation", "modified"
+		],
+		limit_page_length=config.get("limit", 1000),
+		order_by=config.get("order_by", "priority asc, due_date asc"),
+		ignore_permissions=True
+	)
+
+	# Enrich task data
+	for task in tasks:
+		# Add project info
+		if task.get("project"):
+			project_data = frappe.db.get_value("WH Project", task["project"],
+				["title", "health"], as_dict=True)
+			if project_data:
+				task["project_title"] = project_data.title
+				task["project_health"] = project_data.health
+
+		# Add assigned user info
+		if task.get("assigned_to"):
+			user_data = frappe.db.get_value("User", task["assigned_to"],
+				["full_name"], as_dict=True)
+			if user_data:
+				task["assigned_to_name"] = user_data.full_name
+
+		# Calculate overdue status
+		if task.get("due_date") and task.get("status") != "DONE":
+			task["is_overdue"] = getdate(task["due_date"]) < getdate(nowdate())
+		else:
+			task["is_overdue"] = False
+
+	return {"success": True, "data": tasks, "total": len(tasks)}
+
+
+def _execute_projects_data_source(filters, config):
+	"""Execute projects data source query"""
+	from frappe.utils import nowdate, date_diff
+
+	filter_conditions = {}
+
+	# Apply filters
+	if filters.get("status"):
+		if isinstance(filters["status"], list):
+			filter_conditions["status"] = ["in", filters["status"]]
+		else:
+			filter_conditions["status"] = filters["status"]
+
+	if filters.get("health"):
+		if isinstance(filters["health"], list):
+			filter_conditions["health"] = ["in", filters["health"]]
+		else:
+			filter_conditions["health"] = filters["health"]
+
+	if filters.get("department"):
+		filter_conditions["department"] = filters["department"]
+
+	if filters.get("owner_user"):
+		filter_conditions["owner_user"] = filters["owner_user"]
+
+	# Get projects
+	projects = frappe.get_list("WH Project",
+		filters=filter_conditions,
+		fields=[
+			"name", "title", "description", "status", "health", "health_reason",
+			"department", "owner_user", "start_date", "target_date",
+			"progress_pct", "total_tasks", "completed_tasks",
+			"blocked_tasks", "overdue_tasks", "velocity",
+			"creation", "modified"
+		],
+		limit_page_length=config.get("limit", 1000),
+		order_by=config.get("order_by", "health desc, target_date asc"),
+		ignore_permissions=True
+	)
+
+	# Enrich project data
+	for project in projects:
+		# Add owner info
+		if project.get("owner_user"):
+			user_data = frappe.db.get_value("User", project["owner_user"],
+				["full_name"], as_dict=True)
+			if user_data:
+				project["owner_name"] = user_data.full_name
+
+		# Calculate days remaining
+		if project.get("target_date"):
+			days_remaining = date_diff(project["target_date"], nowdate())
+			project["days_remaining"] = days_remaining
+			project["is_overdue"] = days_remaining < 0 and project["status"] == "ACTIVE"
+		else:
+			project["days_remaining"] = None
+			project["is_overdue"] = False
+
+	return {"success": True, "data": projects, "total": len(projects)}
+
+
+def _execute_team_metrics_data_source(filters, config):
+	"""Execute team metrics data source query"""
+	from frappe.utils import nowdate, add_days, add_months
+
+	today = nowdate()
+	period = filters.get("period", "week")
+
+	# Calculate date ranges based on period
+	if period == "week":
+		start_date = add_days(today, -7)
+		prev_start_date = add_days(today, -14)
+		prev_end_date = add_days(today, -7)
+	elif period == "quarter":
+		start_date = add_days(today, -90)
+		prev_start_date = add_days(today, -180)
+		prev_end_date = add_days(today, -90)
+	else:  # month
+		start_date = add_days(today, -30)
+		prev_start_date = add_days(today, -60)
+		prev_end_date = add_days(today, -30)
+
+	# Tasks completed in period
+	tasks_completed = frappe.db.sql("""
+		SELECT COUNT(*) FROM `tabWH Task`
+		WHERE status = 'DONE' AND modified >= %s
+	""", (start_date,))[0][0] or 0
+
+	# Tasks completed in previous period
+	prev_tasks_completed = frappe.db.sql("""
+		SELECT COUNT(*) FROM `tabWH Task`
+		WHERE status = 'DONE'
+		AND modified >= %s AND modified < %s
+	""", (prev_start_date, prev_end_date))[0][0] or 1
+
+	# Active team size
+	team_size = frappe.db.sql("""
+		SELECT COUNT(DISTINCT assigned_to) FROM `tabWH Task`
+		WHERE status != 'DONE'
+	""")[0][0] or 1
+
+	# Calculate metrics
+	velocity = round(tasks_completed / team_size, 1) if team_size else 0
+	prev_velocity = round(prev_tasks_completed / team_size, 1) if team_size else 0
+	velocity_change = round(((velocity - prev_velocity) / prev_velocity * 100), 1) if prev_velocity else 0
+
+	completion_change = round(((tasks_completed - prev_tasks_completed) / prev_tasks_completed * 100), 1) if prev_tasks_completed else 0
+
+	# Blocked tasks
+	tasks_blocked = frappe.db.count("WH Task", {"status": "BLOCKED"})
+
+	# Overdue tasks
+	tasks_overdue = frappe.db.sql("""
+		SELECT COUNT(*) FROM `tabWH Task`
+		WHERE status NOT IN ('DONE') AND due_date < CURDATE()
+	""")[0][0] or 0
+
+	# Build metrics response
+	metrics = [
+		{
+			"metric_name": "team_size",
+			"value": team_size,
+			"change": 0,
+			"trend": "stable",
+			"label": "Team Size"
+		},
+		{
+			"metric_name": "velocity",
+			"value": velocity,
+			"change": velocity_change,
+			"trend": "up" if velocity_change > 5 else "down" if velocity_change < -5 else "stable",
+			"label": f"Velocity (tasks/{period})"
+		},
+		{
+			"metric_name": "tasks_completed",
+			"value": tasks_completed,
+			"change": completion_change,
+			"trend": "up" if completion_change > 5 else "down" if completion_change < -5 else "stable",
+			"label": f"Tasks Completed ({period})"
+		},
+		{
+			"metric_name": "tasks_blocked",
+			"value": tasks_blocked,
+			"change": 0,
+			"trend": "stable",
+			"label": "Tasks Blocked"
+		},
+		{
+			"metric_name": "tasks_overdue",
+			"value": tasks_overdue,
+			"change": 0,
+			"trend": "stable",
+			"label": "Tasks Overdue"
+		}
+	]
+
+	return {"success": True, "data": metrics, "total": len(metrics)}
+
+
+def _execute_haccp_inspections_data_source(filters, config):
+	"""Execute HACCP inspections data source query"""
+	from frappe.utils import get_first_day, get_last_day, today
+
+	filter_conditions = {}
+
+	# Apply status filter
+	if filters.get("status"):
+		if filters["status"] == "Pending":
+			filter_conditions["docstatus"] = 0
+		else:
+			filter_conditions["status"] = filters["status"]
+			filter_conditions["docstatus"] = 1
+
+	# Apply date range filter
+	if filters.get("date_range"):
+		date_range = filters["date_range"]
+		if isinstance(date_range, dict) and date_range.get("from") and date_range.get("to"):
+			filter_conditions["report_date"] = ["between", [date_range["from"], date_range["to"]]]
+	else:
+		# Default to current month
+		filter_conditions["report_date"] = ["between", [get_first_day(today()), get_last_day(today())]]
+
+	try:
+		# Get inspections
+		inspections = frappe.get_list("Quality Inspection",
+			filters=filter_conditions,
+			fields=[
+				"name", "inspection_type", "reference_type", "reference_name",
+				"item_code", "item_name", "sample_size", "status",
+				"inspected_by", "report_date", "creation"
+			],
+			limit_page_length=config.get("limit", 1000),
+			order_by=config.get("order_by", "report_date desc"),
+			ignore_permissions=True
+		)
+
+		# Transform to standard format
+		result = []
+		for insp in inspections:
+			# Map status to result
+			if insp.status == "Accepted":
+				result_status = "approved"
+			elif insp.status == "Rejected":
+				result_status = "rejected"
+			else:
+				result_status = "pending"
+
+			result.append({
+				"id": insp.name,
+				"lot_number": insp.reference_name or insp.name,
+				"item_code": insp.item_code or "",
+				"item_name": insp.item_name or insp.item_code or "",
+				"status": insp.status or "Pending",
+				"report_date": str(insp.report_date or insp.creation),
+				"inspected_by": insp.inspected_by or "Not Assigned",
+				"result": result_status
+			})
+
+		return {"success": True, "data": result, "total": len(result)}
+
+	except Exception as e:
+		# Return empty data if Quality Inspection doesn't exist
+		frappe.log_error(f"Error fetching HACCP inspections: {str(e)}")
+		return {"success": True, "data": [], "total": 0}
+
+
+def _execute_quality_metrics_data_source(filters, config):
+	"""Execute quality metrics data source query"""
+	from frappe.utils import get_first_day, get_last_day, today, add_months
+
+	period = filters.get("period", "current_month")
+
+	# Set date ranges
+	if period == "previous_month":
+		first_day = get_first_day(add_months(today(), -1))
+		last_day = get_last_day(add_months(today(), -1))
+		prev_first = get_first_day(add_months(today(), -2))
+		prev_last = get_last_day(add_months(today(), -2))
+	else:  # current_month
+		first_day = get_first_day(today())
+		last_day = get_last_day(today())
+		prev_first = get_first_day(add_months(today(), -1))
+		prev_last = get_last_day(add_months(today(), -1))
+
+	metrics = []
+
+	try:
+		# Quality inspections
+		inspections_accepted = frappe.db.count("Quality Inspection", {
+			"status": "Accepted",
+			"report_date": ["between", [first_day, last_day]]
+		})
+		inspections_rejected = frappe.db.count("Quality Inspection", {
+			"status": "Rejected",
+			"report_date": ["between", [first_day, last_day]]
+		})
+		total_inspections = inspections_accepted + inspections_rejected
+		approval_rate = (inspections_accepted / total_inspections * 100) if total_inspections else 100
+
+		# Previous period
+		prev_accepted = frappe.db.count("Quality Inspection", {
+			"status": "Accepted",
+			"report_date": ["between", [prev_first, prev_last]]
+		})
+		prev_rejected = frappe.db.count("Quality Inspection", {
+			"status": "Rejected",
+			"report_date": ["between", [prev_first, prev_last]]
+		})
+		prev_total = prev_accepted + prev_rejected
+		prev_approval = (prev_accepted / prev_total * 100) if prev_total else 100
+
+		approval_change = round(approval_rate - prev_approval, 1)
+
+		metrics.append({
+			"metric_name": "approval_rate",
+			"value": round(approval_rate, 1),
+			"previous_value": round(prev_approval, 1),
+			"change": approval_change,
+			"label": "Approval Rate (%)"
+		})
+
+		# Pending inspections
+		inspections_pending = frappe.db.count("Quality Inspection", {"docstatus": 0})
+		metrics.append({
+			"metric_name": "pending_inspections",
+			"value": inspections_pending,
+			"previous_value": 0,
+			"change": 0,
+			"label": "Pending Inspections"
+		})
+
+		# Non-conformances
+		try:
+			open_ncs = frappe.db.count("Non Conformance", {
+				"status": ["not in", ["Closed", "Cancelled"]]
+			})
+			metrics.append({
+				"metric_name": "open_ncs",
+				"value": open_ncs,
+				"previous_value": 0,
+				"change": 0,
+				"label": "Open Non-Conformances"
+			})
+		except Exception:
+			pass
+
+	except Exception as e:
+		frappe.log_error(f"Error fetching quality metrics: {str(e)}")
+
+	return {"success": True, "data": metrics, "total": len(metrics)}
