@@ -572,8 +572,12 @@
 			args: { notification_id: notificationId },
 			callback: function(r) {
 				if (r.message && r.message.success) {
+					// Obtener prioridad antes de actualizar
+					const isHighPriority = itemElement.dataset.priority === 'HIGH';
+
 					// Update UI
 					itemElement.classList.remove('unread');
+					itemElement.classList.remove('high-priority');
 					itemElement.dataset.read = 'True';
 
 					// Remove mark as read button
@@ -584,6 +588,9 @@
 
 					// Update counts
 					updateCounts();
+
+					// Re-apply filter to hide if needed
+					filterNotifications();
 				}
 			}
 		});
@@ -701,11 +708,147 @@
 		if (!frappe.realtime) return;
 
 		frappe.realtime.on('wh_notification', function(data) {
-			// Reload notifications when new one arrives
-			setTimeout(function() {
-				window.location.reload();
-			}, 1000);
+			try {
+				// Validar datos
+				if (!data || !data.name) {
+					console.warn('Notificación en tiempo real sin datos válidos', data);
+					return;
+				}
+
+				// Agregar notificación a la lista de forma dinámica
+				addNotificationToPage(data);
+
+				// Actualizar contadores
+				updateCounts();
+
+				// Mostrar alerta toast para notificaciones de alta prioridad
+				if (data.priority === 'HIGH') {
+					frappe.show_alert({
+						message: `<strong>Alta Prioridad:</strong> ${data.title}`,
+						indicator: 'red'
+					}, 5);
+				}
+			} catch (error) {
+				console.error('Error procesando notificación en tiempo real:', error);
+			}
 		});
+	}
+
+	// Add new notification to page dynamically
+	function addNotificationToPage(notification) {
+		const alertsList = document.getElementById('alerts-list');
+		if (!alertsList) return;
+
+		// Remove empty state if present
+		const emptyState = alertsList.querySelector('.wh-alerts-empty');
+		if (emptyState) {
+			emptyState.remove();
+		}
+
+		// Crear elemento HTML de notificación
+		const notificationHTML = createNotificationHTML(notification);
+
+		// Insertar al principio de la lista
+		alertsList.insertAdjacentHTML('afterbegin', notificationHTML);
+
+		// Aplicar filtro actual
+		filterNotifications();
+
+		// Animación de entrada
+		const newItem = alertsList.querySelector('.wh-alert-item');
+		if (newItem) {
+			newItem.style.opacity = '0';
+			newItem.style.transform = 'translateY(-20px)';
+			setTimeout(() => {
+				newItem.style.transition = 'all 0.3s ease';
+				newItem.style.opacity = '1';
+				newItem.style.transform = 'translateY(0)';
+			}, 10);
+		}
+	}
+
+	// Create notification HTML from data
+	function createNotificationHTML(notification) {
+		const isUnread = !notification.is_read && !notification.read;
+		const isHighPriority = notification.priority === 'HIGH';
+
+		// Formatear fecha
+		let formattedTime = notification.formatted_time;
+		if (!formattedTime && notification.creation) {
+			const date = new Date(notification.creation);
+			formattedTime = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+		}
+
+		// Determinar icono según prioridad
+		let priorityIcon = '';
+		if (notification.priority === 'HIGH') {
+			priorityIcon = `<svg fill="currentColor" viewBox="0 0 20 20">
+				<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+			</svg>`;
+		} else if (notification.priority === 'MEDIUM') {
+			priorityIcon = `<svg fill="currentColor" viewBox="0 0 20 20">
+				<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+			</svg>`;
+		} else {
+			priorityIcon = `<svg fill="currentColor" viewBox="0 0 20 20">
+				<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-7.536 5.879a1 1 0 001.415 0 3 3 0 014.242 0 1 1 0 001.415-1.415 5 5 0 00-7.072 0 1 1 0 000 1.415z" clip-rule="evenodd"/>
+			</svg>`;
+		}
+
+		// Construir link si hay referencia
+		let linkHTML = '';
+		if (notification.reference_doctype && notification.reference_name) {
+			const doctype = notification.reference_doctype.toLowerCase().replace(' ', '-');
+			linkHTML = `
+				<div class="wh-alert-link">
+					<a href="/app/${doctype}/${notification.reference_name}" target="_blank">
+						Ver ${notification.reference_doctype}
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+						</svg>
+					</a>
+				</div>
+			`;
+		}
+
+		// Construir botón "marcar como leída" si es no leída
+		let markReadBtn = '';
+		if (isUnread) {
+			markReadBtn = `
+				<button class="wh-alert-action" data-action="mark-read" title="Marcar como leída">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+					</svg>
+				</button>
+			`;
+		}
+
+		return `
+			<div class="wh-alert-item ${isUnread ? 'unread' : ''} ${isHighPriority ? 'high-priority' : ''}"
+				 data-notification-id="${notification.name}"
+				 data-priority="${notification.priority}"
+				 data-read="${!isUnread}">
+				<div class="wh-notification-priority ${notification.priority.toLowerCase()}">
+					${priorityIcon}
+				</div>
+				<div class="wh-alert-content">
+					<div class="wh-alert-header">
+						<div class="wh-alert-title">${notification.title || 'Notificación'}</div>
+						<div class="wh-alert-time">${formattedTime || '-'}</div>
+					</div>
+					<div class="wh-alert-message">${notification.message || ''}</div>
+					${linkHTML}
+				</div>
+				<div class="wh-alert-actions">
+					${markReadBtn}
+					<button class="wh-alert-action wh-alert-action--delete" data-action="delete" title="Eliminar">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+						</svg>
+					</button>
+				</div>
+			</div>
+		`;
 	}
 
 })();
