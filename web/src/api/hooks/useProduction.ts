@@ -16,6 +16,7 @@ import {
   sampleNonConformances,
   sampleWeeklyTrend
 } from '../sample-data'
+import { createDataHook, type UseDataState } from './createDataHook'
 import type {
   ProductionKPIs,
   ProductionOrder,
@@ -31,91 +32,24 @@ import type {
   WeeklyTrendPoint
 } from '../../components/sections/production-and-quality/types'
 
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
-
 // Production Dashboard hooks
-export function useProductionKPIs(): UseDataState<ProductionKPIs> {
-  const [data, setData] = useState<ProductionKPIs | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+export const useProductionKPIs = createDataHook<ProductionKPIs>({
+  apiMethod: productionApi.getProductionKPIs,
+  sampleData: sampleProductionKPIs,
+  errorMessage: 'Failed to fetch KPIs'
+})
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const kpis = await productionApi.getProductionKPIs()
-      setData(kpis)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleProductionKPIs)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch KPIs'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+export const useProductionOrders = createDataHook<ProductionOrder[]>({
+  apiMethod: productionApi.getProductionOrders,
+  sampleData: sampleProductionOrders,
+  errorMessage: 'Failed to fetch orders'
+})
 
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useProductionOrders(): UseDataState<ProductionOrder[]> {
-  const [data, setData] = useState<ProductionOrder[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const orders = await productionApi.getProductionOrders()
-      setData(orders)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleProductionOrders)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch orders'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useProductionLines(): UseDataState<ProductionLine[]> {
-  const [data, setData] = useState<ProductionLine[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const lines = await productionApi.getProductionLines()
-      setData(lines)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleProductionLines)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch lines'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useProductionLines = createDataHook<ProductionLine[]>({
+  apiMethod: productionApi.getProductionLines,
+  sampleData: sampleProductionLines,
+  errorMessage: 'Failed to fetch lines'
+})
 
 export function useProductionDashboard() {
   const kpis = useProductionKPIs()
@@ -135,31 +69,11 @@ export function useProductionDashboard() {
 }
 
 // Lot Management hooks
-export function useLots(filters?: { status?: string; search?: string }): UseDataState<Lot[]> {
-  const [data, setData] = useState<Lot[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const lots = await productionApi.getLots(filters)
-      setData(lots)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleLots)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch lots'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [filters?.status, filters?.search])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useLots = createDataHook<Lot[], { status?: string; search?: string }>({
+  apiMethod: productionApi.getLots,
+  sampleData: sampleLots,
+  errorMessage: 'Failed to fetch lots'
+})
 
 // HACCP hooks
 export function useHACCPPlans(): UseDataState<HACCPPlan[]> {
