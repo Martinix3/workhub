@@ -518,6 +518,130 @@ def get_time_report(user=None, project=None, from_date=None, to_date=None):
 	}
 
 
+@frappe.whitelist()
+def get_project_time_summary(project_id):
+	"""
+	Get time summary for a project with breakdowns by user and task.
+
+	Args:
+		project_id: ID of the WH Project
+
+	Returns:
+		dict with total hours, breakdown by user, breakdown by task, and comparison with estimated hours
+	"""
+	require_permission("WH Task", "read")
+
+	if not project_id:
+		frappe.throw(_("Project ID is required"))
+
+	# Validate project exists
+	if not frappe.db.exists("WH Project", project_id):
+		frappe.throw(_("Project {0} not found").format(project_id))
+
+	# Get project details
+	project = frappe.get_doc("WH Project", project_id)
+
+	# Query to get all work_log entries for tasks in this project
+	query = """
+		SELECT
+			wl.parent as task_id,
+			wl.user,
+			wl.hours,
+			wl.minutes,
+			wl.duration_hours,
+			wl.date,
+			t.title as task_title,
+			t.estimated_hours as task_estimated_hours,
+			t.total_hours as task_total_hours,
+			t.status as task_status
+		FROM `tabWH Task Work Log` wl
+		INNER JOIN `tabWH Task` t ON wl.parent = t.name
+		WHERE t.project = %(project_id)s
+		ORDER BY wl.date DESC
+	"""
+
+	entries = frappe.db.sql(query, {"project_id": project_id}, as_dict=True)
+
+	# Calculate total hours tracked
+	total_hours_tracked = sum(entry.get("duration_hours") or 0 for entry in entries)
+
+	# Breakdown by user
+	user_breakdown = {}
+	for entry in entries:
+		user = entry.get("user")
+		duration = entry.get("duration_hours") or 0
+		if user not in user_breakdown:
+			user_breakdown[user] = {
+				"user": user,
+				"hours": 0,
+				"entries_count": 0
+			}
+		user_breakdown[user]["hours"] += duration
+		user_breakdown[user]["entries_count"] += 1
+
+	# Convert user_breakdown dict to list
+	user_breakdown_list = list(user_breakdown.values())
+
+	# Breakdown by task
+	task_breakdown = {}
+	for entry in entries:
+		task_id = entry.get("task_id")
+		duration = entry.get("duration_hours") or 0
+		if task_id not in task_breakdown:
+			task_breakdown[task_id] = {
+				"task_id": task_id,
+				"task_title": entry.get("task_title"),
+				"task_status": entry.get("task_status"),
+				"estimated_hours": entry.get("task_estimated_hours") or 0,
+				"tracked_hours": 0,
+				"entries_count": 0
+			}
+		task_breakdown[task_id]["tracked_hours"] += duration
+		task_breakdown[task_id]["entries_count"] += 1
+
+	# Convert task_breakdown dict to list and calculate variance
+	task_breakdown_list = []
+	for task_data in task_breakdown.values():
+		# Calculate variance if estimated_hours exists
+		if task_data["estimated_hours"] > 0:
+			task_data["variance_hours"] = task_data["tracked_hours"] - task_data["estimated_hours"]
+			task_data["variance_percentage"] = (task_data["variance_hours"] / task_data["estimated_hours"]) * 100
+		else:
+			task_data["variance_hours"] = None
+			task_data["variance_percentage"] = None
+		task_breakdown_list.append(task_data)
+
+	# Sort task breakdown by tracked hours (descending)
+	task_breakdown_list.sort(key=lambda x: x["tracked_hours"], reverse=True)
+
+	# Calculate total estimated hours for the project (sum of all tasks' estimated_hours)
+	total_estimated_hours = sum(task_data["estimated_hours"] for task_data in task_breakdown_list)
+
+	# Calculate project-level variance
+	project_variance = None
+	project_variance_percentage = None
+	if total_estimated_hours > 0:
+		project_variance = total_hours_tracked - total_estimated_hours
+		project_variance_percentage = (project_variance / total_estimated_hours) * 100
+
+	return {
+		"success": True,
+		"project": {
+			"id": project_id,
+			"title": project.title,
+			"department": project.department if hasattr(project, "department") else None
+		},
+		"summary": {
+			"total_hours_tracked": total_hours_tracked,
+			"total_estimated_hours": total_estimated_hours,
+			"variance_hours": project_variance,
+			"variance_percentage": project_variance_percentage,
+			"entries_count": len(entries)
+		},
+		"breakdown_by_user": user_breakdown_list,
+		"breakdown_by_task": task_breakdown_list
+	}
+
+
 # To be implemented in subsequent subtasks:
-# - get_project_time_summary(project_id)
 # - get_user_time_summary(user=None, from_date=None, to_date=None)
