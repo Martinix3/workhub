@@ -512,3 +512,193 @@ def notify_task_status_changed(task_id, old_status, new_status):
                 reference_name=task_id,
                 priority="LOW"
             )
+
+
+def notify_order_status_changed(order_id, old_status, new_status):
+    """
+    Notificar cuando cambia el estado de una orden de distribuidor.
+
+    Args:
+        order_id: ID de la orden (Distributor Sell Out Order)
+        old_status: Estado anterior
+        new_status: Estado nuevo
+    """
+    order = frappe.get_doc("Distributor Sell Out Order", order_id)
+
+    # Mapeo de estados en español para mensajes
+    status_labels = {
+        "Pending": "Pendiente",
+        "In Progress": "En Progreso",
+        "Delivered": "Entregado",
+        "Issue": "Con Incidencia",
+        "Cancelled": "Cancelado"
+    }
+
+    old_label = status_labels.get(old_status, old_status)
+    new_label = status_labels.get(new_status, new_status)
+
+    # Detalles de la orden para el mensaje
+    order_details = f"Cliente: {order.customer_name}, Distribuidor: {order.distributor_name}, Monto: {frappe.utils.fmt_money(order.total_amount)}"
+
+    # Obtener usuarios del equipo de ventas (Sales User role)
+    sales_users = frappe.get_all("Has Role",
+        filters={"role": "Sales User", "parenttype": "User"},
+        fields=["parent"],
+        distinct=True)
+
+    # Manejar diferentes cambios de estado
+    if new_status == "Delivered":
+        # Orden entregada - notificar a ventas y distribuidor (baja prioridad, buenas noticias)
+        for user_row in sales_users:
+            create_notification(
+                user=user_row.parent,
+                notification_type="ORDER_DELIVERED",
+                title=f"Orden entregada: {order.name}",
+                message=f"La orden {order.name} fue entregada exitosamente. {order_details}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="LOW",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+        # Notificar al distribuidor si tiene usuario asociado
+        distributor_user = _get_distributor_user(order.distributor)
+        if distributor_user:
+            create_notification(
+                user=distributor_user,
+                notification_type="ORDER_DELIVERED",
+                title=f"Orden entregada: {order.name}",
+                message=f"Tu orden {order.name} fue entregada exitosamente al cliente {order.customer_name}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="MEDIUM",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+    elif new_status == "Issue":
+        # Orden con incidencia - alta prioridad para ventas
+        issue_notes = order.issue_notes or "Sin detalles especificados"
+        for user_row in sales_users:
+            create_notification(
+                user=user_row.parent,
+                notification_type="ORDER_STATUS",
+                title=f"Incidencia en orden: {order.name}",
+                message=f"La orden {order.name} tiene una incidencia. Notas: {issue_notes}. {order_details}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="HIGH",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+        # Notificar al distribuidor
+        distributor_user = _get_distributor_user(order.distributor)
+        if distributor_user:
+            create_notification(
+                user=distributor_user,
+                notification_type="ORDER_STATUS",
+                title=f"Incidencia en orden: {order.name}",
+                message=f"Tu orden {order.name} tiene una incidencia. Notas: {issue_notes}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="HIGH",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+    elif new_status == "Cancelled":
+        # Orden cancelada - notificar a ventas y distribuidor
+        for user_row in sales_users:
+            create_notification(
+                user=user_row.parent,
+                notification_type="ORDER_STATUS",
+                title=f"Orden cancelada: {order.name}",
+                message=f"La orden {order.name} fue cancelada. {order_details}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="MEDIUM",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+        # Notificar al distribuidor
+        distributor_user = _get_distributor_user(order.distributor)
+        if distributor_user:
+            create_notification(
+                user=distributor_user,
+                notification_type="ORDER_STATUS",
+                title=f"Orden cancelada: {order.name}",
+                message=f"Tu orden {order.name} fue cancelada",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="MEDIUM",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+    elif new_status == "In Progress":
+        # Orden en progreso - notificar solo al distribuidor (info)
+        distributor_user = _get_distributor_user(order.distributor)
+        if distributor_user:
+            create_notification(
+                user=distributor_user,
+                notification_type="ORDER_STATUS",
+                title=f"Orden en progreso: {order.name}",
+                message=f"Tu orden {order.name} está en progreso. Entrega esperada: {order.expected_delivery_date or 'No especificada'}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="LOW",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+    elif new_status == "Pending" and old_status:
+        # Cambio a Pending desde otro estado (regresión) - notificar a ventas
+        for user_row in sales_users:
+            create_notification(
+                user=user_row.parent,
+                notification_type="ORDER_STATUS",
+                title=f"Orden regresó a pendiente: {order.name}",
+                message=f"La orden {order.name} cambió de {old_label} a {new_label}. {order_details}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="MEDIUM",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+
+def _get_distributor_user(distributor_name):
+    """
+    Helper para encontrar el usuario de Frappe asociado con un distribuidor (Customer).
+
+    Args:
+        distributor_name: Nombre del distribuidor (Customer)
+
+    Returns:
+        str: Email del usuario si existe, None si no hay usuario asociado
+    """
+    if not distributor_name:
+        return None
+
+    try:
+        # Buscar Portal Users asociados al Customer
+        # En Frappe, los Customers pueden tener usuarios asociados via Dynamic Links
+        links = frappe.get_all("Dynamic Link",
+            filters={
+                "link_doctype": "Customer",
+                "link_name": distributor_name,
+                "parenttype": "Contact"
+            },
+            fields=["parent"])
+
+        if not links:
+            return None
+
+        # Obtener el email del primer contacto encontrado
+        for link in links:
+            contact = frappe.get_doc("Contact", link.parent)
+            if contact.email_ids and len(contact.email_ids) > 0:
+                email = contact.email_ids[0].email_id
+                # Verificar que el email corresponde a un usuario activo
+                if frappe.db.exists("User", {"email": email, "enabled": 1}):
+                    return email
+
+        return None
+    except Exception as e:
+        frappe.log_error(f"Error finding user for distributor {distributor_name}: {e}")
+        return None
