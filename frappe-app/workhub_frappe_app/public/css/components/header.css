@@ -311,6 +311,24 @@ body:has(.wh-sidebar.collapsed) .wh-header {
     height: 12px;
 }
 
+/* Read notification muted styling */
+.wh-notification-item:not(.unread) .wh-notification-title {
+    color: #64748b;
+    font-weight: 400;
+}
+
+.wh-notification-item:not(.unread) .wh-notification-message {
+    color: #94a3b8;
+}
+
+.wh-notification-item:not(.unread) .wh-notification-time {
+    color: #94a3b8;
+}
+
+.wh-notification-item:not(.unread) {
+    opacity: 0.7;
+}
+
 /* Notification content */
 .wh-notification-content {
     flex: 1;

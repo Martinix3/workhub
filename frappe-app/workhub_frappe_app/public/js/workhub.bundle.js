@@ -692,15 +692,24 @@ frappe.workhub.notifications = {
                     const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
                     if (item) {
                         item.classList.remove('unread');
+                        item.classList.remove('high-priority');
                     }
 
-                    // Actualizar contador
+                    // Actualizar en array local para obtener prioridad
+                    const notif = this.notifications.find(n => n.name === notificationId);
+                    const wasHighPriority = notif && notif.priority === 'HIGH' && !notif.read;
+
+                    // Actualizar contador de no leidas
                     if (this.unreadCount > 0) {
                         this.unreadCount--;
                     }
 
-                    // Actualizar en array local
-                    const notif = this.notifications.find(n => n.name === notificationId);
+                    // Actualizar contador de alta prioridad si era HIGH
+                    if (wasHighPriority && this.highPriorityCount > 0) {
+                        this.highPriorityCount--;
+                    }
+
+                    // Marcar como leida en array local
                     if (notif) {
                         notif.read = 1;
                     }
