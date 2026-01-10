@@ -260,30 +260,57 @@ def create_from_template(template_id, data):
 
 @frappe.whitelist()
 def preview_template(template_id):
-    """Preview what a template would create"""
+    """Preview what a template would create - full task breakdown with milestones and dependencies"""
     require_auth()
     template = frappe.get_doc("WH Project Template", template_id)
 
     tasks = []
+    milestones = []
+    dependencies = []
+
     for task_template in template.tasks:
-        tasks.append({
+        task_data = {
             "sequence": task_template.sequence,
             "title": task_template.title,
             "description": task_template.description,
             "offset_days": task_template.offset_days,
             "duration_days": task_template.duration_days,
+            "default_assignee_role": task_template.default_assignee_role,
             "is_milestone": task_template.is_milestone,
-            "depends_on": task_template.depends_on_sequence
-        })
+            "depends_on_sequence": task_template.depends_on_sequence
+        }
+        tasks.append(task_data)
+
+        # Collect milestones separately
+        if task_template.is_milestone:
+            milestones.append({
+                "sequence": task_template.sequence,
+                "title": task_template.title,
+                "offset_days": task_template.offset_days,
+                "duration_days": task_template.duration_days
+            })
+
+        # Build dependency relationships
+        if task_template.depends_on_sequence:
+            dependencies.append({
+                "from_sequence": task_template.depends_on_sequence,
+                "to_sequence": task_template.sequence,
+                "from_title": next((t.title for t in template.tasks if t.sequence == task_template.depends_on_sequence), None),
+                "to_title": task_template.title
+            })
 
     return {
         "template": {
             "name": template.name,
             "description": template.description,
             "department": template.department,
-            "default_duration_days": template.default_duration_days
+            "estimated_duration_days": template.default_duration_days,
+            "task_count": len(tasks),
+            "milestone_count": len(milestones)
         },
-        "tasks": tasks
+        "tasks": tasks,
+        "milestones": milestones,
+        "dependencies": dependencies
     }
 
 
