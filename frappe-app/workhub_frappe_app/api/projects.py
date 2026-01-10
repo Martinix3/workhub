@@ -576,3 +576,20 @@ def recalculate_health(project_id):
         "health": project.health,
         "health_reason": project.health_reason
     }
+
+
+@frappe.whitelist()
+def bulk_change_status(project_ids, new_status):
+    """Change status for multiple projects"""
+    require_permission("WH Project", "write")
+    if isinstance(project_ids, str):
+        project_ids = json.loads(project_ids)
+
+    valid_statuses = ["ACTIVE", "PAUSED", "COMPLETED", "CANCELLED"]
+    if new_status not in valid_statuses:
+        frappe.throw(_("Invalid status: {0}").format(new_status))
+
+    for project_id in project_ids:
+        frappe.db.set_value("WH Project", project_id, "status", new_status)
+
+    return {"success": True, "count": len(project_ids)}
