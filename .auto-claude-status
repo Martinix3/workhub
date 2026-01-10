@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "008-task-completion-flow",
+  "state": "building",
+  "subtasks": {
+    "completed": 1,
+    "total": 14,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Backend - Add Completion Notes Support",
+    "id": null,
+    "total": 3
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 3,
+    "started_at": "2026-01-10T20:01:07.273421"
+  },
+  "last_update": "2026-01-10T20:06:24.585550"
+}
