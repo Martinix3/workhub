@@ -4,8 +4,74 @@
 import frappe
 from frappe import _
 import json
+from frappe.utils import nowdate, get_first_day, get_last_day
+from frappe.utils.data import get_first_day_of_week, get_last_day_of_week
 
 from workhub_frappe_app.api.utils import require_auth, require_permission
+
+
+def resolve_filter_criteria(filter_json):
+    """
+    Resolve dynamic placeholders in filter criteria to actual values.
+    This enables 'intelligent' filters where new items automatically match.
+
+    Dynamic placeholders:
+        - '$current_user' -> frappe.session.user
+        - '$today' -> nowdate()
+        - '$this_week' -> [start_of_week, end_of_week]
+        - '$this_month' -> [start_of_month, end_of_month]
+
+    Args:
+        filter_json: Dict containing filter criteria with potential placeholders
+
+    Returns:
+        Dict with resolved placeholders
+
+    Example:
+        >>> resolve_filter_criteria({"assigned_to": "$current_user"})
+        {"assigned_to": "user@example.com"}
+
+        >>> resolve_filter_criteria({"due_date_value": "$this_week"})
+        {"due_date_value": ["2026-01-06", "2026-01-12"]}
+    """
+    if not isinstance(filter_json, dict):
+        return filter_json
+
+    # Create a copy to avoid modifying the original
+    resolved = filter_json.copy()
+
+    # Get current date for date-based placeholders
+    today = nowdate()
+
+    # Resolve placeholders recursively
+    for key, value in resolved.items():
+        if isinstance(value, str):
+            # Resolve string placeholders
+            if value == "$current_user":
+                resolved[key] = frappe.session.user
+            elif value == "$today":
+                resolved[key] = today
+            elif value == "$this_week":
+                # Return as list [start, end] for range operations
+                week_start = get_first_day_of_week(today)
+                week_end = get_last_day_of_week(today)
+                resolved[key] = [str(week_start), str(week_end)]
+            elif value == "$this_month":
+                # Return as list [start, end] for range operations
+                month_start = get_first_day(today)
+                month_end = get_last_day(today)
+                resolved[key] = [str(month_start), str(month_end)]
+        elif isinstance(value, list):
+            # Recursively resolve items in lists
+            resolved[key] = [
+                resolve_filter_criteria(item) if isinstance(item, dict) else item
+                for item in value
+            ]
+        elif isinstance(value, dict):
+            # Recursively resolve nested dicts
+            resolved[key] = resolve_filter_criteria(value)
+
+    return resolved
 
 
 @frappe.whitelist()
