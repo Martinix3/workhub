@@ -265,7 +265,8 @@ async function networkFirstStrategy(request, cacheName) {
  */
 function getOfflineFallback(request) {
     // For HTML requests, return a simple offline page
-    if (request.headers.get('accept').includes('text/html')) {
+    const acceptHeader = request.headers.get('accept') || '';
+    if (acceptHeader.includes('text/html')) {
         return new Response(
             `
             <!DOCTYPE html>
