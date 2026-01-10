@@ -790,3 +790,48 @@ def cancel_order(order_id):
         "order_id": order_id,
         "message": _("Order {0} has been cancelled").format(order_id)
     }
+
+
+@frappe.whitelist()
+def get_order_worklinks(order_id):
+    """Get WorkLink associations for an order"""
+    require_auth()
+    if not order_id:
+        frappe.throw(_("Order ID is required"))
+
+    # Get WorkLinks where source_doctype is Sales Order and source_id matches order_id
+    worklinks = frappe.get_list("WorkLink",
+        filters={
+            "source_doctype": "Sales Order",
+            "source_id": order_id
+        },
+        fields=["name", "leantime_task_id", "status", "wh_task"],
+        order_by="creation desc",
+        ignore_permissions=True
+    )
+
+    # Transform to include task info
+    result = []
+    for wl in worklinks:
+        task_title = ""
+        task_status = wl.get("status", "BACKLOG")
+
+        # Get task title from WH Task if linked
+        if wl.get("wh_task"):
+            wh_task = frappe.db.get_value("WH Task", wl["wh_task"], ["title", "status"], as_dict=True)
+            if wh_task:
+                task_title = wh_task.get("title", "")
+                task_status = wh_task.get("status", task_status)
+
+        # If no WH Task, use leantime_task_id as fallback title
+        if not task_title and wl.get("leantime_task_id"):
+            task_title = f"Task {wl['leantime_task_id']}"
+
+        result.append({
+            "id": wl["name"],
+            "taskId": wl.get("wh_task") or wl.get("leantime_task_id") or "",
+            "taskTitle": task_title,
+            "taskStatus": task_status
+        })
+
+    return result
