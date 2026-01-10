@@ -698,3 +698,175 @@ def get_order_tasks():
             })
 
     return tasks
+
+
+# ============================================================
+# MESSAGING - Two-way communication between distributor and sales
+# ============================================================
+
+@frappe.whitelist()
+def get_messages(thread_id=None, limit=50, offset=0):
+    """Get messages for the logged-in user (inbox/threads view).
+
+    If thread_id is provided, returns all messages in that conversation thread.
+    Otherwise, returns all messages (inbox view) grouped by thread.
+
+    Returns: List of messages with sender, receiver, subject, message, timestamp, read_status, thread_id, related_order
+    """
+    require_auth()
+    user = frappe.session.user
+
+    filters = {
+        "$or": [
+            {"sender": user},
+            {"receiver": user}
+        ]
+    }
+
+    # If thread_id specified, filter by thread
+    if thread_id:
+        filters["thread_id"] = thread_id
+
+    messages = frappe.get_list("Distributor Message",
+        filters=filters,
+        fields=["name", "sender", "receiver", "subject", "message", "timestamp",
+                "read_status", "thread_id", "related_order"],
+        limit_page_length=int(limit),
+        limit_start=int(offset),
+        order_by="timestamp desc",
+        ignore_permissions=True
+    )
+
+    # Transform to match expected interface
+    result = []
+    for msg in messages:
+        result.append({
+            "id": msg.name,
+            "sender": msg.sender,
+            "receiver": msg.receiver,
+            "subject": msg.subject,
+            "message": msg.message,
+            "timestamp": str(msg.timestamp) if msg.timestamp else "",
+            "readStatus": msg.read_status,
+            "threadId": msg.thread_id,
+            "relatedOrder": msg.related_order
+        })
+
+    return result
+
+
+@frappe.whitelist()
+def send_message(receiver, subject, message, related_order=None):
+    """Send a new message from the logged-in user to a receiver.
+
+    Args:
+        receiver: User email/ID to send message to
+        subject: Message subject
+        message: Message content
+        related_order: Optional Sales Order ID this message relates to
+
+    Returns: Created message details
+    """
+    require_auth()
+    user = frappe.session.user
+
+    if not receiver or not subject or not message:
+        frappe.throw(_("Receiver, subject, and message are required"))
+
+    # Verify receiver exists
+    if not frappe.db.exists("User", receiver):
+        frappe.throw(_("Receiver user does not exist"))
+
+    # Verify related_order if provided
+    if related_order and not frappe.db.exists("Sales Order", related_order):
+        frappe.throw(_("Related order does not exist"))
+
+    try:
+        # Create new message
+        doc = frappe.new_doc("Distributor Message")
+        doc.sender = user
+        doc.receiver = receiver
+        doc.subject = subject
+        doc.message = message
+        doc.read_status = 0  # Unread by default
+
+        if related_order:
+            doc.related_order = related_order
+
+        # thread_id will be auto-generated in validate() hook
+        doc.insert(ignore_permissions=True)
+
+        return {
+            "success": True,
+            "message_id": doc.name,
+            "thread_id": doc.thread_id,
+            "timestamp": str(doc.timestamp)
+        }
+    except Exception as e:
+        frappe.throw(_(str(e)))
+
+
+@frappe.whitelist()
+def mark_as_read(message_ids):
+    """Mark one or more messages as read.
+
+    Args:
+        message_ids: Single message ID or JSON array of message IDs
+
+    Returns: Success status and count of marked messages
+    """
+    require_auth()
+    user = frappe.session.user
+
+    # Handle string JSON input
+    if isinstance(message_ids, str):
+        try:
+            message_ids = json.loads(message_ids)
+        except Exception:
+            # Single message ID passed as string
+            message_ids = [message_ids]
+
+    # Ensure it's a list
+    if not isinstance(message_ids, list):
+        message_ids = [message_ids]
+
+    marked_count = 0
+
+    for msg_id in message_ids:
+        try:
+            # Get message and verify user is the receiver
+            msg = frappe.get_doc("Distributor Message", msg_id)
+
+            if msg.receiver == user:
+                msg.read_status = 1
+                msg.save(ignore_permissions=True)
+                marked_count += 1
+        except Exception:
+            # Message doesn't exist or no permission, skip
+            pass
+
+    return {
+        "success": True,
+        "marked": marked_count
+    }
+
+
+@frappe.whitelist()
+def get_unread_count():
+    """Get count of unread messages for the logged-in user.
+
+    Returns: Number of unread messages where user is the receiver
+    """
+    require_auth()
+    user = frappe.session.user
+
+    count = frappe.db.count("Distributor Message",
+        filters={
+            "receiver": user,
+            "read_status": 0
+        }
+    )
+
+    return {
+        "unread_count": count
+    }
