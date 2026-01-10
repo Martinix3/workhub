@@ -901,3 +901,100 @@ def generate_at_risk_alerts():
         )
 
     frappe.db.commit()
+
+
+def record_task_completion(task_doc):
+    """
+    Record task completion immediately when status changes to DONE.
+    Updates completion statistics for AI duration estimation.
+
+    Args:
+        task_doc: WH Task document that was just completed
+    """
+    if not task_doc.actual_start or not task_doc.actual_end:
+        return  # Need both timestamps to calculate duration
+
+    # Calculate duration in hours
+    start = get_datetime(task_doc.actual_start)
+    end = get_datetime(task_doc.actual_end)
+    duration_hours = (end - start).total_seconds() / 3600
+
+    # Skip if duration is invalid (negative or unreasonably long > 720 hours = 30 days)
+    if duration_hours <= 0 or duration_hours > 720:
+        return
+
+    # Extract task type from title
+    keywords = extract_keywords(task_doc.title)
+    task_type = " ".join(keywords[:2]) if len(keywords) >= 2 else task_doc.title[:30]
+
+    department = task_doc.department or "OPS"
+
+    # Get all completed tasks with same department and task type from last 90 days
+    ninety_days_ago = add_days(nowdate(), -90)
+
+    similar_tasks = frappe.get_all("WH Task",
+        filters={
+            "status": "DONE",
+            "department": department,
+            "actual_start": ["is", "set"],
+            "actual_end": ["is", "set"],
+            "modified": [">=", ninety_days_ago]
+        },
+        fields=["name", "title", "actual_start", "actual_end"]
+    )
+
+    # Calculate durations for all similar tasks including the new one
+    durations = []
+    for t in similar_tasks:
+        # Extract task type and check if similar
+        t_keywords = extract_keywords(t["title"])
+        t_task_type = " ".join(t_keywords[:2]) if len(t_keywords) >= 2 else t["title"][:30]
+
+        if t_task_type == task_type:
+            t_start = get_datetime(t["actual_start"])
+            t_end = get_datetime(t["actual_end"])
+            t_duration = (t_end - t_start).total_seconds() / 3600
+
+            if t_duration > 0 and t_duration <= 720:
+                durations.append(t_duration)
+
+    # Add the current task's duration
+    durations.append(duration_hours)
+
+    # Need at least 2 samples to create/update stats
+    if len(durations) < 2:
+        return
+
+    # Calculate statistics
+    avg_duration = sum(durations) / len(durations)
+    median_duration = sorted(durations)[len(durations) // 2]
+
+    # Check if stats record exists
+    existing = frappe.db.get_value("WH Task Completion Stats",
+        {
+            "department": department,
+            "task_type": task_type
+        },
+        "name"
+    )
+
+    if existing:
+        # Update existing record
+        frappe.db.set_value("WH Task Completion Stats", existing, {
+            "avg_duration_hours": avg_duration,
+            "median_duration_hours": median_duration,
+            "completion_count": len(durations),
+            "similar_task_title_pattern": task_type
+        })
+    else:
+        # Create new record
+        doc = frappe.new_doc("WH Task Completion Stats")
+        doc.department = department
+        doc.task_type = task_type
+        doc.avg_duration_hours = avg_duration
+        doc.median_duration_hours = median_duration
+        doc.completion_count = len(durations)
+        doc.similar_task_title_pattern = task_type
+        doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()

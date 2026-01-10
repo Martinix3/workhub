@@ -15,6 +15,7 @@ class WHTask(Document):
     def on_update(self):
         self.update_project_kpis()
         self.propagate_to_successors()
+        self.record_completion_for_ai()
 
     def set_defaults(self):
         """Establece valores por defecto"""
@@ -127,6 +128,24 @@ class WHTask(Document):
             except Exception:
                 # Si falla una propagacion, continuar con las demas
                 pass
+
+    def record_completion_for_ai(self):
+        """Registra duracion real cuando tarea se completa para estimaciones AI"""
+        if not self.is_new() and self.status == "DONE":
+            old_status = frappe.db.get_value("WH Task", self.name, "status")
+
+            # Solo procesar si acabamos de cambiar a DONE
+            if old_status != "DONE" and self.actual_start and self.actual_end:
+                try:
+                    # Importar aqui para evitar dependencias circulares
+                    from workhub_frappe_app.services.ai_recommendations import record_task_completion
+                    record_task_completion(self)
+                except Exception as e:
+                    # No bloquear la operacion si falla el registro AI
+                    frappe.log_error(
+                        title="Error recording task completion for AI",
+                        message=f"Task: {self.name}\nError: {str(e)}"
+                    )
 
 
 @frappe.whitelist()
