@@ -162,6 +162,21 @@ def update_project(project_id, data):
 
 
 @frappe.whitelist()
+def get_project_options():
+    """Get lightweight list of active projects for dropdown selection"""
+    require_auth()
+
+    projects = frappe.get_all("WH Project",
+        fields=["name", "title"],
+        order_by="title asc",
+        limit_page_length=100,
+        ignore_permissions=True
+    )
+
+    return projects
+
+
+@frappe.whitelist()
 def get_templates():
     """Get available project templates"""
     require_auth()
