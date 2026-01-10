@@ -1,0 +1,928 @@
+<!-- Page: Report Builder -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Constructor de Reportes") }}{% endblock %}
+{% block breadcrumb %}{{ "Nuevo Reporte" if is_new else "Editar Reporte" }}{% endblock %}
+
+{% block page_content %}
+<div class="report-builder-container">
+	<!-- Header -->
+	<div class="report-builder-header">
+		<div class="d-flex justify-content-between align-items-center">
+			<div>
+				<h1>🎨 {{ "Crear Reporte" if is_new else "Editar Reporte" }}</h1>
+				<p class="text-muted">Arrastra secciones al canvas para construir tu reporte</p>
+			</div>
+			<div class="header-actions">
+				<a href="/workhub_reportes" class="btn btn-outline-secondary">
+					Cancelar
+				</a>
+				<button class="btn btn-primary ml-2" onclick="saveReport()">
+					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+					</svg>
+					Guardar Reporte
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Builder Layout: 3 columns -->
+	<div class="builder-layout">
+		<!-- LEFT SIDEBAR: Available Sections -->
+		<div class="builder-sidebar">
+			<div class="sidebar-header">
+				<h5>📦 Componentes</h5>
+				<p class="text-muted small">Arrastra al canvas</p>
+			</div>
+			<div class="components-list">
+				{% for section_type in section_types %}
+				<div class="component-item"
+					 draggable="true"
+					 data-type="{{ section_type.id }}"
+					 data-label="{{ section_type.label }}"
+					 ondragstart="handleDragStart(event)">
+					<div class="component-icon" style="background: {{ section_type.color }}20; color: {{ section_type.color }};">
+						{{ section_type.icon }}
+					</div>
+					<div class="component-info">
+						<div class="component-label">{{ section_type.label }}</div>
+						<div class="component-description">{{ section_type.description }}</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+
+			<div class="sidebar-help mt-4">
+				<h6>💡 Ayuda</h6>
+				<ul class="small text-muted">
+					<li>Arrastra componentes al canvas</li>
+					<li>Haz clic para configurar</li>
+					<li>Reordena arrastrando en el canvas</li>
+					<li>Elimina con el botón 🗑️</li>
+				</ul>
+			</div>
+		</div>
+
+		<!-- MAIN CANVAS: Report Builder -->
+		<div class="builder-canvas">
+			<!-- Report Metadata -->
+			<div class="report-metadata-panel">
+				<div class="form-group">
+					<label>Título del Reporte *</label>
+					<input type="text"
+						   class="form-control"
+						   id="report-title"
+						   placeholder="Ej: Reporte de Productividad del Equipo"
+						   value="{{ report.title }}">
+				</div>
+				<div class="form-group">
+					<label>Descripción</label>
+					<textarea class="form-control"
+							  id="report-description"
+							  rows="2"
+							  placeholder="Describe el propósito del reporte...">{{ report.description }}</textarea>
+				</div>
+				<div class="row">
+					<div class="col-md-4">
+						<div class="form-group">
+							<label>Tipo</label>
+							<select class="form-control" id="report-type">
+								{% for type in report_types %}
+								<option value="{{ type }}" {% if report.report_type == type %}selected{% endif %}>{{ type }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<label>Categoría</label>
+							<select class="form-control" id="report-category">
+								{% for cat in categories %}
+								<option value="{{ cat }}" {% if report.category == cat %}selected{% endif %}>{{ cat }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<label>Estado</label>
+							<select class="form-control" id="report-active">
+								<option value="1" {% if report.is_active %}selected{% endif %}>Activo</option>
+								<option value="0" {% if not report.is_active %}selected{% endif %}>Inactivo</option>
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Canvas Drop Zone -->
+			<div class="canvas-drop-zone"
+				 id="canvas-drop-zone"
+				 ondrop="handleDrop(event)"
+				 ondragover="handleDragOver(event)"
+				 ondragleave="handleDragLeave(event)">
+				<div class="canvas-placeholder" id="canvas-placeholder">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 64px; height: 64px; margin: 0 auto; color: #ccc;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+					</svg>
+					<h4 class="mt-3">Arrastra componentes aquí</h4>
+					<p class="text-muted">Comienza construyendo tu reporte arrastrando secciones desde el panel izquierdo</p>
+				</div>
+
+				<!-- Sections will be rendered here -->
+				<div id="sections-container"></div>
+			</div>
+		</div>
+
+		<!-- RIGHT PANEL: Properties -->
+		<div class="builder-properties">
+			<div class="properties-header">
+				<h5>⚙️ Propiedades</h5>
+			</div>
+			<div class="properties-content" id="properties-content">
+				<div class="no-selection">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px; height: 48px; margin: 0 auto; color: #ccc; display: block;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+					</svg>
+					<p class="text-muted mt-3 text-center">Selecciona una sección del canvas para configurar sus propiedades</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.report-builder-container {
+	padding: 20px;
+	max-width: 100%;
+	height: calc(100vh - 100px);
+	display: flex;
+	flex-direction: column;
+}
+
+.report-builder-header {
+	margin-bottom: 20px;
+	flex-shrink: 0;
+}
+
+.report-builder-header h1 {
+	font-size: 28px;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.header-actions {
+	display: flex;
+	gap: 8px;
+}
+
+/* Builder Layout: 3-column */
+.builder-layout {
+	display: grid;
+	grid-template-columns: 280px 1fr 320px;
+	gap: 20px;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+/* LEFT SIDEBAR */
+.builder-sidebar {
+	background: white;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+}
+
+.sidebar-header h5 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.sidebar-header p {
+	margin: 4px 0 0 0;
+}
+
+.components-list {
+	margin-top: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.component-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px;
+	background: #f8f9fa;
+	border: 2px solid #e0e0e0;
+	border-radius: 6px;
+	cursor: grab;
+	transition: all 0.2s;
+}
+
+.component-item:hover {
+	background: #e9ecef;
+	border-color: #007bff;
+	transform: translateX(2px);
+}
+
+.component-item:active {
+	cursor: grabbing;
+}
+
+.component-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 20px;
+	flex-shrink: 0;
+}
+
+.component-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.component-label {
+	font-weight: 600;
+	font-size: 14px;
+	margin-bottom: 2px;
+}
+
+.component-description {
+	font-size: 12px;
+	color: #6c757d;
+	line-height: 1.3;
+}
+
+.sidebar-help {
+	margin-top: auto;
+	padding-top: 16px;
+	border-top: 1px solid #e0e0e0;
+}
+
+.sidebar-help h6 {
+	font-size: 14px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.sidebar-help ul {
+	margin: 0;
+	padding-left: 20px;
+	line-height: 1.6;
+}
+
+/* MAIN CANVAS */
+.builder-canvas {
+	background: white;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+}
+
+.report-metadata-panel {
+	margin-bottom: 24px;
+	padding-bottom: 24px;
+	border-bottom: 2px solid #e0e0e0;
+}
+
+.canvas-drop-zone {
+	flex: 1;
+	min-height: 300px;
+	position: relative;
+}
+
+.canvas-drop-zone.drag-over {
+	background: #e3f2fd;
+	border: 2px dashed #007bff;
+	border-radius: 8px;
+}
+
+.canvas-placeholder {
+	text-align: center;
+	padding: 60px 20px;
+	color: #6c757d;
+}
+
+.canvas-placeholder h4 {
+	color: #6c757d;
+	font-weight: 500;
+}
+
+#sections-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Section Card */
+.section-card {
+	background: #f8f9fa;
+	border: 2px solid #dee2e6;
+	border-radius: 6px;
+	padding: 16px;
+	cursor: pointer;
+	transition: all 0.2s;
+	position: relative;
+}
+
+.section-card:hover {
+	border-color: #007bff;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section-card.selected {
+	border-color: #007bff;
+	background: #e3f2fd;
+	box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.section-card.dragging {
+	opacity: 0.5;
+	cursor: grabbing;
+}
+
+.section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.section-type-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 12px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.section-title {
+	font-weight: 600;
+	font-size: 14px;
+	color: #333;
+}
+
+.section-actions {
+	display: flex;
+	gap: 4px;
+}
+
+.section-actions button {
+	padding: 4px 8px;
+	border: none;
+	background: white;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 14px;
+	transition: all 0.2s;
+}
+
+.section-actions button:hover {
+	background: #e9ecef;
+}
+
+.section-meta {
+	font-size: 12px;
+	color: #6c757d;
+	margin-top: 4px;
+}
+
+/* RIGHT PANEL: Properties */
+.builder-properties {
+	background: white;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+}
+
+.properties-header h5 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	margin-bottom: 16px;
+}
+
+.properties-content {
+	flex: 1;
+}
+
+.no-selection {
+	text-align: center;
+	padding: 40px 20px;
+}
+
+.no-selection p {
+	font-size: 13px;
+}
+
+/* Form Styling */
+.form-group {
+	margin-bottom: 16px;
+}
+
+.form-group label {
+	display: block;
+	font-weight: 600;
+	font-size: 13px;
+	margin-bottom: 6px;
+	color: #333;
+}
+
+.form-control {
+	border-radius: 4px;
+	border: 1px solid #ced4da;
+	padding: 8px 12px;
+	font-size: 14px;
+}
+
+.form-control:focus {
+	border-color: #007bff;
+	box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+	outline: none;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+	.builder-layout {
+		grid-template-columns: 240px 1fr 280px;
+	}
+}
+
+@media (max-width: 992px) {
+	.builder-layout {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto 1fr auto;
+	}
+
+	.builder-sidebar,
+	.builder-properties {
+		max-height: 300px;
+	}
+}
+</style>
+
+{% endblock %}
+
+{% block script %}
+<script>
+// Global state
+let reportData = {{ report | tojson }};
+let sections = reportData.sections || [];
+let selectedSectionIndex = null;
+let draggedElement = null;
+
+// Data sources (will be loaded via API)
+let dataSources = {{ data_sources | tojson }};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+	renderSections();
+
+	// Hide placeholder if sections exist
+	if (sections.length > 0) {
+		document.getElementById('canvas-placeholder').style.display = 'none';
+	}
+});
+
+// ===== DRAG AND DROP =====
+
+function handleDragStart(event) {
+	const type = event.target.closest('.component-item').dataset.type;
+	const label = event.target.closest('.component-item').dataset.label;
+	event.dataTransfer.effectAllowed = 'copy';
+	event.dataTransfer.setData('section-type', type);
+	event.dataTransfer.setData('section-label', label);
+}
+
+function handleDragOver(event) {
+	event.preventDefault();
+	event.dataTransfer.dropEffect = 'copy';
+	document.getElementById('canvas-drop-zone').classList.add('drag-over');
+}
+
+function handleDragLeave(event) {
+	if (event.target.id === 'canvas-drop-zone') {
+		document.getElementById('canvas-drop-zone').classList.remove('drag-over');
+	}
+}
+
+function handleDrop(event) {
+	event.preventDefault();
+	document.getElementById('canvas-drop-zone').classList.remove('drag-over');
+
+	const sectionType = event.dataTransfer.getData('section-type');
+	const sectionLabel = event.dataTransfer.getData('section-label');
+
+	if (sectionType) {
+		addSection(sectionType, sectionLabel);
+	}
+}
+
+// ===== SECTION MANAGEMENT =====
+
+function addSection(type, label) {
+	const newSection = {
+		section_type: type,
+		title: label || type,
+		data_source: '',
+		display_order: sections.length,
+		is_visible: 1,
+		config: getDefaultConfig(type)
+	};
+
+	sections.push(newSection);
+	renderSections();
+
+	// Hide placeholder
+	document.getElementById('canvas-placeholder').style.display = 'none';
+
+	// Select the new section
+	selectSection(sections.length - 1);
+}
+
+function getDefaultConfig(type) {
+	switch(type) {
+		case 'Chart':
+			return {
+				chart_type: 'bar',
+				x_field: '',
+				y_field: '',
+				colors: ['#007bff', '#28a745', '#ffc107']
+			};
+		case 'Table':
+			return {
+				columns: [],
+				show_totals: false,
+				page_size: 50
+			};
+		case 'KPI':
+			return {
+				kpis: []
+			};
+		case 'Text':
+			return {
+				content: ''
+			};
+		default:
+			return {};
+	}
+}
+
+function renderSections() {
+	const container = document.getElementById('sections-container');
+	container.innerHTML = '';
+
+	sections.forEach((section, index) => {
+		const card = createSectionCard(section, index);
+		container.appendChild(card);
+	});
+}
+
+function createSectionCard(section, index) {
+	const card = document.createElement('div');
+	card.className = 'section-card';
+	card.draggable = true;
+	card.dataset.index = index;
+
+	if (selectedSectionIndex === index) {
+		card.classList.add('selected');
+	}
+
+	// Get section type info
+	const sectionTypes = {{ section_types | tojson }};
+	const typeInfo = sectionTypes.find(t => t.id === section.section_type) || {};
+
+	card.innerHTML = `
+		<div class="section-header">
+			<span class="section-type-badge" style="background: ${typeInfo.color}20; color: ${typeInfo.color};">
+				${typeInfo.icon || '📄'} ${typeInfo.label || section.section_type}
+			</span>
+			<div class="section-actions">
+				<button onclick="selectSection(${index})" title="Configurar">⚙️</button>
+				<button onclick="moveSection(${index}, -1)" title="Mover arriba" ${index === 0 ? 'disabled' : ''}>⬆️</button>
+				<button onclick="moveSection(${index}, 1)" title="Mover abajo" ${index === sections.length - 1 ? 'disabled' : ''}>⬇️</button>
+				<button onclick="duplicateSection(${index})" title="Duplicar">📋</button>
+				<button onclick="deleteSection(${index})" title="Eliminar">🗑️</button>
+			</div>
+		</div>
+		<div class="section-title">${section.title}</div>
+		<div class="section-meta">
+			${section.data_source ? 'Origen: ' + section.data_source : 'Sin origen de datos'}
+		</div>
+	`;
+
+	card.addEventListener('click', (e) => {
+		if (!e.target.closest('button')) {
+			selectSection(index);
+		}
+	});
+
+	return card;
+}
+
+function selectSection(index) {
+	selectedSectionIndex = index;
+	renderSections();
+	renderProperties();
+}
+
+function moveSection(index, direction) {
+	const newIndex = index + direction;
+	if (newIndex < 0 || newIndex >= sections.length) return;
+
+	// Swap sections
+	[sections[index], sections[newIndex]] = [sections[newIndex], sections[index]];
+
+	// Update display_order
+	sections.forEach((s, i) => s.display_order = i);
+
+	// Update selected index
+	if (selectedSectionIndex === index) {
+		selectedSectionIndex = newIndex;
+	}
+
+	renderSections();
+}
+
+function duplicateSection(index) {
+	const section = sections[index];
+	const newSection = JSON.parse(JSON.stringify(section));
+	newSection.title = section.title + ' (Copia)';
+	newSection.display_order = sections.length;
+
+	sections.push(newSection);
+	renderSections();
+}
+
+function deleteSection(index) {
+	if (confirm('¿Eliminar esta sección?')) {
+		sections.splice(index, 1);
+
+		// Update display_order
+		sections.forEach((s, i) => s.display_order = i);
+
+		// Clear selection if deleted
+		if (selectedSectionIndex === index) {
+			selectedSectionIndex = null;
+		} else if (selectedSectionIndex > index) {
+			selectedSectionIndex--;
+		}
+
+		renderSections();
+		renderProperties();
+
+		// Show placeholder if empty
+		if (sections.length === 0) {
+			document.getElementById('canvas-placeholder').style.display = 'block';
+		}
+	}
+}
+
+// ===== PROPERTIES PANEL =====
+
+function renderProperties() {
+	const content = document.getElementById('properties-content');
+
+	if (selectedSectionIndex === null) {
+		content.innerHTML = `
+			<div class="no-selection">
+				<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px; height: 48px; margin: 0 auto; color: #ccc; display: block;">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+				</svg>
+				<p class="text-muted mt-3 text-center">Selecciona una sección para configurar</p>
+			</div>
+		`;
+		return;
+	}
+
+	const section = sections[selectedSectionIndex];
+
+	// Base properties for all sections
+	let html = `
+		<div class="form-group">
+			<label>Título de la Sección *</label>
+			<input type="text" class="form-control" id="prop-title" value="${section.title}"
+				   onchange="updateSectionProperty('title', this.value)">
+		</div>
+		<div class="form-group">
+			<label>Visible</label>
+			<select class="form-control" id="prop-visible" onchange="updateSectionProperty('is_visible', parseInt(this.value))">
+				<option value="1" ${section.is_visible ? 'selected' : ''}>Sí</option>
+				<option value="0" ${!section.is_visible ? 'selected' : ''}>No</option>
+			</select>
+		</div>
+	`;
+
+	// Type-specific properties
+	if (section.section_type !== 'Header' && section.section_type !== 'Text') {
+		html += `
+			<div class="form-group">
+				<label>Origen de Datos</label>
+				<select class="form-control" id="prop-datasource" onchange="updateSectionProperty('data_source', this.value)">
+					<option value="">-- Seleccionar --</option>
+					${dataSources.map(ds => `
+						<option value="${ds.id}" ${section.data_source === ds.id ? 'selected' : ''}>${ds.label}</option>
+					`).join('')}
+				</select>
+			</div>
+		`;
+	}
+
+	// Chart-specific
+	if (section.section_type === 'Chart') {
+		const chartTypes = {{ chart_types | tojson }};
+		html += `
+			<div class="form-group">
+				<label>Tipo de Gráfico</label>
+				<select class="form-control" id="prop-chart-type" onchange="updateConfigProperty('chart_type', this.value)">
+					${chartTypes.map(ct => `
+						<option value="${ct.id}" ${section.config.chart_type === ct.id ? 'selected' : ''}>${ct.label}</option>
+					`).join('')}
+				</select>
+			</div>
+			<div class="form-group">
+				<label>Campo X (Eje horizontal)</label>
+				<input type="text" class="form-control" id="prop-x-field" value="${section.config.x_field || ''}"
+					   onchange="updateConfigProperty('x_field', this.value)" placeholder="Ej: month, category">
+			</div>
+			<div class="form-group">
+				<label>Campo Y (Eje vertical)</label>
+				<input type="text" class="form-control" id="prop-y-field" value="${section.config.y_field || ''}"
+					   onchange="updateConfigProperty('y_field', this.value)" placeholder="Ej: count, total">
+			</div>
+		`;
+	}
+
+	// Text-specific
+	if (section.section_type === 'Text') {
+		html += `
+			<div class="form-group">
+				<label>Contenido</label>
+				<textarea class="form-control" id="prop-content" rows="6"
+						  onchange="updateConfigProperty('content', this.value)"
+						  placeholder="Escribe el contenido de texto...">${section.config.content || ''}</textarea>
+			</div>
+		`;
+	}
+
+	// Table-specific
+	if (section.section_type === 'Table') {
+		html += `
+			<div class="form-group">
+				<label>Mostrar Totales</label>
+				<select class="form-control" id="prop-show-totals" onchange="updateConfigProperty('show_totals', this.value === 'true')">
+					<option value="false" ${!section.config.show_totals ? 'selected' : ''}>No</option>
+					<option value="true" ${section.config.show_totals ? 'selected' : ''}>Sí</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label>Filas por página</label>
+				<input type="number" class="form-control" id="prop-page-size" value="${section.config.page_size || 50}"
+					   onchange="updateConfigProperty('page_size', parseInt(this.value))" min="10" max="1000">
+			</div>
+			<div class="form-group">
+				<label>Columnas (JSON)</label>
+				<textarea class="form-control" id="prop-columns" rows="4"
+						  onchange="updateConfigPropertyJSON('columns', this.value)"
+						  placeholder='[{"field": "name", "label": "Nombre"}]'>${JSON.stringify(section.config.columns || [], null, 2)}</textarea>
+				<small class="text-muted">Define columnas en formato JSON</small>
+			</div>
+		`;
+	}
+
+	content.innerHTML = html;
+}
+
+function updateSectionProperty(key, value) {
+	if (selectedSectionIndex !== null) {
+		sections[selectedSectionIndex][key] = value;
+		renderSections();
+	}
+}
+
+function updateConfigProperty(key, value) {
+	if (selectedSectionIndex !== null) {
+		sections[selectedSectionIndex].config[key] = value;
+		renderSections();
+	}
+}
+
+function updateConfigPropertyJSON(key, value) {
+	try {
+		const parsed = JSON.parse(value);
+		updateConfigProperty(key, parsed);
+	} catch (e) {
+		frappe.show_alert({
+			message: 'JSON inválido: ' + e.message,
+			indicator: 'red'
+		});
+	}
+}
+
+// ===== SAVE REPORT =====
+
+function saveReport() {
+	const title = document.getElementById('report-title').value.trim();
+	const description = document.getElementById('report-description').value.trim();
+	const reportType = document.getElementById('report-type').value;
+	const category = document.getElementById('report-category').value;
+	const isActive = parseInt(document.getElementById('report-active').value);
+
+	if (!title) {
+		frappe.show_alert({
+			message: 'El título es requerido',
+			indicator: 'red'
+		});
+		return;
+	}
+
+	if (sections.length === 0) {
+		frappe.show_alert({
+			message: 'Agrega al menos una sección al reporte',
+			indicator: 'orange'
+		});
+		return;
+	}
+
+	// Show loading
+	frappe.show_progress('Guardando...', 50, 100, 'Guardando reporte...');
+
+	// Prepare data
+	const reportId = reportData.name;
+	const isNew = {{ 'true' if is_new else 'false' }};
+
+	const data = {
+		title: title,
+		description: description,
+		report_type: reportType,
+		category: category,
+		is_active: isActive,
+		sections: sections.map(s => ({
+			section_type: s.section_type,
+			title: s.title,
+			data_source: s.data_source || '',
+			display_order: s.display_order,
+			is_visible: s.is_visible,
+			config: JSON.stringify(s.config)
+		}))
+	};
+
+	const method = isNew ?
+		'workhub_frappe_app.api.reports.create_report' :
+		'workhub_frappe_app.api.reports.update_report';
+
+	const args = isNew ? data : { report_id: reportId, ...data };
+
+	frappe.call({
+		method: method,
+		args: args,
+		callback: function(r) {
+			frappe.hide_progress();
+			if (r.message && r.message.success) {
+				frappe.show_alert({
+					message: 'Reporte guardado exitosamente',
+					indicator: 'green'
+				});
+
+				// Redirect to reports list after short delay
+				setTimeout(() => {
+					window.location.href = '/workhub_reportes';
+				}, 1000);
+			} else {
+				frappe.show_alert({
+					message: 'Error al guardar el reporte',
+					indicator: 'red'
+				});
+			}
+		},
+		error: function(err) {
+			frappe.hide_progress();
+			frappe.show_alert({
+				message: 'Error al guardar el reporte: ' + (err.message || 'Error desconocido'),
+				indicator: 'red'
+			});
+		}
+	});
+}
+</script>
+{% endblock %}
