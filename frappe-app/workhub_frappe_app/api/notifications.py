@@ -444,3 +444,71 @@ def notify_task_completed(task_id):
             reference_name=dep["successor"],
             priority="LOW"
         )
+
+
+def notify_task_status_changed(task_id, old_status, new_status):
+    """
+    Notificar cuando cambia el estado de una tarea.
+
+    Args:
+        task_id: ID de la tarea
+        old_status: Estado anterior
+        new_status: Estado nuevo
+    """
+    task = frappe.get_doc("WH Task", task_id)
+
+    # Si cambia a DONE, notificar tareas bloqueadas (ya existe notify_task_completed)
+    if new_status == "DONE":
+        notify_task_completed(task_id)
+
+        # Notificar al dueño de la tarea que se completó (si no es el que la completó)
+        if task.assigned_to and task.assigned_to != frappe.session.user:
+            create_notification(
+                user=task.assigned_to,
+                notification_type="COMPLETED",
+                title=f"Tarea completada: {task.title}",
+                message=f"Tu tarea '{task.title}' fue marcada como completada por {frappe.session.user}",
+                reference_doctype="WH Task",
+                reference_name=task_id,
+                priority="LOW"
+            )
+
+    # Si cambia a BLOCKED, notificar al dueño con la razón
+    elif new_status == "BLOCKED":
+        if task.assigned_to:
+            blocked_reason = task.blocked_reason or "Sin razón especificada"
+            create_notification(
+                user=task.assigned_to,
+                notification_type="BLOCKED",
+                title=f"Tarea bloqueada: {task.title}",
+                message=f"Tu tarea '{task.title}' fue bloqueada. Razón: {blocked_reason}",
+                reference_doctype="WH Task",
+                reference_name=task_id,
+                priority="HIGH" if task.priority == "P0" else "MEDIUM"
+            )
+
+    # Para otros cambios de estado significativos (DOING, NEXT, etc.)
+    elif old_status and old_status != new_status:
+        # Solo notificar si el cambio lo hizo alguien más (no el dueño)
+        if task.assigned_to and task.assigned_to != frappe.session.user:
+            # Mapeo de estados en español para mensajes
+            status_labels = {
+                "BACKLOG": "Backlog",
+                "NEXT": "Siguiente",
+                "DOING": "En Progreso",
+                "BLOCKED": "Bloqueada",
+                "DONE": "Completada"
+            }
+
+            old_label = status_labels.get(old_status, old_status)
+            new_label = status_labels.get(new_status, new_status)
+
+            create_notification(
+                user=task.assigned_to,
+                notification_type="DEPENDENCY",  # Usar DEPENDENCY para cambios de estado generales
+                title=f"Estado actualizado: {task.title}",
+                message=f"Tu tarea '{task.title}' cambió de estado: {old_label} → {new_label}",
+                reference_doctype="WH Task",
+                reference_name=task_id,
+                priority="LOW"
+            )
