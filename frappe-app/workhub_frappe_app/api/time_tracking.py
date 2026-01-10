@@ -71,12 +71,59 @@ def start_timer(task_id):
 	}
 
 
-def _stop_and_log_timer(timer_dict):
+@frappe.whitelist()
+def stop_timer(notes=None):
+	"""
+	Stop the active timer and log the time to the task.
+
+	Args:
+		notes: Optional notes to include in the work_log entry
+
+	Returns:
+		dict with success flag and logged time details
+	"""
+	require_permission("WH Task", "write")
+
+	user = frappe.session.user
+
+	# Find active timer
+	active_timer = frappe.db.get_value(
+		"WH Time Timer",
+		{"user": user, "status": ["in", ["Running", "Paused"]]},
+		["name", "task", "start_time", "status", "accumulated_seconds"],
+		as_dict=True
+	)
+
+	if not active_timer:
+		frappe.throw(_("No active timer found for user {0}").format(user))
+
+	# Get task info before stopping
+	task = frappe.get_doc("WH Task", active_timer["task"])
+
+	# Stop the timer and log the time
+	time_details = _stop_and_log_timer(active_timer, notes)
+
+	return {
+		"success": True,
+		"time_entry": {
+			"task": time_details["task"],
+			"task_title": task.title,
+			"hours": time_details["hours"],
+			"minutes": time_details["minutes"],
+			"total_seconds": time_details["total_seconds"],
+			"date": time_details["date"],
+			"notes": notes or _("Auto-logged from timer")
+		}
+	}
+
+
+def _stop_and_log_timer(timer_dict, notes=None):
 	"""
 	Helper to stop a timer and log the time to the task.
 
 	Args:
 		timer_dict: Dictionary with timer fields (name, task, start_time, status, accumulated_seconds)
+		notes: Optional notes to include in the work_log entry
 	"""
 	# Get the actual timer document
 	timer = frappe.get_doc("WH Time Timer", timer_dict["name"])
@@ -98,22 +145,31 @@ def _stop_and_log_timer(timer_dict):
 	# Log to task work_log if there's actual time tracked
 	if total_seconds > 0:
 		task = frappe.get_doc("WH Task", timer.task)
-		task.append("work_log", {
+		work_log_entry = {
 			"date": nowdate(),
 			"user": timer.user,
 			"hours": hours,
 			"minutes": minutes,
-			"notes": _("Auto-logged from timer")
-		})
+			"notes": notes or _("Auto-logged from timer")
+		}
+		task.append("work_log", work_log_entry)
 		task.save()
 
 	# Mark timer as stopped
 	timer.status = "Stopped"
 	timer.save()
 
+	# Return details for response
+	return {
+		"task": timer.task,
+		"hours": hours,
+		"minutes": minutes,
+		"total_seconds": total_seconds,
+		"date": nowdate()
+	}
+
 
 # These will be implemented in subsequent subtasks:
-# - stop_timer(notes=None)
 # - pause_timer()
 # - resume_timer()
 # - get_active_timer()
