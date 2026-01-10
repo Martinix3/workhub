@@ -3,8 +3,8 @@
   "spec": "004-add-bulk-operations-to-projects-api",
   "state": "building",
   "subtasks": {
-    "completed": 0,
-    "total": 0,
+    "completed": 1,
+    "total": 4,
     "in_progress": 1,
     "failed": 0
   },
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 2,
+    "number": 3,
     "started_at": "2026-01-10T19:01:16.639363"
   },
-  "last_update": "2026-01-10T19:03:05.651218"
+  "last_update": "2026-01-10T19:04:01.356262"
 }

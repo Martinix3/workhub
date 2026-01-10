@@ -593,3 +593,20 @@ def bulk_change_status(project_ids, new_status):
         frappe.db.set_value("WH Project", project_id, "status", new_status)
 
     return {"success": True, "count": len(project_ids)}
+
+
+@frappe.whitelist()
+def bulk_change_owner(project_ids, new_owner):
+    """Change owner for multiple projects"""
+    require_permission("WH Project", "write")
+    if isinstance(project_ids, str):
+        project_ids = json.loads(project_ids)
+
+    # Validate that new_owner is a valid User
+    if not frappe.db.exists("User", new_owner):
+        frappe.throw(_("Invalid user: {0}").format(new_owner))
+
+    for project_id in project_ids:
+        frappe.db.set_value("WH Project", project_id, "owner_user", new_owner)
+
+    return {"success": True, "count": len(project_ids)}
