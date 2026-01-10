@@ -485,3 +485,59 @@ def quick_add(title, priority="P1", department=None, assigned_to=None):
     doc.is_inbox = 1
     doc.insert()
     return {"success": True, "task_id": doc.name}
+
+
+@frappe.whitelist()
+def get_dependency_popover_data(task_id):
+    """Get detailed dependency info for popover display"""
+    require_auth()
+    if not task_id:
+        frappe.throw(_("Task ID is required"))
+
+    # Get tasks that are blocking this task (predecessors / blocked_by)
+    blocked_by = frappe.db.sql("""
+        SELECT
+            d.predecessor as task_id,
+            t.title,
+            t.status,
+            t.assigned_to,
+            t.due_date,
+            t.priority
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.predecessor = t.name
+        WHERE d.successor = %(task_id)s
+        AND d.is_active = 1
+        ORDER BY t.priority ASC, t.due_date ASC
+    """, {"task_id": task_id}, as_dict=True)
+
+    # Get tasks that this task is blocking (successors / blocks)
+    blocks = frappe.db.sql("""
+        SELECT
+            d.successor as task_id,
+            t.title,
+            t.status,
+            t.assigned_to,
+            t.start_date,
+            t.priority
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.successor = t.name
+        WHERE d.predecessor = %(task_id)s
+        AND d.is_active = 1
+        ORDER BY t.priority ASC, t.start_date ASC
+    """, {"task_id": task_id}, as_dict=True)
+
+    # Enrich with user full names
+    for task in blocked_by:
+        if task.get("assigned_to"):
+            task["assigned_to_name"] = frappe.db.get_value("User", task["assigned_to"], "full_name")
+
+    for task in blocks:
+        if task.get("assigned_to"):
+            task["assigned_to_name"] = frappe.db.get_value("User", task["assigned_to"], "full_name")
+
+    return {
+        "blocked_by": blocked_by,
+        "blocks": blocks,
+        "blocked_by_count": len(blocked_by),
+        "blocks_count": len(blocks)
+    }
