@@ -1,0 +1,372 @@
+/**
+ * Swipeable Task Component - Neobrutalismo Editorial
+ * Touch-optimized swipe-to-complete gesture for task items
+ * Swipe right to complete, visual feedback with threshold indicator
+ */
+
+/* === Swipeable Task Container === */
+.wh-swipeable-task {
+	position: relative;
+	overflow: hidden;
+	touch-action: pan-y; /* Allow vertical scroll, handle horizontal programmatically */
+	user-select: none;
+	-webkit-user-select: none;
+
+	/* GPU acceleration for smooth swipe animations */
+	transform: translateZ(0);
+	backface-visibility: hidden;
+	will-change: transform;
+}
+
+/* === Task Content Wrapper (slides during swipe) === */
+.wh-swipeable-task-content {
+	position: relative;
+	z-index: 2;
+	background: var(--surface-1);
+	border: var(--border-width) solid var(--border-1);
+	padding: var(--space-4);
+	transition: transform var(--mobile-transition-fast), box-shadow var(--mobile-transition-fast);
+	transform: translateX(0);
+
+	/* Neobrutalismo shadow */
+	box-shadow: var(--shadow-sm);
+}
+
+/* Active swipe state - no transition during gesture */
+.wh-swipeable-task.swiping .wh-swipeable-task-content {
+	transition: none;
+}
+
+/* Slight elevation during swipe */
+.wh-swipeable-task.swiping .wh-swipeable-task-content {
+	box-shadow: var(--shadow);
+}
+
+/* === Background Action Area (revealed during swipe) === */
+.wh-swipeable-task-actions {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	padding-right: var(--space-4);
+	background: var(--success);
+	border: var(--border-width) solid var(--border-1);
+	opacity: 0;
+	transition: opacity var(--mobile-transition-fast);
+}
+
+/* Show actions when swiping */
+.wh-swipeable-task.swiping .wh-swipeable-task-actions,
+.wh-swipeable-task.threshold-reached .wh-swipeable-task-actions {
+	opacity: 1;
+}
+
+/* === Action Icon === */
+.wh-swipeable-task-action-icon {
+	width: 32px;
+	height: 32px;
+	color: var(--surface-1);
+	transition: transform var(--mobile-transition-fast);
+	transform: scale(0.8);
+}
+
+/* Scale up icon when threshold is near */
+.wh-swipeable-task.swiping .wh-swipeable-task-action-icon {
+	transform: scale(1);
+}
+
+/* Pulse icon when threshold reached */
+.wh-swipeable-task.threshold-reached .wh-swipeable-task-action-icon {
+	animation: swipe-icon-pulse 0.4s ease-out;
+}
+
+@keyframes swipe-icon-pulse {
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.3);
+	}
+	100% {
+		transform: scale(1.1);
+	}
+}
+
+/* === Action Label === */
+.wh-swipeable-task-action-label {
+	margin-left: var(--space-2);
+	font-size: var(--mobile-text-sm);
+	font-weight: var(--weight-semibold);
+	color: var(--surface-1);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	opacity: 0;
+	transition: opacity var(--mobile-transition-fast);
+}
+
+/* Show label when swiping */
+.wh-swipeable-task.swiping .wh-swipeable-task-action-label {
+	opacity: 1;
+}
+
+/* === Threshold Visual Indicator === */
+.wh-swipeable-task-threshold-indicator {
+	position: absolute;
+	top: 0;
+	left: 30%; /* Threshold at 30% of width */
+	bottom: 0;
+	width: 3px;
+	background: var(--surface-1);
+	opacity: 0;
+	transition: opacity var(--mobile-transition-fast);
+	z-index: 1;
+}
+
+/* Show threshold line when swiping */
+.wh-swipeable-task.swiping .wh-swipeable-task-threshold-indicator {
+	opacity: 0.5;
+}
+
+/* Hide threshold when reached */
+.wh-swipeable-task.threshold-reached .wh-swipeable-task-threshold-indicator {
+	opacity: 0;
+}
+
+/* === Completion Animation === */
+.wh-swipeable-task.completing .wh-swipeable-task-content {
+	animation: swipe-complete-slide 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes swipe-complete-slide {
+	0% {
+		transform: translateX(0);
+		opacity: 1;
+	}
+	100% {
+		transform: translateX(100%);
+		opacity: 0;
+	}
+}
+
+/* Task item fades out after completion */
+.wh-swipeable-task.completed {
+	animation: swipe-task-collapse 0.3s ease-out 0.2s forwards;
+	overflow: hidden;
+}
+
+@keyframes swipe-task-collapse {
+	0% {
+		max-height: 200px;
+		opacity: 1;
+		margin-bottom: var(--mobile-card-gap);
+	}
+	100% {
+		max-height: 0;
+		opacity: 0;
+		margin-bottom: 0;
+		padding-top: 0;
+		padding-bottom: 0;
+	}
+}
+
+/* === Reset Animation (swipe released before threshold) === */
+.wh-swipeable-task.resetting .wh-swipeable-task-content {
+	transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+	transform: translateX(0);
+}
+
+/* === Disabled State === */
+.wh-swipeable-task.disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+.wh-swipeable-task.disabled .wh-swipeable-task-content {
+	background: var(--surface-2);
+	cursor: not-allowed;
+}
+
+/* === Alternative Actions (swipe left for delete/archive) === */
+.wh-swipeable-task-actions-left {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	padding-left: var(--space-4);
+	background: var(--danger);
+	border: var(--border-width) solid var(--border-1);
+	opacity: 0;
+	transition: opacity var(--mobile-transition-fast);
+}
+
+.wh-swipeable-task.swiping-left .wh-swipeable-task-actions-left {
+	opacity: 1;
+}
+
+/* === Touch Feedback === */
+.wh-swipeable-task-content:active {
+	/* Subtle press feedback before swipe is detected */
+	transform: scale(0.99);
+}
+
+.wh-swipeable-task.swiping .wh-swipeable-task-content:active {
+	transform: translateX(var(--swipe-distance, 0));
+}
+
+/* === Mobile-Specific Adjustments === */
+@media (max-width: 767px) {
+	/* Ensure minimum touch target height */
+	.wh-swipeable-task-content {
+		min-height: var(--touch-target-min);
+		display: flex;
+		align-items: center;
+	}
+
+	/* More generous padding on mobile */
+	.wh-swipeable-task-actions,
+	.wh-swipeable-task-actions-left {
+		padding-left: var(--space-5);
+		padding-right: var(--space-5);
+	}
+
+	/* Larger action icon on mobile */
+	.wh-swipeable-task-action-icon {
+		width: 36px;
+		height: 36px;
+	}
+
+	/* Better text visibility on mobile */
+	.wh-swipeable-task-action-label {
+		font-size: var(--mobile-text-base);
+	}
+}
+
+/* === Tablet and Up (disable swipe, show buttons instead) === */
+@media (min-width: 768px) {
+	/* Disable swipe gesture on larger screens */
+	.wh-swipeable-task {
+		touch-action: auto;
+	}
+
+	/* Hide swipe action areas */
+	.wh-swipeable-task-actions,
+	.wh-swipeable-task-actions-left,
+	.wh-swipeable-task-threshold-indicator {
+		display: none;
+	}
+
+	/* Prevent swipe transform on desktop */
+	.wh-swipeable-task-content {
+		transform: none !important;
+	}
+
+	/* Optional: show action buttons on hover instead */
+	.wh-swipeable-task:hover .wh-swipeable-task-hover-actions {
+		opacity: 1;
+	}
+}
+
+/* === Reduced Motion Support === */
+@media (prefers-reduced-motion: reduce) {
+	.wh-swipeable-task-content,
+	.wh-swipeable-task-actions,
+	.wh-swipeable-task-actions-left,
+	.wh-swipeable-task-action-icon,
+	.wh-swipeable-task-action-label,
+	.wh-swipeable-task-threshold-indicator {
+		transition: none !important;
+		animation: none !important;
+	}
+
+	/* Instant completion without animation */
+	.wh-swipeable-task.completing .wh-swipeable-task-content {
+		transform: translateX(100%);
+		opacity: 0;
+	}
+
+	.wh-swipeable-task.completed {
+		max-height: 0;
+		opacity: 0;
+		margin-bottom: 0;
+	}
+}
+
+/* === High Contrast Mode === */
+@media (prefers-contrast: high) {
+	/* Stronger borders in high contrast */
+	.wh-swipeable-task-content,
+	.wh-swipeable-task-actions,
+	.wh-swipeable-task-actions-left {
+		border-width: 3px !important;
+	}
+
+	/* More visible threshold indicator */
+	.wh-swipeable-task.swiping .wh-swipeable-task-threshold-indicator {
+		opacity: 1;
+		width: 4px;
+	}
+}
+
+/* === Dark Mode Preparation (Future Enhancement) === */
+@media (prefers-color-scheme: dark) {
+	/* Dark mode variables will be defined here in future */
+	/* For now, maintain light theme */
+}
+
+/* === Landscape Orientation === */
+@media (max-width: 767px) and (orientation: landscape) {
+	/* Slightly reduce padding in landscape for more content */
+	.wh-swipeable-task-content {
+		padding: var(--space-3);
+	}
+
+	/* Smaller action elements in landscape */
+	.wh-swipeable-task-action-icon {
+		width: 28px;
+		height: 28px;
+	}
+
+	.wh-swipeable-task-action-label {
+		font-size: var(--mobile-text-sm);
+	}
+}
+
+/* === Utility Classes for Task States === */
+
+/* Mark task as already completed (different styling) */
+.wh-swipeable-task.task-completed .wh-swipeable-task-content {
+	background: var(--success-soft);
+	opacity: 0.7;
+}
+
+/* Mark task as blocked (disable swipe) */
+.wh-swipeable-task.task-blocked {
+	pointer-events: none;
+}
+
+.wh-swipeable-task.task-blocked .wh-swipeable-task-content {
+	background: var(--danger-soft);
+	border-style: dashed;
+}
+
+/* Mark task as high priority */
+.wh-swipeable-task.task-priority-high .wh-swipeable-task-content {
+	border-left-width: 4px;
+	border-left-color: var(--accent);
+}
+
+/* Mark task as in progress */
+.wh-swipeable-task.task-in-progress .wh-swipeable-task-content {
+	border-left-width: 4px;
+	border-left-color: var(--primary);
+}
