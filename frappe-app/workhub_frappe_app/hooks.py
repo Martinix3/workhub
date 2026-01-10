@@ -92,7 +92,10 @@ after_install = "workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm
 # Fixtures
 # --------
 fixtures = [
-    {"dt": "Custom Field", "filters": [["dt", "=", "Sales Order"], ["fieldname", "=", "sales_type"]]},
+    {"dt": "Custom Field", "filters": [
+        ["dt", "in", ["Sales Order", "Customer"]],
+        ["fieldname", "in", ["sales_type", "assigned_distributor", "can_create_orders"]]
+    ]},
     # Project templates con sus tareas
     {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]}
 ]
