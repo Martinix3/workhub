@@ -3,7 +3,7 @@
   "spec": "020-advanced-reporting-export",
   "state": "building",
   "subtasks": {
-    "completed": 10,
+    "completed": 11,
     "total": 42,
     "in_progress": 1,
     "failed": 0
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 130,
+    "number": 131,
     "started_at": "2026-01-10T21:23:41.964627"
   },
-  "last_update": "2026-01-10T22:15:21.841144"
+  "last_update": "2026-01-10T22:17:34.421106"
 }
