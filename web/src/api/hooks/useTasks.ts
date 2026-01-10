@@ -260,7 +260,7 @@ export function useGantt(projectId: string): UseDataState<GanttData> & {
 // ============== Kanban Hook ==============
 
 export function useKanban(filters?: TaskFilters): UseDataState<KanbanColumn[]> & {
-  moveTask: (taskId: string, newStatus: TaskStatus) => Promise<void>
+  moveTask: (taskId: string, newStatus: TaskStatus, blockedReason?: string) => Promise<void>
 } {
   const [data, setData] = useState<KanbanColumn[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -297,9 +297,9 @@ export function useKanban(filters?: TaskFilters): UseDataState<KanbanColumn[]> &
     }
   }, [filtersKey])
 
-  const moveTask = useCallback(async (taskId: string, newStatus: TaskStatus) => {
+  const moveTask = useCallback(async (taskId: string, newStatus: TaskStatus, blockedReason?: string) => {
     try {
-      await tasksApi.changeStatus(taskId, newStatus)
+      await tasksApi.changeStatus(taskId, newStatus, blockedReason)
       // Optimistic update
       setData(prev => {
         if (!prev) return prev
