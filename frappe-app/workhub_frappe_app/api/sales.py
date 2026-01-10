@@ -618,6 +618,9 @@ def cancel_order(order_id):
     # Commit the transaction
     frappe.db.commit()
 
+    # Update related WorkLinks
+    _update_worklinks_for_cancelled_order(order_id)
+
     # Get updated status
     updated_status = frappe.db.get_value("Sales Order", order_id, "status")
 
@@ -627,3 +630,26 @@ def cancel_order(order_id):
         "status": updated_status,
         "message": _("Sales Order {0} has been cancelled successfully").format(order_id)
     }
+
+
+def _update_worklinks_for_cancelled_order(order_id):
+    """Update WorkLinks related to a cancelled Sales Order"""
+    # Find WorkLinks with source_doctype='Sales Order' and source_id matching the order
+    worklinks = frappe.get_list("WorkLink",
+        filters={
+            "source_doctype": "Sales Order",
+            "source_id": order_id
+        },
+        fields=["name"]
+    )
+
+    # Update each WorkLink to mark as DONE with CANCELLED state
+    for worklink in worklinks:
+        frappe.db.set_value("WorkLink", worklink.name, {
+            "status": "DONE",
+            "erp_state": "CANCELLED"
+        })
+
+    # Commit WorkLink updates
+    if worklinks:
+        frappe.db.commit()
