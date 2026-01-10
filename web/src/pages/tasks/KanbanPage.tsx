@@ -6,6 +6,7 @@ import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { useKanban, useTaskMutations } from '../../api'
 import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
+import { NLTaskFAB } from '../../components/nl-task-input'
 
 const columnConfig: Record<TaskStatus, { label: string; headerBg: string; bg: string; dropBg: string }> = {
   BACKLOG: { label: 'BACKLOG', headerBg: 'bg-stone-600', bg: 'bg-stone-100', dropBg: 'bg-stone-200' },
@@ -109,7 +110,8 @@ export function KanbanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100">
+    <>
+      <div className="min-h-screen bg-stone-100">
       {/* Header */}
       <div className="bg-white border-b-2 border-stone-900 px-4 lg:px-8 py-4">
         <div className="max-w-full mx-auto flex items-center justify-between">
@@ -313,7 +315,9 @@ export function KanbanPage() {
           </form>
         </div>
       )}
-    </div>
+      </div>
+      <NLTaskFAB onTaskCreated={() => refetch()} />
+    </>
   )
 }
 
