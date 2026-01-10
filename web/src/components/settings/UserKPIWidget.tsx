@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { useUserKPIs } from '../../api'
 import { LoadingState } from '../ui/LoadingState'
 import { ErrorState } from '../ui/ErrorState'
 import { BarChart3, Calendar, CheckCircle, FolderOpen, TrendingUp } from 'lucide-react'
 
 export function UserKPIWidget() {
-  const { data, loading, error, refetch } = useUserKPIs('week')
+  const [period, setPeriod] = useState<'week' | 'month'>('week')
+  const { data, loading, error, refetch } = useUserKPIs(period)
 
   if (loading) {
     return (
@@ -35,12 +37,48 @@ export function UserKPIWidget() {
     <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-          Mis KPIs de Productividad
-        </h2>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-          Últimos {data.period === 'week' ? '7 días' : '30 días'}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              Mis KPIs de Productividad
+            </h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Últimos {data.period === 'week' ? '7 días' : '30 días'}
+            </p>
+          </div>
+
+          {/* Period Toggle */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPeriod('week')}
+              className={`
+                px-3 py-1.5 text-xs font-medium uppercase tracking-wider
+                border-2 border-stone-900 dark:border-stone-100
+                transition-all duration-75
+                ${period === 'week'
+                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
+                  : 'bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800'
+                }
+              `}
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => setPeriod('month')}
+              className={`
+                px-3 py-1.5 text-xs font-medium uppercase tracking-wider
+                border-2 border-stone-900 dark:border-stone-100
+                transition-all duration-75
+                ${period === 'month'
+                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
+                  : 'bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800'
+                }
+              `}
+            >
+              Mes
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* KPI Grid */}
