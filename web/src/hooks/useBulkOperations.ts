@@ -1,29 +1,10 @@
 import { useState, useCallback } from 'react'
-import { frappe } from '../api/frappe-client'
+import bulkApi from '../api/services/bulk'
+import type { BulkOperationResult, UndoOperationResult } from '../api/services/bulk'
 import type { TaskStatus } from '../components/sections/tasks/types'
 
-// Response types based on backend bulk_operations.py
-export interface BulkOperationResult {
-  total: number
-  success_count: number
-  failure_count: number
-  results: {
-    success: Array<{
-      task_id: string
-      details: Record<string, unknown>
-    }>
-    failed: Array<{
-      task_id: string
-      error: string
-    }>
-  }
-  undo_id?: string
-}
-
-export interface UndoOperationResult extends BulkOperationResult {
-  operation_type: string
-  undo_timestamp: string
-}
+// Re-export types for convenience
+export type { BulkOperationResult, UndoOperationResult }
 
 export interface UseBulkOperationsReturn {
   loading: boolean
@@ -92,13 +73,7 @@ export function useBulkOperations(): UseBulkOperationsReturn {
       setLoading(true)
       setError(null)
       try {
-        const result = await frappe.call<BulkOperationResult>(
-          'workhub_frappe_app.api.bulk_operations.bulk_change_status',
-          {
-            task_ids: taskIds,
-            new_status: newStatus
-          }
-        )
+        const result = await bulkApi.bulkChangeStatus(taskIds, newStatus)
 
         if (result.undo_id) {
           setLastUndoId(result.undo_id)
@@ -126,13 +101,7 @@ export function useBulkOperations(): UseBulkOperationsReturn {
       setLoading(true)
       setError(null)
       try {
-        const result = await frappe.call<BulkOperationResult>(
-          'workhub_frappe_app.api.bulk_operations.bulk_assign',
-          {
-            task_ids: taskIds,
-            assigned_to: assignedTo
-          }
-        )
+        const result = await bulkApi.bulkAssign(taskIds, assignedTo)
 
         if (result.undo_id) {
           setLastUndoId(result.undo_id)
@@ -160,13 +129,7 @@ export function useBulkOperations(): UseBulkOperationsReturn {
       setLoading(true)
       setError(null)
       try {
-        const result = await frappe.call<BulkOperationResult>(
-          'workhub_frappe_app.api.bulk_operations.bulk_change_priority',
-          {
-            task_ids: taskIds,
-            new_priority: newPriority
-          }
-        )
+        const result = await bulkApi.bulkChangePriority(taskIds, newPriority)
 
         if (result.undo_id) {
           setLastUndoId(result.undo_id)
@@ -194,13 +157,7 @@ export function useBulkOperations(): UseBulkOperationsReturn {
       setLoading(true)
       setError(null)
       try {
-        const result = await frappe.call<BulkOperationResult>(
-          'workhub_frappe_app.api.bulk_operations.bulk_move_project',
-          {
-            task_ids: taskIds,
-            project_id: projectId
-          }
-        )
+        const result = await bulkApi.bulkMoveProject(taskIds, projectId)
 
         if (result.undo_id) {
           setLastUndoId(result.undo_id)
@@ -229,14 +186,7 @@ export function useBulkOperations(): UseBulkOperationsReturn {
       setLoading(true)
       setError(null)
       try {
-        const result = await frappe.call<BulkOperationResult>(
-          'workhub_frappe_app.api.bulk_operations.bulk_create_worklinks',
-          {
-            task_ids: taskIds,
-            source_doctype: sourceDoctype,
-            source_id: sourceId
-          }
-        )
+        const result = await bulkApi.bulkCreateWorklinks(taskIds, sourceDoctype, sourceId)
 
         if (result.undo_id) {
           setLastUndoId(result.undo_id)
@@ -263,12 +213,7 @@ export function useBulkOperations(): UseBulkOperationsReturn {
       setLoading(true)
       setError(null)
       try {
-        const result = await frappe.call<BulkOperationResult>(
-          'workhub_frappe_app.api.bulk_operations.bulk_remove_worklinks',
-          {
-            task_ids: taskIds
-          }
-        )
+        const result = await bulkApi.bulkRemoveWorklinks(taskIds)
 
         if (result.undo_id) {
           setLastUndoId(result.undo_id)
@@ -303,12 +248,7 @@ export function useBulkOperations(): UseBulkOperationsReturn {
       setLoading(true)
       setError(null)
       try {
-        const result = await frappe.call<UndoOperationResult>(
-          'workhub_frappe_app.api.bulk_operations.undo_bulk_operation',
-          {
-            undo_id: idToUndo
-          }
-        )
+        const result = await bulkApi.undoBulkOperation(idToUndo)
 
         // Clear the undo ID after successful undo
         if (idToUndo === lastUndoId) {

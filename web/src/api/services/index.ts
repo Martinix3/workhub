@@ -7,6 +7,7 @@ export { default as marketingApi } from './marketing'
 export { default as settingsApi } from './settings'
 export { default as adminApi } from './admin'
 export { default as notepadApi } from './notepad'
+export { default as bulkApi } from './bulk'
 
 // Re-export types
 export type {
@@ -25,3 +26,8 @@ export type {
   CreateUserData,
   UpdateUserData
 } from './admin'
+
+export type {
+  BulkOperationResult,
+  UndoOperationResult
+} from './bulk'
