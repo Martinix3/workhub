@@ -5,6 +5,7 @@ import type { KPIs, SalesTrends, Activity, Customer, SalesOrder, Opportunity } f
 import type { NetworkKPIs, Distributor } from '../components/sections/distributor-network/types'
 import type { ProductionKPIs, ProductionOrder, ProductionLine, Lot, HACCPPlan, CCPReading, QualityDocument, DocumentFolder, QualityKPIs, Inspection, NonConformance, WeeklyTrendPoint } from '../components/sections/production-and-quality/types'
 import type { MarketingKPIs, Campaign, SocialPost, PlatformStats } from '../components/sections/marketing-and-growth/types'
+import type { Notification, GetNotificationsResponse } from './types/notifications'
 
 // Command Center
 export const sampleAreaSummaries: AreaSummary[] = [
@@ -431,6 +432,120 @@ export const sampleTaskKPIs: DashboardKPIs = {
     trend: 'up',
     trend_delta: 10.5
   }
+}
+
+// Notifications
+export const sampleNotifications: Notification[] = [
+  {
+    id: 'NOTIF-001',
+    user: 'martin@example.com',
+    type: 'TASK_ASSIGNED',
+    priority: 'HIGH',
+    title: 'Nueva tarea asignada',
+    message: 'Se te ha asignado la tarea "Revisar propuesta comercial" en el proyecto Expansion Zona Norte',
+    read: false,
+    created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-001',
+    action_url: '/tasks?task=WHT-2025-001'
+  },
+  {
+    id: 'NOTIF-002',
+    user: 'martin@example.com',
+    type: 'OVERDUE',
+    priority: 'HIGH',
+    title: 'Tarea vencida',
+    message: 'La tarea "Llamar a cliente potencial" esta vencida desde ayer',
+    read: false,
+    created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-004',
+    action_url: '/tasks?task=WHT-2025-004'
+  },
+  {
+    id: 'NOTIF-003',
+    user: 'martin@example.com',
+    type: 'BLOCKED',
+    priority: 'MEDIUM',
+    title: 'Tarea bloqueada',
+    message: 'Tu tarea "Disenar packaging" ha sido marcada como bloqueada',
+    read: false,
+    created_at: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-P2-002',
+    action_url: '/tasks?task=WHT-2025-P2-002'
+  },
+  {
+    id: 'NOTIF-004',
+    user: 'martin@example.com',
+    type: 'PROJECT_RISK',
+    priority: 'HIGH',
+    title: 'Proyecto en riesgo',
+    message: 'El proyecto "Optimizacion Logistica" tiene 3 tareas vencidas y esta marcado en rojo',
+    read: true,
+    created_at: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
+    reference_doctype: 'WH Project',
+    reference_name: 'WHP-2025-003',
+    action_url: '/tasks/projects?project=WHP-2025-003'
+  },
+  {
+    id: 'NOTIF-005',
+    user: 'martin@example.com',
+    type: 'MENTION',
+    priority: 'MEDIUM',
+    title: 'Te mencionaron en un comentario',
+    message: 'Ana Garcia te menciono en la tarea "Negociar contratos"',
+    read: true,
+    created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-P1-002',
+    action_url: '/tasks?task=WHT-2025-P1-002'
+  },
+  {
+    id: 'NOTIF-006',
+    user: 'martin@example.com',
+    type: 'COMPLETED',
+    priority: 'LOW',
+    title: 'Tarea completada',
+    message: 'Carlos Lopez completo la tarea "Analisis de rutas" del proyecto Optimizacion Logistica',
+    read: true,
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-P3-001',
+    action_url: '/tasks?task=WHT-2025-P3-001'
+  },
+  {
+    id: 'NOTIF-007',
+    user: 'martin@example.com',
+    type: 'DEPENDENCY',
+    priority: 'MEDIUM',
+    title: 'Dependencia completada',
+    message: 'La tarea "Definir producto" fue completada. Ahora puedes continuar con "Disenar packaging"',
+    read: true,
+    created_at: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-P2-001',
+    action_url: '/tasks?task=WHT-2025-P2-002'
+  },
+  {
+    id: 'NOTIF-008',
+    user: 'martin@example.com',
+    type: 'EMAIL_TASK',
+    priority: 'LOW',
+    title: 'Tarea creada desde email',
+    message: 'Se creo una nueva tarea a partir de tu email: "Coordinar reunion con proveedor"',
+    read: true,
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-006',
+    action_url: '/tasks?task=WHT-2025-006'
+  }
+]
+
+export const sampleNotificationsResponse: GetNotificationsResponse = {
+  notifications: sampleNotifications,
+  unread_count: 3,
+  total_count: 8
 }
 
 // Helper to check if in bypass mode
