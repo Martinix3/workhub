@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "019-natural-language-task-creation",
+  "state": "building",
+  "subtasks": {
+    "completed": 3,
+    "total": 21,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Backend API - Natural Language Task Endpoints",
+    "id": null,
+    "total": 3
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 122,
+    "started_at": "2026-01-10T21:23:43.745022"
+  },
+  "last_update": "2026-01-10T22:00:03.585595"
+}
