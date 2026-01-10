@@ -153,8 +153,8 @@ export interface DistributorDashboardProps {
   onViewDistributor?: (id: string) => void
   /** Called when admin wants to send a message/alert */
   onSendAlert?: (id: string) => void
-  /** Called when admin exports data */
-  onExport?: () => void
+  /** Called when admin exports KPIs data */
+  onExport?: (format: 'json' | 'csv') => Promise<void> | void
 }
 
 export interface DistributorPortalProps {

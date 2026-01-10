@@ -1,5 +1,6 @@
 import type { ProductionDashboardProps, ProductionKPIs, ProductionOrder, ProductionLine } from './types'
 import { TrendingUp, TrendingDown, Minus, Play, Pause, AlertTriangle, Wrench, Eye } from 'lucide-react'
+import { ExportKPIsButton } from '../../ui'
 
 interface KPICardProps {
   kpi: { value: number; previousValue: number; change: number; label: string }
@@ -181,7 +182,8 @@ export function ProductionDashboard({
   orders,
   lines,
   onViewOrder,
-  onViewLine
+  onViewLine,
+  onExport
 }: ProductionDashboardProps) {
   const kpiConfig: { key: keyof ProductionKPIs; format: 'number' | 'percent' }[] = [
     { key: 'activeOrders', format: 'number' },
@@ -195,13 +197,17 @@ export function ProductionDashboard({
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
-          Produccion
-        </h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-          Estado de planta y ordenes del dia
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
+            Produccion
+          </h1>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+            Estado de planta y ordenes del dia
+          </p>
+        </div>
+
+        {onExport && <ExportKPIsButton onExport={onExport} />}
       </div>
 
       {/* KPIs */}

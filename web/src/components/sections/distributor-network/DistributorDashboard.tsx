@@ -1,5 +1,6 @@
 import type { DistributorDashboardProps, Distributor, NetworkKPIs } from './types'
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, Eye, Send, Download } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, Eye, Send } from 'lucide-react'
+import { ExportKPIsButton } from '../../ui'
 
 const alertLabels: Record<string, string> = {
   stock_alto: 'Stock Alto',
@@ -186,20 +187,7 @@ export function DistributorDashboard({
           </p>
         </div>
 
-        <button
-          onClick={onExport}
-          className="
-            inline-flex items-center gap-2 px-4 py-2
-            bg-white dark:bg-stone-800
-            text-stone-700 dark:text-stone-300 font-medium text-sm uppercase tracking-wider
-            border-2 border-stone-900 dark:border-stone-100
-            hover:bg-stone-100 dark:hover:bg-stone-700
-            transition-colors
-          "
-        >
-          <Download size={18} />
-          Exportar
-        </button>
+        {onExport && <ExportKPIsButton onExport={onExport} />}
       </div>
 
       {/* KPIs */}

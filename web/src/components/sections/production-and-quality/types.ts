@@ -145,6 +145,8 @@ export interface ProductionDashboardProps {
   lines: ProductionLine[]
   onViewOrder?: (id: string) => void
   onViewLine?: (id: string) => void
+  /** Called when user exports KPIs data */
+  onExport?: (format: 'json' | 'csv') => Promise<void> | void
 }
 
 export interface ProductionOrdersProps {
@@ -173,6 +175,8 @@ export interface QualityDashboardProps {
   weeklyTrend: WeeklyTrendPoint[]
   onViewInspection?: (id: string) => void
   onViewNC?: (id: string) => void
+  /** Called when user exports KPIs data */
+  onExport?: (format: 'json' | 'csv') => Promise<void> | void
 }
 
 export interface InspectionsProps {

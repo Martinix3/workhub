@@ -1,5 +1,6 @@
 import type { QualityDashboardProps, NonConformance, Inspection, WeeklyTrendPoint } from './types'
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Clock, CheckCircle, XCircle, Eye } from 'lucide-react'
+import { ExportKPIsButton } from '../../ui'
 
 interface KPICardProps {
   kpi: { value: number; previousValue: number; change: number; label: string }
@@ -197,18 +198,23 @@ export function QualityDashboard({
   openNCs,
   weeklyTrend,
   onViewInspection,
-  onViewNC
+  onViewNC,
+  onExport
 }: QualityDashboardProps) {
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
-          Control de Calidad
-        </h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-          Inspecciones, no-conformidades y metricas de calidad
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
+            Control de Calidad
+          </h1>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+            Inspecciones, no-conformidades y metricas de calidad
+          </p>
+        </div>
+
+        {onExport && <ExportKPIsButton onExport={onExport} />}
       </div>
 
       {/* KPIs */}
