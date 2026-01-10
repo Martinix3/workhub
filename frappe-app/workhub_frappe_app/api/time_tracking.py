@@ -169,10 +169,70 @@ def _stop_and_log_timer(timer_dict, notes=None):
 	}
 
 
+@frappe.whitelist()
+def get_active_timer():
+	"""
+	Check if user has an active timer and on which task.
+
+	Returns:
+		dict with active timer info or None if no active timer
+	"""
+	require_permission("WH Task", "read")
+
+	user = frappe.session.user
+
+	# Find active timer (Running or Paused)
+	active_timer = frappe.db.get_value(
+		"WH Time Timer",
+		{"user": user, "status": ["in", ["Running", "Paused"]]},
+		["name", "task", "start_time", "status", "accumulated_seconds"],
+		as_dict=True
+	)
+
+	if not active_timer:
+		return {
+			"success": True,
+			"active_timer": None
+		}
+
+	# Get task details
+	task = frappe.get_doc("WH Task", active_timer["task"])
+
+	# Calculate running duration
+	if active_timer["status"] == "Running":
+		# Calculate time from start_time to now
+		elapsed_seconds = time_diff_in_seconds(now_datetime(), get_datetime(active_timer["start_time"]))
+		total_seconds = (active_timer["accumulated_seconds"] or 0) + elapsed_seconds
+	else:  # Paused
+		# Just use accumulated_seconds
+		total_seconds = active_timer["accumulated_seconds"] or 0
+
+	# Convert to hours and minutes for display
+	total_minutes = int(total_seconds // 60)
+	hours = total_minutes // 60
+	minutes = total_minutes % 60
+
+	return {
+		"success": True,
+		"active_timer": {
+			"name": active_timer["name"],
+			"task": active_timer["task"],
+			"task_title": task.title,
+			"project": task.project,
+			"project_name": task.project_name if hasattr(task, "project_name") else None,
+			"status": active_timer["status"],
+			"start_time": active_timer["start_time"],
+			"accumulated_seconds": active_timer["accumulated_seconds"],
+			"running_seconds": total_seconds,
+			"running_hours": hours,
+			"running_minutes": minutes
+		}
+	}
+
+
 # These will be implemented in subsequent subtasks:
 # - pause_timer()
 # - resume_timer()
-# - get_active_timer()
 
 # Manual time entry
 # - add_time_entry(task_id, hours, minutes, date=None, notes=None)
