@@ -1068,6 +1068,357 @@
 	font-size: 0.75rem;
 	color: #6c757d;
 }
+
+/* ============================================================
+   MOBILE RESPONSIVE STYLES
+   ============================================================ */
+
+/* Tablets and smaller (max-width: 768px) */
+@media (max-width: 768px) {
+	/* Page container - reduce padding on mobile */
+	.wh-page-container {
+		padding: 10px;
+	}
+
+	/* Page header - reduce font size */
+	.wh-page-header h1 {
+		font-size: 24px;
+	}
+
+	.wh-page-header p {
+		font-size: 0.9em;
+	}
+
+	/* Navigation tabs - make scrollable horizontally */
+	.nav-tabs {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		border-bottom: 1px solid #dee2e6;
+	}
+
+	.nav-tabs .nav-item {
+		flex: 0 0 auto;
+	}
+
+	.nav-tabs .nav-link {
+		white-space: nowrap;
+		font-size: 0.9em;
+		padding: 10px 12px;
+	}
+
+	/* Tab content - reduce margins */
+	.tab-content {
+		margin-top: 15px !important;
+	}
+
+	/* Cards - reduce margins and padding */
+	.card {
+		margin-bottom: 15px;
+	}
+
+	.card-body {
+		padding: 15px;
+	}
+
+	.card-header h5,
+	.card-header h6 {
+		font-size: 1.1em;
+		margin-bottom: 0;
+	}
+
+	/* Tables - optimize for mobile */
+	.table {
+		font-size: 0.85em;
+	}
+
+	.table thead th {
+		font-size: 0.8em;
+		padding: 8px 5px;
+	}
+
+	.table tbody td {
+		padding: 8px 5px;
+	}
+
+	/* Hide some table columns on very small screens */
+	.table th:nth-child(3),
+	.table td:nth-child(3) {
+		display: none; /* Hide "Fecha Pedido" column */
+	}
+
+	/* Progress bars - reduce height */
+	.progress {
+		height: 16px;
+	}
+
+	.progress-bar {
+		font-size: 0.7rem;
+		line-height: 16px;
+	}
+
+	/* Status badges - smaller */
+	.badge {
+		font-size: 0.7rem;
+		padding: 3px 6px;
+	}
+
+	/* Buttons - make more touch-friendly */
+	.btn {
+		padding: 10px 16px;
+		min-height: 44px; /* iOS recommended touch target size */
+	}
+
+	.btn-sm {
+		padding: 8px 12px;
+		min-height: 38px;
+	}
+
+	/* Items and tasks containers - reduce padding */
+	.items-container,
+	.tasks-container,
+	.change-requests-container {
+		padding: 10px;
+	}
+
+	.items-container h6,
+	.tasks-container h6,
+	.change-requests-container h6 {
+		font-size: 1em;
+		margin-bottom: 10px;
+	}
+
+	/* Messages - optimize for mobile */
+	.message-item {
+		padding: 12px;
+		margin-bottom: 8px;
+	}
+
+	.message-item-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 5px;
+	}
+
+	.message-timestamp {
+		font-size: 0.8em;
+	}
+
+	.message-subject {
+		font-size: 0.95em;
+	}
+
+	.message-preview {
+		font-size: 0.85em;
+	}
+
+	/* Conversation bubbles - increase max-width on mobile */
+	.conversation-bubble {
+		max-width: 85%;
+		padding: 10px 12px;
+	}
+
+	.conversation-thread {
+		max-height: 400px;
+		padding: 10px;
+	}
+
+	/* Forms - optimize spacing */
+	.form-group {
+		margin-bottom: 15px;
+	}
+
+	.form-control {
+		font-size: 16px; /* Prevent iOS zoom on focus */
+		min-height: 44px;
+	}
+
+	select.form-control {
+		font-size: 16px;
+	}
+
+	textarea.form-control {
+		font-size: 16px;
+	}
+
+	/* Modals - full screen on mobile */
+	.modal-dialog {
+		margin: 0;
+		max-width: 100%;
+	}
+
+	.modal-content {
+		border-radius: 0;
+		min-height: 100vh;
+	}
+
+	.modal-body {
+		padding: 15px;
+	}
+
+	/* Nuevo Pedido - cart summary */
+	.cart-item {
+		padding: 10px;
+		font-size: 0.9em;
+	}
+
+	/* Upload area - reduce padding */
+	.upload-area {
+		padding: 30px 15px;
+	}
+}
+
+/* Mobile phones (max-width: 576px) */
+@media (max-width: 576px) {
+	/* Further reduce padding */
+	.wh-page-container {
+		padding: 8px;
+	}
+
+	/* Page header */
+	.wh-page-header {
+		margin-bottom: 20px;
+	}
+
+	.wh-page-header h1 {
+		font-size: 20px;
+	}
+
+	/* Navigation tabs - smaller font */
+	.nav-tabs .nav-link {
+		font-size: 0.85em;
+		padding: 8px 10px;
+	}
+
+	/* Unread badge on messages tab */
+	#unread-badge {
+		font-size: 0.65rem;
+		padding: 2px 5px;
+	}
+
+	/* Cards */
+	.card-body {
+		padding: 12px;
+	}
+
+	/* Tables - hide more columns */
+	.table th:nth-child(4),
+	.table td:nth-child(4) {
+		display: none; /* Hide "Fecha Entrega" column */
+	}
+
+	/* Stack table data vertically for very small screens */
+	.table thead {
+		display: none;
+	}
+
+	.order-row td {
+		display: block;
+		text-align: left !important;
+		padding: 5px 10px;
+		border: none;
+	}
+
+	.order-row td:first-child {
+		padding-top: 10px;
+		font-weight: 600;
+	}
+
+	.order-row td:last-child {
+		padding-bottom: 10px;
+	}
+
+	.order-row td:before {
+		content: attr(data-label);
+		font-weight: 600;
+		display: inline-block;
+		margin-right: 10px;
+	}
+
+	/* Buttons - full width on mobile */
+	.btn-block {
+		width: 100%;
+		display: block;
+	}
+
+	/* Row buttons in orders table */
+	.order-row .btn {
+		padding: 6px 10px;
+		font-size: 0.8em;
+		min-height: 36px;
+	}
+
+	/* Message filters and search */
+	.form-row .col-md-6,
+	.form-row .col-md-3,
+	.form-row .col-md-4,
+	.form-row .col-md-8 {
+		flex: 0 0 100%;
+		max-width: 100%;
+		margin-bottom: 10px;
+	}
+
+	/* Conversation bubbles - full width almost */
+	.conversation-bubble {
+		max-width: 90%;
+		font-size: 0.9em;
+	}
+
+	/* Conversation header */
+	#conversation-header {
+		padding: 12px;
+	}
+
+	#conversation-header h5 {
+		font-size: 1em;
+	}
+
+	/* Cart items in Nuevo Pedido */
+	#order-cart-items {
+		max-height: 250px;
+	}
+
+	/* Change request modal content */
+	.change-requests-container .table td,
+	.change-requests-container .table th {
+		font-size: 0.8em;
+		padding: 6px 8px;
+	}
+
+	/* Items container tables - more compact */
+	.items-container .table td,
+	.items-container .table th,
+	.tasks-container .table td,
+	.tasks-container .table th {
+		font-size: 0.8em;
+		padding: 6px 8px;
+	}
+}
+
+/* Landscape mode optimization for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+	.conversation-thread {
+		max-height: 250px;
+	}
+
+	.modal-content {
+		min-height: auto;
+		max-height: 100vh;
+		overflow-y: auto;
+	}
+}
+
+/* Fix for iOS Safari bottom navigation overlap */
+@supports (-webkit-touch-callout: none) {
+	.wh-page-container {
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+
+	.modal-body {
+		padding-bottom: calc(15px + env(safe-area-inset-bottom));
+	}
+}
 </style>
 
 <script>
@@ -1196,21 +1547,25 @@ function createOrderRow(order, index) {
 
 	// Expand/collapse icon
 	const iconCell = document.createElement('td');
+	iconCell.setAttribute('data-label', '');
 	iconCell.innerHTML = '<i id="expand-icon-' + index + '" class="fa fa-chevron-right text-muted"></i>';
 	row.appendChild(iconCell);
 
 	// Order ID
 	const idCell = document.createElement('td');
+	idCell.setAttribute('data-label', 'Pedido: ');
 	idCell.innerHTML = '<strong>' + order.id + '</strong>';
 	row.appendChild(idCell);
 
 	// Order Date
 	const orderDateCell = document.createElement('td');
+	orderDateCell.setAttribute('data-label', 'Fecha Pedido: ');
 	orderDateCell.textContent = formatDate(order.orderDate);
 	row.appendChild(orderDateCell);
 
 	// Delivery Date
 	const deliveryDateCell = document.createElement('td');
+	deliveryDateCell.setAttribute('data-label', 'Entrega: ');
 	deliveryDateCell.innerHTML = order.deliveryDate ?
 		'<span class="text-primary"><i class="fa fa-calendar"></i> ' + formatDate(order.deliveryDate) + '</span>' :
 		'<span class="text-muted">-</span>';
@@ -1218,23 +1573,27 @@ function createOrderRow(order, index) {
 
 	// Status Badge
 	const statusCell = document.createElement('td');
+	statusCell.setAttribute('data-label', 'Estado: ');
 	statusCell.innerHTML = getStatusBadge(order.status, order.detailedStatus);
 	row.appendChild(statusCell);
 
 	// Delivery Progress Bar
 	const progressCell = document.createElement('td');
 	progressCell.className = 'text-center';
+	progressCell.setAttribute('data-label', 'Progreso: ');
 	progressCell.innerHTML = createProgressBar(order.deliveryProgress);
 	row.appendChild(progressCell);
 
 	// Total
 	const totalCell = document.createElement('td');
 	totalCell.className = 'text-right';
+	totalCell.setAttribute('data-label', 'Total: ');
 	totalCell.innerHTML = '<strong>MXN $' + order.total.toFixed(2) + '</strong>';
 	row.appendChild(totalCell);
 
 	// Actions
 	const actionsCell = document.createElement('td');
+	actionsCell.setAttribute('data-label', '');
 	actionsCell.innerHTML = '<button class="btn btn-sm btn-outline-primary mr-1" onclick="event.stopPropagation(); viewOrder(\'' + order.id + '\')">Ver Detalle</button>' +
 		'<button class="btn btn-sm btn-outline-warning" onclick="event.stopPropagation(); showChangeRequestModal(\'' + order.id + '\')">Solicitar Cambio</button>';
 	row.appendChild(actionsCell);
