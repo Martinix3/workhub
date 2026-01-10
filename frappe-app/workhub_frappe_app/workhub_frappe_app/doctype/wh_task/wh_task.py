@@ -17,6 +17,7 @@ class WHTask(Document):
         self.update_project_kpis()
         self.propagate_to_successors()
         self.send_assignment_notifications()
+        self.send_status_change_notifications()
 
     def set_defaults(self):
         """Establece valores por defecto"""
@@ -34,9 +35,17 @@ class WHTask(Document):
             self.is_inbox = 1
 
     def handle_status_change(self):
-        """Maneja cambios de estado - registra fechas reales"""
+        """Maneja cambios de estado - registra fechas reales y prepara notificaciones"""
         if not self.is_new():
             old_status = frappe.db.get_value("WH Task", self.name, "status")
+
+            # Guardar valores para notificaciones en on_update
+            if old_status != self.status:
+                self._status_changed = True
+                self._old_status = old_status
+                self._new_status = self.status
+            else:
+                self._status_changed = False
 
             # Cambio a DOING -> registrar inicio real
             if old_status != "DOING" and self.status == "DOING":
@@ -47,6 +56,8 @@ class WHTask(Document):
             if old_status != "DONE" and self.status == "DONE":
                 if not self.actual_end:
                     self.actual_end = now_datetime()
+        else:
+            self._status_changed = False
 
     def handle_assignment_change(self):
         """Detecta cambios en assigned_to para notificaciones posteriores"""
@@ -95,6 +106,20 @@ class WHTask(Document):
                 reference_name=self.name,
                 priority="LOW"
             )
+
+    def send_status_change_notifications(self):
+        """Envía notificaciones cuando cambia el status"""
+        if not getattr(self, '_status_changed', False):
+            return
+
+        from workhub_frappe_app.api.notifications import notify_task_status_changed
+
+        old_status = getattr(self, '_old_status', None)
+        new_status = getattr(self, '_new_status', None)
+
+        # Llamar a la función de notificación de cambio de estado
+        if old_status and new_status:
+            notify_task_status_changed(self.name, old_status, new_status)
 
     def handle_worked_today(self):
         """Si se marca 'trabaje hoy', agregar entrada al log"""
