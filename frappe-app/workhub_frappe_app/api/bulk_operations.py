@@ -657,3 +657,167 @@ def bulk_remove_worklinks(task_ids):
     # Add undo_id to result
     result["undo_id"] = undo_id
     return result
+
+
+@frappe.whitelist()
+def undo_bulk_operation(undo_id):
+    """
+    Undo a previous bulk operation by reverting tasks to their previous state.
+
+    Args:
+        undo_id: Unique identifier for the undo operation
+
+    Returns:
+        Dict with total, success_count, failure_count, and detailed results
+    """
+    require_permission("WH Task", "write")
+
+    if not undo_id:
+        frappe.throw(_("undo_id is required"))
+
+    # Retrieve undo data from cache
+    undo_data = _get_undo_data(undo_id)
+
+    if not undo_data:
+        frappe.throw(_("Undo data not found or expired. Undo is only available for 30 seconds after an operation."))
+
+    operation_type = undo_data.get("operation_type")
+    task_ids = undo_data.get("task_ids", [])
+    previous_values = undo_data.get("previous_values", {})
+
+    if not task_ids or not previous_values:
+        frappe.throw(_("Invalid undo data"))
+
+    # Define undo operation based on operation type
+    def undo_operation(task_id):
+        """Revert a single task to its previous state"""
+        try:
+            # Get previous values for this task
+            prev_vals = previous_values.get(task_id)
+            if not prev_vals:
+                return {
+                    "success": False,
+                    "error": _("No previous values found for task")
+                }
+
+            task = frappe.get_doc("WH Task", task_id)
+
+            # Revert based on operation type
+            if operation_type == "change_status":
+                old_status = task.status
+                task.status = prev_vals.get("status")
+                frappe.db.set_value("WH Task", task_id, "status", task.status)
+                details = {
+                    "field": "status",
+                    "reverted_from": old_status,
+                    "reverted_to": task.status
+                }
+
+            elif operation_type == "assign":
+                old_assigned_to = task.assigned_to
+                task.assigned_to = prev_vals.get("assigned_to")
+                frappe.db.set_value("WH Task", task_id, "assigned_to", task.assigned_to)
+                details = {
+                    "field": "assigned_to",
+                    "reverted_from": old_assigned_to,
+                    "reverted_to": task.assigned_to
+                }
+
+            elif operation_type == "change_priority":
+                old_priority = task.priority
+                task.priority = prev_vals.get("priority")
+                frappe.db.set_value("WH Task", task_id, "priority", task.priority)
+                details = {
+                    "field": "priority",
+                    "reverted_from": old_priority,
+                    "reverted_to": task.priority
+                }
+
+            elif operation_type == "move_project":
+                old_project = task.project
+                old_is_inbox = task.is_inbox
+                task.project = prev_vals.get("project")
+                task.is_inbox = prev_vals.get("is_inbox")
+                task.save()
+                details = {
+                    "field": "project",
+                    "reverted_from": {"project": old_project, "is_inbox": old_is_inbox},
+                    "reverted_to": {"project": task.project, "is_inbox": task.is_inbox}
+                }
+
+            elif operation_type == "create_worklinks":
+                # Revert WorkLink creation
+                old_worklink = task.worklink
+
+                # If there was a previous WorkLink, restore it
+                prev_worklink = prev_vals.get("worklink")
+                if prev_worklink:
+                    # Restore previous WorkLink
+                    task.worklink = prev_worklink
+                    task.source_doctype = prev_vals.get("source_doctype")
+                    task.source_name = prev_vals.get("source_name")
+                    frappe.db.set_value("WorkLink", prev_worklink, "wh_task", task_id)
+                else:
+                    # Remove the newly created WorkLink
+                    if old_worklink:
+                        frappe.db.set_value("WorkLink", old_worklink, "wh_task", None)
+                    task.worklink = None
+                    task.source_doctype = None
+                    task.source_name = None
+
+                task.save()
+                details = {
+                    "field": "worklink",
+                    "reverted_from": old_worklink,
+                    "reverted_to": task.worklink
+                }
+
+            elif operation_type == "remove_worklinks":
+                # Revert WorkLink removal by restoring the WorkLink
+                prev_worklink = prev_vals.get("worklink")
+                if prev_worklink:
+                    task.worklink = prev_worklink
+                    task.source_doctype = prev_vals.get("source_doctype")
+                    task.source_name = prev_vals.get("source_name")
+                    # Restore WorkLink reference
+                    frappe.db.set_value("WorkLink", prev_worklink, "wh_task", task_id)
+                    task.save()
+                    details = {
+                        "field": "worklink",
+                        "reverted_from": None,
+                        "reverted_to": prev_worklink
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": _("No previous WorkLink to restore")
+                    }
+
+            else:
+                return {
+                    "success": False,
+                    "error": _("Unknown operation type: {0}").format(operation_type)
+                }
+
+            return {
+                "success": True,
+                "details": details
+            }
+
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # Process undo for all tasks
+    result = _process_bulk_operation(
+        task_ids,
+        undo_operation,
+        "undo_bulk_operation"
+    )
+
+    frappe.db.commit()
+
+    # Add operation details to result
+    result["operation_type"] = operation_type
+    result["undo_timestamp"] = undo_data.get("timestamp")
+
+    return result
