@@ -31,6 +31,10 @@
   "column_break_dates2",
   "estimated_hours",
   "is_milestone",
+  "section_break_completion",
+  "completed_at",
+  "column_break_completion",
+  "completion_notes",
   "section_break_time_tracking",
   "worked_today",
   "total_work_days",
@@ -199,6 +203,28 @@
    "fieldname": "is_milestone",
    "fieldtype": "Check",
    "label": "Es Hito"
+  },
+  {
+   "depends_on": "eval:doc.status=='DONE'",
+   "fieldname": "section_break_completion",
+   "fieldtype": "Section Break",
+   "label": "Cierre de Tarea"
+  },
+  {
+   "depends_on": "eval:doc.status=='DONE'",
+   "fieldname": "completed_at",
+   "fieldtype": "Datetime",
+   "label": "Fecha de Cierre"
+  },
+  {
+   "fieldname": "column_break_completion",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.status=='DONE'",
+   "fieldname": "completion_notes",
+   "fieldtype": "Text",
+   "label": "Notas de Cierre"
   },
   {
    "fieldname": "section_break_time_tracking",
