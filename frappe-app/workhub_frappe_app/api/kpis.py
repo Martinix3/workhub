@@ -230,9 +230,13 @@ def get_project_kpis(project_id):
 
 
 @frappe.whitelist()
-def get_user_kpis(user_id, period="week"):
+def get_user_kpis(user_id=None, period="week"):
     """KPIs de un usuario"""
     require_auth()
+
+    # Default to current user if not specified
+    if not user_id:
+        user_id = frappe.session.user
 
     if period == "week":
         start_date = add_days(nowdate(), -7)
