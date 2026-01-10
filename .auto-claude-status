@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "012-mobile-responsive-enhancement",
+  "state": "building",
+  "subtasks": {
+    "completed": 6,
+    "total": 21,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Navigation Mobile Optimization",
+    "id": null,
+    "total": 4
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 123,
+    "started_at": "2026-01-10T21:23:50.433921"
+  },
+  "last_update": "2026-01-10T22:02:53.305364"
+}
