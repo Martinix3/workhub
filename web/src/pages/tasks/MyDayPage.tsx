@@ -30,15 +30,9 @@ export function MyDayPage() {
     )
   }
 
-  const handleTaskComplete = (taskId: string) => {
-    // Find the task in the data
-    const allTasks = [...(data?.today || []), ...(data?.upcoming || []), ...(data?.overdue || []), ...(data?.blocked || [])]
-    const task = allTasks.find(t => t.name === taskId)
-
-    if (task) {
-      setTaskToComplete(task)
-      setShowCompletionModal(true)
-    }
+  const handleTaskComplete = (task: Task) => {
+    setTaskToComplete(task)
+    setShowCompletionModal(true)
   }
 
   const handleModalComplete = async (taskId: string, notes?: string) => {

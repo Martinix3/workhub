@@ -5,7 +5,7 @@ import type { Task, TaskStatus, TaskPriority, MyDayData } from './types'
 
 interface MyDayProps {
   data: MyDayData
-  onTaskComplete?: (id: string) => void
+  onTaskComplete?: (task: Task) => void
   onTaskBlock?: (id: string, reason: string) => void
   onTaskClick?: (id: string) => void
   onQuickAdd?: (title: string, priority: TaskPriority) => void
@@ -47,8 +47,8 @@ export function MyDay({
   const handleFocus = (taskId: string) => setFocusedTaskId(taskId)
   const handleExitFocus = () => setFocusedTaskId(null)
 
-  const handleComplete = (taskId: string) => {
-    onTaskComplete?.(taskId)
+  const handleComplete = (task: Task) => {
+    onTaskComplete?.(task)
     setFocusedTaskId(null)
   }
 
@@ -96,7 +96,7 @@ export function MyDay({
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => handleComplete(focusedTask.name)}
+                  onClick={() => handleComplete(focusedTask)}
                   className="
                     flex-1 py-3 px-6
                     bg-green-500 hover:bg-green-600
@@ -221,7 +221,7 @@ export function MyDay({
                       task={task}
                       highlighted
                       onFocus={() => handleFocus(task.name)}
-                      onComplete={() => handleComplete(task.name)}
+                      onComplete={() => handleComplete(task)}
                       onClick={() => onTaskClick?.(task.name)}
                     />
                   ))}
@@ -241,7 +241,7 @@ export function MyDay({
                       key={task.name}
                       task={task}
                       onFocus={() => handleFocus(task.name)}
-                      onComplete={() => handleComplete(task.name)}
+                      onComplete={() => handleComplete(task)}
                       onClick={() => onTaskClick?.(task.name)}
                       onStartDoing={() => onChangeStatus?.(task.name, 'DOING')}
                     />
