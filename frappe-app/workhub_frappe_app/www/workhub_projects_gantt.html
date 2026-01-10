@@ -1,0 +1,447 @@
+<!-- Page: WorkHub Project Timeline/Gantt - Neobrutalismo Editorial -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Timeline") }} - {{ project.title }}{% endblock %}
+{% block breadcrumb %}Proyectos / {{ project.title }} / Timeline{% endblock %}
+
+{% block page_content %}
+<div class="wh-container">
+	<!-- Toolbar -->
+	<div class="gantt-toolbar">
+		<div class="gantt-toolbar__left">
+			<a href="/app/wh-project/{{ project.name }}" class="btn btn-ghost btn-sm">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+				</svg>
+				Volver al Proyecto
+			</a>
+			<div class="gantt-toolbar__divider"></div>
+			<h1 class="gantt-toolbar__title">{{ project.title }}</h1>
+			<span class="badge badge-{{ 'success' if project.health == 'green' else ('warning' if project.health == 'yellow' else 'danger') }}">
+				{{ project.status }}
+			</span>
+		</div>
+		<div class="gantt-toolbar__right">
+			<!-- Zoom Controls -->
+			<div class="gantt-zoom-controls">
+				<span class="gantt-zoom-controls__label">Zoom:</span>
+				<button class="btn btn-ghost btn-sm" id="zoom-day" title="Vista Diaria">
+					D
+				</button>
+				<button class="btn btn-ghost btn-sm" id="zoom-week" title="Vista Semanal">
+					S
+				</button>
+				<button class="btn btn-ghost btn-sm active" id="zoom-month" title="Vista Mensual">
+					M
+				</button>
+				<button class="btn btn-ghost btn-sm" id="zoom-quarter" title="Vista Trimestral">
+					T
+				</button>
+			</div>
+			<div class="gantt-toolbar__divider"></div>
+			<!-- Action Buttons -->
+			<button class="btn btn-ghost btn-sm" id="btn-today" title="Ir a Hoy">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+				</svg>
+				Hoy
+			</button>
+			<button class="btn btn-ghost btn-sm" id="btn-critical-path" title="Mostrar Ruta Crítica">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+				</svg>
+				Ruta Crítica
+			</button>
+			<button class="btn btn-secondary btn-sm" id="btn-auto-schedule" title="Auto-programar Tareas">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+				</svg>
+				Auto-programar
+			</button>
+			<button class="btn btn-ghost btn-sm" id="btn-export" title="Exportar como PNG">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+				</svg>
+				Exportar
+			</button>
+		</div>
+	</div>
+
+	<!-- Project Header -->
+	<div class="gantt-project-header">
+		<div class="gantt-project-header__info">
+			<div class="gantt-project-meta">
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Inicio:</span>
+					<span class="gantt-project-meta__value">{{ project.start_date or "Sin definir" }}</span>
+				</div>
+				<div class="gantt-project-meta__divider"></div>
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Fin:</span>
+					<span class="gantt-project-meta__value">{{ project.target_date or "Sin definir" }}</span>
+				</div>
+				<div class="gantt-project-meta__divider"></div>
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Tareas:</span>
+					<span class="gantt-project-meta__value">{{ tasks|length }}</span>
+				</div>
+				<div class="gantt-project-meta__divider"></div>
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Hitos:</span>
+					<span class="gantt-project-meta__value">{{ milestones|length }}</span>
+				</div>
+				{% if project.slack_days != None %}
+				<div class="gantt-project-meta__divider"></div>
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Holgura:</span>
+					<span class="gantt-project-meta__value {{ 'text-danger' if project.slack_days < 0 else 'text-success' }}">
+						{{ project.slack_days }} días
+					</span>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+	<!-- Gantt Container -->
+	<div class="gantt-container">
+		<div id="gantt-chart" class="gantt-chart">
+			<!-- Chart will be rendered here by JavaScript -->
+		</div>
+	</div>
+
+	<!-- Task Detail Sidebar (initially hidden) -->
+	<div id="task-detail-sidebar" class="task-detail-sidebar">
+		<div class="task-detail-sidebar__header">
+			<h3 class="task-detail-sidebar__title">Detalle de Tarea</h3>
+			<button class="task-detail-sidebar__close" id="close-task-detail">
+				<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+			</button>
+		</div>
+		<div class="task-detail-sidebar__content" id="task-detail-content">
+			<!-- Task details will be populated here by JavaScript -->
+		</div>
+	</div>
+
+	<!-- Overlay for sidebar -->
+	<div id="sidebar-overlay" class="sidebar-overlay"></div>
+</div>
+
+<style>
+/* Gantt Toolbar - Neobrutal Style */
+.gantt-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--space-4);
+	background: var(--surface-1);
+	border: 3px solid var(--border-1);
+	margin-bottom: var(--space-4);
+	gap: var(--space-4);
+}
+
+.gantt-toolbar__left {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	flex: 1;
+	min-width: 0;
+}
+
+.gantt-toolbar__right {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.gantt-toolbar__divider {
+	width: 1px;
+	height: 24px;
+	background: var(--border-2);
+}
+
+.gantt-toolbar__title {
+	font-family: var(--font-display);
+	font-size: var(--text-xl);
+	font-weight: 700;
+	margin: 0;
+	color: var(--text-1);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Zoom Controls */
+.gantt-zoom-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.gantt-zoom-controls__label {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	color: var(--text-3);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Project Header */
+.gantt-project-header {
+	background: var(--surface-1);
+	border: 3px solid var(--border-1);
+	padding: var(--space-4);
+	margin-bottom: var(--space-4);
+}
+
+.gantt-project-meta {
+	display: flex;
+	align-items: center;
+	gap: var(--space-4);
+	flex-wrap: wrap;
+}
+
+.gantt-project-meta__item {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.gantt-project-meta__label {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	color: var(--text-3);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.gantt-project-meta__value {
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--text-1);
+}
+
+.gantt-project-meta__divider {
+	width: 1px;
+	height: 20px;
+	background: var(--border-2);
+}
+
+/* Gantt Container */
+.gantt-container {
+	background: var(--surface-1);
+	border: 3px solid var(--border-1);
+	min-height: 600px;
+	position: relative;
+	overflow: auto;
+}
+
+.gantt-chart {
+	width: 100%;
+	height: 100%;
+	min-height: 600px;
+}
+
+/* Task Detail Sidebar */
+.task-detail-sidebar {
+	position: fixed;
+	top: 0;
+	right: -400px;
+	width: 400px;
+	height: 100vh;
+	background: var(--surface-1);
+	border-left: 3px solid var(--border-1);
+	box-shadow: -4px 0 8px rgba(0, 0, 0, 0.1);
+	transition: right 0.3s ease;
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+}
+
+.task-detail-sidebar.open {
+	right: 0;
+}
+
+.task-detail-sidebar__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--space-4);
+	border-bottom: 3px solid var(--border-1);
+}
+
+.task-detail-sidebar__title {
+	font-family: var(--font-display);
+	font-size: var(--text-lg);
+	font-weight: 700;
+	margin: 0;
+	color: var(--text-1);
+}
+
+.task-detail-sidebar__close {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: var(--space-2);
+	color: var(--text-2);
+	transition: color var(--transition);
+}
+
+.task-detail-sidebar__close:hover {
+	color: var(--text-1);
+}
+
+.task-detail-sidebar__content {
+	flex: 1;
+	padding: var(--space-4);
+	overflow-y: auto;
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.3);
+	z-index: 999;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.gantt-toolbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.gantt-toolbar__left,
+	.gantt-toolbar__right {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.gantt-toolbar__title {
+		font-size: var(--text-lg);
+	}
+
+	.gantt-zoom-controls {
+		justify-content: space-between;
+	}
+
+	.task-detail-sidebar {
+		width: 100%;
+		right: -100%;
+	}
+}
+
+/* Utility Classes */
+.text-danger {
+	color: var(--danger) !important;
+}
+
+.text-success {
+	color: var(--success) !important;
+}
+</style>
+
+{% endblock %}
+
+{% block script %}
+<script>
+	// Pass server-side data to JavaScript
+	window.ganttData = {
+		project: {{ project | tojson }},
+		tasks: {{ tasks | tojson }},
+		dependencies: {{ dependencies | tojson }},
+		milestones: {{ milestones | tojson }},
+		criticalPath: {{ critical_path | tojson }}
+	};
+
+	// Initialize Gantt chart when ready
+	document.addEventListener('DOMContentLoaded', function() {
+		console.log('Gantt data loaded:', window.ganttData);
+
+		// TODO: Initialize GanttChart component
+		// This will be implemented in subtask 2.1
+		// const gantt = new frappe.workhub.GanttChart('#gantt-chart', window.ganttData);
+
+		// Setup sidebar controls
+		setupSidebarControls();
+
+		// Setup toolbar button handlers (placeholders)
+		setupToolbarHandlers();
+	});
+
+	function setupSidebarControls() {
+		const sidebar = document.getElementById('task-detail-sidebar');
+		const overlay = document.getElementById('sidebar-overlay');
+		const closeBtn = document.getElementById('close-task-detail');
+
+		// Close sidebar
+		function closeSidebar() {
+			sidebar.classList.remove('open');
+			overlay.classList.remove('active');
+		}
+
+		closeBtn.addEventListener('click', closeSidebar);
+		overlay.addEventListener('click', closeSidebar);
+	}
+
+	function setupToolbarHandlers() {
+		// Zoom controls (placeholders for now)
+		['day', 'week', 'month', 'quarter'].forEach(zoom => {
+			const btn = document.getElementById('zoom-' + zoom);
+			btn.addEventListener('click', function() {
+				// Remove active from all
+				document.querySelectorAll('.gantt-zoom-controls .btn').forEach(b => {
+					b.classList.remove('active');
+				});
+				// Add active to clicked
+				this.classList.add('active');
+				console.log('Zoom changed to:', zoom);
+				// TODO: Trigger gantt zoom change
+			});
+		});
+
+		// Today button
+		document.getElementById('btn-today').addEventListener('click', function() {
+			console.log('Scroll to today');
+			// TODO: Implement scroll to today
+		});
+
+		// Critical path toggle
+		document.getElementById('btn-critical-path').addEventListener('click', function() {
+			this.classList.toggle('active');
+			const isActive = this.classList.contains('active');
+			console.log('Critical path:', isActive ? 'enabled' : 'disabled');
+			// TODO: Toggle critical path visualization
+		});
+
+		// Auto-schedule
+		document.getElementById('btn-auto-schedule').addEventListener('click', function() {
+			console.log('Auto-schedule requested');
+			// TODO: Show confirmation and call API
+		});
+
+		// Export
+		document.getElementById('btn-export').addEventListener('click', function() {
+			console.log('Export requested');
+			// TODO: Export as PNG
+		});
+	}
+</script>
+{% endblock %}
