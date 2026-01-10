@@ -166,6 +166,10 @@ scheduler_events = {
 			"workhub_frappe_app.api.notifications.send_daily_emails"
 		]
 	},
+	"daily": [
+		# Agregar estadísticas de tareas completadas para AI
+		"workhub_frappe_app.services.ai_recommendations.aggregate_task_completion_stats"
+	],
 	"hourly": [
 		# Alertas de tareas vencidas
 		"workhub_frappe_app.api.notifications.send_overdue_alerts",
