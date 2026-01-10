@@ -4,6 +4,7 @@ import { MyDay } from '../../components/sections/tasks'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { useMyDay, useTaskMutations } from '../../api'
+import { NLTaskFAB } from '../../components/nl-task-input'
 
 export function MyDayPage() {
   const navigate = useNavigate()
@@ -47,14 +48,17 @@ export function MyDayPage() {
   }
 
   return (
-    <MyDay
-      data={data}
-      onTaskComplete={handleTaskComplete}
-      onTaskBlock={handleTaskBlock}
-      onTaskClick={(id) => navigate(`/tareas/tarea/${id}`)}
-      onQuickAdd={handleQuickAdd}
-      onChangeStatus={handleChangeStatus}
-    />
+    <>
+      <MyDay
+        data={data}
+        onTaskComplete={handleTaskComplete}
+        onTaskBlock={handleTaskBlock}
+        onTaskClick={(id) => navigate(`/tareas/tarea/${id}`)}
+        onQuickAdd={handleQuickAdd}
+        onChangeStatus={handleChangeStatus}
+      />
+      <NLTaskFAB onTaskCreated={() => refetch()} />
+    </>
   )
 }
 
