@@ -1,0 +1,137 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:metric_code",
+ "creation": "2026-01-10 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "metric_code",
+  "label",
+  "description",
+  "column_break_1",
+  "department",
+  "value_type",
+  "aggregation",
+  "section_break_data_source",
+  "data_source_type",
+  "data_source",
+  "section_break_status",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "metric_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Codigo Metrica",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Etiqueta",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Descripcion"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Departamento",
+   "options": "SALES\nOPS\nMKT\nALL",
+   "reqd": 1
+  },
+  {
+   "fieldname": "value_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tipo de Valor",
+   "options": "number\ncurrency\npercent",
+   "reqd": 1
+  },
+  {
+   "fieldname": "aggregation",
+   "fieldtype": "Select",
+   "label": "Agregacion",
+   "options": "sum\navg\ncount\nlast\nmin\nmax",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_data_source",
+   "fieldtype": "Section Break",
+   "label": "Fuente de Datos"
+  },
+  {
+   "default": "sql",
+   "fieldname": "data_source_type",
+   "fieldtype": "Select",
+   "label": "Tipo de Fuente",
+   "options": "sql\napi\npython",
+   "reqd": 1
+  },
+  {
+   "fieldname": "data_source",
+   "fieldtype": "Code",
+   "label": "Fuente de Datos (SQL/API/Python)",
+   "options": "SQL",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_status",
+   "fieldtype": "Section Break",
+   "label": "Estado"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Activo"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Workhub Frappe App",
+ "name": "WH KPI Metric",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "All"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "label",
+ "track_changes": 1
+}
