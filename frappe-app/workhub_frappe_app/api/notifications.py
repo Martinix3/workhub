@@ -280,8 +280,121 @@ def notify_blocked_dependencies():
 
 # ========== HELPER FUNCTIONS ==========
 
+# Notification type to user preference mapping
+NOTIFICATION_TYPE_PREFERENCE_MAP = {
+    "TASK_ASSIGNED": "task_assigned",
+    "BLOCKED": "task_status",
+    "OVERDUE": "overdue_alerts",
+    "DEPENDENCY": "task_status",
+    "PROJECT_RISK": "project_health",
+    "COMPLETED": "task_status",
+    "ORDER_STATUS": "order_status",
+    "ORDER_CREATED": "order_status",
+    "ORDER_DELIVERED": "order_status",
+    # EMAIL_TASK and MENTION always allowed (critical for collaboration)
+    "EMAIL_TASK": None,
+    "MENTION": None
+}
+
+
+def _get_user_notification_preferences(user):
+    """
+    Get user's notification preferences.
+
+    Args:
+        user: User email/name
+
+    Returns:
+        dict: Notification preferences with granular fields
+    """
+    try:
+        # Import here to avoid circular import
+        from workhub_frappe_app.api.settings import _get_default_notification_preferences, _migrate_notification_preferences
+
+        user_doc = frappe.get_doc("User", user)
+        notifications_json = getattr(user_doc, 'workhub_notifications', None)
+
+        if notifications_json:
+            try:
+                preferences = json.loads(notifications_json)
+                # Migrate old format to new format (backwards compatibility)
+                return _migrate_notification_preferences(preferences)
+            except (json.JSONDecodeError, TypeError):
+                return _get_default_notification_preferences()
+        else:
+            return _get_default_notification_preferences()
+    except Exception as e:
+        frappe.log_error(f"Error getting notification preferences for {user}: {e}")
+        # Return defaults on error
+        return {
+            "email": True,
+            "push": False,
+            "task_assigned": True,
+            "task_status": True,
+            "overdue_alerts": True,
+            "order_status": True,
+            "project_health": True,
+            "digest_frequency": "daily"
+        }
+
+
+def _should_create_notification(user, notification_type, priority):
+    """
+    Check if notification should be created based on user preferences.
+
+    Args:
+        user: User email/name
+        notification_type: Notification type (TASK_ASSIGNED, OVERDUE, etc.)
+        priority: Notification priority (LOW, MEDIUM, HIGH)
+
+    Returns:
+        bool: True if notification should be created, False otherwise
+    """
+    # HIGH priority notifications always go through regardless of preferences
+    if priority == "HIGH":
+        return True
+
+    # Check if this notification type is mapped to a preference
+    preference_key = NOTIFICATION_TYPE_PREFERENCE_MAP.get(notification_type)
+
+    # If no preference mapping (EMAIL_TASK, MENTION), always allow
+    if preference_key is None:
+        return True
+
+    # Get user preferences
+    preferences = _get_user_notification_preferences(user)
+
+    # Check if the specific notification type is enabled
+    return preferences.get(preference_key, True)
+
+
 def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None):
-    """Crear una notificacion"""
+    """
+    Crear una notificacion (respecting user preferences).
+
+    Args:
+        user: User email/name to notify
+        notification_type: Type of notification (TASK_ASSIGNED, OVERDUE, etc.)
+        title: Notification title
+        message: Notification message
+        reference_doctype: Optional reference to DocType
+        reference_name: Optional reference to document name
+        priority: Priority level (LOW, MEDIUM, HIGH) - HIGH bypasses preferences
+        action_url: Optional action URL
+
+    Returns:
+        str: Notification name if created, None if skipped due to preferences
+    """
+    # Check if notification should be created based on preferences
+    if not _should_create_notification(user, notification_type, priority):
+        # Log that notification was skipped
+        frappe.log_error(
+            f"Notification skipped for {user}: type={notification_type}, preference disabled",
+            "Notification Preference"
+        )
+        return None
+
+    # Create the notification
     doc = frappe.new_doc("WH Notification")
     doc.user = user
     doc.type = notification_type
