@@ -427,8 +427,36 @@ def should_notify_immediately(user, task_priority=None):
     return False
 
 
-def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None):
-    """Crear una notificacion"""
+def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None, task_priority=None):
+    """
+    Create a notification and route it based on user preferences.
+
+    Routing logic:
+    - If should_notify_immediately() returns True: creates notification + sends immediate email
+    - If should_notify_immediately() returns False: creates notification with queued_for_digest=1
+    - If frequency is 'off': creates notification only (in-app)
+
+    Args:
+        user: User email/name to notify
+        notification_type: Type of notification (TASK_ASSIGNED, OVERDUE, etc.)
+        title: Notification title
+        message: Notification message
+        reference_doctype: Optional reference doctype
+        reference_name: Optional reference name
+        priority: Notification priority (LOW, MEDIUM, HIGH)
+        action_url: Optional URL for action button
+        task_priority: Optional task priority (P0, P1, P2) for routing decisions
+
+    Returns:
+        str: Name of created notification document
+    """
+    # Get user preferences to determine routing
+    prefs = get_user_notification_preferences(user)
+
+    # Determine if notification should be sent immediately
+    notify_now = should_notify_immediately(user, task_priority)
+
+    # Create the notification document
     doc = frappe.new_doc("WH Notification")
     doc.user = user
     doc.type = notification_type
@@ -439,8 +467,67 @@ def create_notification(user, notification_type, title, message, reference_docty
     doc.priority = priority
     doc.action_url = action_url
     doc.created_at = now_datetime()
+
+    # Set queued_for_digest based on routing decision
+    # If notify_now is True, notification is sent immediately (not queued)
+    # If notify_now is False, notification is queued for digest
+    doc.queued_for_digest = 0 if notify_now else 1
+
     doc.insert(ignore_permissions=True)
+
+    # Send immediate email if:
+    # 1. Routing decision says to notify immediately
+    # 2. Email is enabled in user preferences
+    if notify_now and prefs.get('email_enabled'):
+        try:
+            _send_immediate_notification_email(user, title, message, action_url, reference_doctype, reference_name)
+        except Exception as e:
+            # Log error but don't fail notification creation
+            frappe.log_error(f"Error sending immediate notification email to {user}: {e}", "Notification Email Error")
+
     return doc.name
+
+
+def _send_immediate_notification_email(user, title, message, action_url=None, reference_doctype=None, reference_name=None):
+    """
+    Send an immediate notification email to a user.
+    This is a basic implementation - will be enhanced in subtask 2.3 with proper template.
+
+    Args:
+        user: User email/name
+        title: Notification title
+        message: Notification message
+        action_url: Optional URL for action
+        reference_doctype: Optional reference doctype
+        reference_name: Optional reference name
+    """
+    # Get user email
+    user_email = frappe.db.get_value("User", user, "email")
+    if not user_email:
+        return
+
+    # Build email content
+    email_body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">{title}</h2>
+        <p style="color: #666; line-height: 1.6;">{message}</p>
+
+        {f'<p><a href="{action_url}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Ver detalles</a></p>' if action_url else ''}
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <p style="color: #999; font-size: 12px;">
+            <a href="/app/user-settings/notifications" style="color: #007bff;">Configurar preferencias de notificaciones</a>
+        </p>
+    </div>
+    """
+
+    # Send email
+    frappe.sendmail(
+        recipients=[user_email],
+        subject=f"WorkHub: {title}",
+        message=email_body
+    )
 
 
 def notify_task_assigned(task_id, assigned_to, assigned_by=None):
