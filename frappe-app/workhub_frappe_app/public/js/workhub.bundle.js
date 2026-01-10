@@ -1877,6 +1877,267 @@ frappe.workhub.swipeableTasks = {
 };
 
 // ==========================================
+// SERVICE WORKER (PWA)
+// ==========================================
+frappe.workhub.serviceWorker = {
+    registration: null,
+    updateAvailable: false,
+
+    /**
+     * Initialize and register service worker
+     */
+    init() {
+        // Check if service workers are supported
+        if (!('serviceWorker' in navigator)) {
+            console.log('[SW] Service workers not supported in this browser');
+            return;
+        }
+
+        // Register service worker
+        this.register();
+
+        // Listen for online/offline events
+        this.setupConnectivityListeners();
+    },
+
+    /**
+     * Register the service worker
+     */
+    async register() {
+        try {
+            console.log('[SW] Registering service worker...');
+
+            // Register service worker at /assets/workhub_frappe_app/sw.js
+            const registration = await navigator.serviceWorker.register(
+                '/assets/workhub_frappe_app/sw.js',
+                {
+                    scope: '/'
+                }
+            );
+
+            this.registration = registration;
+
+            console.log('[SW] Service worker registered successfully:', registration.scope);
+
+            // Check for updates on page load
+            registration.update();
+
+            // Listen for service worker updates
+            registration.addEventListener('updatefound', () => {
+                this.handleUpdateFound(registration);
+            });
+
+            // Check if service worker is already controlling the page
+            if (navigator.serviceWorker.controller) {
+                console.log('[SW] Service worker is controlling the page');
+            }
+
+            // Listen for controller changes (when a new service worker activates)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                console.log('[SW] Controller changed - page will reload');
+                // Reload the page to get latest content
+                window.location.reload();
+            });
+
+            // Check for updates periodically (every 60 minutes)
+            setInterval(() => {
+                registration.update();
+            }, 60 * 60 * 1000);
+
+        } catch (error) {
+            console.error('[SW] Service worker registration failed:', error);
+        }
+    },
+
+    /**
+     * Handle service worker update found
+     * @param {ServiceWorkerRegistration} registration
+     */
+    handleUpdateFound(registration) {
+        const newWorker = registration.installing;
+
+        if (!newWorker) {
+            return;
+        }
+
+        console.log('[SW] New service worker found, installing...');
+
+        newWorker.addEventListener('statechange', () => {
+            console.log('[SW] Service worker state changed:', newWorker.state);
+
+            // When the new service worker is installed and waiting
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New service worker is waiting to activate
+                this.updateAvailable = true;
+                this.showUpdateNotification();
+            }
+        });
+    },
+
+    /**
+     * Show update notification to user
+     */
+    showUpdateNotification() {
+        console.log('[SW] Update available - showing notification');
+
+        // Use Frappe's alert system to notify user
+        frappe.show_alert({
+            message: __('A new version of WorkHub is available!'),
+            indicator: 'blue',
+            action: {
+                label: __('Update Now'),
+                callback: () => {
+                    this.activateUpdate();
+                }
+            }
+        }, 0); // 0 = don't auto-dismiss
+
+        // Also emit event for offline indicator component
+        frappe.ui.trigger('sw:update-available', {
+            registration: this.registration
+        });
+    },
+
+    /**
+     * Activate the waiting service worker
+     */
+    activateUpdate() {
+        if (!this.registration || !this.registration.waiting) {
+            console.log('[SW] No service worker waiting to activate');
+            return;
+        }
+
+        console.log('[SW] Activating new service worker...');
+
+        // Send message to service worker to skip waiting
+        this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+
+        // The controllerchange event listener will reload the page
+    },
+
+    /**
+     * Setup connectivity listeners for online/offline detection
+     */
+    setupConnectivityListeners() {
+        // Online event
+        window.addEventListener('online', () => {
+            console.log('[SW] Network connection restored');
+
+            frappe.show_alert({
+                message: __('You are back online'),
+                indicator: 'green'
+            }, 3);
+
+            // Emit event for offline indicator
+            frappe.ui.trigger('connectivity:online');
+        });
+
+        // Offline event
+        window.addEventListener('offline', () => {
+            console.log('[SW] Network connection lost');
+
+            frappe.show_alert({
+                message: __('You are offline - some features may be limited'),
+                indicator: 'orange'
+            }, 5);
+
+            // Emit event for offline indicator
+            frappe.ui.trigger('connectivity:offline');
+        });
+
+        // Log current connectivity status
+        console.log('[SW] Initial connectivity status:', navigator.onLine ? 'online' : 'offline');
+    },
+
+    /**
+     * Check if app is currently online
+     * @returns {boolean}
+     */
+    isOnline() {
+        return navigator.onLine;
+    },
+
+    /**
+     * Unregister service worker (for development/debugging)
+     */
+    async unregister() {
+        if (!this.registration) {
+            console.log('[SW] No service worker registered');
+            return;
+        }
+
+        try {
+            const success = await this.registration.unregister();
+            if (success) {
+                console.log('[SW] Service worker unregistered successfully');
+                this.registration = null;
+            } else {
+                console.log('[SW] Service worker unregister failed');
+            }
+        } catch (error) {
+            console.error('[SW] Error unregistering service worker:', error);
+        }
+    },
+
+    /**
+     * Clear all caches (for development/debugging)
+     */
+    async clearCache() {
+        try {
+            const cacheNames = await caches.keys();
+            const workhubCaches = cacheNames.filter(name => name.startsWith('workhub-'));
+
+            await Promise.all(
+                workhubCaches.map(cacheName => {
+                    console.log('[SW] Deleting cache:', cacheName);
+                    return caches.delete(cacheName);
+                })
+            );
+
+            console.log('[SW] All WorkHub caches cleared');
+
+            frappe.show_alert({
+                message: __('Cache cleared successfully'),
+                indicator: 'green'
+            }, 3);
+
+        } catch (error) {
+            console.error('[SW] Error clearing cache:', error);
+        }
+    },
+
+    /**
+     * Get cache size (for debugging)
+     */
+    async getCacheSize() {
+        if (!this.registration || !this.registration.active) {
+            console.log('[SW] No active service worker');
+            return 0;
+        }
+
+        try {
+            const cacheNames = await caches.keys();
+            let totalSize = 0;
+
+            for (const cacheName of cacheNames) {
+                if (cacheName.startsWith('workhub-')) {
+                    const cache = await caches.open(cacheName);
+                    const keys = await cache.keys();
+                    totalSize += keys.length;
+                }
+            }
+
+            console.log('[SW] Total cached items:', totalSize);
+            return totalSize;
+
+        } catch (error) {
+            console.error('[SW] Error getting cache size:', error);
+            return 0;
+        }
+    }
+};
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 (function initWorkHub() {
@@ -1904,6 +2165,11 @@ frappe.workhub.swipeableTasks = {
         // Inicializar swipeable tasks (mobile task gestures)
         if (frappe.workhub && frappe.workhub.swipeableTasks) {
             frappe.workhub.swipeableTasks.init();
+        }
+
+        // Inicializar Service Worker (PWA)
+        if (frappe.workhub && frappe.workhub.serviceWorker) {
+            frappe.workhub.serviceWorker.init();
         }
 
         // Inicializar Command Palette (Cmd+K)
