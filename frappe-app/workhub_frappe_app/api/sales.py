@@ -729,3 +729,64 @@ def _create_sell_out_order(data):
         "distributor_name": distributor_name,
         "message": f"Pedido asignado a {distributor_name}. El distribuidor entregará desde su stock."
     }
+
+
+@frappe.whitelist()
+def cancel_order(order_id):
+    """Cancel an order - handles both Sales Order and Distributor Sell Out Order"""
+    require_auth()
+    if not order_id:
+        frappe.throw(_("Order ID is required"))
+
+    # Determine document type - check Sales Order first, then Distributor Sell Out Order
+    doc = None
+    doctype = None
+
+    if frappe.db.exists("Sales Order", order_id):
+        doctype = "Sales Order"
+        doc = frappe.get_doc("Sales Order", order_id)
+    elif frappe.db.exists("Distributor Sell Out Order", order_id):
+        doctype = "Distributor Sell Out Order"
+        doc = frappe.get_doc("Distributor Sell Out Order", order_id)
+    else:
+        frappe.throw(_("Order {0} not found").format(order_id))
+
+    # Check permission
+    if not frappe.has_permission(doctype, "cancel", doc=doc):
+        frappe.throw(_("No permission to cancel this order"))
+
+    # Only allow cancellation for draft or confirmed orders
+    if doctype == "Sales Order":
+        # Check if already cancelled
+        if doc.docstatus == 2:
+            frappe.throw(_("Order is already cancelled"))
+
+        # Check if order can be cancelled (must be draft or submitted)
+        if doc.docstatus == 1 and doc.status in ["Completed", "Closed"]:
+            frappe.throw(_("Cannot cancel order with status {0}").format(doc.status))
+
+        # Cancel the order
+        if doc.docstatus == 1:  # Submitted order
+            doc.cancel()
+        else:  # Draft order
+            doc.docstatus = 2  # Set to cancelled
+            doc.status = "Cancelled"
+            doc.save()
+    else:  # Distributor Sell Out Order
+        # Check if already cancelled
+        if doc.status == "Cancelled":
+            frappe.throw(_("Order is already cancelled"))
+
+        # Check if order can be cancelled
+        if doc.status in ["Delivered", "Completed"]:
+            frappe.throw(_("Cannot cancel order with status {0}").format(doc.status))
+
+        # Cancel the order
+        doc.status = "Cancelled"
+        doc.save()
+
+    return {
+        "success": True,
+        "order_id": order_id,
+        "message": _("Order {0} has been cancelled").format(order_id)
+    }
