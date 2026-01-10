@@ -262,8 +262,289 @@ def create_project_status_report():
 	- Risk indicators
 	- Timeline adherence
 	"""
-	# To be implemented in subtask 5.2
-	pass
+	# Check if report already exists
+	if frappe.db.exists("WH Report Definition", {"title": "Project Status Report"}):
+		frappe.logger().info("Project Status Report already exists, skipping creation")
+		return
+
+	# Create the report definition
+	report = frappe.new_doc("WH Report Definition")
+	report.title = "Project Status Report"
+	report.description = "Comprehensive project status overview showing project health, milestone progress, task completion rates, risk indicators, and timeline adherence with visualization."
+	report.report_type = "Standard"
+	report.category = "Project"
+	report.is_active = 1
+
+	# Section 1: Report Header
+	report.append("sections", {
+		"section_type": "Header",
+		"title": "Project Status Report",
+		"display_order": 1,
+		"is_visible": 1,
+		"config": json.dumps({
+			"subtitle": "Project health, progress, and timeline analysis"
+		})
+	})
+
+	# Section 2-5: KPI Cards Row
+	# KPI 1: Active Projects
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "Active Projects",
+		"data_source": "projects",
+		"display_order": 2,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"status": "active"},
+			"metric_type": "count",
+			"color": "primary",
+			"icon": "📊",
+			"format": "number"
+		})
+	})
+
+	# KPI 2: Healthy Projects
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "Healthy Projects",
+		"data_source": "projects",
+		"display_order": 3,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"status": "active", "health": "healthy"},
+			"metric_type": "count",
+			"color": "success",
+			"icon": "✓",
+			"format": "number",
+			"subtitle": "On track"
+		})
+	})
+
+	# KPI 3: At Risk Projects
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "At Risk Projects",
+		"data_source": "projects",
+		"display_order": 4,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"status": "active", "health": "at_risk"},
+			"metric_type": "count",
+			"color": "warning",
+			"icon": "⚠",
+			"format": "number",
+			"subtitle": "Needs attention"
+		})
+	})
+
+	# KPI 4: Overall Completion Rate
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "Overall Completion Rate",
+		"data_source": "projects",
+		"display_order": 5,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"status": "active"},
+			"metric_field": "avg_progress",
+			"aggregation": "average",
+			"color": "info",
+			"icon": "📈",
+			"format": "percentage",
+			"decimals": 1
+		})
+	})
+
+	# Section 6: Project Health Overview Chart
+	report.append("sections", {
+		"section_type": "Chart",
+		"title": "Project Health Overview",
+		"data_source": "projects",
+		"display_order": 6,
+		"is_visible": 1,
+		"config": json.dumps({
+			"chart_type": "pie",
+			"filters": {"status": "active"},
+			"group_by": "health",
+			"value_field": "count",
+			"label_field": "health",
+			"colors": ["#10b981", "#f59e0b", "#ef4444"],
+			"labels": ["Healthy", "At Risk", "Critical"],
+			"show_legend": True,
+			"height": 300
+		})
+	})
+
+	# Section 7: Timeline Adherence Chart
+	report.append("sections", {
+		"section_type": "Chart",
+		"title": "Timeline Adherence (Progress vs Time)",
+		"data_source": "projects",
+		"display_order": 7,
+		"is_visible": 1,
+		"config": json.dumps({
+			"chart_type": "bar",
+			"filters": {"status": "active"},
+			"x_field": "name",
+			"y_fields": ["progress_percentage", "time_elapsed_percentage"],
+			"labels": ["Progress %", "Time Elapsed %"],
+			"colors": ["#3b82f6", "#94a3b8"],
+			"show_grid": True,
+			"stacked": False,
+			"height": 350
+		})
+	})
+
+	# Section 8: Project Status Details Table
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Project Status Details",
+		"data_source": "projects",
+		"display_order": 8,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"status": "active"},
+			"columns": [
+				{"field": "name", "label": "Project ID", "type": "string"},
+				{"field": "title", "label": "Project Name", "type": "string"},
+				{"field": "health", "label": "Health", "type": "string"},
+				{"field": "progress_percentage", "label": "Progress", "type": "percentage"},
+				{"field": "tasks_total", "label": "Total Tasks", "type": "number"},
+				{"field": "tasks_completed", "label": "Completed", "type": "number"},
+				{"field": "tasks_in_progress", "label": "In Progress", "type": "number"},
+				{"field": "owner", "label": "Owner", "type": "string"},
+				{"field": "department", "label": "Department", "type": "string"}
+			],
+			"sort_by": "health",
+			"sort_order": "asc"
+		})
+	})
+
+	# Section 9: Milestone Progress Table
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Milestone Progress by Project",
+		"data_source": "projects",
+		"display_order": 9,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"status": "active"},
+			"columns": [
+				{"field": "name", "label": "Project", "type": "string"},
+				{"field": "title", "label": "Project Name", "type": "string"},
+				{"field": "milestones_total", "label": "Total Milestones", "type": "number"},
+				{"field": "milestones_completed", "label": "Completed", "type": "number"},
+				{"field": "milestones_pending", "label": "Pending", "type": "number"},
+				{"field": "milestone_completion_rate", "label": "Completion Rate", "type": "percentage"},
+				{"field": "next_milestone_date", "label": "Next Milestone", "type": "date"}
+			],
+			"sort_by": "milestone_completion_rate",
+			"sort_order": "asc",
+			"show_averages": True
+		})
+	})
+
+	# Section 10: Task Completion by Project
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Task Completion by Project",
+		"data_source": "tasks",
+		"display_order": 10,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {},
+			"columns": [
+				{"field": "project", "label": "Project", "type": "string"},
+				{"field": "name", "label": "Task ID", "type": "string"},
+				{"field": "title", "label": "Task", "type": "string"},
+				{"field": "status", "label": "Status", "type": "string"},
+				{"field": "priority", "label": "Priority", "type": "string"},
+				{"field": "assigned_to", "label": "Assigned To", "type": "string"},
+				{"field": "due_date", "label": "Due Date", "type": "date"},
+				{"field": "is_overdue", "label": "Overdue", "type": "boolean"}
+			],
+			"sort_by": "project",
+			"sort_order": "asc",
+			"group_by": "project",
+			"highlight_overdue": True,
+			"show_totals": True
+		})
+	})
+
+	# Section 11: Risk Indicators Table
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Risk Indicators",
+		"data_source": "projects",
+		"display_order": 11,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"status": "active", "health": ["at_risk", "critical"]},
+			"columns": [
+				{"field": "name", "label": "Project ID", "type": "string"},
+				{"field": "title", "label": "Project", "type": "string"},
+				{"field": "health", "label": "Health Status", "type": "string"},
+				{"field": "tasks_blocked", "label": "Blocked Tasks", "type": "number"},
+				{"field": "tasks_overdue", "label": "Overdue Tasks", "type": "number"},
+				{"field": "days_remaining", "label": "Days Remaining", "type": "number"},
+				{"field": "progress_percentage", "label": "Progress", "type": "percentage"},
+				{"field": "owner", "label": "Owner", "type": "string"}
+			],
+			"sort_by": "health",
+			"sort_order": "desc"
+		})
+	})
+
+	# Section 12: Timeline Adherence Table
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Timeline Adherence Analysis",
+		"data_source": "projects",
+		"display_order": 12,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"status": "active"},
+			"columns": [
+				{"field": "name", "label": "Project", "type": "string"},
+				{"field": "title", "label": "Project Name", "type": "string"},
+				{"field": "start_date", "label": "Start Date", "type": "date"},
+				{"field": "end_date", "label": "End Date", "type": "date"},
+				{"field": "days_elapsed", "label": "Days Elapsed", "type": "number"},
+				{"field": "days_remaining", "label": "Days Remaining", "type": "number"},
+				{"field": "time_elapsed_percentage", "label": "Time Elapsed", "type": "percentage"},
+				{"field": "progress_percentage", "label": "Progress", "type": "percentage"},
+				{"field": "schedule_variance", "label": "Schedule Variance", "type": "number"}
+			],
+			"sort_by": "schedule_variance",
+			"sort_order": "desc"
+		})
+	})
+
+	# Section 13: Summary and Insights
+	report.append("sections", {
+		"section_type": "Text",
+		"title": "Report Summary",
+		"display_order": 13,
+		"is_visible": 1,
+		"config": json.dumps({
+			"content": """
+				<p>This report provides a comprehensive overview of project status and health metrics:</p>
+				<ul>
+					<li><strong>Health Overview:</strong> Visual breakdown of project health status (Healthy, At Risk, Critical) across all active projects.</li>
+					<li><strong>Progress Tracking:</strong> Detailed view of task completion rates, milestone achievement, and overall project progress.</li>
+					<li><strong>Timeline Analysis:</strong> Comparison of actual progress vs. time elapsed to identify projects ahead or behind schedule.</li>
+					<li><strong>Risk Indicators:</strong> Identification of projects with blocked or overdue tasks requiring immediate attention.</li>
+					<li><strong>Resource Allocation:</strong> Overview of project ownership and departmental distribution for capacity planning.</li>
+				</ul>
+				<p><em>Use this report for executive briefings, project review meetings, and strategic planning sessions.</em></p>
+			"""
+		})
+	})
+
+	# Save the report
+	report.insert(ignore_permissions=True)
+	frappe.logger().info(f"Created Project Status Report: {report.name}")
+	return report.name
 
 
 def create_haccp_compliance_report():
@@ -301,12 +582,12 @@ def install_standard_reports():
 		frappe.log_error(f"Error creating Team Productivity Report: {str(e)}")
 
 	# Create Project Status Report (subtask 5.2)
-	# try:
-	# 	report_id = create_project_status_report()
-	# 	if report_id:
-	# 		created_reports.append({"name": report_id, "title": "Project Status Report"})
-	# except Exception as e:
-	# 	frappe.log_error(f"Error creating Project Status Report: {str(e)}")
+	try:
+		report_id = create_project_status_report()
+		if report_id:
+			created_reports.append({"name": report_id, "title": "Project Status Report"})
+	except Exception as e:
+		frappe.log_error(f"Error creating Project Status Report: {str(e)}")
 
 	# Create HACCP Compliance Report (subtask 5.3)
 	# try:
