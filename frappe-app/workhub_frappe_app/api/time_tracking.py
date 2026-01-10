@@ -312,11 +312,116 @@ def add_time_entry(task_id, hours=0, minutes=0, date=None, notes=None):
 	}
 
 
-# These will be implemented in subsequent subtasks:
-# - pause_timer()
-# - resume_timer()
+@frappe.whitelist()
+def pause_timer():
+	"""
+	Pause the active timer, storing elapsed time in accumulated_seconds.
 
-# Time reports
+	Returns:
+		dict with success flag and timer details
+	"""
+	require_permission("WH Task", "write")
+
+	user = frappe.session.user
+
+	# Find running timer
+	running_timer = frappe.db.get_value(
+		"WH Time Timer",
+		{"user": user, "status": "Running"},
+		["name", "task", "start_time", "accumulated_seconds"],
+		as_dict=True
+	)
+
+	if not running_timer:
+		frappe.throw(_("No running timer found for user {0}").format(user))
+
+	# Get the timer document
+	timer = frappe.get_doc("WH Time Timer", running_timer["name"])
+
+	# Calculate elapsed time since start_time
+	elapsed_seconds = time_diff_in_seconds(now_datetime(), timer.start_time)
+
+	# Add to accumulated_seconds
+	timer.accumulated_seconds = (timer.accumulated_seconds or 0) + elapsed_seconds
+
+	# Set status to Paused
+	timer.status = "Paused"
+	timer.save()
+
+	# Get task info for response
+	task = frappe.get_doc("WH Task", timer.task)
+
+	# Calculate total time for display
+	total_minutes = int(timer.accumulated_seconds // 60)
+	hours = total_minutes // 60
+	minutes = total_minutes % 60
+
+	return {
+		"success": True,
+		"timer": {
+			"name": timer.name,
+			"task": timer.task,
+			"task_title": task.title,
+			"user": user,
+			"status": timer.status,
+			"accumulated_seconds": timer.accumulated_seconds,
+			"accumulated_hours": hours,
+			"accumulated_minutes": minutes
+		}
+	}
+
+
+@frappe.whitelist()
+def resume_timer():
+	"""
+	Resume a paused timer, resetting start_time to now.
+
+	Returns:
+		dict with success flag and timer details
+	"""
+	require_permission("WH Task", "write")
+
+	user = frappe.session.user
+
+	# Find paused timer
+	paused_timer = frappe.db.get_value(
+		"WH Time Timer",
+		{"user": user, "status": "Paused"},
+		["name", "task", "accumulated_seconds"],
+		as_dict=True
+	)
+
+	if not paused_timer:
+		frappe.throw(_("No paused timer found for user {0}").format(user))
+
+	# Get the timer document
+	timer = frappe.get_doc("WH Time Timer", paused_timer["name"])
+
+	# Reset start_time to now
+	timer.start_time = now_datetime()
+
+	# Set status to Running (keep accumulated_seconds as is)
+	timer.status = "Running"
+	timer.save()
+
+	# Get task info for response
+	task = frappe.get_doc("WH Task", timer.task)
+
+	return {
+		"success": True,
+		"timer": {
+			"name": timer.name,
+			"task": timer.task,
+			"task_title": task.title,
+			"user": user,
+			"start_time": timer.start_time,
+			"status": timer.status,
+			"accumulated_seconds": timer.accumulated_seconds
+		}
+	}
+
+
+# Time reports (to be implemented in subsequent subtasks)
 # - get_time_report(user=None, project=None, from_date=None, to_date=None)
 # - get_project_time_summary(project_id)
 # - get_user_time_summary(user=None, from_date=None, to_date=None)
