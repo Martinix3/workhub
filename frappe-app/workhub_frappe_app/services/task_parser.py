@@ -513,6 +513,121 @@ def _calculate_similarity(a: str, b: str) -> float:
     return ratio
 
 
+# Few-shot learning utilities for improving accuracy over time
+
+
+def get_recent_corrections(limit: int = 50) -> list:
+    """
+    Fetch recent correction records for few-shot learning.
+
+    Args:
+        limit: Maximum number of corrections to fetch
+
+    Returns:
+        List of correction records with original_text, llm_output, and final_output
+    """
+    try:
+        corrections = frappe.get_all(
+            "WH NL Task Correction",
+            fields=["original_text", "llm_output", "final_output", "timestamp"],
+            limit=limit,
+            order_by="timestamp desc"
+        )
+        return corrections
+    except Exception as e:
+        # If table doesn't exist or other error, return empty list
+        frappe.log_error(f"Error fetching corrections: {str(e)}", "Task Parser - Few-shot")
+        return []
+
+
+def find_relevant_corrections(input_text: str, corrections: list, limit: int = 5) -> list:
+    """
+    Find the most relevant correction examples based on text similarity.
+
+    Args:
+        input_text: Current natural language input
+        corrections: List of correction records
+        limit: Maximum number of examples to return (3-5)
+
+    Returns:
+        List of most relevant correction examples sorted by similarity
+    """
+    if not corrections or not input_text:
+        return []
+
+    input_lower = input_text.lower().strip()
+
+    # Calculate similarity scores for each correction
+    scored_corrections = []
+    for correction in corrections:
+        if not correction.get("original_text"):
+            continue
+
+        original_lower = correction["original_text"].lower().strip()
+        similarity = _calculate_similarity(input_lower, original_lower)
+
+        # Only include if similarity is above threshold (0.3 for few-shot examples)
+        if similarity >= 0.3:
+            scored_corrections.append({
+                "correction": correction,
+                "similarity": similarity
+            })
+
+    # Sort by similarity descending
+    scored_corrections.sort(key=lambda x: x["similarity"], reverse=True)
+
+    # Return top N most relevant examples
+    return [item["correction"] for item in scored_corrections[:limit]]
+
+
+def build_few_shot_prompt(input_text: str, base_prompt: str) -> str:
+    """
+    Build LLM prompt with few-shot examples from user corrections.
+
+    Args:
+        input_text: Current natural language input
+        base_prompt: Base extraction prompt template
+
+    Returns:
+        Enhanced prompt with few-shot examples
+    """
+    # Fetch recent corrections
+    corrections = get_recent_corrections(limit=50)
+
+    if not corrections:
+        # No corrections yet, return base prompt
+        return base_prompt
+
+    # Find 3-5 most relevant examples
+    relevant = find_relevant_corrections(input_text, corrections, limit=5)
+
+    if not relevant:
+        # No relevant examples, return base prompt
+        return base_prompt
+
+    # Build few-shot examples section
+    examples_text = "\n\nEJEMPLOS de extracciones correctas basadas en correcciones de usuarios:\n"
+
+    for i, example in enumerate(relevant, 1):
+        try:
+            # Parse the JSON strings
+            llm_output = json.loads(example["llm_output"]) if isinstance(example["llm_output"], str) else example["llm_output"]
+            final_output = json.loads(example["final_output"]) if isinstance(example["final_output"], str) else example["final_output"]
+
+            examples_text += f"\nEjemplo {i}:\n"
+            examples_text += f'Entrada: "{example["original_text"]}"\n'
+            examples_text += f"Salida correcta: {json.dumps(final_output, ensure_ascii=False)}\n"
+        except Exception as e:
+            # Skip malformed examples
+            frappe.log_error(f"Error parsing correction example: {str(e)}", "Task Parser - Few-shot")
+            continue
+
+    # Combine base prompt with examples
+    enhanced_prompt = base_prompt + examples_text
+
+    return enhanced_prompt
+
+
 # Prompt template for task extraction
 EXTRACTION_PROMPT = """Eres un asistente que extrae información de tareas descritas en lenguaje natural.
 
@@ -546,6 +661,7 @@ Mantén el título breve y accionable (ej: "Llamar a Juan", no "Necesito llamar 
 def parse_task_with_llm(text: str) -> dict:
     """
     Parse natural language task description using GPT-4o-mini.
+    Uses few-shot learning from user corrections to improve accuracy.
 
     Args:
         text: Natural language task input (e.g., "Call Juan about Santiago order by Friday, high priority")
@@ -568,11 +684,14 @@ def parse_task_with_llm(text: str) -> dict:
 
     client = openai.OpenAI(api_key=api_key)
 
+    # Build prompt with few-shot examples from user corrections
+    enhanced_prompt = build_few_shot_prompt(text, EXTRACTION_PROMPT)
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": EXTRACTION_PROMPT},
+                {"role": "system", "content": enhanced_prompt},
                 {"role": "user", "content": text}
             ],
             temperature=0.3,  # Lower temperature for more consistent extraction
