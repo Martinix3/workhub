@@ -3,7 +3,7 @@
   "spec": "014-manager-analytics-dashboard",
   "state": "building",
   "subtasks": {
-    "completed": 24,
+    "completed": 25,
     "total": 26,
     "in_progress": 1,
     "failed": 0
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 145,
+    "number": 146,
     "started_at": "2026-01-10T21:23:48.864081"
   },
-  "last_update": "2026-01-10T22:44:15.869087"
+  "last_update": "2026-01-10T22:47:30.625661"
 }

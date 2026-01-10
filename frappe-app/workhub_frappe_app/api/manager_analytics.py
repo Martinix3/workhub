@@ -35,7 +35,7 @@ def get_team_workload(department=None):
             ]
         }
     """
-    require_auth()
+    require_any_role("System Manager", "Sales Manager")
 
     # Build WHERE clause for department filter
     where_clause = "WHERE assigned_to IS NOT NULL"
@@ -105,7 +105,7 @@ def get_velocity_trends(period="daily", days=14):
             "avg_previous": 4.8
         }
     """
-    require_auth()
+    require_any_role("System Manager", "Sales Manager")
 
     # Convert days parameter to int
     days = int(days)
@@ -276,7 +276,7 @@ def get_blocker_analysis(department=None):
             ]
         }
     """
-    require_auth()
+    require_any_role("System Manager", "Sales Manager")
 
     # Build WHERE clause for department filter
     where_clause = "WHERE status = 'BLOCKED'"
@@ -392,7 +392,7 @@ def get_overdue_trends(weeks=8):
             "trend": "improving|worsening|stable"
         }
     """
-    require_auth()
+    require_any_role("System Manager", "Sales Manager")
 
     # Convert weeks parameter to int
     weeks = int(weeks)
@@ -505,7 +505,7 @@ def get_manager_dashboard(department=None):
             "overdue": {...}
         }
     """
-    require_auth()
+    require_any_role("System Manager", "Sales Manager")
 
     # Combinar datos de todos los endpoints
     workload = get_team_workload(department)
@@ -536,7 +536,7 @@ def export_analytics(format="csv", department=None):
             "filename": "analytics_export_2026-01-10.csv"
         }
     """
-    require_auth()
+    require_any_role("System Manager", "Sales Manager")
 
     if format != "csv":
         frappe.throw(_("Solo formato CSV es soportado actualmente"))
