@@ -31,6 +31,9 @@ def get_context(context):
 	context.distributor = distributor
 	context.distributor_name = frappe.db.get_value("Customer", distributor, "customer_name")
 
+	# Check if distributor can create orders (for self-service order creation)
+	context.can_create_orders = frappe.db.get_value("Customer", distributor, "can_create_orders") or 0
+
 	# Tab 1: Mis Pedidos - Now loaded via JavaScript API (get_my_orders)
 	# No longer passing delivery_notes via server-side context
 

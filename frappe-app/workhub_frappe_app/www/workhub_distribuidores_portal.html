@@ -16,6 +16,11 @@
 		<li class="nav-item">
 			<a class="nav-link active" data-toggle="tab" href="#mis-pedidos">📦 Mis Pedidos</a>
 		</li>
+		{% if can_create_orders %}
+		<li class="nav-item">
+			<a class="nav-link" data-toggle="tab" href="#nuevo-pedido">🛒 Nuevo Pedido</a>
+		</li>
+		{% endif %}
 		<li class="nav-item">
 			<a class="nav-link" data-toggle="tab" href="#subir-sellout">📤 Subir SELL OUT</a>
 		</li>
@@ -80,6 +85,120 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Tab: Nuevo Pedido (Self-Service Order Creation) -->
+		{% if can_create_orders %}
+		<div id="nuevo-pedido" class="tab-pane fade">
+			<div class="card">
+				<div class="card-header">
+					<h5>🛒 Nuevo Pedido</h5>
+				</div>
+				<div class="card-body">
+					<p class="text-muted">Crea un nuevo pedido seleccionando productos y cantidades</p>
+
+					<div class="row">
+						<!-- Left Column: Product Selection -->
+						<div class="col-md-7">
+							<div class="card bg-light">
+								<div class="card-body">
+									<h6 class="mb-3">Seleccionar Productos</h6>
+
+									<div class="form-row">
+										<div class="col-md-6">
+											<label>Producto *</label>
+											<select class="form-control" id="new-order-product">
+												<option value="">-- Seleccionar Producto --</option>
+												{% for item in items %}
+												<option value="{{ item.name }}"
+													data-name="{{ item.item_name }}"
+													data-rate="{{ item.standard_rate }}">
+													{{ item.item_name }}
+												</option>
+												{% endfor %}
+											</select>
+										</div>
+										<div class="col-md-3">
+											<label>Cantidad *</label>
+											<input type="number" class="form-control" id="new-order-qty"
+												min="1" step="1" value="1" placeholder="Cantidad">
+										</div>
+										<div class="col-md-3">
+											<label>&nbsp;</label>
+											<button type="button" class="btn btn-primary btn-block" onclick="addProductToCart()">
+												<i class="fa fa-plus"></i> Agregar
+											</button>
+										</div>
+									</div>
+
+									<div class="mt-3">
+										<label>Fecha de Entrega (opcional)</label>
+										<input type="date" class="form-control" id="new-order-delivery-date"
+											value="{{ frappe.utils.add_days(frappe.utils.today(), 7) }}">
+										<small class="form-text text-muted">
+											Fecha estimada de entrega. Por defecto: 7 días
+										</small>
+									</div>
+
+									<div class="mt-3">
+										<label>Notas (opcional)</label>
+										<textarea class="form-control" id="new-order-notes" rows="3"
+											placeholder="Notas adicionales sobre el pedido..."></textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Right Column: Order Summary / Cart -->
+						<div class="col-md-5">
+							<div class="card">
+								<div class="card-header bg-primary text-white">
+									<h6 class="mb-0"><i class="fa fa-shopping-cart"></i> Resumen del Pedido</h6>
+								</div>
+								<div class="card-body">
+									<!-- Cart Items -->
+									<div id="order-cart-items" style="max-height: 300px; overflow-y: auto;">
+										<div class="text-center text-muted py-4">
+											<i class="fa fa-shopping-cart" style="font-size: 48px; opacity: 0.3;"></i>
+											<p class="mt-2">Carrito vacío</p>
+											<small>Agrega productos para crear tu pedido</small>
+										</div>
+									</div>
+
+									<!-- Cart Summary -->
+									<div id="order-cart-summary" style="display: none;">
+										<hr>
+										<div class="d-flex justify-content-between mb-2">
+											<strong>Total Items:</strong>
+											<span id="cart-total-items">0</span>
+										</div>
+										<div class="d-flex justify-content-between mb-2">
+											<strong>Total Unidades:</strong>
+											<span id="cart-total-qty">0</span>
+										</div>
+										<div class="d-flex justify-content-between">
+											<strong>Total Estimado:</strong>
+											<strong class="text-primary" id="cart-total-amount">MXN $0.00</strong>
+										</div>
+									</div>
+
+									<!-- Submit Button -->
+									<div id="order-submit-section" style="display: none;">
+										<hr>
+										<button type="button" class="btn btn-success btn-block btn-lg" onclick="submitNewOrder()">
+											<i class="fa fa-check"></i> Crear Pedido
+										</button>
+										<button type="button" class="btn btn-outline-secondary btn-block btn-sm mt-2" onclick="clearCart()">
+											<i class="fa fa-trash"></i> Vaciar Carrito
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		{% endif %}
 
 		<!-- Tab: Subir SELL OUT -->
 		<div id="subir-sellout" class="tab-pane fade">
@@ -918,6 +1037,33 @@
 
 #conversation-header .text-muted {
 	font-size: 0.9em;
+}
+
+/* Nuevo Pedido - Cart Styling */
+.cart-item {
+	background-color: #fff;
+	transition: all 0.2s;
+}
+
+.cart-item:hover {
+	background-color: #f8f9fa;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cart-item .btn-outline-danger {
+	padding: 0.25rem 0.5rem;
+	font-size: 0.875rem;
+}
+
+.cart-item .form-control-sm {
+	height: calc(1.5em + 0.5rem + 2px);
+	padding: 0.25rem 0.5rem;
+	font-size: 0.875rem;
+}
+
+.cart-item .small {
+	font-size: 0.75rem;
+	color: #6c757d;
 }
 </style>
 
@@ -2033,6 +2179,261 @@ function escapeHtml(text) {
 	const div = document.createElement('div');
 	div.textContent = text;
 	return div.innerHTML;
+}
+
+// ============================================================
+// NUEVO PEDIDO - Self-Service Order Creation
+// ============================================================
+
+let orderCart = [];
+
+// Add product to cart
+function addProductToCart() {
+	const productSelect = document.getElementById('new-order-product');
+	const qtyInput = document.getElementById('new-order-qty');
+
+	const itemCode = productSelect.value;
+	const itemName = productSelect.options[productSelect.selectedIndex].getAttribute('data-name');
+	const rate = parseFloat(productSelect.options[productSelect.selectedIndex].getAttribute('data-rate')) || 0;
+	const qty = parseInt(qtyInput.value);
+
+	if (!itemCode) {
+		frappe.msgprint('Por favor selecciona un producto');
+		return;
+	}
+
+	if (!qty || qty < 1) {
+		frappe.msgprint('Por favor ingresa una cantidad válida');
+		return;
+	}
+
+	// Check if item already in cart
+	const existingItem = orderCart.find(function(item) {
+		return item.item_code === itemCode;
+	});
+
+	if (existingItem) {
+		// Update quantity
+		existingItem.qty += qty;
+		existingItem.amount = existingItem.qty * existingItem.rate;
+	} else {
+		// Add new item
+		orderCart.push({
+			item_code: itemCode,
+			item_name: itemName,
+			qty: qty,
+			rate: rate,
+			amount: qty * rate
+		});
+	}
+
+	// Reset form
+	productSelect.value = '';
+	qtyInput.value = 1;
+
+	// Update cart display
+	updateCart();
+
+	frappe.msgprint({
+		title: 'Producto Agregado',
+		message: itemName + ' agregado al carrito',
+		indicator: 'green'
+	});
+}
+
+// Remove item from cart
+function removeFromCart(itemCode) {
+	orderCart = orderCart.filter(function(item) {
+		return item.item_code !== itemCode;
+	});
+
+	updateCart();
+}
+
+// Update cart quantity
+function updateCartQty(itemCode, newQty) {
+	const item = orderCart.find(function(i) {
+		return i.item_code === itemCode;
+	});
+
+	if (item) {
+		item.qty = parseInt(newQty);
+		item.amount = item.qty * item.rate;
+		updateCart();
+	}
+}
+
+// Update cart display
+function updateCart() {
+	const cartItemsDiv = document.getElementById('order-cart-items');
+	const cartSummaryDiv = document.getElementById('order-cart-summary');
+	const submitSectionDiv = document.getElementById('order-submit-section');
+
+	if (orderCart.length === 0) {
+		// Show empty state
+		cartItemsDiv.innerHTML = '<div class="text-center text-muted py-4">' +
+			'<i class="fa fa-shopping-cart" style="font-size: 48px; opacity: 0.3;"></i>' +
+			'<p class="mt-2">Carrito vacío</p>' +
+			'<small>Agrega productos para crear tu pedido</small>' +
+			'</div>';
+		cartSummaryDiv.style.display = 'none';
+		submitSectionDiv.style.display = 'none';
+		return;
+	}
+
+	// Show cart items
+	let html = '';
+	orderCart.forEach(function(item) {
+		html += '<div class="cart-item mb-2 p-2 border rounded">';
+		html += '<div class="d-flex justify-content-between align-items-start">';
+		html += '<div class="flex-grow-1">';
+		html += '<strong>' + item.item_name + '</strong><br>';
+		html += '<small class="text-muted">' + item.item_code + '</small>';
+		html += '</div>';
+		html += '<button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(\'' + item.item_code + '\')">';
+		html += '<i class="fa fa-times"></i>';
+		html += '</button>';
+		html += '</div>';
+		html += '<div class="mt-2">';
+		html += '<div class="row">';
+		html += '<div class="col-6">';
+		html += '<label class="small mb-1">Cantidad</label>';
+		html += '<input type="number" class="form-control form-control-sm" value="' + item.qty + '" ';
+		html += 'min="1" onchange="updateCartQty(\'' + item.item_code + '\', this.value)">';
+		html += '</div>';
+		html += '<div class="col-6 text-right">';
+		html += '<label class="small mb-1">Total</label>';
+		html += '<div class="font-weight-bold text-primary">$' + item.amount.toFixed(2) + '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+	});
+
+	cartItemsDiv.innerHTML = html;
+
+	// Calculate totals
+	let totalItems = orderCart.length;
+	let totalQty = 0;
+	let totalAmount = 0;
+
+	orderCart.forEach(function(item) {
+		totalQty += item.qty;
+		totalAmount += item.amount;
+	});
+
+	// Update summary
+	document.getElementById('cart-total-items').textContent = totalItems;
+	document.getElementById('cart-total-qty').textContent = totalQty;
+	document.getElementById('cart-total-amount').textContent = 'MXN $' + totalAmount.toFixed(2);
+
+	cartSummaryDiv.style.display = 'block';
+	submitSectionDiv.style.display = 'block';
+}
+
+// Clear cart
+function clearCart() {
+	if (orderCart.length === 0) {
+		return;
+	}
+
+	if (!confirm('¿Estás seguro de que deseas vaciar el carrito?')) {
+		return;
+	}
+
+	orderCart = [];
+	updateCart();
+}
+
+// Submit new order
+function submitNewOrder() {
+	if (orderCart.length === 0) {
+		frappe.msgprint('El carrito está vacío. Agrega productos para crear un pedido.');
+		return;
+	}
+
+	const deliveryDate = document.getElementById('new-order-delivery-date').value;
+	const notes = document.getElementById('new-order-notes').value.trim();
+
+	// Prepare items data
+	const items = orderCart.map(function(item) {
+		return {
+			item_code: item.item_code,
+			qty: item.qty,
+			rate: item.rate
+		};
+	});
+
+	// Prepare order data
+	const orderData = {
+		items: items,
+		delivery_date: deliveryDate || null,
+		notes: notes || null
+	};
+
+	// Show confirmation
+	const totalAmount = orderCart.reduce(function(sum, item) { return sum + item.amount; }, 0);
+	const confirmMsg = '¿Confirmas la creación de este pedido?\n\n' +
+		'Items: ' + orderCart.length + '\n' +
+		'Total: MXN $' + totalAmount.toFixed(2) + '\n' +
+		(deliveryDate ? 'Fecha de entrega: ' + formatDate(deliveryDate) : '');
+
+	if (!confirm(confirmMsg)) {
+		return;
+	}
+
+	// Disable submit button
+	const submitBtn = document.querySelector('#order-submit-section .btn-success');
+	submitBtn.disabled = true;
+	submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Creando pedido...';
+
+	// Call API
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.create_distributor_order',
+		args: {
+			data: JSON.stringify(orderData)
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.msgprint({
+					title: 'Pedido Creado',
+					message: 'Tu pedido ha sido creado exitosamente.<br><br>' +
+						'<strong>ID Pedido:</strong> ' + r.message.orderId + '<br>' +
+						'<strong>Total:</strong> MXN $' + r.message.total.toFixed(2) + '<br>' +
+						'<strong>Items:</strong> ' + r.message.itemCount + '<br><br>' +
+						'Puedes ver el pedido en la pestaña "Mis Pedidos".',
+					indicator: 'green'
+				});
+
+				// Clear cart
+				orderCart = [];
+				updateCart();
+
+				// Clear form
+				document.getElementById('new-order-delivery-date').value = '';
+				document.getElementById('new-order-notes').value = '';
+
+				// Switch to Mis Pedidos tab
+				setTimeout(function() {
+					document.querySelector('a[href="#mis-pedidos"]').click();
+					loadOrders();
+				}, 2000);
+			}
+
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = '<i class="fa fa-check"></i> Crear Pedido';
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: err.message || 'Error al crear pedido. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = '<i class="fa fa-check"></i> Crear Pedido';
+		}
+	});
 }
 
 // ============================================================
