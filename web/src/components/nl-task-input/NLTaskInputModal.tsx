@@ -6,6 +6,7 @@ import { X, Mic, MicOff, ArrowRight, Loader2, CheckCircle, AlertCircle } from 'l
 import { useNLTask } from '../../api/hooks/useNLTask'
 import { useVoiceInput } from '../smart-notepad/useVoiceInput'
 import { TaskConfirmationForm } from './TaskConfirmationForm'
+import { nlTasksApi } from '../../api/services/nl-tasks'
 import type { ParsedTask } from './types'
 
 type ModalStep = 'input' | 'confirm' | 'success' | 'error'
@@ -20,6 +21,9 @@ export function NLTaskInputModal({ isOpen, onClose, onTaskCreated }: NLTaskInput
   const [step, setStep] = useState<ModalStep>('input')
   const [text, setText] = useState('')
   const [resultMessage, setResultMessage] = useState('')
+  // Store original LLM output for learning system
+  const [originalText, setOriginalText] = useState('')
+  const [originalParsedTask, setOriginalParsedTask] = useState<ParsedTask | null>(null)
 
   const {
     parsedTask,
@@ -57,6 +61,8 @@ export function NLTaskInputModal({ isOpen, onClose, onTaskCreated }: NLTaskInput
         setStep('input')
         setText('')
         setResultMessage('')
+        setOriginalText('')
+        setOriginalParsedTask(null)
         reset()
         clearTranscript()
       }, 300)
@@ -69,6 +75,9 @@ export function NLTaskInputModal({ isOpen, onClose, onTaskCreated }: NLTaskInput
 
     const result = await parse(text)
     if (result) {
+      // Store original LLM output for learning system
+      setOriginalText(text)
+      setOriginalParsedTask(JSON.parse(JSON.stringify(result))) // Deep copy
       setStep('confirm')
     }
   }, [text, parse])
@@ -80,6 +89,16 @@ export function NLTaskInputModal({ isOpen, onClose, onTaskCreated }: NLTaskInput
     const result = await create(parsedTask)
     if (result) {
       if (result.success) {
+        // Save user corrections for learning system (if any modifications were made)
+        if (originalText && originalParsedTask) {
+          try {
+            await nlTasksApi.saveCorrection(originalText, originalParsedTask, parsedTask)
+          } catch (error) {
+            // Log error but don't block the success flow
+            console.error('Failed to save correction:', error)
+          }
+        }
+
         setResultMessage(result.message)
         setStep('success')
         if (onTaskCreated && result.task_id) {
@@ -90,7 +109,7 @@ export function NLTaskInputModal({ isOpen, onClose, onTaskCreated }: NLTaskInput
         setStep('error')
       }
     }
-  }, [parsedTask, create, onTaskCreated])
+  }, [parsedTask, create, onTaskCreated, originalText, originalParsedTask])
 
   // Handle back to input
   const handleBack = useCallback(() => {

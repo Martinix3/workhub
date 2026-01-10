@@ -46,6 +46,25 @@ export const nlTasksApi = {
       'workhub_frappe_app.api.nl_tasks.search_projects',
       { search, limit }
     )
+  },
+
+  /**
+   * Save user correction for learning system
+   * Only saves if there were actual modifications from LLM output
+   */
+  async saveCorrection(
+    originalText: string,
+    llmOutput: ParsedTask,
+    finalOutput: ParsedTask
+  ): Promise<{ success: boolean; correction_id?: string }> {
+    return frappe.call<{ success: boolean; correction_id?: string }>(
+      'workhub_frappe_app.api.nl_tasks.save_correction',
+      {
+        original_text: originalText,
+        llm_output: JSON.stringify(llmOutput),
+        final_output: JSON.stringify(finalOutput)
+      }
+    )
   }
 }
 
