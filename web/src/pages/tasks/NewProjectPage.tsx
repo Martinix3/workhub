@@ -1,11 +1,14 @@
 // New Project Page - Create a new project with initial tasks
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Save, X, Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Save, X, Plus, Trash2, ChevronDown, ChevronRight, SkipForward, Edit3 } from 'lucide-react'
 import { useAuth } from '../../auth'
 import { tasksApi } from '../../api/services/tasks'
 import { UserSelect } from '../../components/ui/UserSelect'
+import { TemplateGallery, TemplatePreviewModal } from '../../components/templates'
+import { useTemplates, useTemplatePreview } from '../../api/hooks/useTemplates'
 import type { Department } from '../../components/sections/tasks/types'
+import type { TemplateCardData } from '../../components/templates/TemplateCard'
 
 const departmentConfig: Record<Department, { bg: string; text: string; label: string }> = {
   SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Ventas' },
@@ -39,11 +42,22 @@ interface FormData {
 let idCounter = 0
 const generateId = () => `temp-${++idCounter}`
 
+type FormStep = 'template-selection' | 'project-details'
+
 export function NewProjectPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
-  const templateId = searchParams.get('template')
+  const templateIdFromUrl = searchParams.get('template')
+
+  // Step flow state
+  const [currentStep, setCurrentStep] = useState<FormStep>(templateIdFromUrl ? 'project-details' : 'template-selection')
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(templateIdFromUrl)
+  const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null)
+
+  // Template data hooks
+  const { data: templates, loading: templatesLoading } = useTemplates()
+  const { data: previewData, loading: previewLoading } = useTemplatePreview(previewTemplateId)
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -58,32 +72,51 @@ export function NewProjectPage() {
   const [error, setError] = useState<string | null>(null)
   const [templateInfo, setTemplateInfo] = useState<{ title: string; duration: number } | null>(null)
 
-  // If template is provided, fetch its info
+  // If template is selected, fetch its info
   useEffect(() => {
-    if (templateId) {
-      tasksApi.getProjectTemplates().then(templates => {
-        const template = templates.find(t => t.name === templateId)
-        if (template) {
-          setTemplateInfo({
-            title: template.title,
-            duration: template.default_duration_days
-          })
-          setFormData(prev => ({
-            ...prev,
-            department: template.department,
-          }))
-          const targetDate = new Date()
-          targetDate.setDate(targetDate.getDate() + template.default_duration_days)
-          setFormData(prev => ({
-            ...prev,
-            target_date: targetDate.toISOString().split('T')[0],
-          }))
-        }
-      }).catch(() => {
-        // Ignore error
-      })
+    if (selectedTemplateId && templates) {
+      const template = templates.find(t => t.name === selectedTemplateId)
+      if (template) {
+        setTemplateInfo({
+          title: template.title || selectedTemplateId,
+          duration: template.estimated_duration_days || 30
+        })
+        setFormData(prev => ({
+          ...prev,
+          department: template.department as Department,
+        }))
+        const targetDate = new Date()
+        targetDate.setDate(targetDate.getDate() + (template.estimated_duration_days || 30))
+        setFormData(prev => ({
+          ...prev,
+          target_date: targetDate.toISOString().split('T')[0],
+        }))
+      }
     }
-  }, [templateId])
+  }, [selectedTemplateId, templates])
+
+  // Template selection handlers
+  const handleTemplateClick = (template: TemplateCardData) => {
+    setPreviewTemplateId(template.name)
+  }
+
+  const handleUseTemplate = () => {
+    if (previewTemplateId) {
+      setSelectedTemplateId(previewTemplateId)
+      setPreviewTemplateId(null)
+      setCurrentStep('project-details')
+    }
+  }
+
+  const handleSkipTemplateSelection = () => {
+    setSelectedTemplateId(null)
+    setTemplateInfo(null)
+    setCurrentStep('project-details')
+  }
+
+  const handleChangeTemplate = () => {
+    setCurrentStep('template-selection')
+  }
 
   const handleChange = (field: keyof FormData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -199,8 +232,8 @@ export function NewProjectPage() {
       }
 
       let projectResult: { success: boolean; project_id: string }
-      if (templateId) {
-        projectResult = await tasksApi.createFromTemplate(templateId, projectData) as unknown as { success: boolean; project_id: string }
+      if (selectedTemplateId) {
+        projectResult = await tasksApi.createFromTemplate(selectedTemplateId, projectData) as unknown as { success: boolean; project_id: string }
       } else {
         projectResult = await tasksApi.createProject(projectData) as unknown as { success: boolean; project_id: string }
       }
@@ -246,13 +279,38 @@ export function NewProjectPage() {
     }
   }
 
+  // Convert templates to TemplateCardData format
+  const templateCards: TemplateCardData[] = templates?.map(t => ({
+    name: t.name,
+    title: t.name,
+    description: t.description,
+    department: t.department as Department | 'PRODUCTION',
+    task_count: t.task_count || 0,
+    estimated_duration_days: t.estimated_duration_days || 0,
+  })) || []
+
   return (
     <div className="min-h-screen bg-stone-100">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      {/* Template Preview Modal */}
+      <TemplatePreviewModal
+        isOpen={previewTemplateId !== null}
+        onClose={() => setPreviewTemplateId(null)}
+        templateData={previewData}
+        onUseTemplate={handleUseTemplate}
+        loading={previewLoading}
+      />
+
+      <div className={currentStep === 'template-selection' ? 'max-w-6xl mx-auto px-4 py-8' : 'max-w-2xl mx-auto px-4 py-8'}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
-            onClick={() => navigate('/tareas/proyectos')}
+            onClick={() => {
+              if (currentStep === 'project-details' && !templateIdFromUrl) {
+                setCurrentStep('template-selection')
+              } else {
+                navigate('/tareas/proyectos')
+              }
+            }}
             className="p-2 hover:bg-white border-2 border-transparent hover:border-stone-900 transition-all"
           >
             <ArrowLeft size={20} />
@@ -261,18 +319,74 @@ export function NewProjectPage() {
             <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900">
               Nuevo Proyecto
             </h1>
-            {templateInfo && (
+            {currentStep === 'template-selection' && (
+              <p className="text-stone-500 text-sm mt-1">
+                Paso 1 de 2: Selecciona una plantilla o empieza desde cero
+              </p>
+            )}
+            {currentStep === 'project-details' && templateInfo && (
               <p className="text-stone-500 text-sm mt-1">
                 Basado en plantilla: <span className="font-medium">{templateInfo.title}</span>
+              </p>
+            )}
+            {currentStep === 'project-details' && !templateInfo && (
+              <p className="text-stone-500 text-sm mt-1">
+                Paso 2 de 2: Detalles del proyecto
               </p>
             )}
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917]">
-            <div className="p-6 space-y-6">
+        {/* Step 1: Template Selection */}
+        {currentStep === 'template-selection' && (
+          <div className="space-y-6">
+            {/* Template Gallery */}
+            <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] p-6">
+              <h2 className="font-serif text-xl font-bold text-stone-900 mb-4">
+                Plantillas Disponibles
+              </h2>
+              {templatesLoading ? (
+                <div className="text-center py-12 text-stone-500">
+                  Cargando plantillas...
+                </div>
+              ) : (
+                <TemplateGallery
+                  templates={templateCards}
+                  onTemplateClick={handleTemplateClick}
+                />
+              )}
+            </div>
+
+            {/* Skip Button */}
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={handleSkipTemplateSelection}
+                className="
+                  px-6 py-3
+                  inline-flex items-center gap-2
+                  bg-white hover:bg-stone-50
+                  text-stone-600 hover:text-stone-900
+                  border-2 border-stone-900
+                  shadow-[4px_4px_0_#1c1917]
+                  hover:shadow-[2px_2px_0_#1c1917]
+                  hover:translate-x-[2px] hover:translate-y-[2px]
+                  transition-all duration-75
+                  font-medium uppercase tracking-wider
+                "
+              >
+                <SkipForward size={18} />
+                Omitir y Crear desde Cero
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Project Details Form */}
+        {currentStep === 'project-details' && (
+          <form onSubmit={handleSubmit}>
+            <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917]">
+              <div className="p-6 space-y-6">
               {/* Error Message */}
               {error && (
                 <div className="p-4 bg-red-50 border-2 border-red-500 text-red-700">
@@ -308,6 +422,67 @@ export function NewProjectPage() {
                   className="w-full px-4 py-3 border-2 border-stone-300 focus:border-stone-900 focus:outline-none transition-colors resize-none"
                 />
               </div>
+
+              {/* Template Change Option */}
+              {!templateIdFromUrl && (
+                <div className="flex items-center gap-3 p-4 bg-stone-50 border-2 border-stone-200">
+                  {templateInfo ? (
+                    <>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-stone-700">
+                          Usando plantilla: <span className="text-stone-900">{templateInfo.title}</span>
+                        </p>
+                        <p className="text-xs text-stone-500 mt-1">
+                          {templateInfo.duration} días estimados
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleChangeTemplate}
+                        className="
+                          px-4 py-2
+                          inline-flex items-center gap-2
+                          bg-white hover:bg-stone-100
+                          text-stone-600 hover:text-stone-900
+                          border-2 border-stone-300
+                          text-sm font-medium uppercase tracking-wider
+                          transition-colors
+                        "
+                      >
+                        <Edit3 size={14} />
+                        Cambiar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-stone-700">
+                          Creando proyecto desde cero
+                        </p>
+                        <p className="text-xs text-stone-500 mt-1">
+                          Sin plantilla base
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleChangeTemplate}
+                        className="
+                          px-4 py-2
+                          inline-flex items-center gap-2
+                          bg-white hover:bg-stone-100
+                          text-stone-600 hover:text-stone-900
+                          border-2 border-stone-300
+                          text-sm font-medium uppercase tracking-wider
+                          transition-colors
+                        "
+                      >
+                        <Edit3 size={14} />
+                        Elegir Plantilla
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Department */}
               <div>
@@ -525,6 +700,7 @@ export function NewProjectPage() {
             </div>
           </div>
         </form>
+        )}
       </div>
     </div>
   )
