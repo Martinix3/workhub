@@ -1,6 +1,6 @@
 // MyDay Component - TDAH-friendly task view
 import { useState, useMemo } from 'react'
-import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
+import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight, FileText, Eye, EyeOff } from 'lucide-react'
 import type { Task, TaskStatus, TaskPriority, MyDayData } from './types'
 
 interface MyDayProps {
@@ -38,11 +38,13 @@ export function MyDay({
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>('P2')
+  const [showCompleted, setShowCompleted] = useState(false)
 
   const allTasks = [...data.today, ...data.upcoming]
   const focusedTask = focusedTaskId ? allTasks.find(t => t.name === focusedTaskId) : null
   const doingTasks = data.today.filter(t => t.status === 'DOING')
   const nextTasks = data.today.filter(t => t.status === 'NEXT')
+  const completedTasks = data.today.filter(t => t.status === 'DONE')
 
   const handleFocus = (taskId: string) => setFocusedTaskId(taskId)
   const handleExitFocus = () => setFocusedTaskId(null)
@@ -156,22 +158,44 @@ export function MyDay({
             </p>
           </div>
 
-          <button
-            onClick={() => setShowQuickAdd(true)}
-            className="
-              inline-flex items-center gap-2 px-4 py-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium text-sm uppercase tracking-wider
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:shadow-[2px_2px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
-              transition-all duration-75
-            "
-          >
-            <Plus size={18} />
-            Agregar
-          </button>
+          <div className="flex items-center gap-3">
+            {completedTasks.length > 0 && (
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="
+                  inline-flex items-center gap-2 px-4 py-2
+                  bg-white hover:bg-stone-50
+                  text-stone-700 font-medium text-sm uppercase tracking-wider
+                  border-2 border-stone-900
+                  shadow-[2px_2px_0_#1c1917]
+                  hover:shadow-[4px_4px_0_#1c1917]
+                  hover:translate-x-[-2px] hover:translate-y-[-2px]
+                  transition-all duration-75
+                "
+                title={showCompleted ? 'Ocultar completadas' : 'Ver completadas'}
+              >
+                {showCompleted ? <EyeOff size={18} /> : <Eye size={18} />}
+                <span className="hidden sm:inline">{showCompleted ? 'Ocultar' : 'Ver'} Completadas</span>
+                <span className="sm:hidden">{completedTasks.length}</span>
+              </button>
+            )}
+            <button
+              onClick={() => setShowQuickAdd(true)}
+              className="
+                inline-flex items-center gap-2 px-4 py-2
+                bg-amber-400 hover:bg-amber-500
+                text-stone-900 font-medium text-sm uppercase tracking-wider
+                border-2 border-stone-900
+                shadow-[4px_4px_0_#1c1917]
+                hover:shadow-[2px_2px_0_#1c1917]
+                hover:translate-x-[2px] hover:translate-y-[2px]
+                transition-all duration-75
+              "
+            >
+              <Plus size={18} />
+              Agregar
+            </button>
+          </div>
         </div>
 
         {/* Main Content with Calendar */}
@@ -260,6 +284,25 @@ export function MyDay({
                 <div className="space-y-3">
                   {data.blocked.map(task => (
                     <TaskCard
+                      key={task.name}
+                      task={task}
+                      onClick={() => onTaskClick?.(task.name)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Completed */}
+            {showCompleted && completedTasks.length > 0 && (
+              <section className="mb-8">
+                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-green-600 mb-3">
+                  <Check size={14} />
+                  Completadas Hoy ({completedTasks.length})
+                </h2>
+                <div className="space-y-3">
+                  {completedTasks.map(task => (
+                    <CompletedTaskCard
                       key={task.name}
                       task={task}
                       onClick={() => onTaskClick?.(task.name)}
@@ -625,6 +668,84 @@ function MiniCalendar({ tasks, overdueTasks = [] }: MiniCalendarProps) {
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-red-100 border border-red-400" />
           <span className="text-stone-500">Vencidas</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Completed Task Card
+interface CompletedTaskCardProps {
+  task: Task
+  onClick?: () => void
+}
+
+function CompletedTaskCard({ task, onClick }: CompletedTaskCardProps) {
+  const priority = priorityConfig[task.priority]
+
+  const formatCompletedTime = (dateStr?: string) => {
+    if (!dateStr) return null
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+
+    if (diffMins < 60) {
+      return `hace ${diffMins} min`
+    } else if (diffHours < 24) {
+      return `hace ${diffHours} h`
+    } else {
+      return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    }
+  }
+
+  return (
+    <div
+      className="
+        bg-white
+        border-2 border-stone-900
+        border-t-4 border-t-green-500
+        opacity-60
+        shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]
+        transition-all duration-75
+      "
+    >
+      <div className="p-4">
+        {/* Header with checkbox */}
+        <div className="flex items-start gap-4">
+          {/* Green check */}
+          <div className="w-6 h-6 flex-shrink-0 mt-0.5 border-2 border-stone-900 bg-green-500 flex items-center justify-center">
+            <Check size={14} className="text-white" />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`px-1.5 py-0.5 text-xs font-medium ${priority.softBg} ${priority.text}`}>
+                {task.priority}
+              </span>
+              {task.project_title && (
+                <span className="text-xs text-stone-400 truncate">{task.project_title}</span>
+              )}
+              {task.completed_at && (
+                <span className="text-xs text-green-600 font-medium">
+                  {formatCompletedTime(task.completed_at)}
+                </span>
+              )}
+            </div>
+            <h3 className="font-medium line-through text-stone-400 hover:underline">
+              {task.title}
+            </h3>
+            {task.completion_notes && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                <p className="text-xs text-green-700 flex items-start gap-1.5">
+                  <FileText size={12} className="flex-shrink-0 mt-0.5" />
+                  <span>{task.completion_notes}</span>
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
