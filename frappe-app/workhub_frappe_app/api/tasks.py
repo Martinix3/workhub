@@ -52,7 +52,37 @@ def get_tasks(filters=None, limit=50, offset=0):
         ignore_permissions=True
     )
 
-    # Enrich with project info
+    # Get dependency counts for all tasks in batch
+    dependency_counts = {}
+    if tasks:
+        task_ids = [t["name"] for t in tasks]
+
+        # Count blocked_by (tasks blocking this task - where this task is successor)
+        blocked_by_results = frappe.db.sql("""
+            SELECT successor, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE successor IN %(task_ids)s AND is_active = 1
+            GROUP BY successor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Count blocks (tasks this task is blocking - where this task is predecessor)
+        blocks_results = frappe.db.sql("""
+            SELECT predecessor, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE predecessor IN %(task_ids)s AND is_active = 1
+            GROUP BY predecessor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Build lookup dictionaries
+        for row in blocked_by_results:
+            dependency_counts[row["successor"]] = dependency_counts.get(row["successor"], {})
+            dependency_counts[row["successor"]]["blocked_by_count"] = row["count"]
+
+        for row in blocks_results:
+            dependency_counts[row["predecessor"]] = dependency_counts.get(row["predecessor"], {})
+            dependency_counts[row["predecessor"]]["blocks_count"] = row["count"]
+
+    # Enrich with project info and dependency counts
     for task in tasks:
         if task.get("project"):
             project_data = frappe.db.get_value("WH Project", task["project"],
@@ -66,6 +96,11 @@ def get_tasks(filters=None, limit=50, offset=0):
             task["is_overdue"] = getdate(task["due_date"]) < getdate(nowdate())
         else:
             task["is_overdue"] = False
+
+        # Add dependency counts
+        task_deps = dependency_counts.get(task["name"], {})
+        task["blocked_by_count"] = task_deps.get("blocked_by_count", 0)
+        task["blocks_count"] = task_deps.get("blocks_count", 0)
 
     return tasks
 

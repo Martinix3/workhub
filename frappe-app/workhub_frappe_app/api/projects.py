@@ -473,7 +473,10 @@ def get_board(project_id=None, filters=None):
         "DONE": "Completadas"
     }
 
+    # First, collect all tasks across all statuses
+    all_tasks = []
     columns = []
+
     for status in ["BACKLOG", "NEXT", "DOING", "BLOCKED", "DONE"]:
         status_filters = {**base_filters, "status": status}
         tasks = frappe.get_all("WH Task",
@@ -485,9 +488,47 @@ def get_board(project_id=None, filters=None):
             ],
             order_by="priority asc, due_date asc")
 
-        # Enrich with project info and overdue flag
-        for task in tasks:
-            if task.get("due_date") and status != "DONE":
+        all_tasks.extend(tasks)
+        columns.append({
+            "status": status,
+            "label": status_labels[status],
+            "tasks": tasks
+        })
+
+    # Get dependency counts for all tasks in batch
+    dependency_counts = {}
+    if all_tasks:
+        task_ids = [t["name"] for t in all_tasks]
+
+        # Count blocked_by (tasks blocking this task - where this task is successor)
+        blocked_by_results = frappe.db.sql("""
+            SELECT successor, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE successor IN %(task_ids)s AND is_active = 1
+            GROUP BY successor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Count blocks (tasks this task is blocking - where this task is predecessor)
+        blocks_results = frappe.db.sql("""
+            SELECT predecessor, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE predecessor IN %(task_ids)s AND is_active = 1
+            GROUP BY predecessor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Build lookup dictionaries
+        for row in blocked_by_results:
+            dependency_counts[row["successor"]] = dependency_counts.get(row["successor"], {})
+            dependency_counts[row["successor"]]["blocked_by_count"] = row["count"]
+
+        for row in blocks_results:
+            dependency_counts[row["predecessor"]] = dependency_counts.get(row["predecessor"], {})
+            dependency_counts[row["predecessor"]]["blocks_count"] = row["count"]
+
+    # Enrich each column's tasks with project info, overdue flag, and dependency counts
+    for column in columns:
+        for task in column["tasks"]:
+            if task.get("due_date") and column["status"] != "DONE":
                 task["is_overdue"] = getdate(task["due_date"]) < getdate(nowdate())
             else:
                 task["is_overdue"] = False
@@ -496,11 +537,10 @@ def get_board(project_id=None, filters=None):
             if task.get("project"):
                 task["project_title"] = frappe.db.get_value("WH Project", task["project"], "title")
 
-        columns.append({
-            "status": status,
-            "label": status_labels[status],
-            "tasks": tasks
-        })
+            # Add dependency counts
+            task_deps = dependency_counts.get(task["name"], {})
+            task["blocked_by_count"] = task_deps.get("blocked_by_count", 0)
+            task["blocks_count"] = task_deps.get("blocks_count", 0)
 
     return columns
 
