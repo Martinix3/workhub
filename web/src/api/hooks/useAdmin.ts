@@ -9,15 +9,8 @@ import type {
   CreateUserData,
   UpdateUserData
 } from '../services/admin'
-import { createDataHook } from './createDataHook'
+import { createDataHook, type UseDataState } from './createDataHook'
 import { sampleRoles } from '../sample-data'
-
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
 
 // Hook for users list with pagination and search
 export function useUsers(initialLimit = 50): UseDataState<UsersResponse> & {

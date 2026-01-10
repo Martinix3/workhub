@@ -2,15 +2,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import settingsApi from '../services/settings'
 import type { UserSettings, UserProfile, Department, UpdateSettingsData, UpdateProfileData } from '../services/settings'
-import { createDataHook } from './createDataHook'
+import { createDataHook, type UseDataState } from './createDataHook'
 import { sampleDepartments } from '../sample-data'
-
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
 
 // Hook for user settings
 export function useUserSettings(): UseDataState<UserSettings> & {
