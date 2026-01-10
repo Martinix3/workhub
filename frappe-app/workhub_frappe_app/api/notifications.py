@@ -280,6 +280,64 @@ def notify_blocked_dependencies():
 
 # ========== HELPER FUNCTIONS ==========
 
+def get_user_notification_preferences(user=None):
+    """
+    Get notification preferences for a user. Creates default preferences if they don't exist.
+    Results are cached for performance.
+
+    Args:
+        user: User email/name. If None, uses current session user.
+
+    Returns:
+        dict: Notification preferences with keys:
+            - frequency: 'realtime' | 'daily' | 'weekly' | 'off'
+            - quiet_hours_enabled: bool
+            - quiet_hours_start: time string (HH:MM:SS)
+            - quiet_hours_end: time string (HH:MM:SS)
+            - priority_bypass_enabled: bool
+            - email_enabled: bool
+    """
+    if not user:
+        user = frappe.session.user
+
+    # Check cache first
+    cache_key = f"notification_preferences:{user}"
+    cached = frappe.cache().get_value(cache_key)
+    if cached:
+        return cached
+
+    # Try to get existing preferences
+    prefs_name = user  # autoname is by user field
+
+    try:
+        prefs = frappe.get_doc("WH Notification Preferences", prefs_name)
+    except frappe.DoesNotExistError:
+        # Create default preferences
+        prefs = frappe.new_doc("WH Notification Preferences")
+        prefs.user = user
+        prefs.frequency = "daily"
+        prefs.email_enabled = 1
+        prefs.priority_bypass_enabled = 1
+        prefs.quiet_hours_enabled = 0
+        prefs.insert(ignore_permissions=True)
+        frappe.db.commit()
+
+    # Build response dict
+    result = {
+        "frequency": prefs.frequency,
+        "quiet_hours_enabled": bool(prefs.quiet_hours_enabled),
+        "quiet_hours_start": prefs.quiet_hours_start,
+        "quiet_hours_end": prefs.quiet_hours_end,
+        "priority_bypass_enabled": bool(prefs.priority_bypass_enabled),
+        "email_enabled": bool(prefs.email_enabled)
+    }
+
+    # Cache for 5 minutes
+    frappe.cache().set_value(cache_key, result, expires_in_sec=300)
+
+    return result
+
+
 def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None):
     """Crear una notificacion"""
     doc = frappe.new_doc("WH Notification")
