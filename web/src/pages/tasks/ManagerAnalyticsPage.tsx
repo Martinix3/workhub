@@ -1,9 +1,9 @@
 // Manager Analytics Dashboard Page
-import { useState } from 'react'
-import { ChevronDown, Calendar, Users } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { ChevronDown, Calendar, Users, Download, Printer } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useManagerAnalyticsDashboard } from '../../api'
+import { useManagerAnalyticsDashboard, managerAnalyticsApi } from '../../api'
 import {
   WorkloadDistributionChart,
   VelocityTrendChart,
@@ -29,10 +29,27 @@ export function ManagerAnalyticsPage() {
   const [velocityPeriod, setVelocityPeriod] = useState<'daily' | 'weekly'>('daily')
   const [showDepartmentBreakdown, setShowDepartmentBreakdown] = useState(false)
   const [drillDownContext, setDrillDownContext] = useState<DrillDownContext | null>(null)
+  const [showExportDropdown, setShowExportDropdown] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const exportDropdownRef = useRef<HTMLDivElement>(null)
 
   // Fetch all dashboard data using the combined hook
   const department = selectedDepartment === 'ALL' ? undefined : selectedDepartment
   const { data, loading, error, refetch } = useManagerAnalyticsDashboard(department)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
+        setShowExportDropdown(false)
+      }
+    }
+
+    if (showExportDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showExportDropdown])
 
   if (loading) {
     return <LoadingState message="Cargando analytics..." fullPage />
@@ -62,9 +79,37 @@ export function ManagerAnalyticsPage() {
     console.log('View task:', taskId)
   }
 
-  const handleExport = (format: 'csv' | 'pdf') => {
-    // TODO: Subtask 4.3 will implement export functionality
-    console.log('Export format:', format)
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    setShowExportDropdown(false)
+    setExporting(true)
+
+    try {
+      if (format === 'csv') {
+        // Export CSV using API endpoint
+        const result = await managerAnalyticsApi.exportAnalytics('csv', department)
+
+        // Create a blob and download it
+        const blob = new Blob([result.content], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+
+        link.setAttribute('href', url)
+        link.setAttribute('download', result.filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+      } else if (format === 'pdf') {
+        // Export PDF using window.print()
+        window.print()
+      }
+    } catch (error) {
+      console.error('Export failed:', error)
+      // TODO: Show error toast/notification
+    } finally {
+      setExporting(false)
+    }
   }
 
   // Transform API responses to match component expected types
@@ -73,9 +118,89 @@ export function ManagerAnalyticsPage() {
   const overdueData: OverdueData = data.overdue
 
   return (
-    <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
-      {/* Header */}
-      <div className="border-b-2 border-stone-900 dark:border-stone-100 bg-white dark:bg-stone-900 px-8 py-6">
+    <>
+      {/* Print-optimized styles */}
+      <style>{`
+        @media print {
+          /* Hide non-essential elements */
+          button, .no-print {
+            display: none !important;
+          }
+
+          /* Reset page styles */
+          body {
+            background: white !important;
+            color: black !important;
+          }
+
+          /* Remove shadows and borders for cleaner print */
+          * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+          }
+
+          /* Ensure proper page breaks */
+          .print-section {
+            page-break-inside: avoid;
+          }
+
+          /* Adjust layout for print */
+          .print-container {
+            max-width: 100%;
+            padding: 20px;
+          }
+
+          /* Remove dark mode styles */
+          .dark\\:bg-stone-900,
+          .dark\\:bg-stone-950,
+          .dark\\:border-stone-100,
+          .dark\\:text-stone-100 {
+            background: white !important;
+            border-color: black !important;
+            color: black !important;
+          }
+
+          /* Simplify borders */
+          [class*="border-2"] {
+            border-width: 1px !important;
+          }
+
+          /* Remove hover effects */
+          [class*="hover:"] {
+            transform: none !important;
+          }
+
+          /* Optimize chart visibility */
+          svg {
+            max-width: 100%;
+            height: auto;
+          }
+
+          /* Print header */
+          .print-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid black;
+            padding-bottom: 10px;
+          }
+
+          /* Force grid to single column on print */
+          .lg\\:grid-cols-2 {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        /* Print button styles - visible on screen only */
+        @media screen {
+          .print-only {
+            display: none;
+          }
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
+        {/* Header */}
+        <div className="border-b-2 border-stone-900 dark:border-stone-100 bg-white dark:bg-stone-900 px-8 py-6 print-header">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
@@ -125,6 +250,73 @@ export function ManagerAnalyticsPage() {
                 </div>
               </div>
 
+              {/* Export Dropdown */}
+              <div className="relative" ref={exportDropdownRef}>
+                <button
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                  disabled={exporting}
+                  className="
+                    flex items-center gap-2
+                    px-4 py-2
+                    bg-cyan-500 dark:bg-cyan-600
+                    border-2 border-stone-900 dark:border-stone-100
+                    text-stone-900 dark:text-stone-100
+                    font-medium text-sm
+                    shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#fafaf9]
+                    hover:translate-x-[1px] hover:translate-y-[1px]
+                    hover:shadow-[1px_1px_0_#1c1917] dark:hover:shadow-[1px_1px_0_#fafaf9]
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-all duration-75
+                  "
+                >
+                  <Download size={16} />
+                  <span>{exporting ? 'Exportando...' : 'Exportar'}</span>
+                  <ChevronDown size={16} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showExportDropdown && (
+                  <div className="
+                    absolute top-full right-0 mt-2
+                    w-48
+                    bg-white dark:bg-stone-800
+                    border-2 border-stone-900 dark:border-stone-100
+                    shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
+                    z-50
+                  ">
+                    <button
+                      onClick={() => handleExport('csv')}
+                      className="
+                        w-full flex items-center gap-3
+                        px-4 py-3
+                        text-left text-sm font-medium
+                        text-stone-900 dark:text-stone-100
+                        hover:bg-stone-100 dark:hover:bg-stone-700
+                        transition-colors
+                        border-b border-stone-200 dark:border-stone-700
+                      "
+                    >
+                      <Download size={16} />
+                      <span>Descargar CSV</span>
+                    </button>
+                    <button
+                      onClick={() => handleExport('pdf')}
+                      className="
+                        w-full flex items-center gap-3
+                        px-4 py-3
+                        text-left text-sm font-medium
+                        text-stone-900 dark:text-stone-100
+                        hover:bg-stone-100 dark:hover:bg-stone-700
+                        transition-colors
+                      "
+                    >
+                      <Printer size={16} />
+                      <span>Imprimir/PDF</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Quick Stat */}
               <div className="
                 flex items-center gap-2
@@ -143,12 +335,12 @@ export function ManagerAnalyticsPage() {
       </div>
 
       {/* Main Content - 2 Column Grid */}
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="max-w-7xl mx-auto px-8 py-8 print-container">
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Workload Distribution */}
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6">
+            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6 print-section">
               <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
                 <span className="w-4 h-4 bg-cyan-400" />
                 Distribución de Carga
@@ -160,7 +352,7 @@ export function ManagerAnalyticsPage() {
             </div>
 
             {/* Blocker Analysis */}
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6">
+            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6 print-section">
               <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
                 <span className="w-4 h-4 bg-red-500" />
                 Análisis de Bloqueos
@@ -176,7 +368,7 @@ export function ManagerAnalyticsPage() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Velocity Trends */}
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6">
+            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6 print-section">
               <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
                 <span className="w-4 h-4 bg-green-500" />
                 Tendencia de Velocidad
@@ -189,7 +381,7 @@ export function ManagerAnalyticsPage() {
             </div>
 
             {/* Overdue Ratio */}
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6">
+            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6 print-section">
               <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
                 <span className="w-4 h-4 bg-amber-500" />
                 Tendencia de Vencimientos
@@ -211,7 +403,8 @@ export function ManagerAnalyticsPage() {
         onClose={handleCloseDrillDown}
         onTaskClick={handleViewTask}
       />
-    </div>
+      </div>
+    </>
   )
 }
 
