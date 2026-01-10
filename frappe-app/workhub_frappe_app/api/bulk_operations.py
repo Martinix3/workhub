@@ -25,6 +25,9 @@ VALID_SOURCE_DOCTYPES = [
 # Undo mechanism constants
 UNDO_CACHE_TTL = 30  # 30 seconds as specified
 
+# Performance constants
+MAX_BULK_TASKS = 100  # Maximum number of tasks for bulk operations
+
 
 def _generate_undo_id() -> str:
     """
@@ -139,6 +142,7 @@ def _process_bulk_operation(task_ids: List[str], operation_func, operation_name:
 def bulk_change_status(task_ids, new_status):
     """
     Change status for multiple tasks with detailed success/failure tracking.
+    Uses batch database updates for performance.
 
     Args:
         task_ids: JSON array or list of task IDs
@@ -156,40 +160,66 @@ def bulk_change_status(task_ids, new_status):
     if not isinstance(task_ids, list) or len(task_ids) == 0:
         frappe.throw(_("task_ids must be a non-empty array"))
 
+    # Enforce maximum task limit for performance
+    if len(task_ids) > MAX_BULK_TASKS:
+        frappe.throw(_("Cannot update more than {0} tasks at once. Please select fewer tasks.").format(MAX_BULK_TASKS))
+
     # Validate status
     if new_status not in VALID_STATUSES:
         frappe.throw(_("Invalid status: {0}. Valid values: {1}").format(
             new_status, ", ".join(VALID_STATUSES)
         ))
 
-    # Collect previous values for undo
+    # Collect previous values for undo (batch fetch)
     previous_values = {}
-    for task_id in task_ids:
-        if frappe.db.exists("WH Task", task_id):
-            previous_values[task_id] = {
-                "status": frappe.db.get_value("WH Task", task_id, "status")
-            }
+    existing_tasks = frappe.db.get_all(
+        "WH Task",
+        filters={"name": ["in", task_ids]},
+        fields=["name", "status"]
+    )
 
-    def change_status_operation(task_id):
-        """Change status for a single task"""
-        try:
-            old_status = frappe.db.get_value("WH Task", task_id, "status")
-            frappe.db.set_value("WH Task", task_id, "status", new_status)
-            return {
-                "success": True,
+    for task in existing_tasks:
+        previous_values[task.name] = {"status": task.status}
+
+    # Batch update using SQL for performance
+    valid_task_ids = [task.name for task in existing_tasks]
+    if valid_task_ids:
+        frappe.db.sql(
+            """
+            UPDATE `tabWH Task`
+            SET status = %s, modified = NOW(), modified_by = %s
+            WHERE name IN ({0})
+            """.format(','.join(['%s'] * len(valid_task_ids))),
+            [new_status, frappe.session.user] + valid_task_ids
+        )
+
+    # Track results
+    results = {
+        "success": [],
+        "failed": []
+    }
+
+    for task_id in task_ids:
+        if task_id in previous_values:
+            results["success"].append({
+                "task_id": task_id,
                 "details": {
-                    "old_status": old_status,
+                    "old_status": previous_values[task_id]["status"],
                     "new_status": new_status
                 }
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+            })
+        else:
+            results["failed"].append({
+                "task_id": task_id,
+                "error": _("Task not found")
+            })
 
-    result = _process_bulk_operation(
-        task_ids,
-        change_status_operation,
-        "bulk_change_status"
-    )
+    result = {
+        "total": len(task_ids),
+        "success_count": len(results["success"]),
+        "failure_count": len(results["failed"]),
+        "results": results
+    }
 
     # Generate undo_id and store undo data
     undo_id = _generate_undo_id()
@@ -211,6 +241,7 @@ def bulk_change_status(task_ids, new_status):
 def bulk_assign(task_ids, assigned_to):
     """
     Assign multiple tasks to a user.
+    Uses batch database updates for performance.
 
     Args:
         task_ids: JSON array or list of task IDs
@@ -228,6 +259,10 @@ def bulk_assign(task_ids, assigned_to):
     if not isinstance(task_ids, list) or len(task_ids) == 0:
         frappe.throw(_("task_ids must be a non-empty array"))
 
+    # Enforce maximum task limit for performance
+    if len(task_ids) > MAX_BULK_TASKS:
+        frappe.throw(_("Cannot update more than {0} tasks at once. Please select fewer tasks.").format(MAX_BULK_TASKS))
+
     if not assigned_to:
         frappe.throw(_("assigned_to is required"))
 
@@ -235,34 +270,56 @@ def bulk_assign(task_ids, assigned_to):
     if not frappe.db.exists("User", assigned_to):
         frappe.throw(_("User not found: {0}").format(assigned_to))
 
-    # Collect previous values for undo
+    # Collect previous values for undo (batch fetch)
     previous_values = {}
-    for task_id in task_ids:
-        if frappe.db.exists("WH Task", task_id):
-            previous_values[task_id] = {
-                "assigned_to": frappe.db.get_value("WH Task", task_id, "assigned_to")
-            }
+    existing_tasks = frappe.db.get_all(
+        "WH Task",
+        filters={"name": ["in", task_ids]},
+        fields=["name", "assigned_to"]
+    )
 
-    def assign_operation(task_id):
-        """Assign a single task"""
-        try:
-            old_assigned_to = frappe.db.get_value("WH Task", task_id, "assigned_to")
-            frappe.db.set_value("WH Task", task_id, "assigned_to", assigned_to)
-            return {
-                "success": True,
+    for task in existing_tasks:
+        previous_values[task.name] = {"assigned_to": task.assigned_to}
+
+    # Batch update using SQL for performance
+    valid_task_ids = [task.name for task in existing_tasks]
+    if valid_task_ids:
+        frappe.db.sql(
+            """
+            UPDATE `tabWH Task`
+            SET assigned_to = %s, modified = NOW(), modified_by = %s
+            WHERE name IN ({0})
+            """.format(','.join(['%s'] * len(valid_task_ids))),
+            [assigned_to, frappe.session.user] + valid_task_ids
+        )
+
+    # Track results
+    results = {
+        "success": [],
+        "failed": []
+    }
+
+    for task_id in task_ids:
+        if task_id in previous_values:
+            results["success"].append({
+                "task_id": task_id,
                 "details": {
-                    "old_assigned_to": old_assigned_to,
+                    "old_assigned_to": previous_values[task_id]["assigned_to"],
                     "new_assigned_to": assigned_to
                 }
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+            })
+        else:
+            results["failed"].append({
+                "task_id": task_id,
+                "error": _("Task not found")
+            })
 
-    result = _process_bulk_operation(
-        task_ids,
-        assign_operation,
-        "bulk_assign"
-    )
+    result = {
+        "total": len(task_ids),
+        "success_count": len(results["success"]),
+        "failure_count": len(results["failed"]),
+        "results": results
+    }
 
     # Generate undo_id and store undo data
     undo_id = _generate_undo_id()
@@ -284,6 +341,7 @@ def bulk_assign(task_ids, assigned_to):
 def bulk_change_priority(task_ids, new_priority):
     """
     Change priority for multiple tasks.
+    Uses batch database updates for performance.
 
     Args:
         task_ids: JSON array or list of task IDs
@@ -301,40 +359,66 @@ def bulk_change_priority(task_ids, new_priority):
     if not isinstance(task_ids, list) or len(task_ids) == 0:
         frappe.throw(_("task_ids must be a non-empty array"))
 
+    # Enforce maximum task limit for performance
+    if len(task_ids) > MAX_BULK_TASKS:
+        frappe.throw(_("Cannot update more than {0} tasks at once. Please select fewer tasks.").format(MAX_BULK_TASKS))
+
     # Validate priority
     if new_priority not in VALID_PRIORITIES:
         frappe.throw(_("Invalid priority: {0}. Valid values: {1}").format(
             new_priority, ", ".join(VALID_PRIORITIES)
         ))
 
-    # Collect previous values for undo
+    # Collect previous values for undo (batch fetch)
     previous_values = {}
-    for task_id in task_ids:
-        if frappe.db.exists("WH Task", task_id):
-            previous_values[task_id] = {
-                "priority": frappe.db.get_value("WH Task", task_id, "priority")
-            }
+    existing_tasks = frappe.db.get_all(
+        "WH Task",
+        filters={"name": ["in", task_ids]},
+        fields=["name", "priority"]
+    )
 
-    def change_priority_operation(task_id):
-        """Change priority for a single task"""
-        try:
-            old_priority = frappe.db.get_value("WH Task", task_id, "priority")
-            frappe.db.set_value("WH Task", task_id, "priority", new_priority)
-            return {
-                "success": True,
+    for task in existing_tasks:
+        previous_values[task.name] = {"priority": task.priority}
+
+    # Batch update using SQL for performance
+    valid_task_ids = [task.name for task in existing_tasks]
+    if valid_task_ids:
+        frappe.db.sql(
+            """
+            UPDATE `tabWH Task`
+            SET priority = %s, modified = NOW(), modified_by = %s
+            WHERE name IN ({0})
+            """.format(','.join(['%s'] * len(valid_task_ids))),
+            [new_priority, frappe.session.user] + valid_task_ids
+        )
+
+    # Track results
+    results = {
+        "success": [],
+        "failed": []
+    }
+
+    for task_id in task_ids:
+        if task_id in previous_values:
+            results["success"].append({
+                "task_id": task_id,
                 "details": {
-                    "old_priority": old_priority,
+                    "old_priority": previous_values[task_id]["priority"],
                     "new_priority": new_priority
                 }
-            }
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+            })
+        else:
+            results["failed"].append({
+                "task_id": task_id,
+                "error": _("Task not found")
+            })
 
-    result = _process_bulk_operation(
-        task_ids,
-        change_priority_operation,
-        "bulk_change_priority"
-    )
+    result = {
+        "total": len(task_ids),
+        "success_count": len(results["success"]),
+        "failure_count": len(results["failed"]),
+        "results": results
+    }
 
     # Generate undo_id and store undo data
     undo_id = _generate_undo_id()
@@ -372,6 +456,10 @@ def bulk_move_project(task_ids, project_id):
 
     if not isinstance(task_ids, list) or len(task_ids) == 0:
         frappe.throw(_("task_ids must be a non-empty array"))
+
+    # Enforce maximum task limit for performance
+    if len(task_ids) > MAX_BULK_TASKS:
+        frappe.throw(_("Cannot update more than {0} tasks at once. Please select fewer tasks.").format(MAX_BULK_TASKS))
 
     # Validate project exists if provided
     if project_id and not frappe.db.exists("WH Project", project_id):
@@ -464,6 +552,10 @@ def bulk_create_worklinks(task_ids, source_doctype, source_id):
 
     if not isinstance(task_ids, list) or len(task_ids) == 0:
         frappe.throw(_("task_ids must be a non-empty array"))
+
+    # Enforce maximum task limit for performance
+    if len(task_ids) > MAX_BULK_TASKS:
+        frappe.throw(_("Cannot update more than {0} tasks at once. Please select fewer tasks.").format(MAX_BULK_TASKS))
 
     if not source_doctype or not source_id:
         frappe.throw(_("source_doctype and source_id are required"))
@@ -589,6 +681,10 @@ def bulk_remove_worklinks(task_ids):
 
     if not isinstance(task_ids, list) or len(task_ids) == 0:
         frappe.throw(_("task_ids must be a non-empty array"))
+
+    # Enforce maximum task limit for performance
+    if len(task_ids) > MAX_BULK_TASKS:
+        frappe.throw(_("Cannot update more than {0} tasks at once. Please select fewer tasks.").format(MAX_BULK_TASKS))
 
     # Collect previous values for undo
     previous_values = {}

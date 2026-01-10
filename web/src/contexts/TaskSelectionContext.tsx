@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 
+// Maximum number of tasks that can be selected at once for performance
+export const MAX_SELECTION = 100
+
 interface TaskSelectionContextType {
   selectedTasks: Set<string>
   toggleSelection: (taskId: string) => void
@@ -23,6 +26,15 @@ export function TaskSelectionProvider({ children }: TaskSelectionProviderProps) 
       if (next.has(taskId)) {
         next.delete(taskId)
       } else {
+        // Enforce maximum selection limit
+        if (next.size >= MAX_SELECTION) {
+          frappe.msgprint({
+            title: 'Límite de Selección Alcanzado',
+            message: `No puedes seleccionar más de ${MAX_SELECTION} tareas a la vez por razones de rendimiento.`,
+            indicator: 'orange'
+          })
+          return prev
+        }
         next.add(taskId)
       }
       return next
@@ -30,7 +42,17 @@ export function TaskSelectionProvider({ children }: TaskSelectionProviderProps) 
   }, [])
 
   const selectAll = useCallback((taskIds: string[]) => {
-    setSelectedTasks(new Set(taskIds))
+    // Enforce maximum selection limit
+    if (taskIds.length > MAX_SELECTION) {
+      frappe.msgprint({
+        title: 'Límite de Selección Alcanzado',
+        message: `Solo se seleccionarán las primeras ${MAX_SELECTION} tareas de ${taskIds.length} tareas disponibles por razones de rendimiento.`,
+        indicator: 'orange'
+      })
+      setSelectedTasks(new Set(taskIds.slice(0, MAX_SELECTION)))
+    } else {
+      setSelectedTasks(new Set(taskIds))
+    }
   }, [])
 
   const clearSelection = useCallback(() => {

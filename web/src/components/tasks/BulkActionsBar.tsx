@@ -1,4 +1,4 @@
-import { X, Edit, User, Flag, FolderOpen, Link } from 'lucide-react'
+import { X, Edit, User, Flag, FolderOpen, Link, Loader2 } from 'lucide-react'
 import { useTaskSelection } from '../../contexts/TaskSelectionContext'
 
 interface BulkActionsBarProps {
@@ -7,6 +7,7 @@ interface BulkActionsBarProps {
   onChangePriority: () => void
   onMoveProject: () => void
   onAddWorkLink: () => void
+  loading?: boolean
 }
 
 export function BulkActionsBar({
@@ -14,7 +15,8 @@ export function BulkActionsBar({
   onAssign,
   onChangePriority,
   onMoveProject,
-  onAddWorkLink
+  onAddWorkLink,
+  loading = false
 }: BulkActionsBarProps) {
   const { selectedTasks, clearSelection } = useTaskSelection()
 
@@ -35,6 +37,9 @@ export function BulkActionsBar({
     hover:translate-x-[1px] hover:translate-y-[1px]
     active:shadow-none
     active:translate-x-[2px] active:translate-y-[2px]
+    disabled:opacity-50 disabled:cursor-not-allowed
+    disabled:hover:translate-x-0 disabled:hover:translate-y-0
+    disabled:hover:shadow-[2px_2px_0_#1c1917]
     flex items-center gap-2
   `
 
@@ -50,6 +55,9 @@ export function BulkActionsBar({
     hover:translate-x-[1px] hover:translate-y-[1px]
     active:shadow-none
     active:translate-x-[2px] active:translate-y-[2px]
+    disabled:opacity-50 disabled:cursor-not-allowed
+    disabled:hover:translate-x-0 disabled:hover:translate-y-0
+    disabled:hover:shadow-[2px_2px_0_#1c1917]
     flex items-center gap-2
   `
 
@@ -58,6 +66,7 @@ export function BulkActionsBar({
       <div className="bg-amber-400 border-2 border-stone-900 shadow-[6px_6px_0_#1c1917] p-4 flex items-center gap-4">
         {/* Selected Count */}
         <div className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-stone-900">
+          {loading && <Loader2 size={16} className="animate-spin text-amber-600" />}
           <span className="font-bold text-stone-900 text-sm">
             {selectedTasks.size} {selectedTasks.size === 1 ? 'tarea' : 'tareas'}
           </span>
@@ -70,6 +79,7 @@ export function BulkActionsBar({
         <div className="flex items-center gap-2">
           <button
             onClick={onChangeStatus}
+            disabled={loading}
             className={actionButtonClass}
             title="Cambiar estado"
           >
@@ -79,6 +89,7 @@ export function BulkActionsBar({
 
           <button
             onClick={onAssign}
+            disabled={loading}
             className={actionButtonClass}
             title="Asignar a usuario"
           >
@@ -88,6 +99,7 @@ export function BulkActionsBar({
 
           <button
             onClick={onChangePriority}
+            disabled={loading}
             className={actionButtonClass}
             title="Cambiar prioridad"
           >
@@ -97,6 +109,7 @@ export function BulkActionsBar({
 
           <button
             onClick={onMoveProject}
+            disabled={loading}
             className={actionButtonClass}
             title="Mover a proyecto"
           >
@@ -106,6 +119,7 @@ export function BulkActionsBar({
 
           <button
             onClick={onAddWorkLink}
+            disabled={loading}
             className={actionButtonClass}
             title="Añadir WorkLink"
           >
@@ -120,6 +134,7 @@ export function BulkActionsBar({
         {/* Clear Selection */}
         <button
           onClick={clearSelection}
+          disabled={loading}
           className={clearButtonClass}
           title="Limpiar selección"
         >
