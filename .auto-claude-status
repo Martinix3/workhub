@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "022-task-dependencies-blocker-visualization",
+  "state": "building",
+  "subtasks": {
+    "completed": 3,
+    "total": 12,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Task Card Dependency Indicators",
+    "id": null,
+    "total": 3
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 5,
+    "started_at": "2026-01-10T22:50:32.622096"
+  },
+  "last_update": "2026-01-10T23:00:02.793897"
+}

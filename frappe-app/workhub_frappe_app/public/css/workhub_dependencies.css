@@ -1,0 +1,418 @@
+/**
+ * WorkHub Dependencies - Neobrutalismo Editorial
+ *
+ * Styles for task dependency visualization:
+ * - Blocked/blocking badges
+ * - Task card highlighting
+ * - Dependency popovers
+ */
+
+/* === DEPENDENCY BADGES === */
+
+/* Base dependency badge */
+.dependency-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	padding: var(--space-1) var(--space-2);
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-medium);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	border: var(--border-width-thin) solid currentColor;
+	border-radius: var(--radius-sm);
+	white-space: nowrap;
+	cursor: pointer;
+	transition: all var(--transition-fast);
+}
+
+.dependency-badge:hover {
+	opacity: 0.9;
+	transform: translateY(-1px);
+}
+
+/* Blocked badge - red, critical */
+.blocked-badge {
+	background: var(--danger-soft);
+	color: var(--danger);
+	border-color: var(--danger);
+}
+
+.blocked-badge:hover {
+	background: var(--danger);
+	color: var(--surface-1);
+}
+
+/* Blocking badge - yellow/warning */
+.blocking-badge {
+	background: var(--warning-soft);
+	color: var(--earth);
+	border-color: var(--warning);
+}
+
+.blocking-badge:hover {
+	background: var(--warning);
+	color: var(--text-1);
+}
+
+/* Badge icon (optional) */
+.dependency-badge svg {
+	width: 12px;
+	height: 12px;
+	fill: currentColor;
+}
+
+/* Badge count */
+.dependency-badge__count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 var(--space-1);
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: var(--weight-bold);
+	background: currentColor;
+	color: var(--surface-1);
+	border-radius: 8px;
+	margin-left: var(--space-1);
+}
+
+.blocked-badge .dependency-badge__count {
+	background: var(--danger);
+}
+
+.blocking-badge .dependency-badge__count {
+	background: var(--earth);
+}
+
+/* === TASK CARD HIGHLIGHTING === */
+
+/* Blocked task card - highlighted with red accent */
+.task-card--blocked {
+	position: relative;
+	border-left: 3px solid var(--danger) !important;
+	background: linear-gradient(to right, var(--danger-soft) 0%, transparent 10%);
+}
+
+/* Subtle pulse animation for blocked tasks */
+.task-card--blocked::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 3px;
+	height: 100%;
+	background: var(--danger);
+	animation: blocked-pulse 2s ease-in-out infinite;
+}
+
+@keyframes blocked-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.5; }
+}
+
+/* Blocked indicator icon in corner */
+.task-card--blocked::after {
+	content: '⚠';
+	position: absolute;
+	top: var(--space-2);
+	right: var(--space-2);
+	font-size: var(--text-xs);
+	color: var(--danger);
+	opacity: 0.6;
+}
+
+/* Kanban card specific blocked styling */
+.kanban-card.task-card--blocked {
+	box-shadow: 0 0 0 1px var(--danger-soft);
+}
+
+/* === DEPENDENCY POPOVER === */
+
+/* Popover container */
+.dependency-popover {
+	position: absolute;
+	z-index: var(--z-dropdown);
+	min-width: 280px;
+	max-width: 360px;
+	background: var(--surface-1);
+	border: var(--border-width) solid var(--border-1);
+	box-shadow: var(--shadow);
+	padding: var(--space-3);
+	margin-top: var(--space-2);
+	animation: popover-appear 150ms ease-out;
+}
+
+@keyframes popover-appear {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Popover header */
+.dependency-popover__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--space-3);
+	padding-bottom: var(--space-2);
+	border-bottom: var(--border-width-thin) solid var(--border-2);
+}
+
+.dependency-popover__title {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-bold);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	color: var(--text-1);
+}
+
+.dependency-popover__close {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: var(--space-1);
+	color: var(--text-3);
+	transition: color var(--transition-fast);
+}
+
+.dependency-popover__close:hover {
+	color: var(--text-1);
+}
+
+/* Popover section */
+.dependency-popover__section {
+	margin-bottom: var(--space-3);
+}
+
+.dependency-popover__section:last-child {
+	margin-bottom: 0;
+}
+
+.dependency-popover__section-title {
+	font-family: var(--font-ui);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-semibold);
+	color: var(--text-2);
+	margin-bottom: var(--space-2);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+}
+
+/* Task list in popover */
+.dependency-popover__tasks {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+
+/* Individual task item */
+.dependency-task-item {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	padding: var(--space-2);
+	background: var(--surface-2);
+	border: var(--border-width-thin) solid var(--border-2);
+	border-radius: var(--radius-sm);
+	transition: all var(--transition-fast);
+	cursor: pointer;
+}
+
+.dependency-task-item:hover {
+	background: var(--grid);
+	border-color: var(--border-1);
+	transform: translateX(2px);
+}
+
+/* Task item header */
+.dependency-task-item__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
+
+.dependency-task-item__title {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+	color: var(--text-1);
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dependency-task-item__status {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px var(--space-1);
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: var(--weight-medium);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	border: var(--border-width-thin) solid currentColor;
+	border-radius: var(--radius-sm);
+	white-space: nowrap;
+}
+
+/* Status colors */
+.dependency-task-item__status--done {
+	background: var(--success-soft);
+	color: var(--success);
+	border-color: var(--success);
+}
+
+.dependency-task-item__status--doing {
+	background: var(--info-soft);
+	color: var(--info);
+	border-color: var(--info);
+}
+
+.dependency-task-item__status--next {
+	background: var(--warning-soft);
+	color: var(--warning);
+	border-color: var(--warning);
+}
+
+.dependency-task-item__status--backlog {
+	background: var(--surface-2);
+	color: var(--text-3);
+	border-color: var(--border-2);
+}
+
+.dependency-task-item__status--blocked {
+	background: var(--danger-soft);
+	color: var(--danger);
+	border-color: var(--danger);
+}
+
+/* Task item meta */
+.dependency-task-item__meta {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-size: var(--text-xs);
+	color: var(--text-3);
+}
+
+.dependency-task-item__assignee {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.dependency-task-item__assignee svg {
+	width: 12px;
+	height: 12px;
+	fill: currentColor;
+}
+
+.dependency-task-item__date {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.dependency-task-item__date svg {
+	width: 12px;
+	height: 12px;
+	fill: currentColor;
+}
+
+.dependency-task-item__priority {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 4px;
+	font-family: var(--font-mono);
+	font-size: 9px;
+	font-weight: var(--weight-bold);
+	border-radius: var(--radius-sm);
+}
+
+.dependency-task-item__priority--P0 {
+	background: var(--danger);
+	color: var(--surface-1);
+}
+
+.dependency-task-item__priority--P1 {
+	background: var(--warning);
+	color: var(--text-1);
+}
+
+.dependency-task-item__priority--P2 {
+	background: var(--surface-2);
+	color: var(--text-2);
+	border: var(--border-width-thin) solid var(--border-2);
+}
+
+/* Empty state */
+.dependency-popover__empty {
+	padding: var(--space-4);
+	text-align: center;
+	color: var(--text-3);
+	font-size: var(--text-sm);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+	.dependency-popover {
+		min-width: 240px;
+		max-width: calc(100vw - var(--space-8));
+	}
+
+	.dependency-task-item__title {
+		font-size: var(--text-xs);
+	}
+}
+
+/* === UTILITY CLASSES === */
+
+/* Badge container for task cards */
+.task-card__dependency-badges {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	margin-top: var(--space-2);
+}
+
+/* Inline badges in lists */
+.task-list-item__dependency-badges {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	margin-left: var(--space-2);
+}
+
+/* Loading state */
+.dependency-popover--loading {
+	min-height: 120px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.dependency-popover__spinner {
+	width: 24px;
+	height: 24px;
+	border: 2px solid var(--border-2);
+	border-top-color: var(--text-1);
+	border-radius: 50%;
+	animation: spinner-rotate 0.6s linear infinite;
+}
+
+@keyframes spinner-rotate {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}

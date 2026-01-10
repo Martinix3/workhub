@@ -1,0 +1,34 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/022-task-dependencies-blocker-visualization/**)",
+      "Write(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/022-task-dependencies-blocker-visualization/**)",
+      "Edit(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/022-task-dependencies-blocker-visualization/**)",
+      "Glob(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/022-task-dependencies-blocker-visualization/**)",
+      "Grep(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/022-task-dependencies-blocker-visualization/**)",
+      "Read(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/022-task-dependencies-blocker-visualization/.auto-claude/specs/022-task-dependencies-blocker-visualization/**)",
+      "Write(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/022-task-dependencies-blocker-visualization/.auto-claude/specs/022-task-dependencies-blocker-visualization/**)",
+      "Edit(/Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/022-task-dependencies-blocker-visualization/.auto-claude/specs/022-task-dependencies-blocker-visualization/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}
