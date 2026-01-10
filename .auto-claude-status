@@ -3,13 +3,13 @@
   "spec": "020-advanced-reporting-export",
   "state": "building",
   "subtasks": {
-    "completed": 17,
+    "completed": 18,
     "total": 42,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Scheduled Reports",
+    "current": "Standard Report Templates",
     "id": null,
     "total": 4
   },
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 137,
+    "number": 138,
     "started_at": "2026-01-10T21:23:41.964627"
   },
-  "last_update": "2026-01-10T22:37:01.029518"
+  "last_update": "2026-01-10T22:40:23.155516"
 }
