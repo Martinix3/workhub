@@ -3,7 +3,7 @@
   "spec": "016-bulk-task-operations",
   "state": "building",
   "subtasks": {
-    "completed": 8,
+    "completed": 10,
     "total": 18,
     "in_progress": 1,
     "failed": 0
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 127,
+    "number": 129,
     "started_at": "2026-01-10T21:23:46.479367"
   },
-  "last_update": "2026-01-10T22:15:23.906808"
+  "last_update": "2026-01-10T22:19:51.751379"
 }
