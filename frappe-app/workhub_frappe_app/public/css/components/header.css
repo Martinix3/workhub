@@ -351,25 +351,200 @@ body:has(.wh-sidebar.collapsed) .wh-header {
     background: #f5f5f0;
 }
 
-/* === Mobile === */
+/* === Hamburger Menu (Mobile Only) === */
+.wh-header-menu-toggle {
+    display: none; /* Hidden by default on desktop */
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 0;
+    transition: all var(--mobile-transition-fast);
+    background: transparent;
+    border: 2px solid transparent;
+    color: #0f172a;
+    flex-shrink: 0;
+}
+
+.wh-header-menu-toggle:hover {
+    background: #f5f5f0;
+    border-color: #0f172a;
+}
+
+.wh-header-menu-toggle:active {
+    transform: scale(0.95);
+    background: #f5ce3e;
+}
+
+.wh-header-menu-toggle svg,
+.wh-header-menu-toggle i {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+/* === Mobile Styles === */
 @media (max-width: 768px) {
+    /* Header adjustments for mobile */
     .wh-header {
         margin-left: 0;
         left: 0;
+        height: var(--mobile-header-height);
+        padding: 0 var(--space-2); /* 12px - More compact on mobile */
+        gap: var(--space-2);
     }
 
+    /* Show hamburger menu on mobile */
+    .wh-header-menu-toggle {
+        display: flex !important;
+        order: -1; /* Place at the beginning */
+    }
+
+    /* Compact header left section */
+    .wh-header-left {
+        flex: 1;
+        min-width: 0; /* Allow flex item to shrink */
+        gap: var(--space-2);
+    }
+
+    /* Hide search on mobile */
     .wh-header-center {
         display: none;
     }
 
+    /* Hide breadcrumbs on mobile */
     .wh-breadcrumbs {
         display: none;
     }
 
+    /* Compact logo for mobile */
+    .wh-header-logo {
+        height: 28px; /* Slightly smaller on mobile */
+    }
+
+    /* Header right section - ensure touch targets */
+    .wh-header-right {
+        gap: var(--space-1); /* 8px - Compact spacing */
+        flex-shrink: 0;
+    }
+
+    /* All header actions touch-friendly */
+    .wh-header-action {
+        min-width: var(--touch-target-min);
+        min-height: var(--touch-target-min);
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Enhanced active feedback on mobile */
+    .wh-header-action:active {
+        transform: scale(0.95);
+        background: #f5f5f0;
+    }
+
+    /* User avatar touch-friendly */
+    .wh-user-avatar {
+        min-width: var(--touch-target-min);
+        min-height: var(--touch-target-min);
+        width: 44px;
+        height: 44px;
+        font-size: 15px;
+    }
+
+    .wh-user-avatar:active {
+        transform: scale(0.95);
+    }
+
+    /* Notification badge positioning adjusted for larger button */
+    .wh-notification-badge {
+        top: 6px;
+        right: 6px;
+    }
+
+    /* Mobile-optimized dropdowns */
     .wh-notifications-panel,
     .wh-user-dropdown {
-        width: calc(100vw - 32px);
-        right: 16px;
+        /* Full-width on small screens, with margins */
+        width: calc(100vw - var(--mobile-gutter) * 2);
+        max-width: 400px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
         box-shadow: 4px 4px 0 #0f172a;
+    }
+
+    /* Notifications panel mobile optimization */
+    .wh-notifications-panel {
+        max-height: calc(100vh - var(--mobile-header-height) - 80px);
+    }
+
+    /* Notification items touch-friendly */
+    .wh-notification-item {
+        min-height: var(--touch-target-min);
+        padding: var(--space-3) var(--space-4);
+    }
+
+    /* User dropdown mobile optimization */
+    .wh-user-dropdown {
+        width: 260px;
+        right: var(--space-2);
+        left: auto;
+        transform: none;
+    }
+
+    /* User action items touch-friendly */
+    .wh-user-action-item {
+        min-height: var(--touch-target-min);
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--mobile-text-base);
+    }
+
+    /* User action items enhanced feedback */
+    .wh-user-action-item:active {
+        transform: scale(0.98);
+        background: #f5ce3e;
+    }
+}
+
+/* === Small Mobile (< 375px) === */
+@media (max-width: 374px) {
+    /* Extra compact on very small screens */
+    .wh-header {
+        padding: 0 var(--space-1); /* 8px */
+    }
+
+    .wh-header-right {
+        gap: 4px;
+    }
+
+    /* Slightly smaller touch targets on tiny screens (still above 40px) */
+    .wh-header-action,
+    .wh-user-avatar {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    /* User dropdown full width on small screens */
+    .wh-user-dropdown {
+        width: calc(100vw - var(--space-3) * 2);
+    }
+}
+
+/* === Landscape Mobile === */
+@media (max-width: 768px) and (orientation: landscape) {
+    /* Reduce header height in landscape for more content space */
+    .wh-header {
+        height: calc(48px + var(--safe-area-top));
+    }
+
+    /* Compact user dropdown in landscape */
+    .wh-notifications-panel {
+        max-height: calc(100vh - 60px);
     }
 }
