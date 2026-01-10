@@ -1,11 +1,17 @@
 // HACCP Monitor Page with data fetching
+import { useState } from 'react'
 import { HACCPMonitor } from '../components/sections/production-and-quality/HACCPMonitor'
 import { LoadingState } from '../components/ui/LoadingState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { useHACCPMonitor } from '../api'
+import type { CriticalControlPoint } from '../components/sections/production-and-quality/types'
 
 export function HACCPMonitorPage() {
   const { plans, recentReadings, activeAlerts, loading, error, refetch, acknowledgeAlert } = useHACCPMonitor()
+
+  // Modal state management
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedCCP, setSelectedCCP] = useState<CriticalControlPoint | null>(null)
 
   if (loading) {
     return <LoadingState message="Cargando HACCP..." />
@@ -23,8 +29,20 @@ export function HACCPMonitorPage() {
   }
 
   const handleRecordReading = (ccpId: string) => {
-    // TODO: Open modal to record reading for this CCP
-    console.log('Record reading for CCP:', ccpId)
+    // Find the CCP from the plans
+    let foundCCP: CriticalControlPoint | null = null
+    for (const plan of plans) {
+      const ccp = plan.ccps.find(c => c.id === ccpId)
+      if (ccp) {
+        foundCCP = ccp
+        break
+      }
+    }
+
+    if (foundCCP) {
+      setSelectedCCP(foundCCP)
+      setIsModalOpen(true)
+    }
   }
 
   const handleAcknowledgeAlert = async (readingId: string) => {
