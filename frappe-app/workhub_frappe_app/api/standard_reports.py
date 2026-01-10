@@ -558,8 +558,333 @@ def create_haccp_compliance_report():
 	- Compliance percentage
 	- Audit trail
 	"""
-	# To be implemented in subtask 5.3
-	pass
+	# Check if report already exists
+	if frappe.db.exists("WH Report Definition", {"title": "HACCP Compliance Report"}):
+		frappe.logger().info("HACCP Compliance Report already exists, skipping creation")
+		return
+
+	# Create the report definition
+	report = frappe.new_doc("WH Report Definition")
+	report.title = "HACCP Compliance Report"
+	report.description = "Comprehensive quality and audit report showing inspection summary, non-conformances, corrective actions, compliance rates, and complete audit trail. Formatted for regulatory presentation."
+	report.report_type = "Standard"
+	report.category = "HACCP"
+	report.is_active = 1
+
+	# Section 1: Report Header
+	report.append("sections", {
+		"section_type": "Header",
+		"title": "HACCP Compliance Report",
+		"display_order": 1,
+		"is_visible": 1,
+		"config": json.dumps({
+			"subtitle": "Quality assurance, inspection summary, and regulatory compliance"
+		})
+	})
+
+	# Section 2-6: KPI Cards Row
+	# KPI 1: Compliance Rate
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "Compliance Rate",
+		"data_source": "quality_metrics",
+		"display_order": 2,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"period": "current_month"},
+			"metric_field": "value",
+			"metric_filter": {"metric_name": "approval_rate"},
+			"show_trend": True,
+			"trend_field": "change",
+			"color": "success",
+			"icon": "✓",
+			"format": "percentage",
+			"decimals": 1,
+			"subtitle": "Inspections approved"
+		})
+	})
+
+	# KPI 2: Total Inspections This Month
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "Total Inspections",
+		"data_source": "haccp_inspections",
+		"display_order": 3,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"date_range": "current_month"},
+			"metric_type": "count",
+			"color": "primary",
+			"icon": "📋",
+			"format": "number",
+			"subtitle": "This month"
+		})
+	})
+
+	# KPI 3: Non-Conformances
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "Non-Conformances",
+		"data_source": "haccp_inspections",
+		"display_order": 4,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {
+				"status": "Rejected",
+				"date_range": "current_month"
+			},
+			"metric_type": "count",
+			"color": "danger",
+			"icon": "✗",
+			"format": "number",
+			"subtitle": "Rejected this month"
+		})
+	})
+
+	# KPI 4: Pending Inspections
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "Pending Inspections",
+		"data_source": "quality_metrics",
+		"display_order": 5,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"period": "current_month"},
+			"metric_field": "value",
+			"metric_filter": {"metric_name": "pending_inspections"},
+			"color": "warning",
+			"icon": "⏳",
+			"format": "number",
+			"subtitle": "Awaiting review"
+		})
+	})
+
+	# KPI 5: Open Corrective Actions
+	report.append("sections", {
+		"section_type": "KPI",
+		"title": "Open Corrective Actions",
+		"data_source": "quality_metrics",
+		"display_order": 6,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"period": "current_month"},
+			"metric_field": "value",
+			"metric_filter": {"metric_name": "open_ncs"},
+			"color": "info",
+			"icon": "🔧",
+			"format": "number",
+			"subtitle": "Requiring action"
+		})
+	})
+
+	# Section 7: Compliance Trend Chart
+	report.append("sections", {
+		"section_type": "Chart",
+		"title": "Monthly Compliance Trend",
+		"data_source": "quality_metrics",
+		"display_order": 7,
+		"is_visible": 1,
+		"config": json.dumps({
+			"chart_type": "line",
+			"filters": {"period": "current_month", "trend_months": 6},
+			"x_field": "month",
+			"y_field": "approval_rate",
+			"label": "Compliance Rate %",
+			"colors": ["#10b981"],
+			"show_points": True,
+			"show_grid": True,
+			"height": 300,
+			"y_axis_min": 0,
+			"y_axis_max": 100
+		})
+	})
+
+	# Section 8: Inspection Status Distribution Chart
+	report.append("sections", {
+		"section_type": "Chart",
+		"title": "Inspection Status Distribution",
+		"data_source": "haccp_inspections",
+		"display_order": 8,
+		"is_visible": 1,
+		"config": json.dumps({
+			"chart_type": "pie",
+			"filters": {"date_range": "current_month"},
+			"group_by": "status",
+			"value_field": "count",
+			"label_field": "status",
+			"colors": ["#10b981", "#ef4444", "#f59e0b"],
+			"labels": ["Accepted", "Rejected", "Pending"],
+			"show_legend": True,
+			"height": 300
+		})
+	})
+
+	# Section 9: Inspection Summary Table
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Inspection Summary (Current Month)",
+		"data_source": "haccp_inspections",
+		"display_order": 9,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"date_range": "current_month"},
+			"columns": [
+				{"field": "id", "label": "Inspection ID", "type": "string"},
+				{"field": "item_code", "label": "Item Code", "type": "string"},
+				{"field": "item_name", "label": "Item Name", "type": "string"},
+				{"field": "status", "label": "Status", "type": "string"},
+				{"field": "result", "label": "Result", "type": "string"},
+				{"field": "report_date", "label": "Inspection Date", "type": "date"},
+				{"field": "inspected_by", "label": "Inspector", "type": "string"}
+			],
+			"sort_by": "report_date",
+			"sort_order": "desc",
+			"show_totals": True
+		})
+	})
+
+	# Section 10: Non-Conformances Detail Table
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Non-Conformances (Rejected Inspections)",
+		"data_source": "haccp_inspections",
+		"display_order": 10,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {
+				"status": "Rejected",
+				"date_range": "current_month"
+			},
+			"columns": [
+				{"field": "id", "label": "NC ID", "type": "string"},
+				{"field": "item_code", "label": "Item Code", "type": "string"},
+				{"field": "item_name", "label": "Item Name", "type": "string"},
+				{"field": "result", "label": "Rejection Reason", "type": "string"},
+				{"field": "report_date", "label": "Date Identified", "type": "date"},
+				{"field": "inspected_by", "label": "Inspector", "type": "string"},
+				{"field": "status", "label": "Status", "type": "string"}
+			],
+			"sort_by": "report_date",
+			"sort_order": "desc",
+			"highlight_critical": True
+		})
+	})
+
+	# Section 11: Corrective Actions Status Table
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Corrective Actions Status",
+		"data_source": "haccp_inspections",
+		"display_order": 11,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {
+				"status": "Rejected"
+			},
+			"columns": [
+				{"field": "id", "label": "Action ID", "type": "string"},
+				{"field": "item_code", "label": "Item Code", "type": "string"},
+				{"field": "item_name", "label": "Item Name", "type": "string"},
+				{"field": "result", "label": "Issue Description", "type": "string"},
+				{"field": "report_date", "label": "Date Opened", "type": "date"},
+				{"field": "inspected_by", "label": "Assigned To", "type": "string"},
+				{"field": "status", "label": "Action Status", "type": "string"}
+			],
+			"sort_by": "report_date",
+			"sort_order": "asc",
+			"group_by": "status"
+		})
+	})
+
+	# Section 12: Compliance by Item Category
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Compliance Rate by Item",
+		"data_source": "haccp_inspections",
+		"display_order": 12,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"date_range": "current_month"},
+			"columns": [
+				{"field": "item_code", "label": "Item Code", "type": "string"},
+				{"field": "item_name", "label": "Item Name", "type": "string"},
+				{"field": "total_inspections", "label": "Total Inspections", "type": "number"},
+				{"field": "accepted", "label": "Accepted", "type": "number"},
+				{"field": "rejected", "label": "Rejected", "type": "number"},
+				{"field": "pending", "label": "Pending", "type": "number"},
+				{"field": "compliance_rate", "label": "Compliance Rate", "type": "percentage"}
+			],
+			"sort_by": "compliance_rate",
+			"sort_order": "asc",
+			"group_by": "item_code",
+			"show_averages": True
+		})
+	})
+
+	# Section 13: Complete Audit Trail
+	report.append("sections", {
+		"section_type": "Table",
+		"title": "Complete Audit Trail (Last 90 Days)",
+		"data_source": "haccp_inspections",
+		"display_order": 13,
+		"is_visible": 1,
+		"config": json.dumps({
+			"filters": {"date_range": "last_90_days"},
+			"columns": [
+				{"field": "id", "label": "Inspection ID", "type": "string"},
+				{"field": "report_date", "label": "Date", "type": "datetime"},
+				{"field": "item_code", "label": "Item Code", "type": "string"},
+				{"field": "item_name", "label": "Item Name", "type": "string"},
+				{"field": "status", "label": "Status", "type": "string"},
+				{"field": "result", "label": "Result/Reason", "type": "string"},
+				{"field": "inspected_by", "label": "Inspector", "type": "string"}
+			],
+			"sort_by": "report_date",
+			"sort_order": "desc",
+			"show_totals": True
+		})
+	})
+
+	# Section 14: Regulatory Summary
+	report.append("sections", {
+		"section_type": "Text",
+		"title": "Regulatory Summary",
+		"display_order": 14,
+		"is_visible": 1,
+		"config": json.dumps({
+			"content": """
+				<h3>HACCP Compliance Report Summary</h3>
+				<p>This report provides comprehensive quality assurance and regulatory compliance information:</p>
+				<ul>
+					<li><strong>Compliance Overview:</strong> Current month compliance rate with historical trend analysis showing performance against quality standards.</li>
+					<li><strong>Inspection Summary:</strong> Total inspections conducted, status distribution (Accepted/Rejected/Pending), and approval rates.</li>
+					<li><strong>Non-Conformances:</strong> Detailed listing of all rejected inspections requiring corrective action, including rejection reasons and responsible parties.</li>
+					<li><strong>Corrective Actions:</strong> Status tracking for all open quality issues, ensuring timely resolution and continuous improvement.</li>
+					<li><strong>Item-Level Analysis:</strong> Compliance rates broken down by item code to identify recurring quality issues and target improvement efforts.</li>
+					<li><strong>Audit Trail:</strong> Complete chronological record of all inspections for the past 90 days, suitable for regulatory audit purposes.</li>
+				</ul>
+				<h4>Regulatory Compliance Notes:</h4>
+				<p>This report is designed to meet HACCP (Hazard Analysis and Critical Control Points) documentation requirements and provides:</p>
+				<ul>
+					<li>Complete traceability of all quality inspections</li>
+					<li>Documentation of non-conformances and corrective actions</li>
+					<li>Compliance rate tracking and trend analysis</li>
+					<li>Inspector accountability and verification records</li>
+					<li>Historical data retention for audit purposes</li>
+				</ul>
+				<p><em>Use this report for regulatory audits, management reviews, quality system certification, and continuous improvement initiatives.</em></p>
+				<p style="margin-top: 20px; padding: 10px; background-color: #f0f9ff; border-left: 4px solid #3b82f6;">
+					<strong>Certification Statement:</strong> This report contains accurate quality and inspection data as recorded in the WorkHub quality management system.
+					All data is traceable to source inspection records and is maintained in accordance with HACCP principles and applicable food safety regulations.
+				</p>
+			"""
+		})
+	})
+
+	# Save the report
+	report.insert(ignore_permissions=True)
+	frappe.logger().info(f"Created HACCP Compliance Report: {report.name}")
+	return report.name
 
 
 @frappe.whitelist()
@@ -590,12 +915,12 @@ def install_standard_reports():
 		frappe.log_error(f"Error creating Project Status Report: {str(e)}")
 
 	# Create HACCP Compliance Report (subtask 5.3)
-	# try:
-	# 	report_id = create_haccp_compliance_report()
-	# 	if report_id:
-	# 		created_reports.append({"name": report_id, "title": "HACCP Compliance Report"})
-	# except Exception as e:
-	# 	frappe.log_error(f"Error creating HACCP Compliance Report: {str(e)}")
+	try:
+		report_id = create_haccp_compliance_report()
+		if report_id:
+			created_reports.append({"name": report_id, "title": "HACCP Compliance Report"})
+	except Exception as e:
+		frappe.log_error(f"Error creating HACCP Compliance Report: {str(e)}")
 
 	frappe.db.commit()
 
