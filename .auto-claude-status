@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "001-create-generic-data-hook-factory",
+  "state": "building",
+  "subtasks": {
+    "completed": 0,
+    "total": 0,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Factory Foundation",
+    "id": null,
+    "total": 3
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 2,
+    "started_at": "2026-01-10T20:25:53.759439"
+  },
+  "last_update": "2026-01-10T20:29:17.034855"
+}
