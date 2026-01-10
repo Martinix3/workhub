@@ -81,3 +81,10 @@ export {
   useCustomerSearch,
   useItemSearch
 } from './useNotepad'
+
+// NL Task Creation
+export {
+  useNLTask,
+  useUserSearch,
+  useProjectSearch
+} from './useNLTask'
