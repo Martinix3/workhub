@@ -1601,6 +1601,282 @@ frappe.workhub.shortcuts = {
 };
 
 // ==========================================
+// TASK STATE MANAGEMENT
+// ==========================================
+frappe.workhub.taskManager = {
+    /**
+     * Update task status in Leantime (SSOT for tasks)
+     *
+     * @param {string} taskId - Leantime task ID
+     * @param {string} status - New status (BACKLOG, NEXT, DOING, BLOCKED, DONE)
+     * @returns {Promise}
+     */
+    updateTaskStatus(taskId, status) {
+        return new Promise((resolve, reject) => {
+            if (!taskId) {
+                reject(new Error('Task ID is required'));
+                return;
+            }
+
+            // Call Frappe backend method which will sync to Leantime
+            frappe.call({
+                method: 'workhub_frappe_app.api.tasks.update_task_status',
+                args: {
+                    task_id: taskId,
+                    status: status
+                },
+                callback: (response) => {
+                    if (response.message && response.message.success) {
+                        resolve(response.message);
+                    } else {
+                        reject(new Error(response.message?.error || 'Failed to update task status'));
+                    }
+                },
+                error: (error) => {
+                    reject(error);
+                }
+            });
+        });
+    },
+
+    /**
+     * Mark task as complete (sets status to DONE)
+     *
+     * @param {HTMLElement} taskElement - Task DOM element
+     * @returns {Promise}
+     */
+    async completeTask(taskElement) {
+        const taskId = taskElement.dataset.taskId || taskElement.getAttribute('data-task-id');
+
+        if (!taskId) {
+            console.warn('Task element missing data-task-id attribute:', taskElement);
+            frappe.show_alert({
+                message: __('Task ID not found'),
+                indicator: 'red'
+            }, 3);
+            return;
+        }
+
+        try {
+            await this.updateTaskStatus(taskId, 'DONE');
+
+            // Show success notification
+            frappe.show_alert({
+                message: __('Task marked as complete'),
+                indicator: 'green'
+            }, 3);
+
+            // Emit event for other components to listen to
+            frappe.ui.trigger('task:completed', {
+                taskId: taskId,
+                element: taskElement
+            });
+
+        } catch (error) {
+            console.error('Failed to complete task:', error);
+
+            frappe.show_alert({
+                message: __('Failed to complete task: {0}', [error.message]),
+                indicator: 'red'
+            }, 5);
+
+            // Re-add the task element if it was removed
+            throw error;
+        }
+    },
+
+    /**
+     * Delete/archive task
+     *
+     * @param {HTMLElement} taskElement - Task DOM element
+     * @returns {Promise}
+     */
+    async deleteTask(taskElement) {
+        const taskId = taskElement.dataset.taskId || taskElement.getAttribute('data-task-id');
+
+        if (!taskId) {
+            console.warn('Task element missing data-task-id attribute:', taskElement);
+            frappe.show_alert({
+                message: __('Task ID not found'),
+                indicator: 'red'
+            }, 3);
+            return;
+        }
+
+        try {
+            // Call Frappe backend method to delete/archive task
+            await new Promise((resolve, reject) => {
+                frappe.call({
+                    method: 'workhub_frappe_app.api.tasks.delete_task',
+                    args: {
+                        task_id: taskId
+                    },
+                    callback: (response) => {
+                        if (response.message && response.message.success) {
+                            resolve(response.message);
+                        } else {
+                            reject(new Error(response.message?.error || 'Failed to delete task'));
+                        }
+                    },
+                    error: (error) => {
+                        reject(error);
+                    }
+                });
+            });
+
+            // Show success notification
+            frappe.show_alert({
+                message: __('Task archived'),
+                indicator: 'orange'
+            }, 3);
+
+            // Emit event for other components
+            frappe.ui.trigger('task:deleted', {
+                taskId: taskId,
+                element: taskElement
+            });
+
+        } catch (error) {
+            console.error('Failed to delete task:', error);
+
+            frappe.show_alert({
+                message: __('Failed to archive task: {0}', [error.message]),
+                indicator: 'red'
+            }, 5);
+
+            // Re-add the task element if it was removed
+            throw error;
+        }
+    }
+};
+
+// ==========================================
+// SWIPEABLE TASKS INITIALIZATION
+// ==========================================
+frappe.workhub.swipeableTasks = {
+    instances: [],
+
+    /**
+     * Initialize swipeable task gestures on all task elements
+     */
+    init() {
+        // Only initialize on touch devices
+        if (!('ontouchstart' in window)) {
+            return;
+        }
+
+        // Initialize all existing swipeable tasks
+        this.initializeAll();
+
+        // Re-initialize when new tasks are added to the DOM
+        this.observeTaskChanges();
+    },
+
+    /**
+     * Initialize all swipeable task elements on the current page
+     */
+    initializeAll() {
+        if (!frappe.workhub.SwipeableTask) {
+            console.warn('SwipeableTask component not loaded');
+            return;
+        }
+
+        // Default configuration for task swipe gestures
+        const options = {
+            threshold: 0.3,
+            minSwipeDistance: 80,
+            velocityThreshold: 0.3,
+            onComplete: (element) => {
+                // Handle swipe right to complete
+                frappe.workhub.taskManager.completeTask(element).catch((error) => {
+                    // If task completion fails, we need to restore the element
+                    // since SwipeableTask removes it on completion
+                    console.error('Task completion failed, but element already removed:', error);
+                });
+            },
+            onDelete: (element) => {
+                // Handle swipe left to delete/archive
+                frappe.workhub.taskManager.deleteTask(element).catch((error) => {
+                    // If task deletion fails, restore the element
+                    console.error('Task deletion failed, but element already removed:', error);
+                });
+            }
+        };
+
+        // Initialize all tasks with the .wh-swipeable-task class
+        const instances = frappe.workhub.SwipeableTask.initializeAll('.wh-swipeable-task', options);
+        this.instances.push(...instances);
+
+        if (instances.length > 0) {
+            console.log(`Initialized ${instances.length} swipeable task(s)`);
+        }
+    },
+
+    /**
+     * Observe DOM changes to initialize swipeable tasks dynamically
+     */
+    observeTaskChanges() {
+        // Use MutationObserver to detect when new tasks are added
+        const observer = new MutationObserver((mutations) => {
+            let hasNewTasks = false;
+
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    // Check if the added node is a task or contains tasks
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node.classList && node.classList.contains('wh-swipeable-task')) {
+                            hasNewTasks = true;
+                        } else if (node.querySelectorAll) {
+                            const tasks = node.querySelectorAll('.wh-swipeable-task');
+                            if (tasks.length > 0) {
+                                hasNewTasks = true;
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Re-initialize if new tasks were added
+            if (hasNewTasks) {
+                this.initializeAll();
+            }
+        });
+
+        // Start observing the document body for changes
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        this.observer = observer;
+    },
+
+    /**
+     * Destroy all swipeable task instances
+     */
+    destroy() {
+        if (frappe.workhub.SwipeableTask) {
+            frappe.workhub.SwipeableTask.destroyAll();
+        }
+
+        this.instances = [];
+
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
+    },
+
+    /**
+     * Refresh swipeable tasks (destroy and re-initialize)
+     */
+    refresh() {
+        this.destroy();
+        this.initializeAll();
+    }
+};
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 (function initWorkHub() {
@@ -1623,6 +1899,11 @@ frappe.workhub.shortcuts = {
         // Inicializar mobile gestures (swipe support)
         if (frappe.workhub && frappe.workhub.mobileGestures) {
             frappe.workhub.mobileGestures.init();
+        }
+
+        // Inicializar swipeable tasks (mobile task gestures)
+        if (frappe.workhub && frappe.workhub.swipeableTasks) {
+            frappe.workhub.swipeableTasks.init();
         }
 
         // Inicializar Command Palette (Cmd+K)
