@@ -885,3 +885,218 @@ def generate_report(report_id, filters=None, config=None):
 	}
 
 	return report
+
+
+# Section Management API
+
+@frappe.whitelist()
+def add_section(report_id, section_data):
+	"""Add a new section to a report"""
+	require_permission("WH Report Definition", "write")
+
+	if isinstance(section_data, str):
+		section_data = json.loads(section_data)
+
+	if not report_id:
+		frappe.throw(_("Report ID is required"))
+
+	if not section_data.get("section_type"):
+		frappe.throw(_("Section type is required"))
+
+	if not section_data.get("title"):
+		frappe.throw(_("Section title is required"))
+
+	# Validate section type
+	valid_section_types = ["Header", "KPI", "Chart", "Table", "Text"]
+	if section_data["section_type"] not in valid_section_types:
+		frappe.throw(_("Invalid section type. Must be one of: {0}").format(", ".join(valid_section_types)))
+
+	# Get the report document
+	report_doc = frappe.get_doc("WH Report Definition", report_id)
+
+	# Determine display order (append to end if not specified)
+	display_order = section_data.get("display_order")
+	if display_order is None:
+		# Get the max display order and add 1
+		max_order = max([s.display_order for s in report_doc.sections], default=-1)
+		display_order = max_order + 1
+
+	# Add the new section
+	new_section = report_doc.append("sections", {
+		"section_type": section_data["section_type"],
+		"title": section_data["title"],
+		"data_source": section_data.get("data_source", ""),
+		"config": section_data.get("config", "{}") if isinstance(section_data.get("config"), str) else json.dumps(section_data.get("config", {})),
+		"display_order": display_order,
+		"is_visible": section_data.get("is_visible", 1)
+	})
+
+	# Save the report
+	report_doc.save()
+
+	return {
+		"success": True,
+		"section": {
+			"name": new_section.name,
+			"section_type": new_section.section_type,
+			"title": new_section.title,
+			"data_source": new_section.data_source,
+			"config": new_section.config,
+			"display_order": new_section.display_order,
+			"is_visible": new_section.is_visible
+		}
+	}
+
+
+@frappe.whitelist()
+def update_section(report_id, section_name, section_data):
+	"""Update an existing section"""
+	require_permission("WH Report Definition", "write")
+
+	if isinstance(section_data, str):
+		section_data = json.loads(section_data)
+
+	if not report_id:
+		frappe.throw(_("Report ID is required"))
+
+	if not section_name:
+		frappe.throw(_("Section name is required"))
+
+	# Get the report document
+	report_doc = frappe.get_doc("WH Report Definition", report_id)
+
+	# Find the section to update
+	section_found = False
+	for section in report_doc.sections:
+		if section.name == section_name:
+			section_found = True
+
+			# Update allowed fields
+			if "section_type" in section_data:
+				valid_section_types = ["Header", "KPI", "Chart", "Table", "Text"]
+				if section_data["section_type"] not in valid_section_types:
+					frappe.throw(_("Invalid section type. Must be one of: {0}").format(", ".join(valid_section_types)))
+				section.section_type = section_data["section_type"]
+
+			if "title" in section_data:
+				section.title = section_data["title"]
+
+			if "data_source" in section_data:
+				section.data_source = section_data["data_source"]
+
+			if "config" in section_data:
+				config = section_data["config"]
+				if isinstance(config, str):
+					section.config = config
+				else:
+					section.config = json.dumps(config)
+
+			if "display_order" in section_data:
+				section.display_order = section_data["display_order"]
+
+			if "is_visible" in section_data:
+				section.is_visible = section_data["is_visible"]
+
+			break
+
+	if not section_found:
+		frappe.throw(_("Section {0} not found in report {1}").format(section_name, report_id))
+
+	# Save the report
+	report_doc.save()
+
+	return {"success": True, "message": _("Section updated successfully")}
+
+
+@frappe.whitelist()
+def delete_section(report_id, section_name):
+	"""Delete a section from a report"""
+	require_permission("WH Report Definition", "write")
+
+	if not report_id:
+		frappe.throw(_("Report ID is required"))
+
+	if not section_name:
+		frappe.throw(_("Section name is required"))
+
+	# Get the report document
+	report_doc = frappe.get_doc("WH Report Definition", report_id)
+
+	# Find and remove the section
+	section_found = False
+	sections_to_keep = []
+
+	for section in report_doc.sections:
+		if section.name == section_name:
+			section_found = True
+		else:
+			sections_to_keep.append(section)
+
+	if not section_found:
+		frappe.throw(_("Section {0} not found in report {1}").format(section_name, report_id))
+
+	# Replace sections with filtered list
+	report_doc.sections = []
+	for section in sections_to_keep:
+		report_doc.append("sections", {
+			"section_type": section.section_type,
+			"title": section.title,
+			"data_source": section.data_source,
+			"config": section.config,
+			"display_order": section.display_order,
+			"is_visible": section.is_visible
+		})
+
+	# Save the report
+	report_doc.save()
+
+	return {"success": True, "message": _("Section deleted successfully")}
+
+
+@frappe.whitelist()
+def reorder_sections(report_id, section_order):
+	"""Reorder sections in a report"""
+	require_permission("WH Report Definition", "write")
+
+	if isinstance(section_order, str):
+		section_order = json.loads(section_order)
+
+	if not report_id:
+		frappe.throw(_("Report ID is required"))
+
+	if not isinstance(section_order, list):
+		frappe.throw(_("Section order must be a list of section names"))
+
+	# Get the report document
+	report_doc = frappe.get_doc("WH Report Definition", report_id)
+
+	# Create a mapping of section name to section object
+	section_map = {section.name: section for section in report_doc.sections}
+
+	# Validate that all sections exist
+	for section_name in section_order:
+		if section_name not in section_map:
+			frappe.throw(_("Section {0} not found in report {1}").format(section_name, report_id))
+
+	# Check if all sections are accounted for
+	if len(section_order) != len(report_doc.sections):
+		frappe.throw(_("Section order must include all {0} sections").format(len(report_doc.sections)))
+
+	# Clear existing sections and re-add in new order
+	report_doc.sections = []
+
+	for index, section_name in enumerate(section_order):
+		section = section_map[section_name]
+		report_doc.append("sections", {
+			"section_type": section.section_type,
+			"title": section.title,
+			"data_source": section.data_source,
+			"config": section.config,
+			"display_order": index,
+			"is_visible": section.is_visible
+		})
+
+	# Save the report
+	report_doc.save()
+
+	return {"success": True, "message": _("Sections reordered successfully")}
