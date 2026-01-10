@@ -278,11 +278,90 @@ def get_blocker_analysis(department=None):
     """
     require_auth()
 
-    # TODO: Implement blocker analysis logic
+    # Build WHERE clause for department filter
+    where_clause = "WHERE status = 'BLOCKED'"
+    params = []
+
+    if department:
+        where_clause += " AND department = %s"
+        params.append(department)
+
+    # Get blocked areas by project
+    project_query = f"""
+        SELECT
+            project as name,
+            COUNT(*) as blocked_count,
+            'project' as type
+        FROM `tabWH Task`
+        {where_clause}
+        AND project IS NOT NULL AND project != ''
+        GROUP BY project
+        ORDER BY blocked_count DESC
+        LIMIT 10
+    """
+    blocked_by_project = frappe.db.sql(project_query, tuple(params) if params else (), as_dict=True)
+
+    # Get blocked areas by department
+    dept_query = f"""
+        SELECT
+            department as name,
+            COUNT(*) as blocked_count,
+            'department' as type
+        FROM `tabWH Task`
+        {where_clause}
+        AND department IS NOT NULL AND department != ''
+        GROUP BY department
+        ORDER BY blocked_count DESC
+    """
+    blocked_by_department = frappe.db.sql(dept_query, tuple(params) if params else (), as_dict=True)
+
+    # Combine blocked areas (projects + departments)
+    blocked_areas = blocked_by_project + blocked_by_department
+
+    # Calculate average blocked time
+    # Using modified field as approximation for when task became blocked
+    avg_query = f"""
+        SELECT
+            AVG(DATEDIFF(CURDATE(), DATE(modified))) as avg_days
+        FROM `tabWH Task`
+        {where_clause}
+    """
+    avg_result = frappe.db.sql(avg_query, tuple(params) if params else (), as_dict=True)
+    avg_blocked_time_days = round(avg_result[0].get('avg_days') or 0, 1)
+
+    # Get top blocked tasks
+    top_blocked_query = f"""
+        SELECT
+            name as task_id,
+            title,
+            blocked_reason,
+            DATEDIFF(CURDATE(), DATE(modified)) as blocked_days,
+            assigned_to,
+            project,
+            department
+        FROM `tabWH Task`
+        {where_clause}
+        ORDER BY blocked_days DESC, modified DESC
+        LIMIT 10
+    """
+    top_blocked_tasks = frappe.db.sql(top_blocked_query, tuple(params) if params else (), as_dict=True)
+
+    # Enrich with full name from User table
+    for task in top_blocked_tasks:
+        if task.get("assigned_to"):
+            full_name = frappe.db.get_value("User", task["assigned_to"], "full_name")
+            task["assigned_name"] = full_name or task["assigned_to"]
+        else:
+            task["assigned_name"] = "Unassigned"
+
+        # Ensure blocked_reason is not None
+        if not task.get("blocked_reason"):
+            task["blocked_reason"] = ""
+
     return {
-        "blocked_areas": [],
-        "avg_blocked_time_days": 0,
-        "top_blocked_tasks": []
+        "blocked_areas": blocked_areas,
+        "avg_blocked_time_days": avg_blocked_time_days,
+        "top_blocked_tasks": top_blocked_tasks
     }
 
 
