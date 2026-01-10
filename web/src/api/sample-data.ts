@@ -339,6 +339,7 @@ export const samplePlatformStats: PlatformStats[] = [
 
 // Tasks
 import type { Task, Project, ProjectTemplate, MyDayData, KanbanColumn, DashboardKPIs } from '../components/sections/tasks/types'
+import type { TeamWorkloadResponse, VelocityTrendsResponse, BlockerAnalysisResponse, OverdueTrendsResponse } from './services/manager-analytics'
 
 export const sampleTasks: Task[] = [
   { name: 'WHT-2025-001', title: 'Revisar propuesta comercial', status: 'DOING', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date().toISOString().split('T')[0], worked_today: true },
@@ -431,6 +432,250 @@ export const sampleTaskKPIs: DashboardKPIs = {
     trend: 'up',
     trend_delta: 10.5
   }
+}
+
+// Manager Analytics
+export const sampleTeamWorkload: TeamWorkloadResponse = {
+  workload: [
+    {
+      user: 'martin@example.com',
+      full_name: 'Martin Samperiz',
+      backlog: 5,
+      next: 3,
+      doing: 4,
+      blocked: 2,
+      done_recent: 12,
+      total: 14
+    },
+    {
+      user: 'carlos@example.com',
+      full_name: 'Carlos Lopez',
+      backlog: 3,
+      next: 4,
+      doing: 2,
+      blocked: 0,
+      done_recent: 15,
+      total: 9
+    },
+    {
+      user: 'ana@example.com',
+      full_name: 'Ana Garcia',
+      backlog: 4,
+      next: 2,
+      doing: 3,
+      blocked: 1,
+      done_recent: 10,
+      total: 10
+    },
+    {
+      user: 'maria@example.com',
+      full_name: 'Maria Lopez',
+      backlog: 2,
+      next: 1,
+      doing: 1,
+      blocked: 0,
+      done_recent: 8,
+      total: 4
+    },
+    {
+      user: 'juan@example.com',
+      full_name: 'Juan Perez',
+      backlog: 6,
+      next: 2,
+      doing: 2,
+      blocked: 1,
+      done_recent: 6,
+      total: 11
+    }
+  ]
+}
+
+export const sampleVelocityTrends: VelocityTrendsResponse = {
+  period: 'daily',
+  data: [
+    { date: new Date(Date.now() - 86400000 * 13).toISOString().split('T')[0], completed: 4, previous_period: 3 },
+    { date: new Date(Date.now() - 86400000 * 12).toISOString().split('T')[0], completed: 6, previous_period: 5 },
+    { date: new Date(Date.now() - 86400000 * 11).toISOString().split('T')[0], completed: 3, previous_period: 4 },
+    { date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0], completed: 5, previous_period: 2 },
+    { date: new Date(Date.now() - 86400000 * 9).toISOString().split('T')[0], completed: 7, previous_period: 6 },
+    { date: new Date(Date.now() - 86400000 * 8).toISOString().split('T')[0], completed: 4, previous_period: 5 },
+    { date: new Date(Date.now() - 86400000 * 7).toISOString().split('T')[0], completed: 8, previous_period: 7 },
+    { date: new Date(Date.now() - 86400000 * 6).toISOString().split('T')[0], completed: 5, previous_period: 3 },
+    { date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], completed: 6, previous_period: 6 },
+    { date: new Date(Date.now() - 86400000 * 4).toISOString().split('T')[0], completed: 9, previous_period: 4 },
+    { date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0], completed: 7, previous_period: 7 },
+    { date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0], completed: 5, previous_period: 6 },
+    { date: new Date(Date.now() - 86400000 * 1).toISOString().split('T')[0], completed: 8, previous_period: 5 },
+    { date: new Date().toISOString().split('T')[0], completed: 6, previous_period: 8 }
+  ],
+  trend: 'up',
+  avg_current: 6.2,
+  avg_previous: 5.1
+}
+
+export const sampleBlockerAnalysis: BlockerAnalysisResponse = {
+  blocked_areas: [
+    { name: 'WHP-2025-002', blocked_count: 3, type: 'project' },
+    { name: 'WHP-2025-001', blocked_count: 2, type: 'project' },
+    { name: 'SALES', blocked_count: 4, type: 'department' },
+    { name: 'MKT', blocked_count: 3, type: 'department' },
+    { name: 'OPS', blocked_count: 1, type: 'department' }
+  ],
+  avg_blocked_time_days: 5.3,
+  top_blocked_tasks: [
+    {
+      task_id: 'WHT-2025-004',
+      title: 'Llamar a cliente potencial',
+      blocked_reason: 'Esperando informacion del gerente',
+      blocked_days: 8,
+      assigned_to: 'martin@example.com',
+      assigned_name: 'Martin Samperiz',
+      project: 'WHP-2025-001',
+      department: 'SALES'
+    },
+    {
+      task_id: 'WHT-2025-P2-002',
+      title: 'Disenar packaging',
+      blocked_reason: 'Esperando aprobacion legal',
+      blocked_days: 6,
+      assigned_to: 'ana@example.com',
+      assigned_name: 'Ana Garcia',
+      project: 'WHP-2025-002',
+      department: 'MKT'
+    },
+    {
+      task_id: 'WHT-2025-015',
+      title: 'Aprobar contrato distribuidor',
+      blocked_reason: 'Pendiente revision legal',
+      blocked_days: 5,
+      assigned_to: 'maria@example.com',
+      assigned_name: 'Maria Lopez',
+      project: 'WHP-2025-001',
+      department: 'SALES'
+    },
+    {
+      task_id: 'WHT-2025-018',
+      title: 'Actualizar precios en catalogo',
+      blocked_reason: 'Esperando decision de finanzas',
+      blocked_days: 4,
+      assigned_to: 'ana@example.com',
+      assigned_name: 'Ana Garcia',
+      project: 'WHP-2025-002',
+      department: 'MKT'
+    },
+    {
+      task_id: 'WHT-2025-022',
+      title: 'Coordinar envio especial',
+      blocked_reason: 'Transportista no disponible',
+      blocked_days: 3,
+      assigned_to: 'carlos@example.com',
+      assigned_name: 'Carlos Lopez',
+      project: 'WHP-2025-003',
+      department: 'OPS'
+    }
+  ]
+}
+
+export const sampleOverdueTrends: OverdueTrendsResponse = {
+  weeks: [
+    {
+      week_start: new Date(Date.now() - 86400000 * 56).toISOString().split('T')[0],
+      week_end: new Date(Date.now() - 86400000 * 49).toISOString().split('T')[0],
+      total_tasks: 45,
+      overdue_tasks: 12,
+      overdue_ratio: 26.7,
+      by_department: {
+        SALES: { total: 18, overdue: 5, ratio: 27.8 },
+        OPS: { total: 15, overdue: 4, ratio: 26.7 },
+        MKT: { total: 12, overdue: 3, ratio: 25.0 }
+      }
+    },
+    {
+      week_start: new Date(Date.now() - 86400000 * 49).toISOString().split('T')[0],
+      week_end: new Date(Date.now() - 86400000 * 42).toISOString().split('T')[0],
+      total_tasks: 48,
+      overdue_tasks: 11,
+      overdue_ratio: 22.9,
+      by_department: {
+        SALES: { total: 20, overdue: 4, ratio: 20.0 },
+        OPS: { total: 16, overdue: 4, ratio: 25.0 },
+        MKT: { total: 12, overdue: 3, ratio: 25.0 }
+      }
+    },
+    {
+      week_start: new Date(Date.now() - 86400000 * 42).toISOString().split('T')[0],
+      week_end: new Date(Date.now() - 86400000 * 35).toISOString().split('T')[0],
+      total_tasks: 52,
+      overdue_tasks: 10,
+      overdue_ratio: 19.2,
+      by_department: {
+        SALES: { total: 22, overdue: 4, ratio: 18.2 },
+        OPS: { total: 18, overdue: 3, ratio: 16.7 },
+        MKT: { total: 12, overdue: 3, ratio: 25.0 }
+      }
+    },
+    {
+      week_start: new Date(Date.now() - 86400000 * 35).toISOString().split('T')[0],
+      week_end: new Date(Date.now() - 86400000 * 28).toISOString().split('T')[0],
+      total_tasks: 50,
+      overdue_tasks: 8,
+      overdue_ratio: 16.0,
+      by_department: {
+        SALES: { total: 20, overdue: 3, ratio: 15.0 },
+        OPS: { total: 18, overdue: 3, ratio: 16.7 },
+        MKT: { total: 12, overdue: 2, ratio: 16.7 }
+      }
+    },
+    {
+      week_start: new Date(Date.now() - 86400000 * 28).toISOString().split('T')[0],
+      week_end: new Date(Date.now() - 86400000 * 21).toISOString().split('T')[0],
+      total_tasks: 47,
+      overdue_tasks: 7,
+      overdue_ratio: 14.9,
+      by_department: {
+        SALES: { total: 19, overdue: 3, ratio: 15.8 },
+        OPS: { total: 16, overdue: 2, ratio: 12.5 },
+        MKT: { total: 12, overdue: 2, ratio: 16.7 }
+      }
+    },
+    {
+      week_start: new Date(Date.now() - 86400000 * 21).toISOString().split('T')[0],
+      week_end: new Date(Date.now() - 86400000 * 14).toISOString().split('T')[0],
+      total_tasks: 49,
+      overdue_tasks: 6,
+      overdue_ratio: 12.2,
+      by_department: {
+        SALES: { total: 20, overdue: 2, ratio: 10.0 },
+        OPS: { total: 17, overdue: 2, ratio: 11.8 },
+        MKT: { total: 12, overdue: 2, ratio: 16.7 }
+      }
+    },
+    {
+      week_start: new Date(Date.now() - 86400000 * 14).toISOString().split('T')[0],
+      week_end: new Date(Date.now() - 86400000 * 7).toISOString().split('T')[0],
+      total_tasks: 51,
+      overdue_tasks: 5,
+      overdue_ratio: 9.8,
+      by_department: {
+        SALES: { total: 21, overdue: 2, ratio: 9.5 },
+        OPS: { total: 18, overdue: 2, ratio: 11.1 },
+        MKT: { total: 12, overdue: 1, ratio: 8.3 }
+      }
+    },
+    {
+      week_start: new Date(Date.now() - 86400000 * 7).toISOString().split('T')[0],
+      week_end: new Date().toISOString().split('T')[0],
+      total_tasks: 48,
+      overdue_tasks: 4,
+      overdue_ratio: 8.3,
+      by_department: {
+        SALES: { total: 19, overdue: 1, ratio: 5.3 },
+        OPS: { total: 17, overdue: 2, ratio: 11.8 },
+        MKT: { total: 12, overdue: 1, ratio: 8.3 }
+      }
+    }
+  ],
+  trend: 'improving'
 }
 
 // Helper to check if in bypass mode
