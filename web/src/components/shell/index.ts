@@ -1,4 +1,6 @@
 export { AppShell } from './AppShell'
 export { MainNav } from './MainNav'
+export { NotificationCenter } from './NotificationCenter'
+export { NotificationItem } from './NotificationItem'
 export { UserMenu } from './UserMenu'
 export type { NavigationSection, NavigationItem, User } from './types'
