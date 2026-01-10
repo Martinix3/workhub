@@ -134,6 +134,7 @@ export function RecordReadingModal({
 }: RecordReadingModalProps) {
   const [value, setValue] = useState('')
   const [lotNumber, setLotNumber] = useState('')
+  const [correctiveAction, setCorrectiveAction] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // Parse critical limit once
@@ -153,17 +154,24 @@ export function RecordReadingModal({
     e.preventDefault()
     if (!value.trim()) return
 
+    // Validate corrective action is required for out-of-range readings
+    if (validationStatus === 'critical' && !correctiveAction.trim()) {
+      return
+    }
+
     setSubmitting(true)
     try {
       await onSubmit({
         ccpId: ccp.id,
         value: value.trim(),
-        lotNumber: lotNumber.trim() || undefined
+        lotNumber: lotNumber.trim() || undefined,
+        correctiveAction: correctiveAction.trim() || undefined
       })
 
       // Reset form
       setValue('')
       setLotNumber('')
+      setCorrectiveAction('')
       onClose()
     } catch (error) {
       // Error handling will be done by parent component
@@ -292,6 +300,52 @@ export function RecordReadingModal({
           />
         </div>
 
+        {/* Corrective Action (Required for out-of-range readings) */}
+        {validationStatus === 'critical' && (
+          <div className="bg-red-50 dark:bg-red-900/20 p-4 border-2 border-red-300 dark:border-red-700">
+            <label
+              htmlFor="corrective-action"
+              className="block text-sm font-medium text-red-900 dark:text-red-200 mb-2"
+            >
+              Acción Correctiva * <span className="text-xs">(Obligatoria)</span>
+            </label>
+
+            {/* Show predefined corrective action as reference */}
+            {ccp.correctiveAction && (
+              <div className="mb-3 p-3 bg-white dark:bg-stone-800 border border-red-200 dark:border-red-800">
+                <div className="text-xs uppercase tracking-wider text-red-600 dark:text-red-400 mb-1">
+                  Acción Correctiva Definida
+                </div>
+                <div className="text-sm text-stone-700 dark:text-stone-300 italic">
+                  {ccp.correctiveAction}
+                </div>
+              </div>
+            )}
+
+            <textarea
+              id="corrective-action"
+              value={correctiveAction}
+              onChange={(e) => setCorrectiveAction(e.target.value)}
+              placeholder="Describa la acción correctiva tomada..."
+              rows={4}
+              className="
+                w-full px-3 py-2
+                border-2 border-red-300 dark:border-red-700
+                focus:border-red-500 dark:focus:border-red-500
+                bg-white dark:bg-stone-900
+                text-stone-900 dark:text-stone-100
+                outline-none
+                resize-vertical
+              "
+              disabled={submitting}
+              required
+            />
+            <p className="mt-2 text-xs text-red-700 dark:text-red-400">
+              Este campo es obligatorio porque la lectura está fuera del límite crítico.
+            </p>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-3 pt-4 border-t border-stone-200 dark:border-stone-700">
           <button
@@ -311,7 +365,11 @@ export function RecordReadingModal({
           </button>
           <button
             type="submit"
-            disabled={submitting || !value.trim()}
+            disabled={
+              submitting ||
+              !value.trim() ||
+              (validationStatus === 'critical' && !correctiveAction.trim())
+            }
             className="
               flex-1 px-4 py-2
               bg-amber-400 hover:bg-amber-500
