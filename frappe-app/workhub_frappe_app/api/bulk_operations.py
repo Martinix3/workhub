@@ -4,6 +4,8 @@
 import frappe
 from frappe import _
 import json
+import uuid
+from datetime import datetime
 from typing import List, Dict, Any
 
 from workhub_frappe_app.api.utils import require_auth, require_permission
@@ -19,6 +21,59 @@ VALID_SOURCE_DOCTYPES = [
     "Purchase Order", "Purchase Receipt", "Purchase Invoice",
     "Work Order", "Stock Entry", "Batch", "Quality Inspection"
 ]
+
+# Undo mechanism constants
+UNDO_CACHE_TTL = 30  # 30 seconds as specified
+
+
+def _generate_undo_id() -> str:
+    """
+    Generate a unique undo ID for a bulk operation.
+
+    Returns:
+        Unique undo ID string
+    """
+    return f"undo_{uuid.uuid4().hex[:12]}"
+
+
+def _store_undo_data(undo_id: str, operation_type: str, task_ids: List[str], previous_values: Dict[str, Any]) -> None:
+    """
+    Store undo data in Frappe cache with 30-second TTL.
+
+    Args:
+        undo_id: Unique identifier for this undo operation
+        operation_type: Type of operation (e.g., "change_status", "assign", etc.)
+        task_ids: List of task IDs affected
+        previous_values: Dictionary mapping task_id to previous values
+    """
+    undo_data = {
+        "operation_type": operation_type,
+        "task_ids": task_ids,
+        "previous_values": previous_values,
+        "timestamp": datetime.now().isoformat(),
+        "user": frappe.session.user
+    }
+
+    cache_key = f"bulk_operation_undo_{undo_id}"
+    frappe.cache().set_value(cache_key, json.dumps(undo_data), expires_in_sec=UNDO_CACHE_TTL)
+
+
+def _get_undo_data(undo_id: str) -> Dict[str, Any]:
+    """
+    Retrieve undo data from Frappe cache.
+
+    Args:
+        undo_id: Unique identifier for the undo operation
+
+    Returns:
+        Dictionary with undo data or None if not found/expired
+    """
+    cache_key = f"bulk_operation_undo_{undo_id}"
+    cached_data = frappe.cache().get_value(cache_key)
+
+    if cached_data:
+        return json.loads(cached_data)
+    return None
 
 
 def _process_bulk_operation(task_ids: List[str], operation_func, operation_name: str) -> Dict[str, Any]:
@@ -90,7 +145,7 @@ def bulk_change_status(task_ids, new_status):
         new_status: New status value (BACKLOG, NEXT, DOING, BLOCKED, DONE)
 
     Returns:
-        Dict with total, success_count, failure_count, and detailed results
+        Dict with total, success_count, failure_count, detailed results, and undo_id
     """
     require_permission("WH Task", "write")
 
@@ -106,6 +161,14 @@ def bulk_change_status(task_ids, new_status):
         frappe.throw(_("Invalid status: {0}. Valid values: {1}").format(
             new_status, ", ".join(VALID_STATUSES)
         ))
+
+    # Collect previous values for undo
+    previous_values = {}
+    for task_id in task_ids:
+        if frappe.db.exists("WH Task", task_id):
+            previous_values[task_id] = {
+                "status": frappe.db.get_value("WH Task", task_id, "status")
+            }
 
     def change_status_operation(task_id):
         """Change status for a single task"""
@@ -128,7 +191,19 @@ def bulk_change_status(task_ids, new_status):
         "bulk_change_status"
     )
 
+    # Generate undo_id and store undo data
+    undo_id = _generate_undo_id()
+    _store_undo_data(
+        undo_id=undo_id,
+        operation_type="change_status",
+        task_ids=task_ids,
+        previous_values=previous_values
+    )
+
     frappe.db.commit()
+
+    # Add undo_id to result
+    result["undo_id"] = undo_id
     return result
 
 
@@ -142,7 +217,7 @@ def bulk_assign(task_ids, assigned_to):
         assigned_to: User email to assign tasks to
 
     Returns:
-        Dict with total, success_count, failure_count, and detailed results
+        Dict with total, success_count, failure_count, detailed results, and undo_id
     """
     require_permission("WH Task", "write")
 
@@ -159,6 +234,14 @@ def bulk_assign(task_ids, assigned_to):
     # Validate user exists
     if not frappe.db.exists("User", assigned_to):
         frappe.throw(_("User not found: {0}").format(assigned_to))
+
+    # Collect previous values for undo
+    previous_values = {}
+    for task_id in task_ids:
+        if frappe.db.exists("WH Task", task_id):
+            previous_values[task_id] = {
+                "assigned_to": frappe.db.get_value("WH Task", task_id, "assigned_to")
+            }
 
     def assign_operation(task_id):
         """Assign a single task"""
@@ -181,7 +264,19 @@ def bulk_assign(task_ids, assigned_to):
         "bulk_assign"
     )
 
+    # Generate undo_id and store undo data
+    undo_id = _generate_undo_id()
+    _store_undo_data(
+        undo_id=undo_id,
+        operation_type="assign",
+        task_ids=task_ids,
+        previous_values=previous_values
+    )
+
     frappe.db.commit()
+
+    # Add undo_id to result
+    result["undo_id"] = undo_id
     return result
 
 
@@ -195,7 +290,7 @@ def bulk_change_priority(task_ids, new_priority):
         new_priority: New priority value (P0, P1, P2)
 
     Returns:
-        Dict with total, success_count, failure_count, and detailed results
+        Dict with total, success_count, failure_count, detailed results, and undo_id
     """
     require_permission("WH Task", "write")
 
@@ -211,6 +306,14 @@ def bulk_change_priority(task_ids, new_priority):
         frappe.throw(_("Invalid priority: {0}. Valid values: {1}").format(
             new_priority, ", ".join(VALID_PRIORITIES)
         ))
+
+    # Collect previous values for undo
+    previous_values = {}
+    for task_id in task_ids:
+        if frappe.db.exists("WH Task", task_id):
+            previous_values[task_id] = {
+                "priority": frappe.db.get_value("WH Task", task_id, "priority")
+            }
 
     def change_priority_operation(task_id):
         """Change priority for a single task"""
@@ -233,7 +336,19 @@ def bulk_change_priority(task_ids, new_priority):
         "bulk_change_priority"
     )
 
+    # Generate undo_id and store undo data
+    undo_id = _generate_undo_id()
+    _store_undo_data(
+        undo_id=undo_id,
+        operation_type="change_priority",
+        task_ids=task_ids,
+        previous_values=previous_values
+    )
+
     frappe.db.commit()
+
+    # Add undo_id to result
+    result["undo_id"] = undo_id
     return result
 
 
@@ -247,7 +362,7 @@ def bulk_move_project(task_ids, project_id):
         project_id: Project ID to move tasks to (or None/empty to clear project)
 
     Returns:
-        Dict with total, success_count, failure_count, and detailed results
+        Dict with total, success_count, failure_count, detailed results, and undo_id
     """
     require_permission("WH Task", "write")
 
@@ -261,6 +376,17 @@ def bulk_move_project(task_ids, project_id):
     # Validate project exists if provided
     if project_id and not frappe.db.exists("WH Project", project_id):
         frappe.throw(_("Project not found: {0}").format(project_id))
+
+    # Collect previous values for undo
+    previous_values = {}
+    for task_id in task_ids:
+        if frappe.db.exists("WH Task", task_id):
+            task_data = frappe.db.get_value("WH Task", task_id,
+                ["project", "is_inbox"], as_dict=True)
+            previous_values[task_id] = {
+                "project": task_data.project,
+                "is_inbox": task_data.is_inbox
+            }
 
     def move_project_operation(task_id):
         """Move a single task to project"""
@@ -300,7 +426,19 @@ def bulk_move_project(task_ids, project_id):
         "bulk_move_project"
     )
 
+    # Generate undo_id and store undo data
+    undo_id = _generate_undo_id()
+    _store_undo_data(
+        undo_id=undo_id,
+        operation_type="move_project",
+        task_ids=task_ids,
+        previous_values=previous_values
+    )
+
     frappe.db.commit()
+
+    # Add undo_id to result
+    result["undo_id"] = undo_id
     return result
 
 
@@ -315,7 +453,7 @@ def bulk_create_worklinks(task_ids, source_doctype, source_id):
         source_id: ERP document ID
 
     Returns:
-        Dict with total, success_count, failure_count, and detailed results
+        Dict with total, success_count, failure_count, detailed results, and undo_id
     """
     require_permission("WH Task", "write")
     require_permission("WorkLink", "create")
@@ -339,6 +477,18 @@ def bulk_create_worklinks(task_ids, source_doctype, source_id):
     # Validate ERP document exists
     if not frappe.db.exists(source_doctype, source_id):
         frappe.throw(_("{0} not found: {1}").format(source_doctype, source_id))
+
+    # Collect previous values for undo
+    previous_values = {}
+    for task_id in task_ids:
+        if frappe.db.exists("WH Task", task_id):
+            task_data = frappe.db.get_value("WH Task", task_id,
+                ["worklink", "source_doctype", "source_name"], as_dict=True)
+            previous_values[task_id] = {
+                "worklink": task_data.worklink,
+                "source_doctype": task_data.source_doctype,
+                "source_name": task_data.source_name
+            }
 
     def create_worklink_operation(task_id):
         """Create WorkLink for a single task"""
@@ -403,7 +553,19 @@ def bulk_create_worklinks(task_ids, source_doctype, source_id):
         "bulk_create_worklinks"
     )
 
+    # Generate undo_id and store undo data
+    undo_id = _generate_undo_id()
+    _store_undo_data(
+        undo_id=undo_id,
+        operation_type="create_worklinks",
+        task_ids=task_ids,
+        previous_values=previous_values
+    )
+
     frappe.db.commit()
+
+    # Add undo_id to result
+    result["undo_id"] = undo_id
     return result
 
 
@@ -416,7 +578,7 @@ def bulk_remove_worklinks(task_ids):
         task_ids: JSON array or list of task IDs
 
     Returns:
-        Dict with total, success_count, failure_count, and detailed results
+        Dict with total, success_count, failure_count, detailed results, and undo_id
     """
     require_permission("WH Task", "write")
     require_permission("WorkLink", "write")
@@ -427,6 +589,18 @@ def bulk_remove_worklinks(task_ids):
 
     if not isinstance(task_ids, list) or len(task_ids) == 0:
         frappe.throw(_("task_ids must be a non-empty array"))
+
+    # Collect previous values for undo
+    previous_values = {}
+    for task_id in task_ids:
+        if frappe.db.exists("WH Task", task_id):
+            task_data = frappe.db.get_value("WH Task", task_id,
+                ["worklink", "source_doctype", "source_name"], as_dict=True)
+            previous_values[task_id] = {
+                "worklink": task_data.worklink,
+                "source_doctype": task_data.source_doctype,
+                "source_name": task_data.source_name
+            }
 
     def remove_worklink_operation(task_id):
         """Remove WorkLink from a single task"""
@@ -469,5 +643,17 @@ def bulk_remove_worklinks(task_ids):
         "bulk_remove_worklinks"
     )
 
+    # Generate undo_id and store undo data
+    undo_id = _generate_undo_id()
+    _store_undo_data(
+        undo_id=undo_id,
+        operation_type="remove_worklinks",
+        task_ids=task_ids,
+        previous_values=previous_values
+    )
+
     frappe.db.commit()
+
+    # Add undo_id to result
+    result["undo_id"] = undo_id
     return result
