@@ -332,6 +332,58 @@ def get_department_summary(department):
     }
 
 
+@frappe.whitelist()
+def get_blocked_tasks(limit=50, offset=0):
+    """Get all blocked tasks with full details and pagination"""
+    require_auth()
+
+    # Get total count for pagination metadata
+    total_count = frappe.db.count("WH Task", {"status": "BLOCKED"})
+
+    # Fetch blocked tasks with pagination
+    blocked_tasks = frappe.get_list("WH Task",
+        filters={"status": "BLOCKED"},
+        fields=[
+            "name", "title", "description", "priority",
+            "project", "department", "assigned_to",
+            "due_date", "blocked_reason", "is_milestone",
+            "creation", "modified"
+        ],
+        limit_page_length=int(limit),
+        limit_start=int(offset),
+        order_by="due_date asc",
+        ignore_permissions=True
+    )
+
+    # Enrich with additional information
+    for task in blocked_tasks:
+        # Add assignee name
+        if task.get("assigned_to"):
+            task["assigned_name"] = frappe.db.get_value("User", task["assigned_to"], "full_name")
+
+        # Add project info
+        if task.get("project"):
+            project_data = frappe.db.get_value("WH Project", task["project"],
+                ["title", "health"], as_dict=True)
+            if project_data:
+                task["project_title"] = project_data.title
+                task["project_health"] = project_data.health
+
+        # Calculate overdue status
+        if task.get("due_date"):
+            task["is_overdue"] = getdate(task["due_date"]) < getdate(nowdate())
+        else:
+            task["is_overdue"] = False
+
+    return {
+        "tasks": blocked_tasks,
+        "total": total_count,
+        "limit": int(limit),
+        "offset": int(offset),
+        "has_more": (int(offset) + int(limit)) < total_count
+    }
+
+
 def _create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM"):
     """Helper para crear notificaciones"""
     doc = frappe.new_doc("WH Notification")
