@@ -313,6 +313,25 @@ def create_notification(user, notification_type, title, message, reference_docty
     doc.action_url = action_url
     doc.created_at = now_datetime()
     doc.insert(ignore_permissions=True)
+
+    # Publicar evento en tiempo real para el usuario
+    frappe.publish_realtime(
+        event="wh_notification",
+        message={
+            "name": doc.name,
+            "type": notification_type,
+            "title": title,
+            "message": message,
+            "priority": priority,
+            "reference_doctype": reference_doctype,
+            "reference_name": reference_name,
+            "action_url": action_url,
+            "created_at": doc.created_at,
+            "read": 0
+        },
+        user=user
+    )
+
     return doc.name
 
 
