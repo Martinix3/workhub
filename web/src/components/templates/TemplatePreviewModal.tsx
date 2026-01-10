@@ -1,45 +1,22 @@
 import { Modal } from '../ui/Modal'
 import { Calendar, ListChecks, Milestone, ArrowRight, Network } from 'lucide-react'
-import type { Department } from '../sections/tasks/types'
+import type {
+  Department,
+  TemplateTask,
+  TemplateMilestone,
+  TemplateDependency,
+  TemplatePreview
+} from '../sections/tasks/types'
 
-export interface TemplateTask {
-  sequence: number
-  title: string
-  description?: string
-  offset_days: number
-  duration_days: number
-  default_assignee_role?: string
-  is_milestone: boolean
-  depends_on_sequence?: number | null
+// Re-export types for convenience
+export type {
+  TemplateTask,
+  TemplateMilestone,
+  TemplateDependency
 }
 
-export interface TemplateMilestone {
-  sequence: number
-  title: string
-  offset_days: number
-  duration_days: number
-}
-
-export interface TemplateDependency {
-  from_sequence: number
-  to_sequence: number
-  from_title: string
-  to_title: string
-}
-
-export interface TemplatePreviewData {
-  template: {
-    name: string
-    description?: string
-    department: Department | 'PRODUCTION'
-    estimated_duration_days: number
-    task_count: number
-    milestone_count: number
-  }
-  tasks: TemplateTask[]
-  milestones: TemplateMilestone[]
-  dependencies: TemplateDependency[]
-}
+// Alias for backward compatibility
+export type TemplatePreviewData = TemplatePreview
 
 interface TemplatePreviewModalProps {
   isOpen: boolean
@@ -49,7 +26,7 @@ interface TemplatePreviewModalProps {
   loading?: boolean
 }
 
-const departmentConfig: Record<Department | 'PRODUCTION', { bg: string; text: string; label: string }> = {
+const departmentConfig: Record<Department, { bg: string; text: string; label: string }> = {
   SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Ventas' },
   OPS: { bg: 'bg-violet-100', text: 'text-violet-700', label: 'Operaciones' },
   MKT: { bg: 'bg-pink-100', text: 'text-pink-700', label: 'Marketing' },

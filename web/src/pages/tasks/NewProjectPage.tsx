@@ -284,7 +284,7 @@ export function NewProjectPage() {
     name: t.name,
     title: t.name,
     description: t.description,
-    department: t.department as Department | 'PRODUCTION',
+    department: t.department,
     task_count: t.task_count || 0,
     estimated_duration_days: t.estimated_duration_days || 0,
   })) || []

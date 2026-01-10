@@ -61,12 +61,55 @@ export interface Project {
 
 export interface ProjectTemplate {
   name: string
-  title: string
+  title?: string // Optional since API uses 'name' as title
   description?: string
   department: Department
-  default_duration_days: number
+  estimated_duration_days: number // Renamed from default_duration_days for API consistency
   task_count: number
-  is_active: boolean
+  milestone_count?: number
+  is_active?: boolean
+}
+
+// Template Task Structure (used in template preview and editor)
+export interface TemplateTask {
+  sequence: number
+  title: string
+  description?: string
+  offset_days: number
+  duration_days: number
+  default_assignee_role?: string
+  is_milestone: boolean
+  depends_on_sequence?: number | null
+}
+
+// Template Milestone (subset of TemplateTask)
+export interface TemplateMilestone {
+  sequence: number
+  title: string
+  offset_days: number
+  duration_days: number
+}
+
+// Template Dependency Relationship
+export interface TemplateDependency {
+  from_sequence: number
+  to_sequence: number
+  from_title: string
+  to_title: string
+}
+
+// Complete Template Preview Structure
+export interface TemplatePreview {
+  template: ProjectTemplate & {
+    name: string
+    department: Department
+    estimated_duration_days: number
+    task_count: number
+    milestone_count: number
+  }
+  tasks: TemplateTask[]
+  milestones: TemplateMilestone[]
+  dependencies: TemplateDependency[]
 }
 
 export interface TaskDependency {

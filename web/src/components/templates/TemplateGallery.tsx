@@ -4,7 +4,7 @@ import { TemplateCard, TemplateCardData } from './TemplateCard'
 import type { Department } from '../sections/tasks/types'
 
 type ViewMode = 'grid' | 'list'
-type DepartmentFilter = Department | 'PRODUCTION' | 'ALL'
+type DepartmentFilter = Department | 'ALL'
 
 export interface TemplateGalleryProps {
   templates: TemplateCardData[]

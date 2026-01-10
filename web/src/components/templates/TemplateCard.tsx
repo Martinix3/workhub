@@ -5,7 +5,7 @@ export interface TemplateCardData {
   name: string
   title: string
   description?: string
-  department: Department | 'PRODUCTION'
+  department: Department
   task_count: number
   estimated_duration_days: number
 }
@@ -15,7 +15,7 @@ interface TemplateCardProps {
   onClick?: () => void
 }
 
-const departmentConfig: Record<Department | 'PRODUCTION', { bg: string; text: string; label: string }> = {
+const departmentConfig: Record<Department, { bg: string; text: string; label: string }> = {
   SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Ventas' },
   OPS: { bg: 'bg-violet-100', text: 'text-violet-700', label: 'Operaciones' },
   MKT: { bg: 'bg-pink-100', text: 'text-pink-700', label: 'Marketing' },

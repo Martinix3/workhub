@@ -18,7 +18,7 @@ export interface TemplateTaskData {
 export interface TemplateEditorData {
   template_name: string
   description?: string
-  department: Department | 'PRODUCTION'
+  department: Department
   default_duration_days: number
   tasks: TemplateTaskData[]
 }
@@ -31,7 +31,7 @@ export interface TemplateEditorProps {
   saveLabel?: string
 }
 
-const departmentConfig: Record<Department | 'PRODUCTION', { bg: string; text: string; label: string }> = {
+const departmentConfig: Record<Department, { bg: string; text: string; label: string }> = {
   SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Ventas' },
   OPS: { bg: 'bg-violet-100', text: 'text-violet-700', label: 'Operaciones' },
   MKT: { bg: 'bg-pink-100', text: 'text-pink-700', label: 'Marketing' },
@@ -238,7 +238,7 @@ export function TemplateEditor({
               Departamento *
             </label>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {(Object.keys(departmentConfig) as (Department | 'PRODUCTION')[]).map(dept => (
+              {(Object.keys(departmentConfig) as Department[]).map(dept => (
                 <button
                   key={dept}
                   type="button"

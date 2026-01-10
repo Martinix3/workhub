@@ -1,59 +1,35 @@
 // Templates API Service
 import { frappe } from '../frappe-client'
-import type { Project } from '../../components/sections/tasks/types'
+import type {
+  Department,
+  ProjectTemplate,
+  TemplateTask,
+  TemplateMilestone,
+  TemplateDependency,
+  TemplatePreview
+} from '../../components/sections/tasks/types'
 
-// Template types matching the API response structure
+// Re-export centralized types for convenience
+export type {
+  TemplateTask,
+  TemplateMilestone,
+  TemplateDependency,
+  TemplatePreview
+}
+
+// Template List Item (matches API response for get_templates)
 export interface TemplateListItem {
   name: string
   description?: string
-  department: 'SALES' | 'OPS' | 'MKT' | 'PRODUCTION'
+  department: Department
   task_count: number
   estimated_duration_days: number
-}
-
-export interface TemplateTask {
-  sequence: number
-  title: string
-  description?: string
-  offset_days: number
-  duration_days: number
-  default_assignee_role?: string
-  is_milestone: boolean
-  depends_on_sequence?: number | null
-}
-
-export interface TemplateMilestone {
-  sequence: number
-  title: string
-  offset_days: number
-  duration_days: number
-}
-
-export interface TemplateDependency {
-  from_sequence: number
-  to_sequence: number
-  from_title: string
-  to_title: string
-}
-
-export interface TemplatePreview {
-  template: {
-    name: string
-    description?: string
-    department: 'SALES' | 'OPS' | 'MKT' | 'PRODUCTION'
-    estimated_duration_days: number
-    task_count: number
-    milestone_count: number
-  }
-  tasks: TemplateTask[]
-  milestones: TemplateMilestone[]
-  dependencies: TemplateDependency[]
 }
 
 export interface CreateTemplateData {
   template_name: string
   description?: string
-  department: 'SALES' | 'OPS' | 'MKT' | 'PRODUCTION'
+  department: Department
   default_duration_days?: number
   is_active?: number
   tasks?: Array<{
@@ -70,7 +46,7 @@ export interface CreateTemplateData {
 
 export interface UpdateTemplateData {
   description?: string
-  department?: 'SALES' | 'OPS' | 'MKT' | 'PRODUCTION'
+  department?: Department
   default_duration_days?: number
   is_active?: number
   tasks?: Array<{
@@ -88,7 +64,7 @@ export interface UpdateTemplateData {
 export interface CreateFromTemplateData {
   title?: string
   description?: string
-  department?: 'SALES' | 'OPS' | 'MKT' | 'PRODUCTION'
+  department?: Department
   owner_user?: string
   start_date?: string
   assigned_to?: string
@@ -97,7 +73,7 @@ export interface CreateFromTemplateData {
 export interface SaveProjectAsTemplateData {
   template_name: string
   description?: string
-  department?: 'SALES' | 'OPS' | 'MKT' | 'PRODUCTION'
+  department?: Department
   default_duration_days?: number
 }
 
