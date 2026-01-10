@@ -54,17 +54,26 @@ def extract_keywords(text: str) -> Dict[str, List[str]]:
         text: Combined task title and description
 
     Returns:
-        dict with extracted keywords by category
+        dict with extracted keywords by category:
+        - document_numbers: List of detected document IDs (SO-xxx, PO-xxx, etc.)
+        - customer_names: List of potential customer names
+        - product_codes: List of potential product/item codes
+        - batch_codes: List of batch/lot codes
+        - general_keywords: List of relevant keywords for fuzzy matching
     """
     if not text or not text.strip():
         return {
             "document_numbers": [],
             "customer_names": [],
+            "product_codes": [],
+            "batch_codes": [],
             "general_keywords": []
         }
 
     text = text.strip()
     document_numbers = []
+    batch_codes = []
+    product_codes = []
 
     # Extract document number patterns
     for doctype, patterns in DOC_PATTERNS.items():
@@ -73,30 +82,156 @@ def extract_keywords(text: str) -> Dict[str, List[str]]:
             for match in matches:
                 # Normalize the match (remove spaces, uppercase)
                 normalized = re.sub(r'[-\s]+', '-', match.strip().upper())
-                document_numbers.append({
-                    "value": normalized,
+
+                # Separate batch codes from regular document numbers
+                if doctype == "Batch":
+                    batch_codes.append({
+                        "value": normalized,
+                        "original": match,
+                        "doctype": doctype
+                    })
+                else:
+                    document_numbers.append({
+                        "value": normalized,
+                        "original": match,
+                        "doctype": doctype
+                    })
+
+    # Extract additional batch/lot codes (standalone codes without prefix)
+    # Matches: ABC123, LOT-2024-001, L12345, etc.
+    standalone_batch_patterns = [
+        r'\b[A-Z]{2,4}\d{3,6}\b',  # ABC123, ABCD1234
+        r'\bL\d{4,6}\b',  # L12345
+        r'\b\d{6,8}\b(?!\d)',  # 6-8 digit codes (common for batch numbers)
+    ]
+    for pattern in standalone_batch_patterns:
+        matches = re.findall(pattern, text)
+        for match in matches:
+            # Avoid duplicates
+            if not any(bc["value"] == match for bc in batch_codes):
+                batch_codes.append({
+                    "value": match,
                     "original": match,
-                    "doctype": doctype
+                    "doctype": "Batch"
                 })
 
-    # Extract potential customer names (capitalized words, 2+ words together)
-    customer_pattern = r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b'
-    customer_matches = re.findall(customer_pattern, text)
-    customer_names = [m.strip() for m in customer_matches if len(m) > 3]
+    # Extract product/item codes
+    # Matches: ITEM-123, SKU-456, PRD-789, PROD123, etc.
+    product_patterns = [
+        r'\b(?:ITEM|SKU|PRD|PROD|PRODUCTO)[-\s]?[A-Z0-9]{2,10}\b',
+        r'\b[A-Z]{3,5}-\d{2,5}\b',  # Generic product codes like ABC-123
+    ]
+    for pattern in product_patterns:
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        for match in matches:
+            normalized = re.sub(r'[-\s]+', '-', match.strip().upper())
+            # Avoid duplicates with document numbers
+            if not any(dn["value"] == normalized for dn in document_numbers):
+                product_codes.append(normalized)
+
+    # Extract potential customer names with multiple patterns
+    customer_names = _extract_customer_names(text)
 
     # Extract general keywords (words longer than 3 chars, excluding common words)
-    stop_words = {
-        'para', 'con', 'por', 'the', 'and', 'for', 'with', 'from', 'que', 'del', 'las', 'los',
-        'una', 'uno', 'this', 'that', 'estos', 'estas', 'task', 'tarea'
-    }
-    words = re.findall(r'\b\w{4,}\b', text.lower())
-    general_keywords = [w for w in words if w not in stop_words]
+    general_keywords = _extract_general_keywords(text)
 
     return {
         "document_numbers": document_numbers,
         "customer_names": customer_names,
-        "general_keywords": list(set(general_keywords))[:10]  # Limit to 10 unique keywords
+        "product_codes": list(set(product_codes)),
+        "batch_codes": batch_codes,
+        "general_keywords": general_keywords
     }
+
+
+def _extract_customer_names(text: str) -> List[str]:
+    """
+    Extract potential customer names from text using multiple patterns.
+    Handles both Spanish and English company name formats.
+
+    Args:
+        text: Text to extract customer names from
+
+    Returns:
+        List of potential customer names
+    """
+    customer_names = []
+
+    # Pattern 1: Title Case names (Juan Pérez, Acme Corporation)
+    title_case_pattern = r'\b([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)+)\b'
+    title_matches = re.findall(title_case_pattern, text)
+    customer_names.extend([m.strip() for m in title_matches if len(m) > 3])
+
+    # Pattern 2: ALL CAPS names (ACME CORP, DISTRIBUIDORA XYZ)
+    # Look for 2-5 consecutive capitalized words
+    caps_pattern = r'\b([A-ZÁÉÍÓÚÑ]{2,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,}){1,4})\b'
+    caps_matches = re.findall(caps_pattern, text)
+    for match in caps_matches:
+        # Filter out common acronyms and ensure reasonable length
+        words = match.split()
+        if len(match) >= 6 and not all(len(w) <= 3 for w in words):
+            customer_names.append(match)
+
+    # Pattern 3: Mixed case with common company suffixes
+    # Matches: Distribuidora ABC, Comercial XYZ, ABC S.A., XYZ Ltda.
+    company_pattern = r'\b(?:Distribuidora|Comercial|Importadora|Exportadora|Empresa|Grupo)\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ]\.?[A-Z]\.?)?'
+    company_matches = re.findall(company_pattern, text, re.IGNORECASE)
+    customer_names.extend([m.strip() for m in company_matches])
+
+    # Pattern 4: Names with legal suffixes (S.A., Ltda., Inc., LLC, Corp.)
+    legal_pattern = r'\b([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*\s+(?:S\.A\.|Ltda\.|Inc\.|LLC|Corp\.|S\.L\.|S\.R\.L\.))'
+    legal_matches = re.findall(legal_pattern, text, re.IGNORECASE)
+    customer_names.extend([m.strip() for m in legal_matches])
+
+    # Remove duplicates and filter short matches
+    unique_names = []
+    seen = set()
+    for name in customer_names:
+        name_lower = name.lower()
+        if name_lower not in seen and len(name) > 3:
+            seen.add(name_lower)
+            unique_names.append(name)
+
+    return unique_names[:5]  # Limit to top 5 customer names
+
+
+def _extract_general_keywords(text: str) -> List[str]:
+    """
+    Extract general keywords for fuzzy matching, excluding stop words.
+
+    Args:
+        text: Text to extract keywords from
+
+    Returns:
+        List of relevant keywords
+    """
+    # Extended stop words list (Spanish and English)
+    stop_words = {
+        # Spanish
+        'para', 'con', 'por', 'que', 'del', 'las', 'los', 'una', 'uno', 'esta', 'este',
+        'estos', 'estas', 'tarea', 'hacer', 'sobre', 'desde', 'hasta', 'entre', 'sin',
+        'pero', 'como', 'cuando', 'donde', 'cual', 'cada', 'todo', 'toda', 'todos',
+        # English
+        'the', 'and', 'for', 'with', 'from', 'this', 'that', 'task', 'about', 'have',
+        'been', 'have', 'has', 'had', 'will', 'would', 'should', 'could', 'make',
+        'need', 'work', 'want', 'very', 'just', 'also', 'more', 'some', 'than'
+    }
+
+    # Extract words longer than 3 chars
+    words = re.findall(r'\b\w{4,}\b', text.lower())
+
+    # Filter stop words and common task-related words
+    filtered_keywords = [w for w in words if w not in stop_words]
+
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_keywords = []
+    for word in filtered_keywords:
+        if word not in seen:
+            seen.add(word)
+            unique_keywords.append(word)
+
+    return unique_keywords[:10]  # Limit to 10 unique keywords
 
 
 def match_documents(
@@ -130,14 +265,26 @@ def match_documents(
             match["match_type"] = "document_number"
             all_suggestions.append(match)
 
-    # 2. Try to match customer names in customer-related documents
+    # 2. Try to match batch/lot codes
+    if keywords["batch_codes"]:
+        for batch_ref in keywords["batch_codes"]:
+            batch_matches = _match_by_batch_code(batch_ref["value"])
+            all_suggestions.extend(batch_matches)
+
+    # 3. Try to match product codes
+    if keywords["product_codes"]:
+        for product_code in keywords["product_codes"]:
+            product_matches = _match_by_product_code(product_code, threshold)
+            all_suggestions.extend(product_matches)
+
+    # 4. Try to match customer names in customer-related documents
     if keywords["customer_names"]:
         for customer_name in keywords["customer_names"]:
             customer_matches = _match_by_customer_name(customer_name, threshold)
             all_suggestions.extend(customer_matches)
 
-    # 3. Fuzzy match against document names/IDs using general keywords
-    if keywords["general_keywords"] and not all_suggestions:
+    # 5. Fuzzy match against document names/IDs using general keywords
+    if keywords["general_keywords"] and len(all_suggestions) < limit:
         keyword_matches = _match_by_keywords(keywords["general_keywords"], threshold)
         all_suggestions.extend(keyword_matches)
 
@@ -335,6 +482,158 @@ def _match_by_keywords(keywords: List[str], threshold: float) -> List[Dict]:
             continue
 
     return suggestions
+
+
+def _match_by_batch_code(batch_code: str) -> List[Dict]:
+    """
+    Match batch/lot code against Batch DocType.
+
+    Args:
+        batch_code: Batch or lot code
+
+    Returns:
+        List of matched batch documents
+    """
+    try:
+        # Try exact match first
+        exact_match = frappe.db.get_value(
+            "Batch",
+            {"name": ["like", f"%{batch_code}%"]},
+            ["name", "item"],
+            as_dict=True
+        )
+
+        if exact_match:
+            return [{
+                "doctype": "Batch",
+                "doc_id": exact_match.name,
+                "doc_name": exact_match.name,
+                "docstatus": None,
+                "confidence": 0.90,
+                "match_type": "batch_code",
+                "item": exact_match.item
+            }]
+
+        # Try fuzzy match
+        batches = frappe.get_all(
+            "Batch",
+            fields=["name", "item"],
+            limit=100,
+            order_by="modified desc"
+        )
+
+        matches = []
+        for batch in batches:
+            score = _similarity(batch_code.lower(), batch.name.lower())
+            if score >= 0.7:
+                matches.append({
+                    "doctype": "Batch",
+                    "doc_id": batch.name,
+                    "doc_name": batch.name,
+                    "docstatus": None,
+                    "confidence": score * 0.85,  # High confidence for batch codes
+                    "match_type": "batch_code_fuzzy",
+                    "item": batch.item
+                })
+
+        return matches
+
+    except Exception as e:
+        frappe.log_error(f"Error matching batch code {batch_code}: {str(e)}")
+        return []
+
+
+def _match_by_product_code(product_code: str, threshold: float) -> List[Dict]:
+    """
+    Match product code against Item DocType and find related documents.
+
+    Args:
+        product_code: Product or item code
+        threshold: Minimum similarity score
+
+    Returns:
+        List of matched documents related to the product
+    """
+    try:
+        # First, try to match against Item
+        items = frappe.get_all(
+            "Item",
+            fields=["name", "item_code", "item_name"],
+            limit=100,
+            order_by="modified desc"
+        )
+
+        matched_items = []
+        for item in items:
+            # Check against both item code and name
+            code_score = _similarity(product_code.lower(), (item.item_code or "").lower())
+            name_score = _similarity(product_code.lower(), item.name.lower())
+            best_score = max(code_score, name_score)
+
+            if best_score >= threshold:
+                matched_items.append((item.name, best_score))
+
+        if not matched_items:
+            return []
+
+        # Get the best matching item
+        matched_items.sort(key=lambda x: x[1], reverse=True)
+        best_item, item_score = matched_items[0]
+
+        # Find recent documents related to this item
+        suggestions = []
+
+        # Check Work Orders for this item
+        try:
+            work_orders = frappe.get_all(
+                "Work Order",
+                filters={"production_item": best_item},
+                fields=["name", "docstatus"],
+                limit=3,
+                order_by="modified desc"
+            )
+
+            for wo in work_orders:
+                suggestions.append({
+                    "doctype": "Work Order",
+                    "doc_id": wo.name,
+                    "doc_name": wo.name,
+                    "docstatus": wo.docstatus,
+                    "confidence": item_score * 0.75,
+                    "match_type": "product_code",
+                    "matched_item": best_item
+                })
+        except Exception:
+            pass
+
+        # Check Batches for this item
+        try:
+            batches = frappe.get_all(
+                "Batch",
+                filters={"item": best_item},
+                fields=["name"],
+                limit=3,
+                order_by="modified desc"
+            )
+
+            for batch in batches:
+                suggestions.append({
+                    "doctype": "Batch",
+                    "doc_id": batch.name,
+                    "doc_name": batch.name,
+                    "docstatus": None,
+                    "confidence": item_score * 0.75,
+                    "match_type": "product_code",
+                    "matched_item": best_item
+                })
+        except Exception:
+            pass
+
+        return suggestions
+
+    except Exception as e:
+        frappe.log_error(f"Error matching product code {product_code}: {str(e)}")
+        return []
 
 
 def _similarity(a: str, b: str) -> float:
