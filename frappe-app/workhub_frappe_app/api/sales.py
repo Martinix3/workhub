@@ -578,3 +578,160 @@ def _create_sell_out_order(data):
         "distributor_name": distributor_name,
         "message": f"Pedido asignado a {distributor_name}. El distribuidor entregará desde su stock."
     }
+
+
+@frappe.whitelist()
+def get_pending_change_requests():
+    """
+    Get all pending order change requests for the logged-in sales rep.
+    Returns requests for orders where the sales rep is the owner or assigned sales person.
+    """
+    require_auth()
+
+    current_user = frappe.session.user
+
+    # Get all Sales Orders where current user is owner or sales person
+    orders = frappe.db.sql("""
+        SELECT name
+        FROM `tabSales Order`
+        WHERE (owner = %(user)s OR sales_person = %(user)s)
+        AND docstatus != 2
+    """, {"user": current_user}, pluck="name")
+
+    if not orders:
+        return []
+
+    # Get pending change requests for those orders
+    requests = frappe.get_list(
+        "Order Change Request",
+        filters={
+            "order_id": ["in", orders],
+            "status": "Pending"
+        },
+        fields=[
+            "name",
+            "order_id",
+            "distributor",
+            "request_type",
+            "reason",
+            "new_values",
+            "creation",
+            "modified"
+        ],
+        order_by="creation desc",
+        ignore_permissions=True
+    )
+
+    # Transform to camelCase for frontend
+    result = []
+    for req in requests:
+        # Get distributor name
+        distributor_name = frappe.db.get_value("Customer", req.distributor, "customer_name")
+
+        # Parse new_values if it's a JSON string
+        new_values = req.new_values
+        if new_values and isinstance(new_values, str):
+            try:
+                new_values = json.loads(new_values)
+            except json.JSONDecodeError:
+                new_values = {}
+
+        result.append({
+            "requestId": req.name,
+            "orderId": req.order_id,
+            "distributor": req.distributor,
+            "distributorName": distributor_name or req.distributor,
+            "requestType": req.request_type,
+            "reason": req.reason,
+            "newValues": new_values or {},
+            "createdAt": str(req.creation) if req.creation else "",
+            "modifiedAt": str(req.modified) if req.modified else ""
+        })
+
+    return result
+
+
+@frappe.whitelist()
+def approve_change_request(request_id, response_notes=None):
+    """
+    Approve an order change request.
+    Validates that the request is pending and belongs to the sales rep's orders.
+    """
+    require_auth()
+
+    if not request_id:
+        frappe.throw(_("Request ID is required"))
+
+    current_user = frappe.session.user
+
+    # Get the request
+    request = frappe.get_doc("Order Change Request", request_id, ignore_permissions=True)
+
+    # Validate request status
+    if request.status != "Pending":
+        frappe.throw(_("This request has already been processed with status: {0}").format(request.status))
+
+    # Validate that the order belongs to the sales rep
+    order = frappe.get_doc("Sales Order", request.order_id, ignore_permissions=True)
+    if order.owner != current_user and order.sales_person != current_user:
+        frappe.throw(_("You don't have permission to approve this request"))
+
+    # Update request
+    request.status = "Approved"
+    request.response_notes = response_notes or ""
+    request.processed_by = current_user
+    request.processed_date = now_datetime()
+    request.flags.ignore_permissions = True
+    request.save()
+
+    return {
+        "success": True,
+        "requestId": request.name,
+        "status": "Approved",
+        "message": _("Request approved successfully")
+    }
+
+
+@frappe.whitelist()
+def reject_change_request(request_id, response_notes=None):
+    """
+    Reject an order change request.
+    Validates that the request is pending and belongs to the sales rep's orders.
+    Requires response_notes to explain the rejection.
+    """
+    require_auth()
+
+    if not request_id:
+        frappe.throw(_("Request ID is required"))
+
+    if not response_notes:
+        frappe.throw(_("Response notes are required for rejection"))
+
+    current_user = frappe.session.user
+
+    # Get the request
+    request = frappe.get_doc("Order Change Request", request_id, ignore_permissions=True)
+
+    # Validate request status
+    if request.status != "Pending":
+        frappe.throw(_("This request has already been processed with status: {0}").format(request.status))
+
+    # Validate that the order belongs to the sales rep
+    order = frappe.get_doc("Sales Order", request.order_id, ignore_permissions=True)
+    if order.owner != current_user and order.sales_person != current_user:
+        frappe.throw(_("You don't have permission to reject this request"))
+
+    # Update request
+    request.status = "Rejected"
+    request.response_notes = response_notes
+    request.processed_by = current_user
+    request.processed_date = now_datetime()
+    request.flags.ignore_permissions = True
+    request.save()
+
+    return {
+        "success": True,
+        "requestId": request.name,
+        "status": "Rejected",
+        "message": _("Request rejected successfully")
+    }
