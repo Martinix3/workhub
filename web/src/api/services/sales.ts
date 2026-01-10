@@ -110,6 +110,14 @@ export const salesApi = {
       { data: orderData }
     )
     return data
+  },
+
+  async cancelOrder(orderId: string): Promise<CancelOrderResponse> {
+    const data = await frappe.call<CancelOrderResponse>(
+      'workhub_frappe_app.api.sales.cancel_order',
+      { order_id: orderId }
+    )
+    return data
   }
 }
 
@@ -143,6 +151,11 @@ export interface CreateOrderResponse {
   success: boolean
   order_id: string
   total: number
+}
+
+export interface CancelOrderResponse {
+  success: boolean
+  message: string
 }
 
 export default salesApi
