@@ -9,7 +9,7 @@ import type { CriticalControlPoint } from '../components/sections/production-and
 import type { ReadingSubmission } from '../components/sections/production-and-quality/RecordReadingModal'
 
 export function HACCPMonitorPage() {
-  const { plans, recentReadings, activeAlerts, loading, error, refetch, acknowledgeAlert } = useHACCPMonitor()
+  const { plans, recentReadings, activeAlerts, loading, error, refetch, acknowledgeAlert, recordReading } = useHACCPMonitor()
 
   // Modal state management
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -53,9 +53,20 @@ export function HACCPMonitorPage() {
   }
 
   const handleModalSubmit = async (data: ReadingSubmission) => {
-    // TODO: Will be implemented in subtask 2.3
-    // This will call recordReading API and refresh data
-    console.log('Recording reading:', data)
+    try {
+      // Call recordReading API
+      // Note: correctiveAction parameter will be added in subtask 3.1
+      await recordReading(data.ccpId, data.value, data.lotNumber)
+
+      // Refresh data to show the new reading
+      await refetch()
+
+      // Modal closes automatically on success (handled in RecordReadingModal)
+    } catch (err) {
+      // Error is caught here but modal component handles the UI state
+      // User will see the error through the submitting state not clearing
+      throw err
+    }
   }
 
   const handleAcknowledgeAlert = async (readingId: string) => {
