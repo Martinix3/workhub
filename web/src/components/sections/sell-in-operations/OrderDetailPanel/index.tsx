@@ -6,7 +6,7 @@ import {
 import { SidePanel } from '../../../ui/SidePanel'
 import type { OrderDetailPanelProps, OrderDetail, SalesType } from './types'
 import type { OrderItem } from '../types'
-import { useOrderDetail } from '../../../../api/hooks/useSalesData'
+import { useOrderDetail, useUpdateOrder } from '../../../../api/hooks/useSalesData'
 
 // Status configuration
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -79,11 +79,13 @@ export function OrderDetailPanel({
   onCancelOrder
 }: OrderDetailPanelProps) {
   const [order, setOrder] = useState<OrderDetail | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
 
   // Fetch order detail from API
   const { data: orderData, loading, error } = useOrderDetail(isOpen ? orderId : null)
+
+  // Update order mutation hook
+  const { updateOrder, loading: isSaving, error: saveError } = useUpdateOrder()
 
   // Update local state when hook data changes
   useEffect(() => {
@@ -133,12 +135,30 @@ export function OrderDetailPanel({
 
   const handleSave = async () => {
     if (!order) return
-    setIsSaving(true)
-    // TODO: Replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    onSave?.(order)
-    setIsSaving(false)
-    setHasChanges(false)
+
+    // Prepare update data
+    const updateData = {
+      deliveryDate: order.deliveryDate,
+      salesType: order.salesType,
+      items: order.items.map(item => ({
+        itemCode: item.itemCode,
+        itemName: item.itemName,
+        qty: item.qty,
+        rate: item.rate,
+        amount: item.amount
+      }))
+    }
+
+    // Call API to update order
+    const result = await updateOrder(order.id, updateData)
+
+    if (result) {
+      // Update succeeded
+      setOrder(result)
+      setHasChanges(false)
+      onSave?.(result)
+    }
+    // Error handling is managed by the hook and displayed in UI
   }
 
   const handleCancelOrder = () => {
@@ -207,6 +227,12 @@ export function OrderDetailPanel({
               <div className="flex items-center gap-2 text-amber-600 mt-2">
                 <Save size={14} />
                 <span className="text-xs font-medium">Cambios sin guardar</span>
+              </div>
+            )}
+            {saveError && (
+              <div className="flex items-center gap-2 text-red-600 mt-2">
+                <X size={14} />
+                <span className="text-xs font-medium">Error al guardar: {saveError.message}</span>
               </div>
             )}
           </div>
