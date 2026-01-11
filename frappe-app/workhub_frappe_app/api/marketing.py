@@ -179,8 +179,7 @@ def get_recent_posts(limit=20):
             fields=["name", "platform", "content", "post_date", "status",
                     "likes", "shares", "comments", "reach"],
             limit_page_length=int(limit),
-            order_by="post_date desc",
-            ignore_permissions=True
+            order_by="post_date desc"
         )
         return posts
     except Exception:
