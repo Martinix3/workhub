@@ -127,7 +127,20 @@ export function useTaskMutations() {
     }
   }, [])
 
-  return { createTask, updateTask, changeStatus, quickAdd, loading, error }
+  const completeTask = useCallback(async (taskId: string, notes?: string): Promise<Task | null> => {
+    setLoading(true)
+    setError(null)
+    try {
+      return await tasksApi.completeTask(taskId, notes)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to complete task'))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { createTask, updateTask, changeStatus, quickAdd, completeTask, loading, error }
 }
 
 // ============== Projects Hooks ==============

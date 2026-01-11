@@ -13,10 +13,12 @@ import {
   ExternalLink,
   List,
   BarChart2,
+  FileText,
 } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useProjects, useProjectTemplates } from '../../api'
+import { useProjects, useProjectTemplates, useTaskMutations } from '../../api'
+import { TaskCompletionModal } from '../../components/tasks/TaskCompletionModal'
 import type {
   Project,
   ProjectTemplate,
@@ -61,9 +63,12 @@ export function ProjectsPage() {
   const [filter, setFilter] = useState<'all' | 'risk'>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [expandedProject, setExpandedProject] = useState<string | null>(null)
+  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null)
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
 
   const { data: projects, loading, error, refetch } = useProjects({ status: 'ACTIVE' })
   const { data: templates } = useProjectTemplates()
+  const { completeTask } = useTaskMutations()
 
   if (loading) {
     return <LoadingState message="Cargando proyectos..." />
@@ -105,8 +110,23 @@ export function ProjectsPage() {
   }
 
   const handleTaskComplete = (taskId: string) => {
-    // TODO: Implement task completion
-    console.log('Complete task:', taskId)
+    // Find the task in the projects list
+    const task = projectsList
+      .flatMap(p => p.tasks || [])
+      .find(t => t.name === taskId)
+
+    if (task) {
+      setTaskToComplete(task)
+      setShowCompletionModal(true)
+    }
+  }
+
+  const handleModalComplete = async (taskId: string, notes?: string) => {
+    await completeTask(taskId, notes)
+    // Refetch projects to update the UI
+    await refetch()
+    setShowCompletionModal(false)
+    setTaskToComplete(null)
   }
 
   return (
@@ -351,6 +371,17 @@ export function ProjectsPage() {
             </div>
           </div>
         )}
+
+        {/* Task Completion Modal */}
+        <TaskCompletionModal
+          isOpen={showCompletionModal}
+          onClose={() => {
+            setShowCompletionModal(false)
+            setTaskToComplete(null)
+          }}
+          task={taskToComplete}
+          onComplete={handleModalComplete}
+        />
       </div>
     </div>
   )
@@ -577,6 +608,16 @@ function TaskRow({ task, onClick, onComplete }: TaskRowProps) {
       {task.blocked_reason && (
         <span className="text-xs text-red-500 truncate max-w-32" title={task.blocked_reason}>
           {task.blocked_reason}
+        </span>
+      )}
+
+      {/* Completion notes indicator */}
+      {isDone && task.completion_notes && (
+        <span
+          className="text-xs text-green-600 flex items-center gap-1"
+          title={task.completion_notes}
+        >
+          <FileText size={12} />
         </span>
       )}
     </div>

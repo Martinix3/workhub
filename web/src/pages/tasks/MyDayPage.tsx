@@ -1,14 +1,19 @@
 // My Day Page - TDAH-friendly task view
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MyDay } from '../../components/sections/tasks'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { TaskCompletionModal } from '../../components/tasks/TaskCompletionModal'
 import { useMyDay, useTaskMutations } from '../../api'
+import type { Task } from '../../components/sections/tasks/types'
 
 export function MyDayPage() {
   const navigate = useNavigate()
   const { data, loading, error, refetch } = useMyDay()
-  const { changeStatus, quickAdd } = useTaskMutations()
+  const { changeStatus, quickAdd, completeTask } = useTaskMutations()
+  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null)
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
 
   if (loading) {
     return <LoadingState message="Cargando tu dia..." />
@@ -25,9 +30,16 @@ export function MyDayPage() {
     )
   }
 
-  const handleTaskComplete = async (taskId: string) => {
-    await changeStatus(taskId, 'DONE')
+  const handleTaskComplete = (task: Task) => {
+    setTaskToComplete(task)
+    setShowCompletionModal(true)
+  }
+
+  const handleModalComplete = async (taskId: string, notes?: string) => {
+    await completeTask(taskId, notes)
     await refetch()
+    setShowCompletionModal(false)
+    setTaskToComplete(null)
   }
 
   const handleTaskBlock = async (taskId: string, _reason: string) => {
@@ -47,14 +59,27 @@ export function MyDayPage() {
   }
 
   return (
-    <MyDay
-      data={data}
-      onTaskComplete={handleTaskComplete}
-      onTaskBlock={handleTaskBlock}
-      onTaskClick={(id) => navigate(`/tareas/tarea/${id}`)}
-      onQuickAdd={handleQuickAdd}
-      onChangeStatus={handleChangeStatus}
-    />
+    <>
+      <MyDay
+        data={data}
+        onTaskComplete={handleTaskComplete}
+        onTaskBlock={handleTaskBlock}
+        onTaskClick={(id) => navigate(`/tareas/tarea/${id}`)}
+        onQuickAdd={handleQuickAdd}
+        onChangeStatus={handleChangeStatus}
+      />
+
+      {/* Task Completion Modal */}
+      <TaskCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => {
+          setShowCompletionModal(false)
+          setTaskToComplete(null)
+        }}
+        task={taskToComplete}
+        onComplete={handleModalComplete}
+      />
+    </>
   )
 }
 

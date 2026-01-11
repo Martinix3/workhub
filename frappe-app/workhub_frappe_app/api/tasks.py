@@ -45,6 +45,7 @@ def get_tasks(filters=None, limit=50, offset=0):
             "project", "department", "assigned_to", "created_by",
             "start_date", "due_date", "is_milestone", "is_inbox",
             "worked_today", "total_work_days", "blocked_reason",
+            "completed_at", "completion_notes",
             "creation", "modified"
         ],
         limit_page_length=int(limit),
@@ -180,7 +181,7 @@ def delete_task(task_id):
 
 
 @frappe.whitelist()
-def change_status(task_id, new_status):
+def change_status(task_id, new_status, completion_notes=None):
     """Change task status"""
     require_permission("WH Task", "write")
     valid_statuses = ["BACKLOG", "NEXT", "DOING", "BLOCKED", "DONE"]
@@ -189,8 +190,19 @@ def change_status(task_id, new_status):
 
     doc = frappe.get_doc("WH Task", task_id)
     doc.status = new_status
+
+    # When marking as DONE, set completion timestamp and notes
+    if new_status == "DONE":
+        from frappe.utils import now_datetime
+        doc.completed_at = now_datetime()
+        if completion_notes:
+            doc.completion_notes = completion_notes
+
     doc.save()
-    return {"success": True, "status": doc.status}
+    return {
+        "success": True,
+        "task": doc.as_dict()
+    }
 
 
 @frappe.whitelist()
