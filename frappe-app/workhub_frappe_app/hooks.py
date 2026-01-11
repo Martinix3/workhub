@@ -216,7 +216,8 @@ scheduler_events = {
 
 # Request Events
 # ----------------
-# before_request = ["workhub_frappe_app.utils.before_request"]
+# Cookie authentication middleware runs before each request
+before_request = ["workhub_frappe_app.api.middleware.authenticate_with_cookie"]
 # after_request = ["workhub_frappe_app.utils.after_request"]
 
 # Job Events
