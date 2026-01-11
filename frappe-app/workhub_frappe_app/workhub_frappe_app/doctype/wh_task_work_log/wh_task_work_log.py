@@ -6,4 +6,12 @@ from frappe.model.document import Document
 
 
 class WHTaskWorkLog(Document):
-	pass
+	def validate(self):
+		"""Calculate duration_hours from hours and minutes."""
+		self.calculate_duration()
+
+	def calculate_duration(self):
+		"""Calculate duration_hours as hours + minutes/60."""
+		hours = self.hours or 0
+		minutes = self.minutes or 0
+		self.duration_hours = hours + (minutes / 60.0)

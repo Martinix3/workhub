@@ -38,6 +38,7 @@
   "section_break_time_tracking",
   "worked_today",
   "total_work_days",
+  "total_hours",
   "work_log",
   "section_break_erp",
   "worklink",
@@ -246,6 +247,12 @@
    "fieldname": "total_work_days",
    "fieldtype": "Int",
    "label": "Dias Trabajados",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_hours",
+   "fieldtype": "Float",
+   "label": "Total Horas",
    "read_only": 1
   },
   {

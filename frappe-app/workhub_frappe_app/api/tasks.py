@@ -6,7 +6,7 @@ from frappe import _
 from frappe.utils import nowdate, getdate, add_days
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission, sanitize_search_term
+from workhub_frappe_app.api.utils import require_auth, require_permission
 
 
 @frappe.whitelist()
@@ -35,8 +35,7 @@ def get_tasks(filters=None, limit=50, offset=0):
         if filters.get("is_inbox"):
             filter_conditions["is_inbox"] = 1
         if filters.get("search"):
-            sanitized_search = sanitize_search_term(filters['search'])
-            filter_conditions["title"] = ["like", f"%{sanitized_search}%"]
+            filter_conditions["title"] = ["like", f"%{filters['search']}%"]
 
     tasks = frappe.get_list("WH Task",
         filters=filter_conditions,
@@ -44,8 +43,7 @@ def get_tasks(filters=None, limit=50, offset=0):
             "name", "title", "description", "status", "priority",
             "project", "department", "assigned_to", "created_by",
             "start_date", "due_date", "is_milestone", "is_inbox",
-            "worked_today", "total_work_days", "blocked_reason",
-            "completed_at", "completion_notes",
+            "worked_today", "total_work_days", "total_hours", "blocked_reason",
             "creation", "modified"
         ],
         limit_page_length=int(limit),
@@ -181,7 +179,7 @@ def delete_task(task_id):
 
 
 @frappe.whitelist()
-def change_status(task_id, new_status, completion_notes=None):
+def change_status(task_id, new_status):
     """Change task status"""
     require_permission("WH Task", "write")
     valid_statuses = ["BACKLOG", "NEXT", "DOING", "BLOCKED", "DONE"]
@@ -190,19 +188,8 @@ def change_status(task_id, new_status, completion_notes=None):
 
     doc = frappe.get_doc("WH Task", task_id)
     doc.status = new_status
-
-    # When marking as DONE, set completion timestamp and notes
-    if new_status == "DONE":
-        from frappe.utils import now_datetime
-        doc.completed_at = now_datetime()
-        if completion_notes:
-            doc.completion_notes = completion_notes
-
     doc.save()
-    return {
-        "success": True,
-        "task": doc.as_dict()
-    }
+    return {"success": True, "status": doc.status}
 
 
 @frappe.whitelist()
