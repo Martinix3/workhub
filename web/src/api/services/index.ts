@@ -7,7 +7,7 @@ export { default as marketingApi } from './marketing'
 export { default as settingsApi } from './settings'
 export { default as adminApi } from './admin'
 export { default as notepadApi } from './notepad'
-export { default as templatesApi } from './templates'
+export { default as nlTasksApi } from './nl-tasks'
 
 // Re-export types
 export type {
@@ -28,13 +28,10 @@ export type {
 } from './admin'
 
 export type {
-  TemplateListItem,
-  TemplatePreview,
-  TemplateTask,
-  TemplateMilestone,
-  TemplateDependency,
-  CreateTemplateData,
-  UpdateTemplateData,
-  CreateFromTemplateData,
-  SaveProjectAsTemplateData
-} from './templates'
+  ParsedTask,
+  NLTaskResult,
+  UserSuggestion,
+  ProjectSuggestion,
+  AssigneeInfo,
+  ProjectInfo
+} from '../components/nl-task-input/types'
