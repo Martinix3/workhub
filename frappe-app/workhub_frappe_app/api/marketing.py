@@ -138,8 +138,7 @@ def get_active_campaigns(limit=50, offset=0):
         fields=["name", "campaign_name", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     # Add default values for fields that may not exist
