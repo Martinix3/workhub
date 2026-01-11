@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { MainNav } from './MainNav'
 import { UserMenu } from './UserMenu'
+import { NotificationCenter } from './NotificationCenter'
 import type { NavigationSection, User } from './types'
 import { Menu, Search, X } from 'lucide-react'
 
@@ -102,6 +103,16 @@ export function AppShell({
           />
         </div>
 
+        {/* Notification Center */}
+        <div className="border-t border-slate-700 p-4">
+          <NotificationCenter
+            onNavigate={(href) => {
+              onNavigate?.(href)
+              setSidebarOpen(false)
+            }}
+          />
+        </div>
+
         {/* User Menu */}
         {user && (
           <div className="border-t border-slate-700 p-4">
@@ -130,12 +141,17 @@ export function AppShell({
           <span className="font-['Playfair_Display'] text-lg font-bold ml-2">
             WorkHub
           </span>
-          <button
-            className="ml-auto p-2 hover:bg-stone-100"
-            onClick={() => setSearchOpen(true)}
-          >
-            <Search size={20} />
-          </button>
+          <div className="ml-auto flex items-center gap-1">
+            <div className="[&_button]:hover:bg-stone-100 [&_button]:text-[#1e293b]">
+              <NotificationCenter onNavigate={onNavigate} />
+            </div>
+            <button
+              className="p-2 hover:bg-stone-100"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search size={20} />
+            </button>
+          </div>
         </header>
 
         {/* Content area */}

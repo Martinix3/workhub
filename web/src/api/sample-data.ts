@@ -5,8 +5,7 @@ import type { KPIs, SalesTrends, Activity, Customer, SalesOrder, Opportunity } f
 import type { NetworkKPIs, Distributor } from '../components/sections/distributor-network/types'
 import type { ProductionKPIs, ProductionOrder, ProductionLine, Lot, HACCPPlan, CCPReading, QualityDocument, DocumentFolder, QualityKPIs, Inspection, NonConformance, WeeklyTrendPoint } from '../components/sections/production-and-quality/types'
 import type { MarketingKPIs, Campaign, SocialPost, PlatformStats } from '../components/sections/marketing-and-growth/types'
-import type { Role } from './services/admin'
-import type { Department } from './services/settings'
+import type { Notification, GetNotificationsResponse } from './types/notifications'
 
 // Command Center
 export const sampleAreaSummaries: AreaSummary[] = [
@@ -219,44 +218,14 @@ export const sampleHACCPPlans: HACCPPlan[] = [
     effectiveDate: '2025-01-01',
     ccps: [
       { id: 'ccp1', name: 'Fermentacion - Temperatura', hazardType: 'biological', hazardDescription: 'Crecimiento de bacterias patogenas por temperatura inadecuada', criticalLimit: '25-32°C', monitoringMethod: 'Termometro digital calibrado', frequency: 'Cada 4 horas', correctiveAction: 'Ajustar temperatura y notificar supervisor', currentValue: '28°C', status: 'normal', lastReading: new Date().toISOString() },
-      { id: 'ccp2', name: 'Destilacion - Alcohol', hazardType: 'chemical', hazardDescription: 'Concentracion de metanol por destilacion incorrecta', criticalLimit: '45-55%', monitoringMethod: 'Alcoholimetro certificado', frequency: 'Continuo', correctiveAction: 'Descartar lote y revisar equipo', currentValue: '48%', status: 'normal', lastReading: new Date().toISOString() },
-      { id: 'ccp3', name: 'Fermentacion - pH', hazardType: 'biological', hazardDescription: 'pH fuera de rango puede permitir crecimiento microbiano', criticalLimit: '3.5-4.5', monitoringMethod: 'pH metro digital', frequency: 'Cada 6 horas', correctiveAction: 'Ajustar pH con acido citrico y documentar', currentValue: '4.1', status: 'normal', lastReading: new Date(Date.now() - 3600000).toISOString() },
-      { id: 'ccp4', name: 'Destilacion - Metanol', hazardType: 'chemical', hazardDescription: 'Exceso de metanol toxico para consumo humano', criticalLimit: '<300mg/L', monitoringMethod: 'Cromatografia de gases', frequency: 'Por lote', correctiveAction: 'Rechazar lote completo y revisar proceso', currentValue: '185mg/L', status: 'normal', lastReading: new Date(Date.now() - 7200000).toISOString() }
-    ]
-  },
-  {
-    id: '2',
-    productCode: 'MEZ-TOB-001',
-    productName: 'Mezcal Tobala',
-    version: '1.0',
-    effectiveDate: '2024-11-15',
-    ccps: [
-      { id: 'ccp5', name: 'Almacenamiento - Temperatura', hazardType: 'physical', hazardDescription: 'Temperatura inadecuada afecta calidad del producto', criticalLimit: '-2-2°C', monitoringMethod: 'Sensor de temperatura continuo', frequency: 'Continuo', correctiveAction: 'Transferir producto y revisar refrigeracion', currentValue: '0.5°C', status: 'normal', lastReading: new Date(Date.now() - 1800000).toISOString() },
-      { id: 'ccp6', name: 'Envasado - Presion', hazardType: 'physical', hazardDescription: 'Presion baja puede comprometer sellado de botellas', criticalLimit: '>10psi', monitoringMethod: 'Manometro digital', frequency: 'Cada hora', correctiveAction: 'Detener linea y revisar compresor', currentValue: '12.5psi', status: 'normal', lastReading: new Date(Date.now() - 900000).toISOString() },
-      { id: 'ccp7', name: 'Limpieza - Cloro Residual', hazardType: 'chemical', hazardDescription: 'Cloro residual excesivo contamina producto', criticalLimit: '<10ppm', monitoringMethod: 'Kit colorimetrico', frequency: 'Despues de cada limpieza', correctiveAction: 'Enjuague adicional hasta nivel aceptable', currentValue: '35ppm', status: 'critical', lastReading: new Date(Date.now() - 600000).toISOString() },
-      { id: 'ccp8', name: 'Fermentacion - Tiempo', hazardType: 'biological', hazardDescription: 'Tiempo insuficiente produce fermentacion incompleta', criticalLimit: '>72h', monitoringMethod: 'Registro de tiempo', frequency: 'Por lote', correctiveAction: 'Extender tiempo de fermentacion segun especificacion', currentValue: '96h', status: 'normal', lastReading: new Date(Date.now() - 14400000).toISOString() }
+      { id: 'ccp2', name: 'Destilacion - Alcohol', hazardType: 'chemical', hazardDescription: 'Concentracion de metanol por destilacion incorrecta', criticalLimit: '45-55%', monitoringMethod: 'Alcoholimetro certificado', frequency: 'Continuo', correctiveAction: 'Descartar lote y revisar equipo', currentValue: '48%', status: 'normal', lastReading: new Date().toISOString() }
     ]
   }
 ]
 
-export const sampleCCPReadings: CCPReading[] = [
-  { id: 'r1', ccpId: 'ccp1', ccpName: 'Fermentacion - Temperatura', value: '28°C', timestamp: new Date(Date.now() - 14400000).toISOString(), operator: 'Carlos Lopez', status: 'normal', lotNumber: 'LOT-2025-089' },
-  { id: 'r2', ccpId: 'ccp1', ccpName: 'Fermentacion - Temperatura', value: '29.5°C', timestamp: new Date(Date.now() - 10800000).toISOString(), operator: 'Maria Garcia', status: 'normal', lotNumber: 'LOT-2025-089' },
-  { id: 'r3', ccpId: 'ccp2', ccpName: 'Destilacion - Alcohol', value: '48%', timestamp: new Date(Date.now() - 7200000).toISOString(), operator: 'Juan Perez', status: 'normal', lotNumber: 'LOT-2025-089' },
-  { id: 'r4', ccpId: 'ccp3', ccpName: 'Fermentacion - pH', value: '4.1', timestamp: new Date(Date.now() - 3600000).toISOString(), operator: 'Ana Martinez', status: 'normal', lotNumber: 'LOT-2025-089' },
-  { id: 'r5', ccpId: 'ccp4', ccpName: 'Destilacion - Metanol', value: '185mg/L', timestamp: new Date(Date.now() - 7200000).toISOString(), operator: 'Carlos Lopez', status: 'normal', lotNumber: 'LOT-2025-089' },
-  { id: 'r6', ccpId: 'ccp5', ccpName: 'Almacenamiento - Temperatura', value: '0.5°C', timestamp: new Date(Date.now() - 1800000).toISOString(), operator: 'Pedro Silva', status: 'normal', lotNumber: 'LOT-2025-088' },
-  { id: 'r7', ccpId: 'ccp6', ccpName: 'Envasado - Presion', value: '12.5psi', timestamp: new Date(Date.now() - 900000).toISOString(), operator: 'Maria Garcia', status: 'normal', lotNumber: 'LOT-2025-088' },
-  { id: 'r8', ccpId: 'ccp7', ccpName: 'Limpieza - Cloro Residual', value: '35ppm', timestamp: new Date(Date.now() - 600000).toISOString(), operator: 'Juan Perez', status: 'critical', lotNumber: 'LOT-2025-088', correctiveActionTaken: 'Realizar enjuague adicional con agua purificada' },
-  { id: 'r9', ccpId: 'ccp8', ccpName: 'Fermentacion - Tiempo', value: '96h', timestamp: new Date(Date.now() - 14400000).toISOString(), operator: 'Ana Martinez', status: 'normal', lotNumber: 'LOT-2025-088' },
-  { id: 'r10', ccpId: 'ccp1', ccpName: 'Fermentacion - Temperatura', value: '34°C', timestamp: new Date(Date.now() - 1200000).toISOString(), operator: 'Carlos Lopez', status: 'critical', lotNumber: 'LOT-2025-090', correctiveActionTaken: 'Temperatura ajustada a 30°C, supervisor notificado' },
-  { id: 'r11', ccpId: 'ccp2', ccpName: 'Destilacion - Alcohol', value: '58%', timestamp: new Date(Date.now() - 3000000).toISOString(), operator: 'Pedro Silva', status: 'critical', lotNumber: 'LOT-2025-087', correctiveActionTaken: 'Lote descartado, equipo calibrado nuevamente' }
-]
+export const sampleCCPReadings: CCPReading[] = []
 
-export const sampleActiveAlerts: CCPReading[] = [
-  { id: 'r8', ccpId: 'ccp7', ccpName: 'Limpieza - Cloro Residual', value: '35ppm', timestamp: new Date(Date.now() - 600000).toISOString(), operator: 'Juan Perez', status: 'critical', lotNumber: 'LOT-2025-088', correctiveActionTaken: 'Realizar enjuague adicional con agua purificada' },
-  { id: 'r10', ccpId: 'ccp1', ccpName: 'Fermentacion - Temperatura', value: '34°C', timestamp: new Date(Date.now() - 1200000).toISOString(), operator: 'Carlos Lopez', status: 'critical', lotNumber: 'LOT-2025-090', correctiveActionTaken: 'Temperatura ajustada a 30°C, supervisor notificado' }
-]
+export const sampleActiveAlerts: CCPReading[] = []
 
 export const sampleDocumentFolders: DocumentFolder[] = [
   { id: '1', name: 'HACCP', documentCount: 12 },
@@ -377,11 +346,7 @@ export const sampleTasks: Task[] = [
   { name: 'WHT-2025-002', title: 'Actualizar catalogo de productos', status: 'NEXT', priority: 'P2', assigned_to: 'martin@example.com', department: 'MKT', due_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0] },
   { name: 'WHT-2025-003', title: 'Coordinar envio a distribuidor', status: 'BACKLOG', priority: 'P2', assigned_to: 'martin@example.com', department: 'OPS', due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0] },
   { name: 'WHT-2025-004', title: 'Llamar a cliente potencial', status: 'BLOCKED', priority: 'P0', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date(Date.now() - 86400000).toISOString().split('T')[0], blocked_reason: 'Esperando informacion del gerente' },
-  { name: 'WHT-2025-005', title: 'Preparar presentacion Q1', status: 'DONE', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 2 + 3600000 * 3).toISOString(), completion_notes: 'Presentacion aprobada por el director. Incluye proyecciones y estrategia de ventas para Q1 2025.' },
-  { name: 'WHT-2025-006', title: 'Enviar cotizacion a Distribuidora del Pacifico', status: 'DONE', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date().toISOString().split('T')[0], worked_today: true, completed_at: new Date(Date.now() - 3600000 * 2).toISOString(), completion_notes: 'Cotizacion enviada con descuento especial del 15% por volumen. Cliente solicito 30 dias para responder.' },
-  { name: 'WHT-2025-007', title: 'Actualizar precios en sistema', status: 'DONE', priority: 'P2', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date(Date.now() - 86400000).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 + 3600000 * 5).toISOString() },
-  { name: 'WHT-2025-008', title: 'Revisar inventario de producto terminado', status: 'DONE', priority: 'P0', assigned_to: 'martin@example.com', department: 'OPS', due_date: new Date().toISOString().split('T')[0], worked_today: true, completed_at: new Date(Date.now() - 3600000).toISOString(), completion_notes: 'Stock actual: Espadin 850L, Tobala 320L, Madrecuixe 180L. Todo dentro de rangos normales.' },
-  { name: 'WHT-2025-009', title: 'Programar campana Instagram para lanzamiento', status: 'DONE', priority: 'P1', assigned_to: 'martin@example.com', department: 'MKT', due_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 3 + 3600000 * 4).toISOString(), completion_notes: 'Campana programada del 15-30 Ene. Presupuesto $25k. Contenido aprobado por marketing.' }
+  { name: 'WHT-2025-005', title: 'Preparar presentacion Q1', status: 'DONE', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0] }
 ]
 
 // Project templates
@@ -393,45 +358,37 @@ export const sampleProjectTemplates: ProjectTemplate[] = [
 
 // Projects with tasks
 const projectTasks1: Task[] = [
-  { name: 'WHT-2025-P1-001', title: 'Identificar distribuidores potenciales', status: 'DONE', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', project: 'WHP-2025-001', due_date: new Date(Date.now() - 86400000 * 20).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 18).toISOString(), completion_notes: 'Identificados 8 distribuidores en la zona norte: 3 en Monterrey, 2 en Chihuahua, 2 en Tijuana, 1 en Hermosillo. Lista compartida con equipo comercial.' },
+  { name: 'WHT-2025-P1-001', title: 'Identificar distribuidores potenciales', status: 'DONE', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', project: 'WHP-2025-001', due_date: new Date(Date.now() - 86400000 * 20).toISOString().split('T')[0] },
   { name: 'WHT-2025-P1-002', title: 'Negociar contratos', status: 'DOING', priority: 'P0', assigned_to: 'martin@example.com', department: 'SALES', project: 'WHP-2025-001', due_date: new Date().toISOString().split('T')[0] },
-  { name: 'WHT-2025-P1-003', title: 'Setup logistico', status: 'NEXT', priority: 'P2', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-001', due_date: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0] },
-  { name: 'WHT-2025-P1-004', title: 'Analizar competencia regional', status: 'DONE', priority: 'P2', assigned_to: 'ana@example.com', department: 'SALES', project: 'WHP-2025-001', due_date: new Date(Date.now() - 86400000 * 15).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 14).toISOString(), completion_notes: 'Principales competidores: Marca A (35% market share), Marca B (22%). Oportunidad en segmento premium.' },
-  { name: 'WHT-2025-P1-005', title: 'Preparar material promocional', status: 'DONE', priority: 'P1', assigned_to: 'ana@example.com', department: 'MKT', project: 'WHP-2025-001', due_date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 9).toISOString() }
+  { name: 'WHT-2025-P1-003', title: 'Setup logistico', status: 'NEXT', priority: 'P2', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-001', due_date: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0] }
 ]
 
 const projectTasks2: Task[] = [
-  { name: 'WHT-2025-P2-001', title: 'Definir producto', status: 'DONE', priority: 'P1', assigned_to: 'ana@example.com', department: 'MKT', project: 'WHP-2025-002', due_date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 9).toISOString(), completion_notes: 'Producto final: Mezcal Ancestral Edicion Especial. Blend 70% Espadin + 30% Tobala. Presentacion 750ml. Precio objetivo $1,200 MXN.' },
-  { name: 'WHT-2025-P2-002', title: 'Disenar packaging', status: 'BLOCKED', priority: 'P1', assigned_to: 'ana@example.com', department: 'MKT', project: 'WHP-2025-002', blocked_reason: 'Esperando aprobacion legal', due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0] },
-  { name: 'WHT-2025-P2-003', title: 'Investigacion de mercado premium', status: 'DONE', priority: 'P2', assigned_to: 'ana@example.com', department: 'MKT', project: 'WHP-2025-002', due_date: new Date(Date.now() - 86400000 * 12).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 11).toISOString() }
+  { name: 'WHT-2025-P2-001', title: 'Definir producto', status: 'DONE', priority: 'P1', assigned_to: 'ana@example.com', department: 'MKT', project: 'WHP-2025-002', due_date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0] },
+  { name: 'WHT-2025-P2-002', title: 'Disenar packaging', status: 'BLOCKED', priority: 'P1', assigned_to: 'ana@example.com', department: 'MKT', project: 'WHP-2025-002', blocked_reason: 'Esperando aprobacion legal', due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0] }
 ]
 
 const projectTasks3: Task[] = [
-  { name: 'WHT-2025-P3-001', title: 'Analisis de rutas', status: 'DONE', priority: 'P1', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 30).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 28).toISOString(), completion_notes: 'Identificadas 3 rutas principales optimizadas: Norte (reduce 2h), Centro (reduce 1.5h), Sur (reduce 1h). Ahorro estimado: 15% en combustible.' },
+  { name: 'WHT-2025-P3-001', title: 'Analisis de rutas', status: 'DONE', priority: 'P1', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 30).toISOString().split('T')[0] },
   { name: 'WHT-2025-P3-002', title: 'Optimizar tiempos de entrega', status: 'DOING', priority: 'P0', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0] },
-  { name: 'WHT-2025-P3-003', title: 'Implementar tracking GPS', status: 'NEXT', priority: 'P2', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0] },
-  { name: 'WHT-2025-P3-004', title: 'Evaluar proveedores de transporte', status: 'DONE', priority: 'P1', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 35).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 33).toISOString(), completion_notes: 'Seleccionado Transportes Confiables SA. Mejor precio-calidad, cobertura nacional, certificacion ISO.' },
-  { name: 'WHT-2025-P3-005', title: 'Configurar zona de carga optimizada', status: 'DONE', priority: 'P2', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 25).toISOString().split('T')[0], completed_at: new Date(Date.now() - 86400000 * 24).toISOString() }
+  { name: 'WHT-2025-P3-003', title: 'Implementar tracking GPS', status: 'NEXT', priority: 'P2', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0] }
 ]
 
 export const sampleProjects: Project[] = [
-  { name: 'WHP-2025-001', title: 'Expansion Zona Norte', status: 'ACTIVE', health: 'GREEN', department: 'SALES', owner_user: 'martin@example.com', owner_name: 'Martin Samperiz', start_date: new Date(Date.now() - 86400000 * 30).toISOString().split('T')[0], target_date: new Date(Date.now() + 86400000 * 60).toISOString().split('T')[0], progress_pct: 60, total_tasks: 5, completed_tasks: 3, blocked_tasks: 0, tasks: projectTasks1 },
-  { name: 'WHP-2025-002', title: 'Nuevo Producto Premium', status: 'ACTIVE', health: 'YELLOW', department: 'MKT', owner_user: 'martin@example.com', owner_name: 'Martin Samperiz', start_date: new Date(Date.now() - 86400000 * 15).toISOString().split('T')[0], target_date: new Date(Date.now() + 86400000 * 45).toISOString().split('T')[0], progress_pct: 66, total_tasks: 3, completed_tasks: 2, blocked_tasks: 1, health_reason: '1 tarea bloqueada', tasks: projectTasks2 },
-  { name: 'WHP-2025-003', title: 'Optimizacion Logistica', status: 'ACTIVE', health: 'RED', department: 'OPS', owner_user: 'martin@example.com', owner_name: 'Martin Samperiz', start_date: new Date(Date.now() - 86400000 * 45).toISOString().split('T')[0], target_date: new Date(Date.now() + 86400000 * 15).toISOString().split('T')[0], progress_pct: 60, total_tasks: 5, completed_tasks: 3, blocked_tasks: 0, overdue_tasks: 2, health_reason: '2 tareas vencidas', tasks: projectTasks3 }
+  { name: 'WHP-2025-001', title: 'Expansion Zona Norte', status: 'ACTIVE', health: 'GREEN', department: 'SALES', owner_user: 'martin@example.com', owner_name: 'Martin Samperiz', start_date: new Date(Date.now() - 86400000 * 30).toISOString().split('T')[0], target_date: new Date(Date.now() + 86400000 * 60).toISOString().split('T')[0], progress_pct: 45, total_tasks: 12, completed_tasks: 5, blocked_tasks: 1, tasks: projectTasks1 },
+  { name: 'WHP-2025-002', title: 'Nuevo Producto Premium', status: 'ACTIVE', health: 'YELLOW', department: 'MKT', owner_user: 'martin@example.com', owner_name: 'Martin Samperiz', start_date: new Date(Date.now() - 86400000 * 15).toISOString().split('T')[0], target_date: new Date(Date.now() + 86400000 * 45).toISOString().split('T')[0], progress_pct: 25, total_tasks: 8, completed_tasks: 2, blocked_tasks: 2, health_reason: '2 tareas bloqueadas', tasks: projectTasks2 },
+  { name: 'WHP-2025-003', title: 'Optimizacion Logistica', status: 'ACTIVE', health: 'RED', department: 'OPS', owner_user: 'martin@example.com', owner_name: 'Martin Samperiz', start_date: new Date(Date.now() - 86400000 * 45).toISOString().split('T')[0], target_date: new Date(Date.now() + 86400000 * 15).toISOString().split('T')[0], progress_pct: 60, total_tasks: 10, completed_tasks: 6, blocked_tasks: 0, overdue_tasks: 3, health_reason: '3 tareas vencidas', tasks: projectTasks3 }
 ]
 
 export const sampleMyDayData: MyDayData = {
-  today: [
-    ...sampleTasks.filter(t => t.status === 'DOING' || t.status === 'NEXT'),
-    ...sampleTasks.filter(t => t.status === 'DONE' && t.worked_today)
-  ],
+  today: sampleTasks.filter(t => t.status === 'DOING' || t.status === 'NEXT'),
   overdue: sampleTasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'DONE'),
   upcoming: sampleTasks.filter(t => t.due_date && new Date(t.due_date) > new Date()),
   blocked: sampleTasks.filter(t => t.status === 'BLOCKED'),
   blocking: [],
   inbox: sampleTasks.filter(t => !t.project),
   summary: {
-    total_today: 4,
+    total_today: 2,
     overdue_count: 1,
     blocked_count: 1
   }
@@ -477,20 +434,119 @@ export const sampleTaskKPIs: DashboardKPIs = {
   }
 }
 
-// Admin & Settings
-export const sampleRoles: Role[] = [
-  { name: 'System Manager', desk_access: 1, is_custom: 0 },
-  { name: 'Sales User', desk_access: 1, is_custom: 0 },
-  { name: 'Production Manager', desk_access: 1, is_custom: 0 },
-  { name: 'Quality Manager', desk_access: 1, is_custom: 0 },
-  { name: 'Distributor', desk_access: 0, is_custom: 1 }
+// Notifications
+export const sampleNotifications: Notification[] = [
+  {
+    id: 'NOTIF-001',
+    user: 'martin@example.com',
+    type: 'TASK_ASSIGNED',
+    priority: 'HIGH',
+    title: 'Nueva tarea asignada',
+    message: 'Se te ha asignado la tarea "Revisar propuesta comercial" en el proyecto Expansion Zona Norte',
+    read: false,
+    created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-001',
+    action_url: '/tasks?task=WHT-2025-001'
+  },
+  {
+    id: 'NOTIF-002',
+    user: 'martin@example.com',
+    type: 'OVERDUE',
+    priority: 'HIGH',
+    title: 'Tarea vencida',
+    message: 'La tarea "Llamar a cliente potencial" esta vencida desde ayer',
+    read: false,
+    created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-004',
+    action_url: '/tasks?task=WHT-2025-004'
+  },
+  {
+    id: 'NOTIF-003',
+    user: 'martin@example.com',
+    type: 'BLOCKED',
+    priority: 'MEDIUM',
+    title: 'Tarea bloqueada',
+    message: 'Tu tarea "Disenar packaging" ha sido marcada como bloqueada',
+    read: false,
+    created_at: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-P2-002',
+    action_url: '/tasks?task=WHT-2025-P2-002'
+  },
+  {
+    id: 'NOTIF-004',
+    user: 'martin@example.com',
+    type: 'PROJECT_RISK',
+    priority: 'HIGH',
+    title: 'Proyecto en riesgo',
+    message: 'El proyecto "Optimizacion Logistica" tiene 3 tareas vencidas y esta marcado en rojo',
+    read: true,
+    created_at: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
+    reference_doctype: 'WH Project',
+    reference_name: 'WHP-2025-003',
+    action_url: '/tasks/projects?project=WHP-2025-003'
+  },
+  {
+    id: 'NOTIF-005',
+    user: 'martin@example.com',
+    type: 'MENTION',
+    priority: 'MEDIUM',
+    title: 'Te mencionaron en un comentario',
+    message: 'Ana Garcia te menciono en la tarea "Negociar contratos"',
+    read: true,
+    created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-P1-002',
+    action_url: '/tasks?task=WHT-2025-P1-002'
+  },
+  {
+    id: 'NOTIF-006',
+    user: 'martin@example.com',
+    type: 'COMPLETED',
+    priority: 'LOW',
+    title: 'Tarea completada',
+    message: 'Carlos Lopez completo la tarea "Analisis de rutas" del proyecto Optimizacion Logistica',
+    read: true,
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-P3-001',
+    action_url: '/tasks?task=WHT-2025-P3-001'
+  },
+  {
+    id: 'NOTIF-007',
+    user: 'martin@example.com',
+    type: 'DEPENDENCY',
+    priority: 'MEDIUM',
+    title: 'Dependencia completada',
+    message: 'La tarea "Definir producto" fue completada. Ahora puedes continuar con "Disenar packaging"',
+    read: true,
+    created_at: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-P2-001',
+    action_url: '/tasks?task=WHT-2025-P2-002'
+  },
+  {
+    id: 'NOTIF-008',
+    user: 'martin@example.com',
+    type: 'EMAIL_TASK',
+    priority: 'LOW',
+    title: 'Tarea creada desde email',
+    message: 'Se creo una nueva tarea a partir de tu email: "Coordinar reunion con proveedor"',
+    read: true,
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+    reference_doctype: 'WH Task',
+    reference_name: 'WHT-2025-006',
+    action_url: '/tasks?task=WHT-2025-006'
+  }
 ]
 
-export const sampleDepartments: Department[] = [
-  { id: 'SALES', name: 'Ventas', icon: 'DollarSign' },
-  { id: 'OPS', name: 'Operaciones', icon: 'Factory' },
-  { id: 'MKT', name: 'Marketing', icon: 'TrendingUp' }
-]
+export const sampleNotificationsResponse: GetNotificationsResponse = {
+  notifications: sampleNotifications,
+  unread_count: 3,
+  total_count: 8
+}
 
 // Helper to check if in bypass mode
 export function isInBypassMode(): boolean {
