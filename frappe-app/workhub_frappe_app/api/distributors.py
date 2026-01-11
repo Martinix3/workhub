@@ -227,8 +227,7 @@ def get_my_orders(limit=50, offset=0):
                 "status", "per_delivered", "per_billed", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="transaction_date desc",
-        ignore_permissions=True
+        order_by="transaction_date desc"
     )
 
     # Transform to MyOrder interface
