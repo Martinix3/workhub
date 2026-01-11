@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "024-quick-task-creation-modal",
+  "state": "building",
+  "subtasks": {
+    "completed": 6,
+    "total": 17,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Quick Task Modal Component",
+    "id": null,
+    "total": 3
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 3,
+    "started_at": "2026-01-11T07:56:15.699323"
+  },
+  "last_update": "2026-01-11T07:59:21.675383"
+}
