@@ -217,14 +217,44 @@ export const sampleHACCPPlans: HACCPPlan[] = [
     effectiveDate: '2025-01-01',
     ccps: [
       { id: 'ccp1', name: 'Fermentacion - Temperatura', hazardType: 'biological', hazardDescription: 'Crecimiento de bacterias patogenas por temperatura inadecuada', criticalLimit: '25-32°C', monitoringMethod: 'Termometro digital calibrado', frequency: 'Cada 4 horas', correctiveAction: 'Ajustar temperatura y notificar supervisor', currentValue: '28°C', status: 'normal', lastReading: new Date().toISOString() },
-      { id: 'ccp2', name: 'Destilacion - Alcohol', hazardType: 'chemical', hazardDescription: 'Concentracion de metanol por destilacion incorrecta', criticalLimit: '45-55%', monitoringMethod: 'Alcoholimetro certificado', frequency: 'Continuo', correctiveAction: 'Descartar lote y revisar equipo', currentValue: '48%', status: 'normal', lastReading: new Date().toISOString() }
+      { id: 'ccp2', name: 'Destilacion - Alcohol', hazardType: 'chemical', hazardDescription: 'Concentracion de metanol por destilacion incorrecta', criticalLimit: '45-55%', monitoringMethod: 'Alcoholimetro certificado', frequency: 'Continuo', correctiveAction: 'Descartar lote y revisar equipo', currentValue: '48%', status: 'normal', lastReading: new Date().toISOString() },
+      { id: 'ccp3', name: 'Fermentacion - pH', hazardType: 'biological', hazardDescription: 'pH fuera de rango puede permitir crecimiento microbiano', criticalLimit: '3.5-4.5', monitoringMethod: 'pH metro digital', frequency: 'Cada 6 horas', correctiveAction: 'Ajustar pH con acido citrico y documentar', currentValue: '4.1', status: 'normal', lastReading: new Date(Date.now() - 3600000).toISOString() },
+      { id: 'ccp4', name: 'Destilacion - Metanol', hazardType: 'chemical', hazardDescription: 'Exceso de metanol toxico para consumo humano', criticalLimit: '<300mg/L', monitoringMethod: 'Cromatografia de gases', frequency: 'Por lote', correctiveAction: 'Rechazar lote completo y revisar proceso', currentValue: '185mg/L', status: 'normal', lastReading: new Date(Date.now() - 7200000).toISOString() }
+    ]
+  },
+  {
+    id: '2',
+    productCode: 'MEZ-TOB-001',
+    productName: 'Mezcal Tobala',
+    version: '1.0',
+    effectiveDate: '2024-11-15',
+    ccps: [
+      { id: 'ccp5', name: 'Almacenamiento - Temperatura', hazardType: 'physical', hazardDescription: 'Temperatura inadecuada afecta calidad del producto', criticalLimit: '-2-2°C', monitoringMethod: 'Sensor de temperatura continuo', frequency: 'Continuo', correctiveAction: 'Transferir producto y revisar refrigeracion', currentValue: '0.5°C', status: 'normal', lastReading: new Date(Date.now() - 1800000).toISOString() },
+      { id: 'ccp6', name: 'Envasado - Presion', hazardType: 'physical', hazardDescription: 'Presion baja puede comprometer sellado de botellas', criticalLimit: '>10psi', monitoringMethod: 'Manometro digital', frequency: 'Cada hora', correctiveAction: 'Detener linea y revisar compresor', currentValue: '12.5psi', status: 'normal', lastReading: new Date(Date.now() - 900000).toISOString() },
+      { id: 'ccp7', name: 'Limpieza - Cloro Residual', hazardType: 'chemical', hazardDescription: 'Cloro residual excesivo contamina producto', criticalLimit: '<10ppm', monitoringMethod: 'Kit colorimetrico', frequency: 'Despues de cada limpieza', correctiveAction: 'Enjuague adicional hasta nivel aceptable', currentValue: '35ppm', status: 'critical', lastReading: new Date(Date.now() - 600000).toISOString() },
+      { id: 'ccp8', name: 'Fermentacion - Tiempo', hazardType: 'biological', hazardDescription: 'Tiempo insuficiente produce fermentacion incompleta', criticalLimit: '>72h', monitoringMethod: 'Registro de tiempo', frequency: 'Por lote', correctiveAction: 'Extender tiempo de fermentacion segun especificacion', currentValue: '96h', status: 'normal', lastReading: new Date(Date.now() - 14400000).toISOString() }
     ]
   }
 ]
 
-export const sampleCCPReadings: CCPReading[] = []
+export const sampleCCPReadings: CCPReading[] = [
+  { id: 'r1', ccpId: 'ccp1', ccpName: 'Fermentacion - Temperatura', value: '28°C', timestamp: new Date(Date.now() - 14400000).toISOString(), operator: 'Carlos Lopez', status: 'normal', lotNumber: 'LOT-2025-089' },
+  { id: 'r2', ccpId: 'ccp1', ccpName: 'Fermentacion - Temperatura', value: '29.5°C', timestamp: new Date(Date.now() - 10800000).toISOString(), operator: 'Maria Garcia', status: 'normal', lotNumber: 'LOT-2025-089' },
+  { id: 'r3', ccpId: 'ccp2', ccpName: 'Destilacion - Alcohol', value: '48%', timestamp: new Date(Date.now() - 7200000).toISOString(), operator: 'Juan Perez', status: 'normal', lotNumber: 'LOT-2025-089' },
+  { id: 'r4', ccpId: 'ccp3', ccpName: 'Fermentacion - pH', value: '4.1', timestamp: new Date(Date.now() - 3600000).toISOString(), operator: 'Ana Martinez', status: 'normal', lotNumber: 'LOT-2025-089' },
+  { id: 'r5', ccpId: 'ccp4', ccpName: 'Destilacion - Metanol', value: '185mg/L', timestamp: new Date(Date.now() - 7200000).toISOString(), operator: 'Carlos Lopez', status: 'normal', lotNumber: 'LOT-2025-089' },
+  { id: 'r6', ccpId: 'ccp5', ccpName: 'Almacenamiento - Temperatura', value: '0.5°C', timestamp: new Date(Date.now() - 1800000).toISOString(), operator: 'Pedro Silva', status: 'normal', lotNumber: 'LOT-2025-088' },
+  { id: 'r7', ccpId: 'ccp6', ccpName: 'Envasado - Presion', value: '12.5psi', timestamp: new Date(Date.now() - 900000).toISOString(), operator: 'Maria Garcia', status: 'normal', lotNumber: 'LOT-2025-088' },
+  { id: 'r8', ccpId: 'ccp7', ccpName: 'Limpieza - Cloro Residual', value: '35ppm', timestamp: new Date(Date.now() - 600000).toISOString(), operator: 'Juan Perez', status: 'critical', lotNumber: 'LOT-2025-088', correctiveActionTaken: 'Realizar enjuague adicional con agua purificada' },
+  { id: 'r9', ccpId: 'ccp8', ccpName: 'Fermentacion - Tiempo', value: '96h', timestamp: new Date(Date.now() - 14400000).toISOString(), operator: 'Ana Martinez', status: 'normal', lotNumber: 'LOT-2025-088' },
+  { id: 'r10', ccpId: 'ccp1', ccpName: 'Fermentacion - Temperatura', value: '34°C', timestamp: new Date(Date.now() - 1200000).toISOString(), operator: 'Carlos Lopez', status: 'critical', lotNumber: 'LOT-2025-090', correctiveActionTaken: 'Temperatura ajustada a 30°C, supervisor notificado' },
+  { id: 'r11', ccpId: 'ccp2', ccpName: 'Destilacion - Alcohol', value: '58%', timestamp: new Date(Date.now() - 3000000).toISOString(), operator: 'Pedro Silva', status: 'critical', lotNumber: 'LOT-2025-087', correctiveActionTaken: 'Lote descartado, equipo calibrado nuevamente' }
+]
 
-export const sampleActiveAlerts: CCPReading[] = []
+export const sampleActiveAlerts: CCPReading[] = [
+  { id: 'r8', ccpId: 'ccp7', ccpName: 'Limpieza - Cloro Residual', value: '35ppm', timestamp: new Date(Date.now() - 600000).toISOString(), operator: 'Juan Perez', status: 'critical', lotNumber: 'LOT-2025-088', correctiveActionTaken: 'Realizar enjuague adicional con agua purificada' },
+  { id: 'r10', ccpId: 'ccp1', ccpName: 'Fermentacion - Temperatura', value: '34°C', timestamp: new Date(Date.now() - 1200000).toISOString(), operator: 'Carlos Lopez', status: 'critical', lotNumber: 'LOT-2025-090', correctiveActionTaken: 'Temperatura ajustada a 30°C, supervisor notificado' }
+]
 
 export const sampleDocumentFolders: DocumentFolder[] = [
   { id: '1', name: 'HACCP', documentCount: 12 },
