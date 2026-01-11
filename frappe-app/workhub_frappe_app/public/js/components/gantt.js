@@ -500,6 +500,9 @@
 		// Add click handler to open task detail sidebar
 		this._setupTaskBarClick(bar, task);
 
+		// Add dependency drag connector
+		this._setupDependencyDrag(bar, task);
+
 		return bar;
 	}
 
@@ -2375,6 +2378,313 @@
 	}
 
 	/**
+	 * Setup dependency drag connector on task bar
+	 * Allows dragging from task end to create dependencies
+	 * @private
+	 */
+	_setupDependencyDrag(barElement, task) {
+		// Create dependency connector button on right side of task bar
+		const connector = document.createElement('div');
+		connector.className = 'gantt-task-bar__dependency-connector';
+		connector.title = 'Crear dependencia';
+		barElement.appendChild(connector);
+
+		// Add mousedown listener to start dependency drag
+		connector.addEventListener('mousedown', (e) => {
+			// Only left mouse button
+			if (e.button !== 0) return;
+
+			e.preventDefault();
+			e.stopPropagation();
+
+			this._startDependencyDrag(barElement, task, e);
+		});
+	}
+
+	/**
+	 * Start dependency drag operation
+	 * @private
+	 */
+	_startDependencyDrag(barElement, task, event) {
+		// Initialize dependency drag state (inline since we can't modify constructor)
+		if (!this.dependencyDragState) {
+			this.dependencyDragState = {
+				isDragging: false,
+				sourceTaskId: null,
+				sourceTaskElement: null,
+				currentX: 0,
+				currentY: 0,
+				targetTaskId: null,
+				targetTaskElement: null,
+				previewLine: null
+			};
+		}
+
+		// Set state
+		this.dependencyDragState.isDragging = true;
+		this.dependencyDragState.sourceTaskId = task.name;
+		this.dependencyDragState.sourceTaskElement = barElement;
+		this.dependencyDragState.currentX = event.clientX;
+		this.dependencyDragState.currentY = event.clientY;
+
+		// Create SVG preview line
+		this._createDependencyPreviewLine();
+
+		// Add document-level event listeners
+		this._onDependencyDragMoveHandler = (e) => this._onDependencyDragMove(e);
+		this._onDependencyDragEndHandler = (e) => this._onDependencyDragEnd(e);
+
+		document.addEventListener('mousemove', this._onDependencyDragMoveHandler);
+		document.addEventListener('mouseup', this._onDependencyDragEndHandler);
+
+		// Prevent text selection during drag
+		document.body.style.userSelect = 'none';
+	}
+
+	/**
+	 * Create SVG preview line for dependency drag
+	 * @private
+	 */
+	_createDependencyPreviewLine() {
+		if (!this.elements.body) return;
+
+		// Create or reuse SVG layer
+		if (!this.dependencyDragState.previewLine) {
+			const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+			svg.setAttribute('class', 'gantt-dependency-preview');
+			svg.style.position = 'absolute';
+			svg.style.top = '0';
+			svg.style.left = '0';
+			svg.style.width = '100%';
+			svg.style.height = '100%';
+			svg.style.pointerEvents = 'none';
+			svg.style.zIndex = '10';
+
+			// Create path element
+			const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+			path.setAttribute('class', 'gantt-dependency-preview__line');
+			path.setAttribute('stroke', 'var(--primary)');
+			path.setAttribute('stroke-width', '3');
+			path.setAttribute('stroke-dasharray', '5,5');
+			path.setAttribute('fill', 'none');
+
+			svg.appendChild(path);
+			this.elements.body.appendChild(svg);
+
+			this.dependencyDragState.previewLine = { svg, path };
+		}
+	}
+
+	/**
+	 * Handle dependency drag move
+	 * @private
+	 */
+	_onDependencyDragMove(event) {
+		if (!this.dependencyDragState || !this.dependencyDragState.isDragging) return;
+
+		event.preventDefault();
+
+		// Update current position
+		this.dependencyDragState.currentX = event.clientX;
+		this.dependencyDragState.currentY = event.clientY;
+
+		// Update preview line
+		this._updateDependencyPreviewLine();
+
+		// Check if hovering over a task bar (potential target)
+		const targetElement = this._findTaskBarUnderCursor(event.clientX, event.clientY);
+
+		// Update target highlighting
+		if (this.dependencyDragState.targetTaskElement &&
+			this.dependencyDragState.targetTaskElement !== targetElement) {
+			// Remove highlight from previous target
+			this.dependencyDragState.targetTaskElement.classList.remove('gantt-task-bar--dependency-target');
+		}
+
+		if (targetElement && targetElement !== this.dependencyDragState.sourceTaskElement) {
+			// Highlight new target
+			targetElement.classList.add('gantt-task-bar--dependency-target');
+			this.dependencyDragState.targetTaskElement = targetElement;
+			this.dependencyDragState.targetTaskId = targetElement.dataset.taskId;
+		} else {
+			this.dependencyDragState.targetTaskElement = null;
+			this.dependencyDragState.targetTaskId = null;
+		}
+	}
+
+	/**
+	 * Update dependency preview line to follow cursor
+	 * @private
+	 */
+	_updateDependencyPreviewLine() {
+		if (!this.dependencyDragState.previewLine || !this.elements.body) return;
+
+		const sourceBar = this.dependencyDragState.sourceTaskElement;
+		if (!sourceBar) return;
+
+		// Get source position (right edge of task bar)
+		const sourcePos = this._getTaskBarPosition(sourceBar);
+		if (!sourcePos) return;
+
+		// Start from right edge of source task
+		const startX = sourcePos.right;
+		const startY = sourcePos.centerY;
+
+		// End at cursor position (relative to timeline body)
+		const bodyRect = this.elements.body.getBoundingClientRect();
+		const endX = this.dependencyDragState.currentX - bodyRect.left;
+		const endY = this.dependencyDragState.currentY - bodyRect.top;
+
+		// Create simple curved path
+		const dx = endX - startX;
+		const cpOffset = Math.min(Math.abs(dx) / 2, 50);
+
+		const path = `M ${startX} ${startY} C ${startX + cpOffset} ${startY}, ${endX - cpOffset} ${endY}, ${endX} ${endY}`;
+
+		this.dependencyDragState.previewLine.path.setAttribute('d', path);
+	}
+
+	/**
+	 * Find task bar element under cursor position
+	 * @private
+	 */
+	_findTaskBarUnderCursor(clientX, clientY) {
+		// Temporarily hide the preview line to get element underneath
+		if (this.dependencyDragState.previewLine) {
+			this.dependencyDragState.previewLine.svg.style.pointerEvents = 'none';
+		}
+
+		const element = document.elementFromPoint(clientX, clientY);
+
+		// Restore pointer events
+		if (this.dependencyDragState.previewLine) {
+			this.dependencyDragState.previewLine.svg.style.pointerEvents = 'none'; // Keep it none
+		}
+
+		// Find closest task bar
+		if (element) {
+			const taskBar = element.closest('.gantt-task-bar');
+			return taskBar;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Handle dependency drag end
+	 * @private
+	 */
+	_onDependencyDragEnd(event) {
+		if (!this.dependencyDragState || !this.dependencyDragState.isDragging) return;
+
+		event.preventDefault();
+
+		// Remove event listeners
+		document.removeEventListener('mousemove', this._onDependencyDragMoveHandler);
+		document.removeEventListener('mouseup', this._onDependencyDragEndHandler);
+
+		// Restore user selection
+		document.body.style.userSelect = '';
+
+		// Remove preview line
+		this._removeDependencyPreviewLine();
+
+		// Remove target highlighting
+		if (this.dependencyDragState.targetTaskElement) {
+			this.dependencyDragState.targetTaskElement.classList.remove('gantt-task-bar--dependency-target');
+		}
+
+		// If dropped on a valid target, create dependency
+		if (this.dependencyDragState.targetTaskId &&
+			this.dependencyDragState.targetTaskId !== this.dependencyDragState.sourceTaskId) {
+			this._createDependency(
+				this.dependencyDragState.sourceTaskId,
+				this.dependencyDragState.targetTaskId
+			);
+		}
+
+		// Reset state
+		this.dependencyDragState.isDragging = false;
+		this.dependencyDragState.sourceTaskId = null;
+		this.dependencyDragState.sourceTaskElement = null;
+		this.dependencyDragState.targetTaskId = null;
+		this.dependencyDragState.targetTaskElement = null;
+		this.dependencyDragState.currentX = 0;
+		this.dependencyDragState.currentY = 0;
+	}
+
+	/**
+	 * Remove dependency preview line
+	 * @private
+	 */
+	_removeDependencyPreviewLine() {
+		if (this.dependencyDragState && this.dependencyDragState.previewLine) {
+			if (this.dependencyDragState.previewLine.svg.parentNode) {
+				this.dependencyDragState.previewLine.svg.parentNode.removeChild(
+					this.dependencyDragState.previewLine.svg
+				);
+			}
+			this.dependencyDragState.previewLine = null;
+		}
+	}
+
+	/**
+	 * Create dependency via API
+	 * @private
+	 */
+	_createDependency(predecessorId, successorId) {
+		// Show loading
+		frappe.freeze('Creando dependencia...');
+
+		// Call API
+		frappe.call({
+			method: 'workhub_frappe_app.api.gantt.add_dependency',
+			args: {
+				predecessor_id: predecessorId,
+				successor_id: successorId,
+				dep_type: 'FS', // Default to Finish-to-Start
+				lag_days: 0
+			},
+			callback: (response) => {
+				frappe.unfreeze();
+
+				if (response.message && response.message.success) {
+					// Show success notification
+					frappe.show_alert({
+						message: 'Dependencia creada correctamente',
+						indicator: 'green'
+					}, 3);
+
+					// Refresh chart to show new dependency
+					this._refreshChartData();
+				} else {
+					// Show error message
+					const errorMsg = response.message && response.message.message
+						? response.message.message
+						: 'No se pudo crear la dependencia';
+
+					frappe.msgprint({
+						title: 'Error',
+						message: errorMsg,
+						indicator: 'orange'
+					});
+				}
+			},
+			error: (error) => {
+				frappe.unfreeze();
+
+				frappe.msgprint({
+					title: 'Error',
+					message: 'No se pudo crear la dependencia. Por favor intenta de nuevo.',
+					indicator: 'red'
+				});
+
+				console.error('Error creating dependency:', error);
+			}
+		});
+	}
+
+	/**
 	 * Destroy the component
 		 */
 		destroy() {
@@ -2383,6 +2693,9 @@
 
 			// Remove resize preview if exists
 			this._removeResizePreview();
+
+			// Remove dependency preview if exists
+			this._removeDependencyPreviewLine();
 
 			// Clear container
 			this.container.innerHTML = '';

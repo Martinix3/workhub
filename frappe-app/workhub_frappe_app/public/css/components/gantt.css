@@ -248,6 +248,56 @@
 	opacity: 0.2;
 }
 
+/* Dependency Connector */
+.gantt-task-bar__dependency-connector {
+	position: absolute;
+	top: 50%;
+	right: -8px;
+	width: 16px;
+	height: 16px;
+	margin-top: -8px;
+	background: var(--primary);
+	border: 2px solid var(--border-1);
+	border-radius: 50%;
+	cursor: crosshair;
+	opacity: 0;
+	transition: opacity 0.2s ease, transform 0.2s ease;
+	z-index: 6;
+}
+
+.gantt-task-bar:hover .gantt-task-bar__dependency-connector {
+	opacity: 1;
+}
+
+.gantt-task-bar__dependency-connector:hover {
+	transform: scale(1.2);
+	background: var(--primary-dark);
+	box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.gantt-task-bar__dependency-connector:active {
+	transform: scale(0.9);
+}
+
+/* Dependency Target Highlighting */
+.gantt-task-bar--dependency-target {
+	box-shadow: 0 0 0 3px var(--success), 4px 4px 0 var(--success-dark) !important;
+	z-index: 20 !important;
+}
+
+/* Dependency Preview Line */
+.gantt-dependency-preview {
+	pointer-events: none;
+}
+
+.gantt-dependency-preview__line {
+	stroke: var(--primary);
+	stroke-width: 3;
+	stroke-dasharray: 5, 5;
+	fill: none;
+	opacity: 0.8;
+}
+
 /* === STATUS COLORS === */
 .gantt-task-bar--backlog {
 	background: var(--surface-2);
