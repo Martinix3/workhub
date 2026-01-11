@@ -457,6 +457,7 @@
 {% endblock %}
 
 {% block script %}
+<script src="/assets/workhub_frappe_app/js/report_export_ui.js"></script>
 <script>
 let currentReportId = null;
 let currentReportTitle = null;
@@ -478,44 +479,15 @@ function showScheduleModal(reportId, reportTitle) {
 function exportReport() {
 	const format = document.getElementById('export-format').value;
 
-	// Show loading state
-	frappe.show_progress('Exportando...', 0, 100, 'Generando ' + format + '...');
-
-	// Call export API
-	frappe.call({
-		method: 'workhub_frappe_app.api.report_export.export_report',
-		args: {
-			report_id: currentReportId,
-			format: format
+	// Use the export UI module
+	window.reportExportUI.exportReport(currentReportId, format, {},
+		// Success callback
+		function(result) {
+			$('#exportModal').modal('hide');
 		},
-		callback: function(r) {
-			frappe.hide_progress();
-			if (r.message && r.message.success) {
-				$('#exportModal').modal('hide');
-				frappe.show_alert({
-					message: 'Reporte exportado exitosamente',
-					indicator: 'green'
-				});
-
-				// Download file
-				if (r.message.file_url) {
-					window.open(r.message.file_url, '_blank');
-				}
-			} else {
-				frappe.show_alert({
-					message: 'Error al exportar el reporte',
-					indicator: 'red'
-				});
-			}
-		},
-		error: function() {
-			frappe.hide_progress();
-			frappe.show_alert({
-				message: 'Error al exportar el reporte',
-				indicator: 'red'
-			});
-		}
-	});
+		// Error callback (already handled by module)
+		null
+	);
 }
 
 // Auto-submit form on filter change (optional)

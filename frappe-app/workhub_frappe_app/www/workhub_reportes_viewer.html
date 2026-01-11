@@ -510,6 +510,7 @@
 
 {% block script %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="/assets/workhub_frappe_app/js/report_export_ui.js"></script>
 <script>
 // Global state
 let reportData = null;
@@ -863,45 +864,16 @@ function refreshReport() {
 }
 
 function exportReport(format) {
-	frappe.show_progress('Exportando...', 0, 100, `Generando ${format}...`);
-
-	frappe.call({
-		method: 'workhub_frappe_app.api.report_export.export_report',
-		args: {
-			report_id: reportId,
-			format: format,
-			filters: filters
+	// Use the export UI module
+	window.reportExportUI.exportReport(reportId, format, filters,
+		// Success callback
+		function(result) {
+			// Reload page to refresh export history
+			setTimeout(() => window.location.reload(), 1500);
 		},
-		callback: function(r) {
-			frappe.hide_progress();
-			if (r.message && r.message.success) {
-				frappe.show_alert({
-					message: 'Reporte exportado exitosamente',
-					indicator: 'green'
-				});
-
-				// Download file
-				if (r.message.file_url) {
-					window.open(r.message.file_url, '_blank');
-				}
-
-				// Reload page to refresh export history
-				setTimeout(() => window.location.reload(), 1500);
-			} else {
-				frappe.show_alert({
-					message: 'Error al exportar el reporte',
-					indicator: 'red'
-				});
-			}
-		},
-		error: function() {
-			frappe.hide_progress();
-			frappe.show_alert({
-				message: 'Error al exportar el reporte',
-				indicator: 'red'
-			});
-		}
-	});
+		// Error callback (already handled by module)
+		null
+	);
 }
 
 function showShareModal() {
