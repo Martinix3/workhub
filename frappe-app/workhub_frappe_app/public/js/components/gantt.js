@@ -323,51 +323,252 @@
 			}
 		}
 
-		/**
-		 * Create a task row
-		 * @private
-		 */
-		_createTaskRow(task) {
-			const row = document.createElement('div');
-			row.className = 'gantt-task-row';
-			row.dataset.taskId = task.name;
+	/**
+	 * Create a task row
+	 * @private
+	 */
+	_createTaskRow(task) {
+		const row = document.createElement('div');
+		row.className = 'gantt-task-row';
+		row.dataset.taskId = task.name;
 
-			// Task label
-			const label = document.createElement('div');
-			label.className = 'gantt-task-row__label';
+		// Task label
+		const label = document.createElement('div');
+		label.className = 'gantt-task-row__label';
 
-			const name = document.createElement('div');
-			name.className = 'gantt-task-row__name';
-			name.textContent = task.title || task.name;
-			name.title = task.title || task.name;
+		const name = document.createElement('div');
+		name.className = 'gantt-task-row__name';
+		name.textContent = task.title || task.name;
+		name.title = task.title || task.name;
 
-			label.appendChild(name);
-			row.appendChild(label);
+		label.appendChild(name);
+		row.appendChild(label);
 
-			// Grid cells
-			const grid = document.createElement('div');
-			grid.className = 'gantt-task-row__grid';
+		// Grid cells
+		const grid = document.createElement('div');
+		grid.className = 'gantt-task-row__grid';
 
-			this.dateColumns.forEach(column => {
-				const cell = document.createElement('div');
-				cell.className = 'gantt-task-row__grid-cell';
+		this.dateColumns.forEach(column => {
+			const cell = document.createElement('div');
+			cell.className = 'gantt-task-row__grid-cell';
 
-				if (column.isWeekend) {
-					cell.classList.add('gantt-task-row__grid-cell--weekend');
-				}
+			if (column.isWeekend) {
+				cell.classList.add('gantt-task-row__grid-cell--weekend');
+			}
 
-				if (column.isToday) {
-					cell.classList.add('gantt-task-row__grid-cell--today');
-				}
+			if (column.isToday) {
+				cell.classList.add('gantt-task-row__grid-cell--today');
+			}
 
-				grid.appendChild(cell);
-			});
+			grid.appendChild(cell);
+		});
 
-			row.appendChild(grid);
-
-			return row;
+		// Render task bar if task has dates
+		if (task.start_date && task.due_date) {
+			const taskBar = this._createTaskBar(task);
+			grid.appendChild(taskBar);
 		}
 
+		row.appendChild(grid);
+
+		return row;
+	}
+
+	/**
+	 * Create a task bar element
+	 * @private
+	 */
+	_createTaskBar(task) {
+		const bar = document.createElement('div');
+		bar.className = 'gantt-task-bar';
+		bar.dataset.taskId = task.name;
+
+		// Add status class
+		const status = (task.status || 'backlog').toLowerCase();
+		bar.classList.add(`gantt-task-bar--${status}`);
+
+		// Add critical path class if applicable
+		if (this.showCriticalPath && this.criticalPath.includes(task.name)) {
+			bar.classList.add('gantt-task-bar--critical');
+		}
+
+		// Calculate position and width
+		const position = this._calculateTaskBarPosition(task);
+		bar.style.left = `${position.left}px`;
+		bar.style.width = `${position.width}px`;
+
+		// Priority indicator
+		if (task.priority) {
+			const priority = document.createElement('div');
+			priority.className = 'gantt-task-bar__priority';
+			priority.classList.add(`gantt-task-bar__priority--${task.priority.toLowerCase()}`);
+			bar.appendChild(priority);
+		}
+
+		// Task bar content
+		const content = document.createElement('div');
+		content.className = 'gantt-task-bar__content';
+
+		// Task title
+		const title = document.createElement('div');
+		title.className = 'gantt-task-bar__title';
+		title.textContent = task.title || task.name;
+		title.title = task.title || task.name;
+		content.appendChild(title);
+
+		// Assigned user avatar
+		if (task.assigned_to) {
+			const avatar = this._createUserAvatar(task.assigned_to);
+			content.appendChild(avatar);
+		}
+
+		bar.appendChild(content);
+
+		// Progress overlay if task has progress
+		if (task.progress && task.progress > 0) {
+			const progressOverlay = document.createElement('div');
+			progressOverlay.className = 'gantt-task-bar__progress';
+			progressOverlay.style.width = `${task.progress}%`;
+			bar.appendChild(progressOverlay);
+		}
+
+		// Drag handles (for future drag-and-drop - Phase 4)
+		const handleLeft = document.createElement('div');
+		handleLeft.className = 'gantt-task-bar__handle gantt-task-bar__handle--left';
+		bar.appendChild(handleLeft);
+
+		const handleRight = document.createElement('div');
+		handleRight.className = 'gantt-task-bar__handle gantt-task-bar__handle--right';
+		bar.appendChild(handleRight);
+
+		return bar;
+	}
+
+	/**
+	 * Calculate task bar position and width
+	 * @private
+	 */
+	_calculateTaskBarPosition(task) {
+		const startDate = this._parseDate(task.start_date);
+		const dueDate = this._parseDate(task.due_date);
+
+		if (!startDate || !dueDate) {
+			return { left: 0, width: 0 };
+		}
+
+		const columnWidth = this._getColumnWidth();
+
+		// Find the column index for start date
+		let startColumnIndex = this._findColumnIndexForDate(startDate);
+		let endColumnIndex = this._findColumnIndexForDate(dueDate);
+
+		// If dates are outside visible range, clamp them
+		if (startColumnIndex < 0) startColumnIndex = 0;
+		if (endColumnIndex < 0) endColumnIndex = 0;
+		if (startColumnIndex >= this.dateColumns.length) startColumnIndex = this.dateColumns.length - 1;
+		if (endColumnIndex >= this.dateColumns.length) endColumnIndex = this.dateColumns.length - 1;
+
+		// Calculate position and width
+		const left = startColumnIndex * columnWidth;
+		const width = Math.max((endColumnIndex - startColumnIndex + 1) * columnWidth, columnWidth);
+
+		return { left, width };
+	}
+
+	/**
+	 * Find column index for a given date
+	 * @private
+	 */
+	_findColumnIndexForDate(date) {
+		if (!date) return -1;
+
+		const targetDate = new Date(date);
+		targetDate.setHours(0, 0, 0, 0);
+
+		for (let i = 0; i < this.dateColumns.length; i++) {
+			const columnDate = new Date(this.dateColumns[i].date);
+			columnDate.setHours(0, 0, 0, 0);
+
+			if (this.currentZoom === 'day') {
+				// Exact day match
+				if (columnDate.getTime() === targetDate.getTime()) {
+					return i;
+				}
+				// If target is before first column, return first column
+				if (targetDate < columnDate && i === 0) {
+					return 0;
+				}
+				// If target is between this and next column, return this
+				if (i < this.dateColumns.length - 1) {
+					const nextColumnDate = new Date(this.dateColumns[i + 1].date);
+					nextColumnDate.setHours(0, 0, 0, 0);
+					if (targetDate >= columnDate && targetDate < nextColumnDate) {
+						return i;
+					}
+				}
+			} else if (this.currentZoom === 'week') {
+				// Check if date falls within this week
+				const weekEnd = new Date(columnDate);
+				weekEnd.setDate(weekEnd.getDate() + 6);
+				weekEnd.setHours(23, 59, 59, 999);
+				if (targetDate >= columnDate && targetDate <= weekEnd) {
+					return i;
+				}
+			} else if (this.currentZoom === 'month') {
+				// Check if date is in this month
+				if (columnDate.getMonth() === targetDate.getMonth() &&
+					columnDate.getFullYear() === targetDate.getFullYear()) {
+					return i;
+				}
+			} else if (this.currentZoom === 'quarter') {
+				// Check if date is in this quarter
+				const colQuarter = Math.floor(columnDate.getMonth() / 3);
+				const targetQuarter = Math.floor(targetDate.getMonth() / 3);
+				if (colQuarter === targetQuarter &&
+					columnDate.getFullYear() === targetDate.getFullYear()) {
+					return i;
+				}
+			}
+		}
+
+		// If date is after all columns, return last column
+		if (targetDate > new Date(this.dateColumns[this.dateColumns.length - 1].date)) {
+			return this.dateColumns.length - 1;
+		}
+
+		return -1;
+	}
+
+	/**
+	 * Create user avatar element
+	 * @private
+	 */
+	_createUserAvatar(assignedTo) {
+		const avatar = document.createElement('div');
+		avatar.className = 'gantt-task-bar__avatar';
+
+		// Extract initials from assigned user
+		let initials = '?';
+		if (assignedTo) {
+			// If it's an email, use first letter
+			if (assignedTo.includes('@')) {
+				initials = assignedTo.charAt(0).toUpperCase();
+			} else {
+				// If it's a name, use first letters of first and last name
+				const parts = assignedTo.trim().split(/\s+/);
+				if (parts.length >= 2) {
+					initials = parts[0].charAt(0).toUpperCase() + parts[parts.length - 1].charAt(0).toUpperCase();
+				} else {
+					initials = parts[0].substring(0, 2).toUpperCase();
+				}
+			}
+		}
+
+		avatar.textContent = initials;
+		avatar.title = assignedTo;
+
+		return avatar;
+	}
 		/**
 		 * Render today line
 		 * @private
