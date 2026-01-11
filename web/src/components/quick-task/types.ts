@@ -18,6 +18,7 @@ export interface QuickTaskModalProps {
   initialContext?: {
     doctype?: string
     docId?: string
+    department?: 'SALES' | 'OPS' | 'MKT'
   }
 }
 

@@ -8,6 +8,7 @@ import { PenLine, Zap, X } from 'lucide-react'
 import { SmartNotepadModal } from './smart-notepad/SmartNotepadModal'
 import { QuickTaskModal } from './quick-task/QuickTaskModal'
 import { useGlobalKeyboard } from '../hooks/useGlobalKeyboard'
+import { detectContext, hasRelevantContext, getSuggestedDepartment } from '../services/contextDetector'
 
 type ActiveModal = 'notepad' | 'quickTask' | null
 
@@ -15,12 +16,17 @@ export function GlobalActions() {
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [detectedContext, setDetectedContext] = useState<{
+    doctype?: string
+    docId?: string
+    department?: 'SALES' | 'OPS' | 'MKT'
+  } | undefined>(undefined)
 
   // Handle Cmd/Ctrl+K shortcut to open Quick Task
   useGlobalKeyboard({
     onShortcut: () => {
       setMenuOpen(false)
-      setActiveModal('quickTask')
+      detectAndOpenQuickTask()
     },
     enabled: activeModal === null // Only enable when no modal is open
   })
@@ -44,6 +50,34 @@ export function GlobalActions() {
     setMenuOpen(prev => !prev)
   }, [])
 
+  // Detect context and open Quick Task
+  const detectAndOpenQuickTask = useCallback(() => {
+    const context = detectContext()
+
+    // Build initial context object
+    const initialContext: {
+      doctype?: string
+      docId?: string
+      department?: 'SALES' | 'OPS' | 'MKT'
+    } = {}
+
+    // Add doctype if relevant context detected
+    if (hasRelevantContext(context) && context.doctype) {
+      initialContext.doctype = context.doctype
+      // Note: docId would need to be extracted from URL params if viewing a specific doc
+      // For now, we just pass doctype to trigger suggestions
+    }
+
+    // Add suggested department
+    const department = getSuggestedDepartment(context)
+    if (department) {
+      initialContext.department = department
+    }
+
+    setDetectedContext(Object.keys(initialContext).length > 0 ? initialContext : undefined)
+    setActiveModal('quickTask')
+  }, [])
+
   // Handle menu option click
   const handleSmartNotepad = useCallback(() => {
     setMenuOpen(false)
@@ -52,8 +86,8 @@ export function GlobalActions() {
 
   const handleQuickTask = useCallback(() => {
     setMenuOpen(false)
-    setActiveModal('quickTask')
-  }, [])
+    detectAndOpenQuickTask()
+  }, [detectAndOpenQuickTask])
 
   // Handle modal close
   const handleCloseModal = useCallback(() => {
@@ -142,6 +176,7 @@ export function GlobalActions() {
       <QuickTaskModal
         isOpen={activeModal === 'quickTask'}
         onClose={handleCloseModal}
+        initialContext={detectedContext}
       />
     </>
   )

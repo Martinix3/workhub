@@ -3,8 +3,9 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { X, Loader2, CheckCircle, AlertCircle, Calendar, Zap } from 'lucide-react'
-import { useQuickTask, useQuickTaskOptions } from '../../api/hooks/useQuickTask'
-import type { QuickTaskData, QuickTaskModalProps, ModalStep, Priority, Department } from './types'
+import { useQuickTask, useQuickTaskOptions, useWorkLinkSuggestions } from '../../api/hooks/useQuickTask'
+import { WorkLinkSuggestions } from './WorkLinkSuggestions'
+import type { QuickTaskData, QuickTaskModalProps, ModalStep, Priority, Department, WorkLinkSuggestion } from './types'
 
 export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskModalProps) {
   const [step, setStep] = useState<ModalStep>('input')
@@ -15,9 +16,32 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
   const [assignee, setAssignee] = useState('')
   const [department, setDepartment] = useState<Department>('')
   const [resultMessage, setResultMessage] = useState('')
+  const [selectedDoctype, setSelectedDoctype] = useState<string | undefined>(undefined)
+  const [selectedDocId, setSelectedDocId] = useState<string | undefined>(undefined)
 
   const { creating, createError, createTask, reset } = useQuickTask()
   const { projects, users, loading: optionsLoading } = useQuickTaskOptions()
+
+  // Load WorkLink suggestions if we have a doctype context
+  const { suggestions, loading: suggestionsLoading, error: suggestionsError } = useWorkLinkSuggestions(
+    initialContext?.doctype,
+    initialContext?.docId
+  )
+
+  // Initialize department from context when modal opens
+  useEffect(() => {
+    if (isOpen && initialContext?.department) {
+      setDepartment(initialContext.department)
+    }
+  }, [isOpen, initialContext?.department])
+
+  // Initialize WorkLink selection from context
+  useEffect(() => {
+    if (isOpen && initialContext?.doctype) {
+      setSelectedDoctype(initialContext.doctype)
+      setSelectedDocId(initialContext.docId)
+    }
+  }, [isOpen, initialContext?.doctype, initialContext?.docId])
 
   // Reset state when modal closes
   useEffect(() => {
@@ -31,10 +55,18 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
         setAssignee('')
         setDepartment('')
         setResultMessage('')
+        setSelectedDoctype(undefined)
+        setSelectedDocId(undefined)
         reset()
       }, 300)
     }
   }, [isOpen, reset])
+
+  // Handle WorkLink suggestion selection
+  const handleSuggestionSelect = useCallback((suggestion: WorkLinkSuggestion) => {
+    setSelectedDoctype(suggestion.source_doctype)
+    setSelectedDocId(suggestion.source_id)
+  }, [])
 
   // Handle submit
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -49,8 +81,8 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
       ...(project && { project }),
       ...(assignee && { assigned_to: assignee }),
       ...(department && { department }),
-      ...(initialContext?.doctype && { source_doctype: initialContext.doctype }),
-      ...(initialContext?.docId && { source_id: initialContext.docId })
+      ...(selectedDoctype && { source_doctype: selectedDoctype }),
+      ...(selectedDocId && { source_id: selectedDocId })
     }
 
     const result = await createTask(taskData)
@@ -67,7 +99,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
         setStep('error')
       }
     }
-  }, [title, priority, dueDate, project, assignee, department, initialContext, createTask, onClose])
+  }, [title, priority, dueDate, project, assignee, department, selectedDoctype, selectedDocId, createTask, onClose])
 
   // Handle close and reset
   const handleClose = useCallback(() => {
@@ -257,17 +289,24 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                 </select>
               </div>
 
+              {/* WorkLink Suggestions */}
+              {initialContext?.doctype && (
+                <div>
+                  <WorkLinkSuggestions
+                    suggestions={suggestions}
+                    loading={suggestionsLoading}
+                    error={suggestionsError}
+                    onSelect={handleSuggestionSelect}
+                    selectedDoctype={selectedDoctype}
+                    selectedDocId={selectedDocId}
+                  />
+                </div>
+              )}
+
               {/* Error Display */}
               {createError && (
                 <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm">
                   {createError.message}
-                </div>
-              )}
-
-              {/* Context Indicator */}
-              {initialContext?.doctype && (
-                <div className="p-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs">
-                  Se vinculará con: {initialContext.doctype} {initialContext.docId}
                 </div>
               )}
 
