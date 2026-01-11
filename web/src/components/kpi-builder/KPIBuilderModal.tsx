@@ -5,6 +5,7 @@ import { MetricSelector } from './MetricSelector'
 import { ThresholdEditor } from './ThresholdEditor'
 import { VisualizationPicker } from './VisualizationPicker'
 import { useCustomKPIMutations } from '../../api'
+import { useToast } from '../../hooks/useToast'
 import type {
   KPIMetric,
   ThresholdConfig,
@@ -53,6 +54,7 @@ export function KPIBuilderModal({
   const [isShared, setIsShared] = useState(false)
 
   const { createKPI, updateKPI, loading, error } = useCustomKPIMutations(onSuccess)
+  const toast = useToast()
 
   // Initialize form when editing existing KPI
   useEffect(() => {
@@ -108,7 +110,7 @@ export function KPIBuilderModal({
 
     // Validate title
     if (!title.trim()) {
-      alert('Please enter a title for your KPI')
+      toast.warning('Please enter a title for your KPI')
       return
     }
 
@@ -127,6 +129,7 @@ export function KPIBuilderModal({
 
       const result = await updateKPI(editKPI.name, updates)
       if (result) {
+        toast.success('KPI updated successfully')
         onClose()
       }
     } else {
@@ -144,6 +147,7 @@ export function KPIBuilderModal({
 
       const result = await createKPI(kpiData)
       if (result) {
+        toast.success('KPI created successfully')
         onClose()
       }
     }
@@ -157,7 +161,8 @@ export function KPIBuilderModal({
     editKPI,
     createKPI,
     updateKPI,
-    onClose
+    onClose,
+    toast
   ])
 
   // Calculate progress for progress bar (0-100)

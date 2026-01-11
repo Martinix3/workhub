@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { useCustomKPIs, useCustomKPIMutations } from '../../api/hooks/useCustomKPIs'
 import { CustomKPICard } from './CustomKPICard'
 import { KPIBuilderModal } from './KPIBuilderModal'
 import { SkeletonCard } from '../ui/LoadingState'
+import { useToast } from '../../hooks/useToast'
 import type { CustomKPI, Department } from '../../types/custom-kpi'
 
 interface CustomKPIGridProps {
@@ -25,6 +26,18 @@ export function CustomKPIGrid({
 }: CustomKPIGridProps) {
   const { data: kpis, loading, error, refetch } = useCustomKPIs(department, includeShared)
   const { deleteKPI, reorderKPIs } = useCustomKPIMutations(refetch)
+  const toast = useToast()
+
+  // Optimistic UI state
+  const [optimisticKPIs, setOptimisticKPIs] = useState<CustomKPI[] | null>(null)
+  const displayKPIs = optimisticKPIs ?? kpis
+
+  // Sync optimistic state with server data
+  useEffect(() => {
+    if (kpis && !optimisticKPIs) {
+      setOptimisticKPIs(kpis)
+    }
+  }, [kpis, optimisticKPIs])
 
   // Modal state
   const [isBuilderOpen, setIsBuilderOpen] = useState(false)
@@ -46,9 +59,25 @@ export function CustomKPIGrid({
     setIsBuilderOpen(true)
   }
 
-  // Handle deleting a KPI
+  // Handle deleting a KPI with optimistic update
   const handleDeleteKPI = async (kpi: CustomKPI) => {
-    await deleteKPI(kpi.name)
+    if (!optimisticKPIs) return
+
+    // Optimistic update: remove KPI from UI immediately
+    const previousKPIs = optimisticKPIs
+    setOptimisticKPIs(optimisticKPIs.filter(k => k.name !== kpi.name))
+
+    // Attempt to delete from backend
+    const success = await deleteKPI(kpi.name)
+    if (success) {
+      toast.success(`KPI "${kpi.title}" deleted successfully`)
+      // Refetch to ensure sync with server
+      await refetch()
+    } else {
+      // Rollback on failure
+      setOptimisticKPIs(previousKPIs)
+      toast.error('Failed to delete KPI')
+    }
   }
 
   // Handle drag start
@@ -62,27 +91,38 @@ export function CustomKPIGrid({
     setDraggedOverIndex(index)
   }
 
-  // Handle drop
+  // Handle drop with optimistic update
   const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault()
 
-    if (draggedIndex === null || !kpis) return
+    if (draggedIndex === null || !optimisticKPIs) return
 
     // Don't allow reordering shared KPIs
-    const draggedKPI = kpis[draggedIndex]
+    const draggedKPI = optimisticKPIs[draggedIndex]
     if (!draggedKPI.is_owned) return
 
-    // Create new order
-    const reorderedKPIs = [...kpis]
+    // Optimistic update: reorder KPIs in UI immediately
+    const previousKPIs = optimisticKPIs
+    const reorderedKPIs = [...optimisticKPIs]
     const [draggedKPI_] = reorderedKPIs.splice(draggedIndex, 1)
     reorderedKPIs.splice(dropIndex, 0, draggedKPI_)
+    setOptimisticKPIs(reorderedKPIs)
 
     // Filter only owned KPIs for reordering (backend requires owner permission)
     const ownedKPIs = reorderedKPIs.filter(kpi => kpi.is_owned)
     const kpiOrder = ownedKPIs.map(kpi => kpi.name)
 
     // Update order in backend
-    await reorderKPIs(kpiOrder)
+    const success = await reorderKPIs(kpiOrder)
+    if (success) {
+      toast.success('KPI order updated')
+      // Refetch to ensure sync with server
+      await refetch()
+    } else {
+      // Rollback on failure
+      setOptimisticKPIs(previousKPIs)
+      toast.error('Failed to update KPI order')
+    }
 
     // Reset drag state
     setDraggedIndex(null)
@@ -139,7 +179,7 @@ export function CustomKPIGrid({
   }
 
   // Empty state
-  if (!kpis || kpis.length === 0) {
+  if (!displayKPIs || displayKPIs.length === 0) {
     return (
       <div className="
         bg-white dark:bg-stone-900
@@ -189,7 +229,7 @@ export function CustomKPIGrid({
     <>
       {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {kpis.map((kpi, index) => (
+        {displayKPIs.map((kpi, index) => (
           <div
             key={kpi.name}
             draggable={kpi.is_owned}
