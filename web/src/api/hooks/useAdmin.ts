@@ -9,13 +9,8 @@ import type {
   CreateUserData,
   UpdateUserData
 } from '../services/admin'
-
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
+import { createDataHook, type UseDataState } from './createDataHook'
+import { sampleRoles } from '../sample-data'
 
 // Hook for users list with pagination and search
 export function useUsers(initialLimit = 50): UseDataState<UsersResponse> & {
@@ -81,28 +76,11 @@ export function useUserDetail(userId: string | null): UseDataState<UserDetail> {
 }
 
 // Hook for roles list
-export function useRoles(): UseDataState<Role[]> {
-  const [data, setData] = useState<Role[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const roles = await adminApi.getRoles()
-      setData(roles)
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch roles'))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-
-  return { data, loading, error, refetch: fetch }
-}
+export const useRoles = createDataHook<Role[]>({
+  apiMethod: adminApi.getRoles,
+  sampleData: sampleRoles,
+  errorMessage: 'Failed to fetch roles'
+})
 
 // Hook for user CRUD operations
 export function useUserMutations() {

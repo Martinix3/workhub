@@ -2,13 +2,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import settingsApi from '../services/settings'
 import type { UserSettings, UserProfile, Department, UpdateSettingsData, UpdateProfileData } from '../services/settings'
-
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
+import { createDataHook, type UseDataState } from './createDataHook'
+import { sampleDepartments } from '../sample-data'
 
 // Hook for user settings
 export function useUserSettings(): UseDataState<UserSettings> & {
@@ -95,25 +90,8 @@ export function useUserProfile(): UseDataState<UserProfile> & {
 }
 
 // Hook for departments
-export function useDepartments(): UseDataState<Department[]> {
-  const [data, setData] = useState<Department[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const departments = await settingsApi.getDepartments()
-      setData(departments)
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch departments'))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-
-  return { data, loading, error, refetch: fetch }
-}
+export const useDepartments = createDataHook<Department[]>({
+  apiMethod: settingsApi.getDepartments,
+  sampleData: sampleDepartments,
+  errorMessage: 'Failed to fetch departments'
+})

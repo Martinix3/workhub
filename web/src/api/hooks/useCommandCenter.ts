@@ -3,40 +3,13 @@ import { useState, useEffect, useCallback } from 'react'
 import commandCenterApi from '../services/command-center'
 import type { AreaSummary, PriorityAlert } from '../../components/sections/command-center/types'
 import { isInBypassMode, sampleAreaSummaries, samplePriorityAlerts } from '../sample-data'
+import { createDataHook, type UseDataState } from './createDataHook'
 
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
-
-export function useAreaSummaries(): UseDataState<AreaSummary[]> {
-  const [data, setData] = useState<AreaSummary[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const areas = await commandCenterApi.getAreaSummaries()
-      setData(areas)
-    } catch (err) {
-      // Use sample data in bypass mode
-      if (isInBypassMode()) {
-        setData(sampleAreaSummaries)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch area summaries'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useAreaSummaries = createDataHook<AreaSummary[]>({
+  apiMethod: commandCenterApi.getAreaSummaries,
+  sampleData: sampleAreaSummaries,
+  errorMessage: 'Failed to fetch area summaries'
+})
 
 export function useAlerts(): UseDataState<PriorityAlert[]> & { dismissAlert: (id: string) => Promise<void> } {
   const [data, setData] = useState<PriorityAlert[] | null>(null)

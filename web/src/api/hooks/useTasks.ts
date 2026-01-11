@@ -22,13 +22,7 @@ import {
   sampleKanbanColumns,
   sampleTaskKPIs
 } from '../sample-data'
-
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
+import { createDataHook, type UseDataState } from './createDataHook'
 
 // ============== My Day Hook ==============
 
@@ -71,35 +65,11 @@ export function useMyDay(): UseDataState<MyDayData> & {
 
 // ============== Tasks Hooks ==============
 
-export function useTasks(filters?: TaskFilters): UseDataState<Task[]> {
-  const [data, setData] = useState<Task[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  // Serialize filters for stable dependency comparison
-  const filtersKey = filters ? JSON.stringify(filters) : ''
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const parsedFilters = filtersKey ? JSON.parse(filtersKey) : undefined
-      const tasks = await tasksApi.getTasks(parsedFilters)
-      setData(tasks)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleTasks)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch tasks'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [filtersKey])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useTasks = createDataHook<Task[], TaskFilters>({
+  apiMethod: tasksApi.getTasks,
+  sampleData: sampleTasks,
+  errorMessage: 'Failed to fetch tasks'
+})
 
 export function useTaskMutations() {
   const [loading, setLoading] = useState(false)
@@ -162,64 +132,19 @@ export function useTaskMutations() {
 
 // ============== Projects Hooks ==============
 
-export function useProjects(filters?: ProjectFilters): UseDataState<Project[]> {
-  const [data, setData] = useState<Project[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+export const useProjects = createDataHook<Project[], ProjectFilters>({
+  apiMethod: tasksApi.getProjects,
+  sampleData: sampleProjects,
+  errorMessage: 'Failed to fetch projects',
+  bypassTransformer: (data, filters) =>
+    filters?.status ? data.filter(p => p.status === filters.status) : data
+})
 
-  // Serialize filters for stable dependency comparison
-  const filtersKey = filters ? JSON.stringify(filters) : ''
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const parsedFilters = filtersKey ? JSON.parse(filtersKey) : undefined
-      const projects = await tasksApi.getProjects(parsedFilters)
-      setData(projects)
-    } catch (err) {
-      if (isInBypassMode()) {
-        // Apply filters to sample data
-        const parsedFilters = filtersKey ? JSON.parse(filtersKey) : {}
-        let filtered = [...sampleProjects]
-        if (parsedFilters.status) {
-          filtered = filtered.filter(p => p.status === parsedFilters.status)
-        }
-        setData(filtered)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch projects'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [filtersKey])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useProject(projectId: string): UseDataState<Project> {
-  const [data, setData] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    if (!projectId) return
-    setLoading(true)
-    setError(null)
-    try {
-      const project = await tasksApi.getProject(projectId)
-      setData(project)
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch project'))
-    } finally {
-      setLoading(false)
-    }
-  }, [projectId])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useProject = createDataHook<Project, string>({
+  apiMethod: tasksApi.getProject,
+  sampleData: sampleProjects[0],
+  errorMessage: 'Failed to fetch project'
+})
 
 // ============== Gantt Hook ==============
 
@@ -324,59 +249,19 @@ export function useKanban(filters?: TaskFilters): UseDataState<KanbanColumn[]> &
 
 // ============== Project Templates Hook ==============
 
-export function useProjectTemplates(): UseDataState<ProjectTemplate[]> {
-  const [data, setData] = useState<ProjectTemplate[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const templates = await tasksApi.getProjectTemplates()
-      setData(templates)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleProjectTemplates)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch templates'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useProjectTemplates = createDataHook<ProjectTemplate[]>({
+  apiMethod: tasksApi.getProjectTemplates,
+  sampleData: sampleProjectTemplates,
+  errorMessage: 'Failed to fetch templates'
+})
 
 // ============== Dashboard KPIs Hook ==============
 
-export function useTaskKPIs(): UseDataState<DashboardKPIs> {
-  const [data, setData] = useState<DashboardKPIs | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const kpis = await tasksApi.getDashboardKPIs()
-      setData(kpis)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleTaskKPIs)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch KPIs'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useTaskKPIs = createDataHook<DashboardKPIs>({
+  apiMethod: tasksApi.getDashboardKPIs,
+  sampleData: sampleTaskKPIs,
+  errorMessage: 'Failed to fetch KPIs'
+})
 
 // ============== Combined Dashboard Hook ==============
 

@@ -1,5 +1,9 @@
 // API Hooks index
 
+// Factory
+export { createDataHook } from './createDataHook'
+export type { UseDataState } from './createDataHook'
+
 // Sales
 export {
   useSalesKPIs,

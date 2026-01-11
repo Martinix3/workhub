@@ -1,5 +1,4 @@
 // React hooks for Distributors data
-import { useState, useEffect, useCallback } from 'react'
 import distributorsApi from '../services/distributors'
 import type {
   NetworkKPIs,
@@ -10,70 +9,23 @@ import type {
   PortalAnalytics
 } from '../../components/sections/distributor-network/types'
 import {
-  isInBypassMode,
   sampleNetworkKPIs,
   sampleDistributors,
   samplePortalData
 } from '../sample-data'
+import { createDataHook } from './createDataHook'
 
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
+export const useDistributorKPIs = createDataHook<NetworkKPIs>({
+  apiMethod: distributorsApi.getKPIs,
+  sampleData: sampleNetworkKPIs,
+  errorMessage: 'Failed to fetch KPIs'
+})
 
-export function useDistributorKPIs(): UseDataState<NetworkKPIs> {
-  const [data, setData] = useState<NetworkKPIs | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const kpis = await distributorsApi.getKPIs()
-      setData(kpis)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleNetworkKPIs)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch KPIs'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useDistributors(): UseDataState<Distributor[]> {
-  const [data, setData] = useState<Distributor[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const distributors = await distributorsApi.getDistributors()
-      setData(distributors)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleDistributors)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch distributors'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useDistributors = createDataHook<Distributor[]>({
+  apiMethod: distributorsApi.getDistributors,
+  sampleData: sampleDistributors,
+  errorMessage: 'Failed to fetch distributors'
+})
 
 export function useDistributorDashboard() {
   const kpis = useDistributorKPIs()
@@ -91,109 +43,29 @@ export function useDistributorDashboard() {
 }
 
 // Portal hooks (for distributor users)
-export function useMyOrders(): UseDataState<MyOrder[]> {
-  const [data, setData] = useState<MyOrder[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+export const useMyOrders = createDataHook<MyOrder[]>({
+  apiMethod: distributorsApi.getMyOrders,
+  sampleData: samplePortalData.myOrders,
+  errorMessage: 'Failed to fetch orders'
+})
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const orders = await distributorsApi.getMyOrders()
-      setData(orders)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(samplePortalData.myOrders)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch orders'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+export const useMyInventory = createDataHook<InventoryItem[]>({
+  apiMethod: distributorsApi.getMyInventory,
+  sampleData: samplePortalData.myInventory,
+  errorMessage: 'Failed to fetch inventory'
+})
 
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useMySellOutRecords = createDataHook<SellOutRecord[]>({
+  apiMethod: distributorsApi.getMySellOutRecords,
+  sampleData: samplePortalData.sellOutRecords,
+  errorMessage: 'Failed to fetch sell out records'
+})
 
-export function useMyInventory(): UseDataState<InventoryItem[]> {
-  const [data, setData] = useState<InventoryItem[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const inventory = await distributorsApi.getMyInventory()
-      setData(inventory)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(samplePortalData.myInventory)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch inventory'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useMySellOutRecords(): UseDataState<SellOutRecord[]> {
-  const [data, setData] = useState<SellOutRecord[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const records = await distributorsApi.getMySellOutRecords()
-      setData(records)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(samplePortalData.sellOutRecords)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch sell out records'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function usePortalAnalytics(): UseDataState<PortalAnalytics> {
-  const [data, setData] = useState<PortalAnalytics | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const analytics = await distributorsApi.getPortalAnalytics()
-      setData(analytics)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(samplePortalData.analytics)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch analytics'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const usePortalAnalytics = createDataHook<PortalAnalytics>({
+  apiMethod: distributorsApi.getPortalAnalytics,
+  sampleData: samplePortalData.analytics,
+  errorMessage: 'Failed to fetch analytics'
+})
 
 export function useDistributorPortal() {
   const orders = useMyOrders()
