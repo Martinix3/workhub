@@ -1,0 +1,109 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-01-10 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "entity_type",
+  "icon",
+  "column_break_1",
+  "is_shared",
+  "is_preset",
+  "sort_order",
+  "section_break_filter",
+  "filter_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Titulo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "entity_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Tipo de Entidad",
+   "options": "task\nproject",
+   "reqd": 1,
+   "default": "task"
+  },
+  {
+   "fieldname": "icon",
+   "fieldtype": "Data",
+   "label": "Icono",
+   "description": "Emoji o nombre de icono"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_shared",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Compartido"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_preset",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Preset del Sistema"
+  },
+  {
+   "default": "0",
+   "fieldname": "sort_order",
+   "fieldtype": "Int",
+   "label": "Orden",
+   "description": "Orden de visualizacion en la lista"
+  },
+  {
+   "fieldname": "section_break_filter",
+   "fieldtype": "Section Break",
+   "label": "Criterios de Filtro"
+  },
+  {
+   "fieldname": "filter_json",
+   "fieldtype": "Long Text",
+   "label": "Configuracion del Filtro (JSON)",
+   "description": "JSON con criterios de filtro. Soporta placeholders dinamicos: $current_user, $today, $this_week, $this_month"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Workhub Frappe App",
+ "name": "WH Saved Filter",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "All",
+   "write": 1
+  }
+ ],
+ "sort_field": "sort_order",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

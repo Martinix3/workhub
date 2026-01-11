@@ -1,6 +1,6 @@
 // Projects List Page - Enhanced with Stats, Expandable Projects, Templates Modal
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Plus,
   FolderOpen,
@@ -13,12 +13,14 @@ import {
   ExternalLink,
   List,
   BarChart2,
-  FileText,
+  Menu,
 } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useProjects, useProjectTemplates, useTaskMutations } from '../../api'
-import { TaskCompletionModal } from '../../components/tasks/TaskCompletionModal'
+import { useProjects, useProjectTemplates, useSavedFilter } from '../../api'
+import { SavedFiltersPanel } from '../../components/sections/tasks/SavedFiltersPanel'
+import { FilterBar } from '../../components/sections/tasks/FilterBar'
+import { SaveFilterModal } from '../../components/sections/tasks/SaveFilterModal'
 import type {
   Project,
   ProjectTemplate,
@@ -28,6 +30,7 @@ import type {
   TaskStatus,
   TaskPriority,
 } from '../../components/sections/tasks/types'
+import type { SavedFilter, FilterCriteria } from '../../api/services/saved-filters'
 
 const healthConfig: Record<ProjectHealth, { bg: string; border: string; text: string; label: string }> = {
   GREEN: { bg: 'bg-emerald-400', border: 'border-t-emerald-400', text: 'text-emerald-600', label: 'ON TRACK' },
@@ -59,18 +62,55 @@ type ViewMode = 'list' | 'gantt'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filterIdFromUrl = searchParams.get('filter')
+
   const [showNewProject, setShowNewProject] = useState(false)
   const [filter, setFilter] = useState<'all' | 'risk'>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [expandedProject, setExpandedProject] = useState<string | null>(null)
-  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null)
-  const [showCompletionModal, setShowCompletionModal] = useState(false)
+
+  // Saved filters state
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [activeFilterId, setActiveFilterId] = useState<string | null>(filterIdFromUrl)
+  const [currentFilters, setCurrentFilters] = useState<FilterCriteria>({})
+  const [showSaveModal, setShowSaveModal] = useState(false)
 
   const { data: projects, loading, error, refetch } = useProjects({ status: 'ACTIVE' })
   const { data: templates } = useProjectTemplates()
-  const { completeTask } = useTaskMutations()
 
-  if (loading) {
+  // Load saved filter from URL
+  const { data: savedFilter, loading: savedFilterLoading } = useSavedFilter(filterIdFromUrl || '')
+
+  // Apply saved filter when loaded
+  useEffect(() => {
+    if (savedFilter && savedFilter.filter_json) {
+      setCurrentFilters(savedFilter.filter_json)
+      setActiveFilterId(savedFilter.name)
+    }
+  }, [savedFilter])
+
+  // Keyboard shortcut 's' to toggle sidebar
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only trigger if not typing in an input/textarea and 's' is pressed
+      if (
+        e.key === 's' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault()
+        setSidebarOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [])
+
+  if (loading || (filterIdFromUrl && savedFilterLoading)) {
     return <LoadingState message="Cargando proyectos..." />
   }
 
@@ -110,38 +150,80 @@ export function ProjectsPage() {
   }
 
   const handleTaskComplete = (taskId: string) => {
-    // Find the task in the projects list
-    const task = projectsList
-      .flatMap(p => p.tasks || [])
-      .find(t => t.name === taskId)
+    // TODO: Implement task completion
+    console.log('Complete task:', taskId)
+  }
 
-    if (task) {
-      setTaskToComplete(task)
-      setShowCompletionModal(true)
+  // Handle filter selection from sidebar
+  const handleFilterSelect = (filter: SavedFilter) => {
+    setActiveFilterId(filter.name)
+    setCurrentFilters(filter.filter_json)
+    // Update URL with filter ID for shareable links
+    searchParams.set('filter', filter.name)
+    setSearchParams(searchParams)
+  }
+
+  // Handle filter changes from FilterBar
+  const handleFilterChange = (newFilters: FilterCriteria) => {
+    setCurrentFilters(newFilters)
+    // Clear active filter ID when manually changing filters
+    if (activeFilterId) {
+      setActiveFilterId(null)
+      searchParams.delete('filter')
+      setSearchParams(searchParams)
     }
   }
 
-  const handleModalComplete = async (taskId: string, notes?: string) => {
-    await completeTask(taskId, notes)
-    // Refetch projects to update the UI
-    await refetch()
-    setShowCompletionModal(false)
-    setTaskToComplete(null)
+  // Handle save filter success
+  const handleSaveSuccess = () => {
+    // Refetch would happen automatically via useSavedFilters hook
   }
 
   return (
-    <div className="min-h-screen bg-stone-100">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="font-serif text-3xl lg:text-4xl font-bold text-stone-900">
-              Proyectos
-            </h1>
-            <p className="text-stone-500 uppercase tracking-wider text-sm mt-1">
-              {stats.active} proyectos activos
-            </p>
-          </div>
+    <div className="min-h-screen bg-stone-100 flex">
+      {/* Saved Filters Sidebar */}
+      {sidebarOpen && (
+        <aside className="hidden lg:block flex-shrink-0">
+          <SavedFiltersPanel
+            activeFilterId={activeFilterId}
+            onFilterSelect={handleFilterSelect}
+            onCreateNew={() => setShowSaveModal(true)}
+          />
+        </aside>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        <div className="max-w-full px-4 py-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              {/* Sidebar toggle button */}
+              <button
+                onClick={() => setSidebarOpen(prev => !prev)}
+                className="
+                  p-2
+                  border-2 border-stone-900
+                  bg-white hover:bg-stone-100
+                  shadow-[2px_2px_0_#1c1917]
+                  hover:shadow-[3px_3px_0_#1c1917]
+                  hover:translate-x-[-1px] hover:translate-y-[-1px]
+                  transition-all duration-75
+                "
+                title="Alternar panel de filtros (tecla: s)"
+              >
+                <Menu size={18} />
+              </button>
+
+              <div>
+                <h1 className="font-serif text-3xl lg:text-4xl font-bold text-stone-900">
+                  Proyectos
+                </h1>
+                <p className="text-stone-500 uppercase tracking-wider text-sm mt-1">
+                  {stats.active} proyectos activos
+                </p>
+              </div>
+            </div>
           <button
             onClick={() => setShowNewProject(true)}
             className="
@@ -159,6 +241,13 @@ export function ProjectsPage() {
             Nuevo Proyecto
           </button>
         </div>
+
+        {/* Filter Bar */}
+        <FilterBar
+          currentFilters={currentFilters}
+          onFilterChange={handleFilterChange}
+          onSaveClick={() => setShowSaveModal(true)}
+        />
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -372,17 +461,15 @@ export function ProjectsPage() {
           </div>
         )}
 
-        {/* Task Completion Modal */}
-        <TaskCompletionModal
-          isOpen={showCompletionModal}
-          onClose={() => {
-            setShowCompletionModal(false)
-            setTaskToComplete(null)
-          }}
-          task={taskToComplete}
-          onComplete={handleModalComplete}
+        {/* Save Filter Modal */}
+        <SaveFilterModal
+          isOpen={showSaveModal}
+          onClose={() => setShowSaveModal(false)}
+          currentFilters={currentFilters}
+          onSaved={handleSaveSuccess}
         />
       </div>
+    </div>
     </div>
   )
 }
@@ -608,16 +695,6 @@ function TaskRow({ task, onClick, onComplete }: TaskRowProps) {
       {task.blocked_reason && (
         <span className="text-xs text-red-500 truncate max-w-32" title={task.blocked_reason}>
           {task.blocked_reason}
-        </span>
-      )}
-
-      {/* Completion notes indicator */}
-      {isDone && task.completion_notes && (
-        <span
-          className="text-xs text-green-600 flex items-center gap-1"
-          title={task.completion_notes}
-        >
-          <FileText size={12} />
         </span>
       )}
     </div>

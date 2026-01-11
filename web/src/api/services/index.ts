@@ -7,7 +7,7 @@ export { default as marketingApi } from './marketing'
 export { default as settingsApi } from './settings'
 export { default as adminApi } from './admin'
 export { default as notepadApi } from './notepad'
-export { default as nlTasksApi } from './nl-tasks'
+export { default as savedFiltersApi } from './saved-filters'
 
 // Re-export types
 export type {
@@ -28,10 +28,6 @@ export type {
 } from './admin'
 
 export type {
-  ParsedTask,
-  NLTaskResult,
-  UserSuggestion,
-  ProjectSuggestion,
-  AssigneeInfo,
-  ProjectInfo
-} from '../components/nl-task-input/types'
+  SavedFilter,
+  FilterCriteria
+} from './saved-filters'
