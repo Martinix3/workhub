@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { MainNav } from './MainNav'
 import { UserMenu } from './UserMenu'
@@ -22,6 +22,21 @@ export function AppShell({
 }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  // Handle Cmd/Ctrl+K keyboard shortcut to toggle command palette
+  const handleKeyboardShortcut = useCallback((e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault()
+      setSearchOpen(prev => !prev)
+    }
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyboardShortcut)
+    return () => {
+      document.removeEventListener('keydown', handleKeyboardShortcut)
+    }
+  }, [handleKeyboardShortcut])
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">

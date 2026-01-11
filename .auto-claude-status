@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "031-add-keyboard-shortcut-to-open-command-palette",
+  "state": "building",
+  "subtasks": {
+    "completed": 0,
+    "total": 0,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Core Implementation",
+    "id": null,
+    "total": 3
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 2,
+    "started_at": "2026-01-11T10:22:26.896288"
+  },
+  "last_update": "2026-01-11T10:24:29.508778"
+}
