@@ -7,7 +7,7 @@ export { default as marketingApi } from './marketing'
 export { default as settingsApi } from './settings'
 export { default as adminApi } from './admin'
 export { default as notepadApi } from './notepad'
-export { default as bulkApi } from './bulk'
+export { default as workLinkSuggestionsApi } from './worklink-suggestions'
 
 // Re-export types
 export type {
@@ -28,6 +28,11 @@ export type {
 } from './admin'
 
 export type {
-  BulkOperationResult,
-  UndoOperationResult
-} from './bulk'
+  WorkLinkSuggestion,
+  GetSuggestionsResponse,
+  AcceptSuggestionResponse,
+  DismissSuggestionResponse,
+  GetSuggestionsParams,
+  AcceptSuggestionParams,
+  DismissSuggestionParams
+} from './worklink-suggestions'

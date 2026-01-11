@@ -82,10 +82,9 @@ export {
   useItemSearch
 } from './useNotepad'
 
-// Tasks - Saved Filters
+// WorkLink Suggestions
 export {
-  useSavedFilters,
-  useSavedFilter,
-  useSavedFilterMutations,
-  useFilterCounts
-} from './useSavedFilters'
+  useWorkLinkSuggestions,
+  useAcceptSuggestion,
+  useDismissSuggestion
+} from './useWorkLinkSuggestions'

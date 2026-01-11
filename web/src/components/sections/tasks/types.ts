@@ -14,6 +14,31 @@ export interface TaskAssignee {
   user_email?: string
 }
 
+// WorkLink Types
+export type WorkLinkDocType =
+  | 'Sales Order'
+  | 'Delivery Note'
+  | 'Sales Invoice'
+  | 'Payment Entry'
+  | 'Purchase Order'
+  | 'Purchase Receipt'
+  | 'Purchase Invoice'
+  | 'Work Order'
+  | 'Stock Entry'
+  | 'Batch'
+  | 'Quality Inspection'
+  | 'Opportunity'
+  | 'Campaign'
+  | 'OpsCase'
+  | 'CalendarEvent'
+  | 'Account'
+
+export interface WorkLinkDocTypeConfig {
+  icon: React.ReactNode
+  label: string
+  color: string
+}
+
 export interface Task {
   name: string  // WHT-2024-00001
   title: string

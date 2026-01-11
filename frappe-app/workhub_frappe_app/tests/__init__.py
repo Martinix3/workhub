@@ -1,1 +1,1 @@
-# WorkHub Frappe App Tests
+# Tests for WorkHub Frappe App
