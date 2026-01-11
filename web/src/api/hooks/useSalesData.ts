@@ -1,7 +1,7 @@
 // React hooks for Sales data
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import salesApi from '../services/sales'
-import type { Product, CreateOrderData, CreateOrderResponse, CancelOrderResponse } from '../services/sales'
+import type { Product, CreateOrderData, CreateOrderResponse, UpdateOrderData, CancelOrderResponse } from '../services/sales'
 import type {
   KPIs,
   Customer,
@@ -10,6 +10,7 @@ import type {
   Activity,
   SalesTrends
 } from '../../components/sections/sell-in-operations/types'
+import type { OrderDetail, WorkLink } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
 import {
   isInBypassMode,
   sampleSalesKPIs,
@@ -17,45 +18,173 @@ import {
   sampleRecentActivity,
   sampleCustomers,
   sampleOrders,
-  sampleOpportunities
+  sampleOpportunities,
+  sampleOrderDetail,
+  sampleOrderWorkLinks
 } from '../sample-data'
-import { createDataHook, type UseDataState } from './createDataHook'
 
-export const useSalesKPIs = createDataHook<KPIs>({
-  apiMethod: salesApi.getKPIs,
-  sampleData: sampleSalesKPIs,
-  errorMessage: 'Failed to fetch KPIs'
-})
+interface UseDataState<T> {
+  data: T | null
+  loading: boolean
+  error: Error | null
+  refetch: () => Promise<void>
+}
 
-export const useCustomers = createDataHook<Customer[], { type?: string; status?: string; search?: string }>({
-  apiMethod: salesApi.getCustomers,
-  sampleData: sampleCustomers,
-  errorMessage: 'Failed to fetch customers'
-})
+export function useSalesKPIs(): UseDataState<KPIs> {
+  const [data, setData] = useState<KPIs | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
 
-export const useOrders = createDataHook<SalesOrder[], { status?: string; customerId?: string; search?: string }>({
-  apiMethod: salesApi.getOrders,
-  sampleData: sampleOrders as SalesOrder[],
-  errorMessage: 'Failed to fetch orders'
-})
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const kpis = await salesApi.getKPIs()
+      setData(kpis)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleSalesKPIs)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch KPIs'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-export const useOpportunities = createDataHook<Opportunity[]>({
-  apiMethod: salesApi.getOpportunities,
-  sampleData: sampleOpportunities,
-  errorMessage: 'Failed to fetch opportunities'
-})
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
 
-export const useRecentActivity = createDataHook<Activity[]>({
-  apiMethod: salesApi.getRecentActivity,
-  sampleData: sampleRecentActivity as Activity[],
-  errorMessage: 'Failed to fetch activity'
-})
+export function useCustomers(filters?: { type?: string; status?: string; search?: string }): UseDataState<Customer[]> {
+  const [data, setData] = useState<Customer[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
 
-export const useSalesTrends = createDataHook<SalesTrends>({
-  apiMethod: salesApi.getSalesTrends,
-  sampleData: sampleSalesTrends as SalesTrends,
-  errorMessage: 'Failed to fetch trends'
-})
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const customers = await salesApi.getCustomers(filters)
+      setData(customers)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleCustomers)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch customers'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [filters?.type, filters?.status, filters?.search])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
+
+export function useOrders(filters?: { status?: string; customerId?: string; search?: string }): UseDataState<SalesOrder[]> {
+  const [data, setData] = useState<SalesOrder[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const orders = await salesApi.getOrders(filters)
+      setData(orders)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleOrders as SalesOrder[])
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch orders'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [filters?.status, filters?.customerId, filters?.search])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
+
+export function useOpportunities(): UseDataState<Opportunity[]> {
+  const [data, setData] = useState<Opportunity[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const opps = await salesApi.getOpportunities()
+      setData(opps)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleOpportunities)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch opportunities'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
+
+export function useRecentActivity(): UseDataState<Activity[]> {
+  const [data, setData] = useState<Activity[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const activity = await salesApi.getRecentActivity()
+      setData(activity)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleRecentActivity as Activity[])
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch activity'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
+
+export function useSalesTrends(): UseDataState<SalesTrends> {
+  const [data, setData] = useState<SalesTrends | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const trends = await salesApi.getSalesTrends()
+      setData(trends)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleSalesTrends as SalesTrends)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch trends'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
 
 export function useSalesDashboard() {
   const kpis = useSalesKPIs()
@@ -82,13 +211,35 @@ const sampleProducts: Product[] = [
   { name: 'MEZCAL-ESP-750', item_name: 'Mezcal Edición Especial 750ml', item_code: 'MEZCAL-ESP-750', stock_uom: 'Nos', standard_rate: 2500, image: null, available_stock: 20 }
 ]
 
-export const useProducts = createDataHook<Product[], string>({
-  apiMethod: salesApi.getProducts,
-  sampleData: sampleProducts,
-  errorMessage: 'Failed to fetch products',
-  bypassTransformer: (data, search) =>
-    search ? data.filter(p => p.item_name.toLowerCase().includes(search.toLowerCase())) : data
-})
+export function useProducts(search?: string): UseDataState<Product[]> {
+  const [data, setData] = useState<Product[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const products = await salesApi.getProducts(search)
+      setData(products)
+    } catch (err) {
+      if (isInBypassMode()) {
+        // Filter sample products by search term
+        const filtered = search
+          ? sampleProducts.filter(p => p.item_name.toLowerCase().includes(search.toLowerCase()))
+          : sampleProducts
+        setData(filtered)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch products'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [search])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
 
 export function useCreateOrder() {
   const [loading, setLoading] = useState(false)
@@ -119,6 +270,67 @@ export function useCreateOrder() {
   return { createOrder, loading, error }
 }
 
+export function useOrderDetail(orderId: string | null): UseDataState<OrderDetail> {
+  const [data, setData] = useState<OrderDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    if (!orderId) {
+      setData(null)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const orderDetail = await salesApi.getOrderDetail(orderId)
+      setData(orderDetail)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleOrderDetail)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch order detail'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [orderId])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
+
+export function useUpdateOrder() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const updateOrder = useCallback(async (orderId: string, data: UpdateOrderData): Promise<OrderDetail | null> => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await salesApi.updateOrder(orderId, data)
+      return result
+    } catch (err) {
+      if (isInBypassMode()) {
+        // Simulate order update in bypass mode by returning updated sample data
+        return {
+          ...sampleOrderDetail,
+          ...data,
+          items: data.items || sampleOrderDetail.items
+        }
+      }
+      setError(err instanceof Error ? err : new Error('Failed to update order'))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { updateOrder, loading, error }
+}
+
 export function useCancelOrder() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
@@ -134,6 +346,7 @@ export function useCancelOrder() {
         // Simulate order cancellation in bypass mode
         return {
           success: true,
+          order_id: orderId,
           message: 'Order cancelled successfully (bypass mode)'
         }
       }
@@ -145,4 +358,36 @@ export function useCancelOrder() {
   }, [])
 
   return { cancelOrder, loading, error }
+}
+
+export function useOrderWorkLinks(orderId: string | null): UseDataState<WorkLink[]> {
+  const [data, setData] = useState<WorkLink[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    if (!orderId) {
+      setData([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const workLinks = await salesApi.getOrderWorkLinks(orderId)
+      setData(workLinks)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleOrderWorkLinks)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch order WorkLinks'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [orderId])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
 }

@@ -10,6 +10,15 @@ export interface OrderDetail extends SalesOrder {
   }
 }
 
+export interface WorkLink {
+  id: string
+  taskId: string
+  taskTitle: string
+  taskStatus: string
+  documentType: string
+  documentId: string
+}
+
 export interface OrderDetailPanelProps {
   orderId: string | null
   isOpen: boolean

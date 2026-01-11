@@ -2,6 +2,7 @@
 
 import type { AreaSummary, PriorityAlert } from '../components/sections/command-center/types'
 import type { KPIs, SalesTrends, Activity, Customer, SalesOrder, Opportunity } from '../components/sections/sell-in-operations/types'
+import type { OrderDetail, WorkLink } from '../components/sections/sell-in-operations/OrderDetailPanel/types'
 import type { NetworkKPIs, Distributor } from '../components/sections/distributor-network/types'
 import type { ProductionKPIs, ProductionOrder, ProductionLine, Lot, HACCPPlan, CCPReading, QualityDocument, DocumentFolder, QualityKPIs, Inspection, NonConformance, WeeklyTrendPoint } from '../components/sections/production-and-quality/types'
 import type { MarketingKPIs, Campaign, SocialPost, PlatformStats } from '../components/sections/marketing-and-growth/types'
@@ -103,6 +104,49 @@ export const sampleOpportunities: Opportunity[] = [
   { id: '2', title: 'Contrato Anual Premium', customerName: 'Distribuciones Norte SA', customerId: '1', value: 1200000, stage: 'negotiation', assignee: 'Carlos Mendez', daysInStage: 3, nextContactDate: new Date(Date.now() + 86400000).toISOString(), notes: 'Negociando descuento por volumen y exclusividad regional' },
   { id: '3', title: 'Nuevo Cliente Restaurante', customerName: 'La Cocina de Oaxaca', customerId: 'new-2', value: 85000, stage: 'new', assignee: 'Ana Garcia', daysInStage: 1, nextContactDate: new Date(Date.now() + 86400000 * 3).toISOString(), notes: 'Primer contacto, restaurante de alta cocina oaxaquena' },
   { id: '4', title: 'Hotel Boutique Mezcalero', customerName: 'Hotel Casa Mezcal', customerId: 'new-3', value: 150000, stage: 'contacted', assignee: 'Maria Lopez', daysInStage: 7, nextContactDate: null, notes: 'Esperando respuesta a propuesta de productos para bar' }
+]
+
+export const sampleOrderDetail: OrderDetail = {
+  id: '1',
+  orderNumber: 'SAL-2025-047',
+  customerId: '1',
+  customerName: 'Distribuciones Norte SA',
+  status: 'confirmed',
+  items: [
+    { itemCode: 'MEZCAL-JOVEN-750', itemName: 'Mezcal Joven 750ml', qty: 24, rate: 1200, amount: 28800 },
+    { itemCode: 'MEZCAL-REP-750', itemName: 'Mezcal Reposado 750ml', qty: 12, rate: 1400, amount: 16800 }
+  ],
+  subtotal: 45600,
+  tax: 7296,
+  total: 52896,
+  orderDate: new Date().toISOString(),
+  deliveryDate: new Date(Date.now() + 86400000 * 3).toISOString(),
+  deliveryProgress: 0,
+  invoiceProgress: 0,
+  salesType: 'sell_in',
+  assignedDistributor: {
+    id: '1',
+    name: 'Distribuciones Norte SA'
+  }
+}
+
+export const sampleOrderWorkLinks: WorkLink[] = [
+  {
+    id: 'WL-001',
+    taskId: 'LT-2025-042',
+    taskTitle: 'Preparar envio para Distribuciones Norte',
+    taskStatus: 'DOING',
+    documentType: 'Sales Order',
+    documentId: '1'
+  },
+  {
+    id: 'WL-002',
+    taskId: 'LT-2025-043',
+    taskTitle: 'Verificar disponibilidad de producto',
+    taskStatus: 'DONE',
+    documentType: 'Sales Order',
+    documentId: '1'
+  }
 ]
 
 // Distributors

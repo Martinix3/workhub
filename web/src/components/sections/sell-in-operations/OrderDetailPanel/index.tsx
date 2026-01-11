@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import {
   X, Loader2, Save, Calendar, User, Truck, Building2,
-  Package, Plus, Minus, Receipt, ChevronDown, ChevronUp
+  Package, Plus, Minus, Receipt, ChevronDown, ChevronUp, Link
 } from 'lucide-react'
 import { SidePanel } from '../../../ui/SidePanel'
 import type { OrderDetailPanelProps, OrderDetail, SalesType } from './types'
 import type { OrderItem } from '../types'
+import { useOrderDetail, useUpdateOrder, useCancelOrder, useOrderWorkLinks } from '../../../../api/hooks/useSalesData'
 
 // Status configuration
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -16,32 +17,6 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   invoiced: { label: 'Facturado', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300' },
   paid: { label: 'Pagado', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
   cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
-}
-
-// Mock data for demo - replace with actual API call
-const mockOrderDetail: OrderDetail = {
-  id: 'ORD-2024-0042',
-  orderNumber: 'ORD-2024-0042',
-  customerId: 'CUST-001',
-  customerName: 'Restaurante El Mezcalito',
-  orderDate: '2024-01-15',
-  deliveryDate: '2024-01-22',
-  status: 'confirmed',
-  salesType: 'sell_in',
-  items: [
-    { itemCode: 'MZ-TOB-750', itemName: 'Mezcal Tobalá 750ml', qty: 12, rate: 2500, amount: 30000 },
-    { itemCode: 'MZ-ESP-750', itemName: 'Mezcal Espadín 750ml', qty: 6, rate: 1200, amount: 7200 },
-    { itemCode: 'MZ-CUI-750', itemName: 'Mezcal Cuishe 750ml', qty: 4, rate: 1800, amount: 7200 },
-  ],
-  subtotal: 44400,
-  tax: 7104,
-  total: 51504,
-  deliveryProgress: 0,
-  invoiceProgress: 0,
-  assignedDistributor: {
-    id: 'DIST-001',
-    name: 'Distribuidora Oaxaca Norte'
-  }
 }
 
 // Collapsible Section Component
@@ -104,22 +79,27 @@ export function OrderDetailPanel({
   onCancelOrder
 }: OrderDetailPanelProps) {
   const [order, setOrder] = useState<OrderDetail | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
 
-  // Load order when panel opens
+  // Fetch order detail from API
+  const { data: orderData, loading, error } = useOrderDetail(isOpen ? orderId : null)
+
+  // Update order mutation hook
+  const { updateOrder, loading: isSaving, error: saveError } = useUpdateOrder()
+
+  // Cancel order mutation hook
+  const { cancelOrder, loading: isCancelling, error: cancelError } = useCancelOrder()
+
+  // Fetch WorkLinks for this order
+  const { data: workLinks = [], loading: workLinksLoading } = useOrderWorkLinks(isOpen && order ? order.id : null)
+
+  // Update local state when hook data changes
   useEffect(() => {
-    if (isOpen && orderId) {
-      setIsLoading(true)
-      // TODO: Replace with actual API call
-      setTimeout(() => {
-        setOrder({ ...mockOrderDetail, id: orderId, orderNumber: orderId })
-        setIsLoading(false)
-        setHasChanges(false)
-      }, 500)
+    if (orderData) {
+      setOrder(orderData)
+      setHasChanges(false)
     }
-  }, [isOpen, orderId])
+  }, [orderData])
 
   const handleItemsChange = (items: OrderItem[]) => {
     if (!order) return
@@ -161,19 +141,44 @@ export function OrderDetailPanel({
 
   const handleSave = async () => {
     if (!order) return
-    setIsSaving(true)
-    // TODO: Replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    onSave?.(order)
-    setIsSaving(false)
-    setHasChanges(false)
+
+    // Prepare update data
+    const updateData = {
+      deliveryDate: order.deliveryDate,
+      salesType: order.salesType,
+      items: order.items.map(item => ({
+        itemCode: item.itemCode,
+        itemName: item.itemName,
+        qty: item.qty,
+        rate: item.rate,
+        amount: item.amount
+      }))
+    }
+
+    // Call API to update order
+    const result = await updateOrder(order.id, updateData)
+
+    if (result) {
+      // Update succeeded
+      setOrder(result)
+      setHasChanges(false)
+      onSave?.(result)
+    }
+    // Error handling is managed by the hook and displayed in UI
   }
 
-  const handleCancelOrder = () => {
+  const handleCancelOrder = async () => {
     if (!order) return
     if (confirm('¿Estás seguro de cancelar este pedido?')) {
-      onCancelOrder?.(order.id)
-      onClose()
+      // Call API to cancel order
+      const result = await cancelOrder(order.id)
+
+      if (result && result.success) {
+        // Cancellation succeeded - refresh parent list and close panel
+        onCancelOrder?.(order.id)
+        onClose()
+      }
+      // Error handling is managed by the hook and displayed in UI
     }
   }
 
@@ -199,7 +204,7 @@ export function OrderDetailPanel({
       width="lg"
     >
       {/* Loading State */}
-      {isLoading && (
+      {loading && (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 size={32} className="animate-spin text-amber-500 mx-auto mb-3" />
@@ -209,7 +214,7 @@ export function OrderDetailPanel({
       )}
 
       {/* Order Content */}
-      {!isLoading && order && (
+      {!loading && order && (
         <div className="flex flex-col h-full">
           {/* Header with status */}
           <div className="px-6 py-4 border-b-2 border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
@@ -235,6 +240,18 @@ export function OrderDetailPanel({
               <div className="flex items-center gap-2 text-amber-600 mt-2">
                 <Save size={14} />
                 <span className="text-xs font-medium">Cambios sin guardar</span>
+              </div>
+            )}
+            {saveError && (
+              <div className="flex items-center gap-2 text-red-600 mt-2">
+                <X size={14} />
+                <span className="text-xs font-medium">Error al guardar: {saveError.message}</span>
+              </div>
+            )}
+            {cancelError && (
+              <div className="flex items-center gap-2 text-red-600 mt-2">
+                <X size={14} />
+                <span className="text-xs font-medium">Error al cancelar: {cancelError.message}</span>
               </div>
             )}
           </div>
@@ -465,6 +482,49 @@ export function OrderDetailPanel({
                 </div>
               </div>
             </Section>
+
+            {/* WorkLinks Section */}
+            <Section
+              title="Tareas Asociadas"
+              icon={<Link size={20} />}
+              badge={workLinks.length > 0 ? `${workLinks.length}` : undefined}
+              defaultOpen={false}
+            >
+              {workLinksLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 size={20} className="animate-spin text-amber-500" />
+                  <span className="ml-2 text-sm text-stone-500">Cargando tareas...</span>
+                </div>
+              ) : workLinks.length > 0 ? (
+                <div className="space-y-2">
+                  {workLinks.map((workLink) => (
+                    <div
+                      key={workLink.id}
+                      className="p-3 bg-stone-50 dark:bg-stone-800/50 border-2 border-stone-200 dark:border-stone-700"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
+                            {workLink.taskTitle}
+                          </p>
+                          <p className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-1">
+                            ID: {workLink.taskId}
+                          </p>
+                        </div>
+                        <span className="px-2 py-1 text-xs font-medium uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-700 flex-shrink-0">
+                          {workLink.taskStatus}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Link size={32} className="mx-auto text-stone-300 dark:text-stone-600 mb-2" />
+                  <p className="text-sm text-stone-500">No hay tareas asociadas a este pedido</p>
+                </div>
+              )}
+            </Section>
           </div>
 
           {/* Footer */}
@@ -476,16 +536,22 @@ export function OrderDetailPanel({
                   <button
                     type="button"
                     onClick={handleCancelOrder}
+                    disabled={isCancelling}
                     className="
                       inline-flex items-center gap-2 px-4 py-2
                       text-red-600 hover:text-red-700 dark:text-red-400
                       text-sm font-medium
                       hover:bg-red-50 dark:hover:bg-red-900/20
                       transition-colors
+                      disabled:opacity-50 disabled:cursor-not-allowed
                     "
                   >
-                    <X size={16} />
-                    Cancelar Pedido
+                    {isCancelling ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <X size={16} />
+                    )}
+                    {isCancelling ? 'Cancelando...' : 'Cancelar Pedido'}
                   </button>
                 )}
               </div>
@@ -537,10 +603,12 @@ export function OrderDetailPanel({
       )}
 
       {/* Error State */}
-      {!isLoading && !order && orderId && (
+      {!loading && !order && orderId && (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-stone-500">No se pudo cargar el pedido</p>
+            <p className="text-stone-500">
+              {error ? error.message : 'No se pudo cargar el pedido'}
+            </p>
             <button
               onClick={onClose}
               className="mt-4 text-sm text-amber-600 hover:underline"
