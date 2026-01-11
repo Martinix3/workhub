@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "028-multi-assignee-task-support",
+  "state": "building",
+  "subtasks": {
+    "completed": 0,
+    "total": 19,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Backend Schema & DocType Changes",
+    "id": null,
+    "total": 4
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 2,
+    "started_at": "2026-01-11T07:56:48.086686"
+  },
+  "last_update": "2026-01-11T07:58:45.376668"
+}
