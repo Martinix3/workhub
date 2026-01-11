@@ -127,6 +127,14 @@ export const salesApi = {
       { order_id: orderId, data }
     )
     return result
+  },
+
+  async cancelOrder(orderId: string): Promise<CancelOrderResponse> {
+    const result = await frappe.call<CancelOrderResponse>(
+      'workhub_frappe_app.api.sales.cancel_order',
+      { order_id: orderId }
+    )
+    return result
   }
 }
 
@@ -175,6 +183,13 @@ export interface UpdateOrderData {
   deliveryDate?: string
   salesType?: 'sell_in' | 'sell_out'
   items?: UpdateOrderItem[]
+}
+
+// Order cancel response type
+export interface CancelOrderResponse {
+  success: boolean
+  order_id: string
+  message: string
 }
 
 export default salesApi
