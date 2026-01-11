@@ -89,8 +89,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return
     }
 
-    // Check for bypass mode first
-    if (sessionStorage.getItem(BYPASS_STORAGE_KEY) === 'true') {
+    // Check for bypass mode first (only if bypass is enabled)
+    if (IS_BYPASS_ENABLED && sessionStorage.getItem(BYPASS_STORAGE_KEY) === 'true') {
       setUser(BYPASS_USER)
       storeUser(BYPASS_USER)
       setIsBypassMode(true)
