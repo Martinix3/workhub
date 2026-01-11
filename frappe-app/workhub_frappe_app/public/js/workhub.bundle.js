@@ -246,11 +246,11 @@ frappe.workhub.sidebar = {
                 <div class="wh-sidebar-logo">
                     <img src="/assets/workhub_frappe_app/img/logo.svg" alt="Santa Brisa" />
                 </div>
-                <div class="wh-sidebar-toggle" data-action="toggle">
+                <button class="wh-sidebar-toggle" data-action="toggle" aria-label="Colapsar barra lateral">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                </div>
+                </button>
             </div>
             <nav class="wh-sidebar-nav">
                 ${this.renderNavItems()}
