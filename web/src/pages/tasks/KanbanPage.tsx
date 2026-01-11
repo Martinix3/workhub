@@ -1,11 +1,14 @@
 // Kanban Board Page - Enhanced with priority bars, avatars, drag effects, FAB
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen } from 'lucide-react'
+import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, CheckSquare, Square, HelpCircle } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { AssigneeAvatarGroup } from '../../components/ui/AssigneeAvatarGroup'
 import { useKanban, useTaskMutations } from '../../api'
+import { TaskSelectionProvider, useTaskSelection } from '../../contexts/TaskSelectionContext'
+import { SelectableTaskCard } from '../../components/tasks/SelectableTaskCard'
+import { BulkActionsBar } from '../../components/tasks/BulkActionsBar'
 import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
 
 const columnConfig: Record<TaskStatus, { label: string; headerBg: string; bg: string; dropBg: string }> = {
@@ -23,10 +26,20 @@ const priorityConfig: Record<TaskPriority, { bg: string; text: string; bar: stri
 }
 
 export function KanbanPage() {
+  return (
+    <TaskSelectionProvider>
+      <KanbanContent />
+    </TaskSelectionProvider>
+  )
+}
+
+function KanbanContent() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const projectFilter = searchParams.get('project')
   const [departmentFilter, setDepartmentFilter] = useState<Department | 'ALL'>('ALL')
+  const [selectionMode, setSelectionMode] = useState(false)
+  const { selectAll, clearSelection } = useTaskSelection()
 
   // Build filters object
   const filters = {
@@ -49,6 +62,61 @@ export function KanbanPage() {
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
+
+  // Toggle selection mode
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode)
+    if (!selectionMode) {
+      clearSelection() // Clear selection when exiting selection mode
+    }
+  }
+
+  // Select all tasks in a column
+  const handleSelectAllColumn = (columnTasks: Task[]) => {
+    const taskIds = columnTasks.map(task => task.name)
+    selectAll(taskIds)
+  }
+
+  // Bulk action handlers (placeholders - will be implemented in subtask 4.2)
+  const handleBulkChangeStatus = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  const handleBulkAssign = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  const handleBulkChangePriority = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  const handleBulkMoveProject = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  const handleBulkAddWorkLink = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd+A: Select all visible tasks
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode) {
+        e.preventDefault()
+        const allVisibleTasks = allColumns.flatMap(col => col.tasks)
+        const allTaskIds = allVisibleTasks.map(task => task.name)
+        selectAll(allTaskIds)
+      }
+      // Escape: Clear selection
+      else if (e.key === 'Escape' && selectionMode) {
+        clearSelection()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectionMode, columns, selectAll, clearSelection])
 
   if (loading) {
     return <LoadingState message="Cargando tablero..." />
@@ -137,6 +205,57 @@ export function KanbanPage() {
               {totalTasks} tareas
             </div>
 
+            {/* Selection Mode Toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleSelectionMode}
+                className={`
+                  px-3 py-1.5 text-xs font-medium uppercase tracking-wider
+                  border-2 border-stone-900
+                  transition-all duration-75
+                  flex items-center gap-2
+                  ${selectionMode
+                    ? 'bg-amber-400 text-stone-900 shadow-[2px_2px_0_#1c1917]'
+                    : 'bg-white text-stone-900 hover:bg-stone-100'
+                  }
+                `}
+                title={selectionMode ? 'Salir del modo selección' : 'Activar modo selección'}
+              >
+                {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
+                <span>{selectionMode ? 'Seleccionando' : 'Seleccionar'}</span>
+              </button>
+
+              {/* Keyboard Shortcuts Help */}
+              <div className="relative group">
+                <HelpCircle size={18} className="text-stone-400 hover:text-stone-600 cursor-help" />
+                <div className="
+                  absolute right-0 top-full mt-2 w-64 p-3
+                  bg-white border-2 border-stone-900
+                  shadow-[4px_4px_0_#1c1917]
+                  opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                  transition-all duration-150 z-50
+                ">
+                  <p className="font-bold text-xs uppercase tracking-wider text-stone-900 mb-2">
+                    Atajos de Teclado
+                  </p>
+                  <div className="space-y-1 text-xs text-stone-700">
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Ctrl/Cmd+A</span>
+                      <span className="text-[10px] ml-2">Seleccionar todas</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Escape</span>
+                      <span className="text-[10px] ml-2">Limpiar selección</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Ctrl/Cmd+Click</span>
+                      <span className="text-[10px] ml-2">Alternar selección</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Department Filter */}
             <div className="flex gap-2">
               {(['ALL', 'SALES', 'OPS', 'MKT'] as const).map((dept) => (
@@ -187,7 +306,7 @@ export function KanbanPage() {
               >
                 {/* Column Header */}
                 <div className={`${config.headerBg} p-3 border-b-2 border-stone-900`}>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-sm uppercase tracking-wider text-stone-900">
                       {config.label}
                     </span>
@@ -199,6 +318,26 @@ export function KanbanPage() {
                       {column.tasks.length}
                     </span>
                   </div>
+
+                  {/* Select All Button - shown in selection mode */}
+                  {selectionMode && column.tasks.length > 0 && (
+                    <button
+                      onClick={() => handleSelectAllColumn(column.tasks)}
+                      className="
+                        w-full px-2 py-1.5 text-xs font-medium
+                        bg-white hover:bg-stone-100
+                        border-2 border-stone-900
+                        transition-all duration-75
+                        shadow-[2px_2px_0_#1c1917]
+                        hover:shadow-[1px_1px_0_#1c1917]
+                        hover:translate-x-[1px] hover:translate-y-[1px]
+                        flex items-center justify-center gap-1
+                      "
+                    >
+                      <CheckSquare size={12} />
+                      <span>Seleccionar todas</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Tasks Container */}
@@ -208,14 +347,26 @@ export function KanbanPage() {
                   transition-colors
                 `}>
                   {column.tasks.map((task) => (
-                    <TaskCard
-                      key={task.name}
-                      task={task}
-                      onDragStart={() => handleDragStart(task)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => navigate(`/tareas/tarea/${task.name}`)}
-                      isDragging={draggedTask?.name === task.name}
-                    />
+                    selectionMode ? (
+                      <SelectableTaskCard
+                        key={task.name}
+                        task={task}
+                        onDragStart={() => handleDragStart(task)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => navigate(`/tareas/tarea/${task.name}`)}
+                        isDragging={draggedTask?.name === task.name}
+                        selectionMode={true}
+                      />
+                    ) : (
+                      <TaskCard
+                        key={task.name}
+                        task={task}
+                        onDragStart={() => handleDragStart(task)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => navigate(`/tareas/tarea/${task.name}`)}
+                        isDragging={draggedTask?.name === task.name}
+                      />
+                    )
                   ))}
 
                   {/* Empty State */}
@@ -313,6 +464,17 @@ export function KanbanPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {/* Bulk Actions Bar - shown when tasks are selected in selection mode */}
+      {selectionMode && (
+        <BulkActionsBar
+          onChangeStatus={handleBulkChangeStatus}
+          onAssign={handleBulkAssign}
+          onChangePriority={handleBulkChangePriority}
+          onMoveProject={handleBulkMoveProject}
+          onAddWorkLink={handleBulkAddWorkLink}
+        />
       )}
     </div>
   )

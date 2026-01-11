@@ -1,15 +1,24 @@
 // MyDay Component - TDAH-friendly task view
 import { useState, useMemo } from 'react'
-import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight, FileText, Eye, EyeOff } from 'lucide-react'
+import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight, CheckSquare, Square, HelpCircle } from 'lucide-react'
+import { useTaskSelection } from '../../contexts/TaskSelectionContext'
+import { BulkActionsBar } from '../tasks/BulkActionsBar'
 import type { Task, TaskStatus, TaskPriority, MyDayData } from './types'
 
 interface MyDayProps {
   data: MyDayData
-  onTaskComplete?: (task: Task) => void
+  onTaskComplete?: (id: string) => void
   onTaskBlock?: (id: string, reason: string) => void
   onTaskClick?: (id: string) => void
   onQuickAdd?: (title: string, priority: TaskPriority) => void
   onChangeStatus?: (id: string, status: TaskStatus) => void
+  selectionMode?: boolean
+  onToggleSelectionMode?: () => void
+  onBulkChangeStatus?: () => void
+  onBulkAssign?: () => void
+  onBulkChangePriority?: () => void
+  onBulkMoveProject?: () => void
+  onBulkAddWorkLink?: () => void
 }
 
 const priorityConfig: Record<TaskPriority, { bg: string; text: string; softBg: string }> = {
@@ -33,24 +42,30 @@ export function MyDay({
   onTaskClick,
   onQuickAdd,
   onChangeStatus,
+  selectionMode = false,
+  onToggleSelectionMode,
+  onBulkChangeStatus,
+  onBulkAssign,
+  onBulkChangePriority,
+  onBulkMoveProject,
+  onBulkAddWorkLink,
 }: MyDayProps) {
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>('P2')
-  const [showCompleted, setShowCompleted] = useState(false)
+  const { selectAll, clearSelection } = useTaskSelection()
 
   const allTasks = [...data.today, ...data.upcoming]
   const focusedTask = focusedTaskId ? allTasks.find(t => t.name === focusedTaskId) : null
   const doingTasks = data.today.filter(t => t.status === 'DOING')
   const nextTasks = data.today.filter(t => t.status === 'NEXT')
-  const completedTasks = data.today.filter(t => t.status === 'DONE')
 
   const handleFocus = (taskId: string) => setFocusedTaskId(taskId)
   const handleExitFocus = () => setFocusedTaskId(null)
 
-  const handleComplete = (task: Task) => {
-    onTaskComplete?.(task)
+  const handleComplete = (taskId: string) => {
+    onTaskComplete?.(taskId)
     setFocusedTaskId(null)
   }
 
@@ -61,6 +76,20 @@ export function MyDay({
       setQuickAddTitle('')
       setShowQuickAdd(false)
     }
+  }
+
+  // Toggle selection mode - clear selections when exiting
+  const handleToggleSelectionMode = () => {
+    if (selectionMode) {
+      clearSelection()
+    }
+    onToggleSelectionMode?.()
+  }
+
+  // Select all tasks in a section
+  const handleSelectAllSection = (tasks: Task[]) => {
+    const taskIds = tasks.map(task => task.name)
+    selectAll(taskIds)
   }
 
   // Focus Mode - Full screen immersive
@@ -98,7 +127,7 @@ export function MyDay({
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => handleComplete(focusedTask)}
+                  onClick={() => handleComplete(focusedTask.name)}
                   className="
                     flex-1 py-3 px-6
                     bg-green-500 hover:bg-green-600
@@ -114,8 +143,8 @@ export function MyDay({
                 </button>
                 <button
                   onClick={() => {
-                    handleExitFocus()
-                    onChangeStatus?.(focusedTask.name, 'BLOCKED')
+                    const reason = prompt('Por que esta bloqueada?')
+                    if (reason) onTaskBlock?.(focusedTask.name, reason)
                   }}
                   className="
                     py-3 px-6
@@ -159,26 +188,60 @@ export function MyDay({
           </div>
 
           <div className="flex items-center gap-3">
-            {completedTasks.length > 0 && (
-              <button
-                onClick={() => setShowCompleted(!showCompleted)}
-                className="
-                  inline-flex items-center gap-2 px-4 py-2
-                  bg-white hover:bg-stone-50
-                  text-stone-700 font-medium text-sm uppercase tracking-wider
-                  border-2 border-stone-900
-                  shadow-[2px_2px_0_#1c1917]
-                  hover:shadow-[4px_4px_0_#1c1917]
-                  hover:translate-x-[-2px] hover:translate-y-[-2px]
-                  transition-all duration-75
-                "
-                title={showCompleted ? 'Ocultar completadas' : 'Ver completadas'}
-              >
-                {showCompleted ? <EyeOff size={18} /> : <Eye size={18} />}
-                <span className="hidden sm:inline">{showCompleted ? 'Ocultar' : 'Ver'} Completadas</span>
-                <span className="sm:hidden">{completedTasks.length}</span>
-              </button>
+            {/* Selection Mode Toggle */}
+            {onToggleSelectionMode && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleToggleSelectionMode}
+                  className={`
+                    px-3 py-2 text-xs font-medium uppercase tracking-wider
+                    border-2 border-stone-900
+                    transition-all duration-75
+                    flex items-center gap-2
+                    ${selectionMode
+                      ? 'bg-amber-400 text-stone-900 shadow-[2px_2px_0_#1c1917]'
+                      : 'bg-white text-stone-900 hover:bg-stone-100'
+                    }
+                  `}
+                  title={selectionMode ? 'Salir del modo selección' : 'Activar modo selección'}
+                >
+                  {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
+                  <span>{selectionMode ? 'Seleccionando' : 'Seleccionar'}</span>
+                </button>
+
+                {/* Keyboard Shortcuts Help */}
+                <div className="relative group">
+                  <HelpCircle size={18} className="text-stone-400 hover:text-stone-600 cursor-help" />
+                  <div className="
+                    absolute right-0 top-full mt-2 w-64 p-3
+                    bg-white border-2 border-stone-900
+                    shadow-[4px_4px_0_#1c1917]
+                    opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                    transition-all duration-150 z-50
+                  ">
+                    <p className="font-bold text-xs uppercase tracking-wider text-stone-900 mb-2">
+                      Atajos de Teclado
+                    </p>
+                    <div className="space-y-1 text-xs text-stone-700">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Ctrl/Cmd+A</span>
+                        <span className="text-[10px] ml-2">Seleccionar todas</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Escape</span>
+                        <span className="text-[10px] ml-2">Limpiar selección</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-[10px] bg-stone-100 px-1.5 py-0.5 border border-stone-300">Ctrl/Cmd+Click</span>
+                        <span className="text-[10px] ml-2">Alternar selección</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
+
+            {/* Quick Add Button */}
             <button
               onClick={() => setShowQuickAdd(true)}
               className="
@@ -234,10 +297,30 @@ export function MyDay({
             {/* En Progreso */}
             {doingTasks.length > 0 && (
               <section className="mb-8">
-                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-stone-500 mb-3">
-                  <span className="w-2 h-2 bg-amber-400 animate-pulse" />
-                  En Progreso
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-stone-500">
+                    <span className="w-2 h-2 bg-amber-400 animate-pulse" />
+                    En Progreso
+                  </h2>
+                  {selectionMode && doingTasks.length > 0 && (
+                    <button
+                      onClick={() => handleSelectAllSection(doingTasks)}
+                      className="
+                        px-2 py-1 text-xs font-medium
+                        bg-white hover:bg-stone-100
+                        border-2 border-stone-900
+                        transition-all duration-75
+                        shadow-[2px_2px_0_#1c1917]
+                        hover:shadow-[1px_1px_0_#1c1917]
+                        hover:translate-x-[1px] hover:translate-y-[1px]
+                        flex items-center gap-1
+                      "
+                    >
+                      <CheckSquare size={12} />
+                      <span>Seleccionar todas</span>
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {doingTasks.map(task => (
                     <TaskCard
@@ -245,8 +328,9 @@ export function MyDay({
                       task={task}
                       highlighted
                       onFocus={() => handleFocus(task.name)}
-                      onComplete={() => handleComplete(task)}
+                      onComplete={() => handleComplete(task.name)}
                       onClick={() => onTaskClick?.(task.name)}
+                      selectionMode={selectionMode}
                     />
                   ))}
                 </div>
@@ -256,18 +340,39 @@ export function MyDay({
             {/* Siguiente */}
             {nextTasks.length > 0 && (
               <section className="mb-8">
-                <h2 className="text-xs font-medium uppercase tracking-wider text-stone-500 mb-3">
-                  Siguiente
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-medium uppercase tracking-wider text-stone-500">
+                    Siguiente
+                  </h2>
+                  {selectionMode && nextTasks.length > 0 && (
+                    <button
+                      onClick={() => handleSelectAllSection(nextTasks)}
+                      className="
+                        px-2 py-1 text-xs font-medium
+                        bg-white hover:bg-stone-100
+                        border-2 border-stone-900
+                        transition-all duration-75
+                        shadow-[2px_2px_0_#1c1917]
+                        hover:shadow-[1px_1px_0_#1c1917]
+                        hover:translate-x-[1px] hover:translate-y-[1px]
+                        flex items-center gap-1
+                      "
+                    >
+                      <CheckSquare size={12} />
+                      <span>Seleccionar todas</span>
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {nextTasks.map(task => (
                     <TaskCard
                       key={task.name}
                       task={task}
                       onFocus={() => handleFocus(task.name)}
-                      onComplete={() => handleComplete(task)}
+                      onComplete={() => handleComplete(task.name)}
                       onClick={() => onTaskClick?.(task.name)}
                       onStartDoing={() => onChangeStatus?.(task.name, 'DOING')}
+                      selectionMode={selectionMode}
                     />
                   ))}
                 </div>
@@ -277,35 +382,37 @@ export function MyDay({
             {/* Blocked */}
             {data.blocked.length > 0 && (
               <section className="mb-8">
-                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-red-500 mb-3">
-                  <AlertTriangle size={14} />
-                  Bloqueadas
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-red-500">
+                    <AlertTriangle size={14} />
+                    Bloqueadas
+                  </h2>
+                  {selectionMode && data.blocked.length > 0 && (
+                    <button
+                      onClick={() => handleSelectAllSection(data.blocked)}
+                      className="
+                        px-2 py-1 text-xs font-medium
+                        bg-white hover:bg-stone-100
+                        border-2 border-stone-900
+                        transition-all duration-75
+                        shadow-[2px_2px_0_#1c1917]
+                        hover:shadow-[1px_1px_0_#1c1917]
+                        hover:translate-x-[1px] hover:translate-y-[1px]
+                        flex items-center gap-1
+                      "
+                    >
+                      <CheckSquare size={12} />
+                      <span>Seleccionar todas</span>
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {data.blocked.map(task => (
                     <TaskCard
                       key={task.name}
                       task={task}
                       onClick={() => onTaskClick?.(task.name)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Completed */}
-            {showCompleted && completedTasks.length > 0 && (
-              <section className="mb-8">
-                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-green-600 mb-3">
-                  <Check size={14} />
-                  Completadas Hoy ({completedTasks.length})
-                </h2>
-                <div className="space-y-3">
-                  {completedTasks.map(task => (
-                    <CompletedTaskCard
-                      key={task.name}
-                      task={task}
-                      onClick={() => onTaskClick?.(task.name)}
+                      selectionMode={selectionMode}
                     />
                   ))}
                 </div>
@@ -408,6 +515,17 @@ export function MyDay({
             </form>
           </div>
         )}
+
+        {/* Bulk Actions Bar - shown when tasks are selected in selection mode */}
+        {selectionMode && onBulkChangeStatus && onBulkAssign && onBulkChangePriority && onBulkMoveProject && onBulkAddWorkLink && (
+          <BulkActionsBar
+            onChangeStatus={onBulkChangeStatus}
+            onAssign={onBulkAssign}
+            onChangePriority={onBulkChangePriority}
+            onMoveProject={onBulkMoveProject}
+            onAddWorkLink={onBulkAddWorkLink}
+          />
+        )}
       </div>
     </div>
   )
@@ -438,11 +556,30 @@ interface TaskCardProps {
   onComplete?: () => void
   onClick?: () => void
   onStartDoing?: () => void
+  selectionMode?: boolean
 }
 
-function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoing }: TaskCardProps) {
+function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoing, selectionMode = false }: TaskCardProps) {
   const priority = priorityConfig[task.priority]
-  const isDone = task.status === 'DONE'
+  const { isSelected, toggleSelection } = useTaskSelection()
+  const selected = isSelected(task.name)
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    toggleSelection(task.name)
+  }
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Ctrl/Cmd+Click toggles selection even when not in selection mode
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      toggleSelection(task.name)
+    } else if (selectionMode) {
+      toggleSelection(task.name)
+    } else {
+      onClick?.()
+    }
+  }
 
   return (
     <div
@@ -450,39 +587,60 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
         bg-white
         border-2 border-stone-900
         border-t-4 ${statusBorderTop[task.status]}
-        ${isDone ? 'opacity-60' : ''}
         ${highlighted
           ? 'shadow-[4px_4px_0_#1c1917]'
-          : 'shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]'
+          : selected
+            ? 'shadow-[4px_4px_0_#f59e0b] ring-2 ring-amber-400'
+            : 'shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]'
         }
         transition-all duration-75
+        ${selectionMode ? 'cursor-pointer' : ''}
       `}
     >
       <div className="p-4 flex items-start gap-4">
-        {/* Checkbox */}
-        {task.status !== 'BLOCKED' && onComplete && (
+        {/* Selection Checkbox - shown in selection mode */}
+        {selectionMode && (
+          <div
+            onClick={handleCheckboxClick}
+            className="flex-shrink-0 mt-0.5"
+          >
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => {}}
+              onClick={handleCheckboxClick}
+              className="
+                w-5 h-5
+                border-2 border-stone-900
+                cursor-pointer
+                accent-amber-400
+                focus:ring-2 focus:ring-amber-400 focus:ring-offset-0
+              "
+            />
+          </div>
+        )}
+
+        {/* Complete Checkbox - shown when not in selection mode */}
+        {!selectionMode && task.status !== 'BLOCKED' && onComplete && (
           <button
             onClick={e => {
               e.stopPropagation()
               onComplete?.()
             }}
-            className={`
+            className="
               w-6 h-6 flex-shrink-0 mt-0.5
               border-2 border-stone-900
+              hover:bg-green-100
               flex items-center justify-center
-              transition-colors
-              ${isDone
-                ? 'bg-green-500'
-                : 'hover:bg-green-100 group/check'
-              }
-            `}
+              transition-colors group/check
+            "
           >
-            <Check size={14} className={`${isDone ? 'text-white' : 'text-green-600 opacity-0 group-hover/check:opacity-100'}`} />
+            <Check size={14} className="text-green-600 opacity-0 group-hover/check:opacity-100" />
           </button>
         )}
 
         {/* Content */}
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={handleCardClick}>
           <div className="flex items-center gap-2 mb-1">
             <span className={`px-1.5 py-0.5 text-xs font-medium ${priority.softBg} ${priority.text}`}>
               {task.priority}
@@ -496,7 +654,7 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
               </span>
             )}
           </div>
-          <h3 className={`font-medium hover:underline ${isDone ? 'line-through text-stone-400' : 'text-stone-900'}`}>
+          <h3 className="font-medium text-stone-900 hover:underline">
             {task.title}
           </h3>
           {task.blocked_reason && (
@@ -508,50 +666,45 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
               {new Date(task.due_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
             </p>
           )}
-          {/* Completion notes indicator */}
-          {isDone && task.completion_notes && (
-            <p className="text-xs text-green-600 mt-1 flex items-center gap-1" title={task.completion_notes}>
-              <FileText size={12} />
-              Notas de cierre
-            </p>
-          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1">
-          {task.status === 'NEXT' && onStartDoing && (
-            <button
-              onClick={e => {
-                e.stopPropagation()
-                onStartDoing?.()
-              }}
-              className="
-                p-2 text-stone-400 hover:text-cyan-500
-                hover:bg-cyan-50
-                transition-colors
-              "
-              title="Empezar"
-            >
-              <Play size={16} />
-            </button>
-          )}
-          {task.status === 'DOING' && onFocus && (
-            <button
-              onClick={e => {
-                e.stopPropagation()
-                onFocus?.()
-              }}
-              className="
-                p-2 text-stone-400 hover:text-amber-500
-                hover:bg-amber-50
-                transition-colors
-              "
-              title="Focus Mode"
-            >
-              <Play size={20} />
-            </button>
-          )}
-        </div>
+        {/* Actions - hidden in selection mode */}
+        {!selectionMode && (
+          <div className="flex items-center gap-1">
+            {task.status === 'NEXT' && onStartDoing && (
+              <button
+                onClick={e => {
+                  e.stopPropagation()
+                  onStartDoing?.()
+                }}
+                className="
+                  p-2 text-stone-400 hover:text-cyan-500
+                  hover:bg-cyan-50
+                  transition-colors
+                "
+                title="Empezar"
+              >
+                <Play size={16} />
+              </button>
+            )}
+            {task.status === 'DOING' && onFocus && (
+              <button
+                onClick={e => {
+                  e.stopPropagation()
+                  onFocus?.()
+                }}
+                className="
+                  p-2 text-stone-400 hover:text-amber-500
+                  hover:bg-amber-50
+                  transition-colors
+                "
+                title="Focus Mode"
+              >
+                <Play size={20} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -668,84 +821,6 @@ function MiniCalendar({ tasks, overdueTasks = [] }: MiniCalendarProps) {
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-red-100 border border-red-400" />
           <span className="text-stone-500">Vencidas</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Completed Task Card
-interface CompletedTaskCardProps {
-  task: Task
-  onClick?: () => void
-}
-
-function CompletedTaskCard({ task, onClick }: CompletedTaskCardProps) {
-  const priority = priorityConfig[task.priority]
-
-  const formatCompletedTime = (dateStr?: string) => {
-    if (!dateStr) return null
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-
-    if (diffMins < 60) {
-      return `hace ${diffMins} min`
-    } else if (diffHours < 24) {
-      return `hace ${diffHours} h`
-    } else {
-      return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-    }
-  }
-
-  return (
-    <div
-      className="
-        bg-white
-        border-2 border-stone-900
-        border-t-4 border-t-green-500
-        opacity-60
-        shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]
-        transition-all duration-75
-      "
-    >
-      <div className="p-4">
-        {/* Header with checkbox */}
-        <div className="flex items-start gap-4">
-          {/* Green check */}
-          <div className="w-6 h-6 flex-shrink-0 mt-0.5 border-2 border-stone-900 bg-green-500 flex items-center justify-center">
-            <Check size={14} className="text-white" />
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`px-1.5 py-0.5 text-xs font-medium ${priority.softBg} ${priority.text}`}>
-                {task.priority}
-              </span>
-              {task.project_title && (
-                <span className="text-xs text-stone-400 truncate">{task.project_title}</span>
-              )}
-              {task.completed_at && (
-                <span className="text-xs text-green-600 font-medium">
-                  {formatCompletedTime(task.completed_at)}
-                </span>
-              )}
-            </div>
-            <h3 className="font-medium line-through text-stone-400 hover:underline">
-              {task.title}
-            </h3>
-            {task.completion_notes && (
-              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                <p className="text-xs text-green-700 flex items-start gap-1.5">
-                  <FileText size={12} className="flex-shrink-0 mt-0.5" />
-                  <span>{task.completion_notes}</span>
-                </p>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

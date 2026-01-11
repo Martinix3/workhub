@@ -9,6 +9,7 @@ export { default as distributorsApi } from './services/distributors'
 export { default as productionApi } from './services/production'
 export { default as marketingApi } from './services/marketing'
 export { default as tasksApi } from './services/tasks'
+export { default as bulkApi } from './services/bulk'
 
 // Sales Hooks
 export {
@@ -26,8 +27,8 @@ export {
 // Sales types
 export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem } from './services/sales'
 
-// Task types
-export type { TaskAssignee, AssigneeRole } from '../components/sections/tasks/types'
+// Bulk Operations types
+export type { BulkOperationResult, UndoOperationResult } from './services/bulk'
 
 // Command Center Hooks
 export {
@@ -106,10 +107,3 @@ export {
   useTaskKPIs,
   useTaskDashboard
 } from './hooks/useTasks'
-
-// Template Management Hooks
-export {
-  useTemplates,
-  useTemplatePreview,
-  useTemplateMutations
-} from './hooks/useTemplates'
