@@ -18,6 +18,7 @@ class WHTask(Document):
     def on_update(self):
         self.update_project_kpis()
         self.propagate_to_successors()
+        self.sync_assignees_to_worklink()
 
     def set_defaults(self):
         """Establece valores por defecto"""
@@ -171,6 +172,22 @@ class WHTask(Document):
             except Exception:
                 # Si falla una propagacion, continuar con las demas
                 pass
+
+    def sync_assignees_to_worklink(self):
+        """Sync assignees to linked WorkLink when assignees change"""
+        if not self.worklink:
+            return
+
+        try:
+            # Get the linked WorkLink document
+            worklink = frappe.get_doc("WorkLink", self.worklink)
+            # Sync assignees from this task to the WorkLink
+            worklink.sync_assignees()
+            # Save the WorkLink to persist changes and trigger Leantime sync
+            worklink.save()
+        except Exception:
+            # Si falla el sync, no bloquear la operacion de la tarea
+            pass
 
 
 @frappe.whitelist()

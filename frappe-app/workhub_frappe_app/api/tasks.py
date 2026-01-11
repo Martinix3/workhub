@@ -445,7 +445,10 @@ def link_to_erp(task_id, doctype, doc_id):
 
     if existing:
         # Update existing WorkLink
-        frappe.db.set_value("WorkLink", existing, "wh_task", task_id)
+        worklink = frappe.get_doc("WorkLink", existing)
+        worklink.wh_task = task_id
+        worklink.sync_assignees()
+        worklink.save()
         worklink_id = existing
     else:
         # Create new WorkLink
