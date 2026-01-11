@@ -212,6 +212,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Enable bypass mode (for UI review without backend)
   const bypassAuth = useCallback(() => {
+    if (!IS_BYPASS_ENABLED) {
+      console.warn('Authentication bypass is disabled. Set VITE_ENABLE_AUTH_BYPASS=true in .env to enable for development.')
+      return
+    }
     sessionStorage.setItem(BYPASS_STORAGE_KEY, 'true')
     setUser(BYPASS_USER)
     storeUser(BYPASS_USER)
