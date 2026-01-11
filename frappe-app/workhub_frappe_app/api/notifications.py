@@ -548,6 +548,196 @@ def send_immediate_email(user, title, message, action_url=None, reference_doctyp
     )
 
 
+def send_digest_email(user, digest_type='daily'):
+    """
+    Send digest email to a user with queued notifications.
+    Groups notifications by project and type, renders the digest template, and sends email.
+
+    Args:
+        user: User email/name to send digest to
+        digest_type: 'daily' or 'weekly'
+
+    Returns:
+        dict: Result with success status and count of notifications sent
+    """
+    # Fetch queued notifications for this user that haven't been sent yet
+    notifications = frappe.get_all("WH Notification",
+        filters={
+            "user": user,
+            "queued_for_digest": 1,
+            "digest_sent_at": ["is", "not set"]
+        },
+        fields=["name", "type", "priority", "title", "message",
+                "reference_doctype", "reference_name", "action_url",
+                "created_at"],
+        order_by="created_at desc")
+
+    # Handle empty digests gracefully - don't send if nothing to report
+    if not notifications:
+        return {
+            "success": True,
+            "sent": False,
+            "count": 0,
+            "message": "No notifications to send in digest"
+        }
+
+    # Get user details
+    user_email = frappe.db.get_value("User", user, "email")
+    user_name = frappe.db.get_value("User", user, "full_name") or user
+
+    if not user_email:
+        frappe.log_error(f"User {user} has no email address", "Digest Email Error")
+        return {
+            "success": False,
+            "sent": False,
+            "count": 0,
+            "message": "User has no email address"
+        }
+
+    # Get site URL for absolute links
+    site_url = frappe.utils.get_url()
+
+    # Group notifications by project and type
+    grouped_notifications = {}
+    no_project = {
+        "project_title": None,
+        "total_count": 0,
+        "types": {}
+    }
+
+    # Process each notification
+    for notif in notifications:
+        # Get project information from reference if it's a task
+        project_key = None
+        project_title = None
+
+        if notif.get("reference_doctype") == "WH Task" and notif.get("reference_name"):
+            try:
+                task_project = frappe.db.get_value("WH Task", notif["reference_name"], "project")
+                if task_project:
+                    project_key = task_project
+                    project_title = frappe.db.get_value("WH Project", task_project, "title")
+            except Exception:
+                pass
+        elif notif.get("reference_doctype") == "WH Project" and notif.get("reference_name"):
+            try:
+                project_key = notif["reference_name"]
+                project_title = frappe.db.get_value("WH Project", project_key, "title")
+            except Exception:
+                pass
+
+        # Add to appropriate group
+        if project_key:
+            # Initialize project group if not exists
+            if project_key not in grouped_notifications:
+                grouped_notifications[project_key] = {
+                    "project_title": project_title or project_key,
+                    "total_count": 0,
+                    "types": {}
+                }
+
+            # Add to project group
+            target_group = grouped_notifications[project_key]
+        else:
+            # Add to no-project group
+            target_group = no_project
+
+        # Initialize type list if not exists
+        notif_type = notif.get("type", "OTHER")
+        if notif_type not in target_group["types"]:
+            target_group["types"][notif_type] = []
+
+        # Add notification to type list
+        target_group["types"][notif_type].append(notif)
+        target_group["total_count"] += 1
+
+    # Calculate total count
+    total_count = len(notifications)
+
+    # Calculate period dates for weekly digest
+    period_start = None
+    period_end = None
+    if digest_type == 'weekly':
+        from frappe.utils import add_days, formatdate
+        period_end = formatdate(nowdate(), "dd/MM/yyyy")
+        period_start = formatdate(add_days(nowdate(), -7), "dd/MM/yyyy")
+
+    # Prepare template context
+    template_context = {
+        "digest_type": digest_type,
+        "user_name": user_name,
+        "total_count": total_count,
+        "grouped_notifications": grouped_notifications,
+        "no_project": no_project if no_project["total_count"] > 0 else None,
+        "site_url": site_url,
+        "period_start": period_start,
+        "period_end": period_end
+    }
+
+    # Render email template
+    try:
+        email_html = frappe.render_template(
+            "workhub_frappe_app/templates/emails/notification_digest.html",
+            template_context
+        )
+    except Exception as e:
+        frappe.log_error(f"Error rendering digest template for {user}: {e}", "Digest Template Error")
+        return {
+            "success": False,
+            "sent": False,
+            "count": 0,
+            "message": f"Template rendering error: {str(e)}"
+        }
+
+    # Prepare subject line
+    if digest_type == 'daily':
+        subject = f"WorkHub: Resumen Diario ({total_count} notificación{'es' if total_count != 1 else ''})"
+    else:
+        subject = f"WorkHub: Resumen Semanal ({total_count} notificación{'es' if total_count != 1 else ''})"
+
+    # Send email
+    try:
+        frappe.sendmail(
+            recipients=[user_email],
+            subject=subject,
+            message=email_html
+        )
+    except Exception as e:
+        frappe.log_error(f"Error sending digest email to {user}: {e}", "Digest Email Error")
+        return {
+            "success": False,
+            "sent": False,
+            "count": 0,
+            "message": f"Email sending error: {str(e)}"
+        }
+
+    # Mark notifications as sent
+    try:
+        notification_names = [n["name"] for n in notifications]
+        frappe.db.sql("""
+            UPDATE `tabWH Notification`
+            SET digest_sent_at = %s
+            WHERE name IN %s
+        """, (now_datetime(), notification_names))
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(f"Error marking notifications as sent for {user}: {e}", "Digest Update Error")
+        # Email was sent successfully, so we still return success but log the error
+        return {
+            "success": True,
+            "sent": True,
+            "count": total_count,
+            "message": f"Email sent but error updating notifications: {str(e)}"
+        }
+
+    return {
+        "success": True,
+        "sent": True,
+        "count": total_count,
+        "message": f"Digest email sent successfully with {total_count} notifications"
+    }
+
+
 def notify_task_assigned(task_id, assigned_to, assigned_by=None):
     """Notificar cuando se asigna una tarea"""
     task = frappe.get_doc("WH Task", task_id)

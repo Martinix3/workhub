@@ -3,13 +3,13 @@
   "spec": "026-smart-notification-digest",
   "state": "building",
   "subtasks": {
-    "completed": 5,
+    "completed": 7,
     "total": 17,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Notification Routing Logic",
+    "current": "Enhanced Digest System",
     "id": null,
     "total": 3
   },
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 2,
+    "number": 4,
     "started_at": "2026-01-11T07:56:08.039737"
   },
-  "last_update": "2026-01-11T07:57:45.322680"
+  "last_update": "2026-01-11T08:01:48.239204"
 }
