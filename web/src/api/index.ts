@@ -9,7 +9,7 @@ export { default as distributorsApi } from './services/distributors'
 export { default as productionApi } from './services/production'
 export { default as marketingApi } from './services/marketing'
 export { default as tasksApi } from './services/tasks'
-export { default as notificationsApi } from './services/notifications'
+export { default as managerAnalyticsApi } from './services/manager-analytics'
 
 // Sales Hooks
 export {
@@ -21,20 +21,11 @@ export {
   useSalesTrends,
   useSalesDashboard,
   useProducts,
-  useCreateOrder,
-  useCancelOrder
+  useCreateOrder
 } from './hooks/useSalesData'
 
 // Sales types
-export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem, CancelOrderResponse } from './services/sales'
-
-// Notification types
-export type {
-  Notification,
-  NotificationType,
-  NotificationPriority,
-  GetNotificationsResponse
-} from './types/notifications'
+export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem } from './services/sales'
 
 // Command Center Hooks
 export {
@@ -89,8 +80,7 @@ export {
 export {
   useUserSettings,
   useUserProfile,
-  useDepartments,
-  useUserKPIs
+  useDepartments
 } from './hooks/useSettings'
 
 // Admin Hooks
@@ -115,7 +105,11 @@ export {
   useTaskDashboard
 } from './hooks/useTasks'
 
-// Notification Hooks
+// Manager Analytics Hooks
 export {
-  useNotifications
-} from './hooks/useNotifications'
+  useTeamWorkload,
+  useVelocityTrends,
+  useBlockerAnalysis,
+  useOverdueTrends,
+  useManagerAnalyticsDashboard
+} from './hooks/useManagerAnalytics'

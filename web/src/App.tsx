@@ -1,12 +1,11 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom'
 import { AppShell } from './components/shell/AppShell'
+import type { NavigationSection } from './components/shell/types'
 import { AuthProvider, useAuth, LoginPage, ProtectedRoute, RoleGuard } from './auth'
 import { LoadingState } from './components/ui/LoadingState'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SmartNotepadFAB } from './components/smart-notepad'
-import { useActiveNavigation } from './hooks/useActiveNavigation'
-import { BASE_NAVIGATION_SECTIONS } from './constants/navigation'
 
 // Lazy-loaded Page Components (code splitting)
 const CommandCenterPage = lazy(() => import('./pages/CommandCenterPage').then(m => ({ default: m.CommandCenterPage })))
@@ -29,6 +28,7 @@ const ProjectsPage = lazy(() => import('./pages/tasks/ProjectsPage').then(m => (
 const NewProjectPage = lazy(() => import('./pages/tasks/NewProjectPage').then(m => ({ default: m.NewProjectPage })))
 const KanbanPage = lazy(() => import('./pages/tasks/KanbanPage').then(m => ({ default: m.KanbanPage })))
 const TaskDashboardPage = lazy(() => import('./pages/tasks/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const ManagerAnalyticsPage = lazy(() => import('./pages/tasks/ManagerAnalyticsPage').then(m => ({ default: m.ManagerAnalyticsPage })))
 
 // Settings & Admin (lazy-loaded)
 const SettingsPage = lazy(() => import('./pages/settings').then(m => ({ default: m.SettingsPage })))
@@ -39,12 +39,82 @@ const CreateUserPage = lazy(() => import('./pages/admin/CreateUserPage').then(m 
 const RolesPage = lazy(() => import('./pages/admin/RolesPage').then(m => ({ default: m.RolesPage })))
 const InvitationsPage = lazy(() => import('./pages/admin/InvitationsPage').then(m => ({ default: m.InvitationsPage })))
 
+// Icons
+import {
+  TrendingUp,
+  Users,
+  Factory,
+  Shield,
+  BarChart3,
+  LayoutDashboard,
+  CheckSquare
+} from 'lucide-react'
+
+const navigationSections: NavigationSection[] = [
+  {
+    label: 'Command Center',
+    icon: <LayoutDashboard size={18} />,
+    href: '/',
+    isActive: true
+  },
+  {
+    label: 'Tareas',
+    icon: <CheckSquare size={18} />,
+    items: [
+      { label: 'Mi Día', href: '/tareas' },
+      { label: 'Proyectos', href: '/tareas/proyectos' },
+      { label: 'Kanban', href: '/tareas/kanban' },
+      { label: 'Dashboard', href: '/tareas/dashboard' },
+      { label: 'Analytics', href: '/tareas/analytics' }
+    ]
+  },
+  {
+    label: 'SELL IN',
+    icon: <TrendingUp size={18} />,
+    items: [
+      { label: 'Dashboard', href: '/ventas' },
+      { label: 'Pipeline', href: '/ventas/pipeline' },
+      { label: 'Clientes', href: '/ventas/clientes' },
+      { label: 'Pedidos', href: '/ventas/pedidos' }
+    ]
+  },
+  {
+    label: 'Distribuidores',
+    icon: <Users size={18} />,
+    items: [
+      { label: 'Red', href: '/distribuidores' },
+      { label: 'Portal', href: '/distribuidores/portal' }
+    ]
+  },
+  {
+    label: 'Produccion',
+    icon: <Factory size={18} />,
+    items: [
+      { label: 'Dashboard', href: '/produccion' },
+      { label: 'Lotes', href: '/produccion/lotes' },
+      { label: 'HACCP', href: '/produccion/haccp' },
+      { label: 'Documentos', href: '/produccion/documentos' }
+    ]
+  },
+  {
+    label: 'Calidad',
+    icon: <Shield size={18} />,
+    items: [
+      { label: 'Dashboard', href: '/calidad' }
+    ]
+  },
+  {
+    label: 'Marketing',
+    icon: <BarChart3 size={18} />,
+    items: [
+      { label: 'Dashboard', href: '/marketing' }
+    ]
+  }
+]
+
 function AppContent() {
   const navigate = useNavigate()
   const { user, logout, loading } = useAuth()
-
-  // Compute active navigation states based on current route
-  const sectionsWithActiveStates = useActiveNavigation(BASE_NAVIGATION_SECTIONS)
 
   const handleNavigate = (href: string) => {
     navigate(href)
@@ -67,7 +137,7 @@ function AppContent() {
 
   return (
     <AppShell
-      navigationSections={sectionsWithActiveStates}
+      navigationSections={navigationSections}
       user={user}
       onNavigate={handleNavigate}
       onLogout={handleLogout}
@@ -86,6 +156,11 @@ function AppContent() {
             <Route path="/tareas/dashboard" element={
               <RoleGuard roles={['System Manager', 'Sales Manager']}>
                 <TaskDashboardPage />
+              </RoleGuard>
+            } />
+            <Route path="/tareas/analytics" element={
+              <RoleGuard roles={['System Manager', 'Sales Manager']}>
+                <ManagerAnalyticsPage />
               </RoleGuard>
             } />
 
