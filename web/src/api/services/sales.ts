@@ -119,6 +119,14 @@ export const salesApi = {
       { order_id: orderId }
     )
     return data
+  },
+
+  async updateOrder(orderId: string, data: UpdateOrderData): Promise<OrderDetail> {
+    const result = await frappe.call<OrderDetail>(
+      'workhub_frappe_app.api.sales.update_order',
+      { order_id: orderId, data }
+    )
+    return result
   }
 }
 
@@ -152,6 +160,21 @@ export interface CreateOrderResponse {
   success: boolean
   order_id: string
   total: number
+}
+
+// Order update types
+export interface UpdateOrderItem {
+  itemCode: string
+  itemName?: string
+  qty: number
+  rate: number
+  amount?: number
+}
+
+export interface UpdateOrderData {
+  deliveryDate?: string
+  salesType?: 'sell_in' | 'sell_out'
+  items?: UpdateOrderItem[]
 }
 
 export default salesApi
