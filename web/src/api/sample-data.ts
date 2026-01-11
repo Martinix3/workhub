@@ -407,6 +407,61 @@ export const sampleTasks: Task[] = [
     primary_owner: 'martin@example.com',
     department: 'SALES',
     due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-006',
+    title: 'Implementar campana multi-canal',
+    status: 'DOING',
+    priority: 'P0',
+    assignees: [
+      { user: 'ana@example.com', role: 'Owner', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'martin@example.com', role: 'Collaborator', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'carlos@example.com', role: 'Collaborator', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' },
+      { user: 'maria@example.com', role: 'Collaborator', user_name: 'Maria Rodriguez', user_email: 'maria@example.com' },
+      { user: 'luis@example.com', role: 'Collaborator', user_name: 'Luis Martinez', user_email: 'luis@example.com' },
+      { user: 'sofia@example.com', role: 'Collaborator', user_name: 'Sofia Gonzalez', user_email: 'sofia@example.com' },
+      { user: 'diego@example.com', role: 'Collaborator', user_name: 'Diego Sanchez', user_email: 'diego@example.com' }
+    ],
+    primary_owner: 'ana@example.com',
+    department: 'MKT',
+    due_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+    worked_today: true,
+    description: 'Campana integrada con equipo completo - testing overflow UI y max assignees'
+  },
+  {
+    name: 'WHT-2025-007',
+    title: 'Auditoria de calidad mensual',
+    status: 'NEXT',
+    priority: 'P1',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'maria@example.com', role: 'Collaborator', user_name: 'Maria Rodriguez', user_email: 'maria@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' },
+      { user: 'sofia@example.com', role: 'Collaborator', user_name: 'Sofia Gonzalez', user_email: 'sofia@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    due_date: new Date(Date.now() + 86400000 * 10).toISOString().split('T')[0],
+    description: 'Revision mensual con equipo de calidad'
+  },
+  {
+    name: 'WHT-2025-008',
+    title: 'Planning trimestral Q2 2025',
+    status: 'BACKLOG',
+    priority: 'P2',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'ana@example.com', role: 'Collaborator', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'carlos@example.com', role: 'Collaborator', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' },
+      { user: 'maria@example.com', role: 'Collaborator', user_name: 'Maria Rodriguez', user_email: 'maria@example.com' },
+      { user: 'luis@example.com', role: 'Collaborator', user_name: 'Luis Martinez', user_email: 'luis@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    due_date: new Date(Date.now() + 86400000 * 30).toISOString().split('T')[0],
+    description: 'Planning estrategico con todos los lideres de area'
   }
 ]
 
@@ -458,6 +513,21 @@ const projectTasks1: Task[] = [
     department: 'OPS',
     project: 'WHP-2025-001',
     due_date: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P1-004',
+    title: 'Capacitar equipo de ventas regional',
+    status: 'NEXT',
+    priority: 'P1',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'ana@example.com', role: 'Collaborator', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    project: 'WHP-2025-001',
+    due_date: new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0]
   }
 ]
 
@@ -489,6 +559,23 @@ const projectTasks2: Task[] = [
     project: 'WHP-2025-002',
     blocked_reason: 'Esperando aprobacion legal',
     due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P2-003',
+    title: 'Crear material promocional',
+    status: 'DOING',
+    priority: 'P1',
+    assignees: [
+      { user: 'ana@example.com', role: 'Owner', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'sofia@example.com', role: 'Collaborator', user_name: 'Sofia Gonzalez', user_email: 'sofia@example.com' },
+      { user: 'diego@example.com', role: 'Collaborator', user_name: 'Diego Sanchez', user_email: 'diego@example.com' },
+      { user: 'maria@example.com', role: 'Collaborator', user_name: 'Maria Rodriguez', user_email: 'maria@example.com' }
+    ],
+    primary_owner: 'ana@example.com',
+    department: 'MKT',
+    project: 'WHP-2025-002',
+    due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+    worked_today: true
   }
 ]
 
@@ -532,6 +619,21 @@ const projectTasks3: Task[] = [
     department: 'OPS',
     project: 'WHP-2025-003',
     due_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P3-004',
+    title: 'Optimizar sistema de inventario',
+    status: 'BACKLOG',
+    priority: 'P2',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' },
+      { user: 'luis@example.com', role: 'Collaborator', user_name: 'Luis Martinez', user_email: 'luis@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    project: 'WHP-2025-003',
+    due_date: new Date(Date.now() + 86400000 * 20).toISOString().split('T')[0]
   }
 ]
 
