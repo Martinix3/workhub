@@ -21,6 +21,7 @@
 @import url('/assets/workhub_frappe_app/css/components/data-table.css');
 @import url('/assets/workhub_frappe_app/css/components/command-palette.css');
 @import url('/assets/workhub_frappe_app/css/components/charts.css');
+@import url('/assets/workhub_frappe_app/css/components/gantt.css');
 
 /* === Layout Utilities === */
 .wh-container {
