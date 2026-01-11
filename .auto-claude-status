@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "001-create-generic-data-hook-factory",
+  "spec": "040-auditor-a-reparaci-n-y-estabilizaci-n-de-tests-e2e",
   "state": "building",
   "subtasks": {
-    "completed": 17,
+    "completed": 3,
     "total": 18,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Verification & Cleanup",
+    "current": "Reproduce and Environment Setup",
     "id": null,
-    "total": 3
+    "total": 4
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 19,
-    "started_at": "2026-01-10T20:25:53.759439"
+    "number": 5,
+    "started_at": "2026-01-11T20:03:41.021077"
   },
-  "last_update": "2026-01-10T21:02:44.156300"
+  "last_update": "2026-01-11T20:13:57.873425"
 }
