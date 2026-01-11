@@ -246,3 +246,149 @@ def get_available_metrics(department=None):
 	)
 
 	return metrics
+
+
+@frappe.whitelist()
+def calculate_kpi_value(kpi_name, date_from=None, date_to=None, use_cache=True):
+	"""
+	Service function to calculate current value for a KPI with trend comparison
+
+	Args:
+		kpi_name: Name/ID of the WH Custom KPI
+		date_from: Start date for calculation (optional)
+		date_to: End date for calculation (optional)
+		use_cache: Use cached values if available (default: True)
+
+	Returns:
+		dict: {
+			"value": numeric_value,
+			"formatted": formatted_string,
+			"status": "ok" | "warning" | "critical",
+			"target_value": target,
+			"warning_threshold": warning,
+			"critical_threshold": critical,
+			"trend": {
+				"previous_value": numeric_value,
+				"change": numeric_change,
+				"change_percent": percent_change,
+				"direction": "up" | "down" | "stable"
+			}
+		}
+	"""
+	require_auth()
+
+	# Check cache first if enabled
+	cache_key = f"kpi_value_{kpi_name}_{date_from}_{date_to}"
+	if use_cache:
+		cached_value = frappe.cache().get_value(cache_key)
+		if cached_value:
+			return cached_value
+
+	# Get the KPI document
+	kpi_doc = frappe.get_doc("WH Custom KPI", kpi_name)
+
+	# Verify user has access to this KPI
+	if kpi_doc.owner_user != frappe.session.user and not kpi_doc.is_shared:
+		if not frappe.has_permission("WH Custom KPI", "read", kpi_doc):
+			frappe.throw(_("You don't have permission to view this KPI"))
+
+	# Calculate current period value
+	current_result = kpi_doc.get_current_value(date_from=date_from, date_to=date_to)
+	current_value = current_result.get("value", 0)
+
+	# Calculate previous period value for trend
+	trend = _calculate_trend(kpi_doc, current_value, date_from, date_to)
+
+	# Build complete result
+	result = {
+		"value": current_value,
+		"formatted": current_result.get("formatted", "0"),
+		"status": current_result.get("status", "unknown"),
+		"target_value": current_result.get("target_value"),
+		"warning_threshold": current_result.get("warning_threshold"),
+		"critical_threshold": current_result.get("critical_threshold"),
+		"trend": trend,
+		"error": current_result.get("error")
+	}
+
+	# Cache the result for 5 minutes (300 seconds)
+	if use_cache and not result.get("error"):
+		frappe.cache().set_value(cache_key, result, expires_in_sec=300)
+
+	return result
+
+
+def _calculate_trend(kpi_doc, current_value, date_from=None, date_to=None):
+	"""
+	Calculate trend by comparing current value to previous period
+
+	Args:
+		kpi_doc: WH Custom KPI document
+		current_value: Current period value
+		date_from: Start date of current period
+		date_to: End date of current period
+
+	Returns:
+		dict: Trend information with previous value, change, and direction
+	"""
+	from frappe.utils import add_days, getdate
+
+	try:
+		# If no date range specified, compare to same period last week/month
+		if not date_from or not date_to:
+			# Default to last 30 days for current period
+			date_to = getdate()
+			date_from = add_days(date_to, -30)
+
+		# Calculate previous period (same duration, shifted back)
+		date_from = getdate(date_from)
+		date_to = getdate(date_to)
+		period_days = (date_to - date_from).days
+
+		prev_date_to = add_days(date_from, -1)
+		prev_date_from = add_days(prev_date_to, -period_days)
+
+		# Get metric and calculate previous period value
+		metric = frappe.get_doc("WH KPI Metric", kpi_doc.metric)
+		prev_result = metric.calculate_value(
+			department=kpi_doc.department,
+			user=kpi_doc.owner_user,
+			date_from=str(prev_date_from),
+			date_to=str(prev_date_to)
+		)
+
+		previous_value = prev_result.get("value", 0)
+
+		# Calculate change and direction
+		change = current_value - previous_value
+
+		# Calculate percentage change (avoid division by zero)
+		if previous_value != 0:
+			change_percent = (change / abs(previous_value)) * 100
+		else:
+			change_percent = 100 if current_value > 0 else 0
+
+		# Determine direction
+		if abs(change_percent) < 1:
+			direction = "stable"
+		elif change > 0:
+			direction = "up"
+		else:
+			direction = "down"
+
+		return {
+			"previous_value": previous_value,
+			"change": change,
+			"change_percent": round(change_percent, 1),
+			"direction": direction
+		}
+
+	except Exception as e:
+		frappe.log_error(f"Error calculating trend for KPI {kpi_doc.name}: {str(e)}")
+		return {
+			"previous_value": 0,
+			"change": 0,
+			"change_percent": 0,
+			"direction": "stable",
+			"error": str(e)
+		}
