@@ -225,6 +225,27 @@ class FrappeClient {
     }
   }
 
+  // Verify auth cookie and get user info (uses WorkHub's whitelisted endpoint)
+  async verifyAuthCookie(): Promise<{
+    authenticated: boolean
+    user: string
+    full_name?: string
+    email?: string
+    user_image?: string
+    roles?: string[]
+    error?: string
+  }> {
+    try {
+      return await this.call('workhub_frappe_app.api.auth.verify_auth_cookie')
+    } catch (error) {
+      return {
+        authenticated: false,
+        user: 'Guest',
+        error: error instanceof Error ? error.message : 'Verification failed'
+      }
+    }
+  }
+
   // Login with username and password (for testing)
   async login(usr: string, pwd: string): Promise<boolean> {
     const url = `${this.baseUrl}/api/method/login`
