@@ -59,6 +59,7 @@ def get_social_login_url(provider="google", redirect_to=None):
 
 
 @frappe.whitelist()
+@rate_limit(limit=5, window=60, identifier="user")
 def generate_api_token():
     """
     Generate or retrieve API token for the authenticated user.
