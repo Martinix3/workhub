@@ -9,7 +9,8 @@ from frappe import _
 from frappe.utils import cstr, now_datetime, random_string
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_any_role, validate_json_input, sanitize_search_term
+from workhub_frappe_app.api.utils import require_auth, require_any_role, validate_json_input
+from workhub_frappe_app.api.rate_limiter import rate_limit
 
 
 @frappe.whitelist()
@@ -35,16 +36,11 @@ def get_users(limit=50, offset=0, search=None):
     filters = {"enabled": 1, "user_type": "System User"}
 
     if search:
-        sanitized_search = sanitize_search_term(search)
-        filters["full_name"] = ["like", f"%{sanitized_search}%"]
+        filters["full_name"] = ["like", f"%{search}%"]
 
     # Get total count
     total = frappe.db.count("User", filters)
 
-    # SECURITY: ignore_permissions is safe here because:
-    # - Function is protected by require_any_role("System Manager", "HR Manager")
-    # - This is an administrative operation to list all users in the system
-    # - Regular users don't have read access to User doctype
     # Get users
     users = frappe.get_list("User",
         filters=filters,
@@ -106,6 +102,7 @@ def get_user_detail(user_id):
 
 
 @frappe.whitelist()
+@rate_limit(limit=10, window=60, identifier="user")  # Rate Limiting: 10 requests/min PER USER to prevent mass account creation
 def create_user(email, first_name, last_name=None, roles=None, send_welcome_email=True):
     """
     Create a new user.
@@ -119,6 +116,14 @@ def create_user(email, first_name, last_name=None, roles=None, send_welcome_emai
 
     Returns:
         dict: Created user object
+
+    Rate Limiting Strategy:
+    - Limit: 10 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: User creation is a sensitive operation that could be abused to create
+      spam accounts or overwhelm the system. Rate limiting per user prevents abuse
+      from compromised System Manager accounts.
+    - Protection: Prevents mass account creation attacks while allowing legitimate
+      bulk user provisioning (e.g., onboarding multiple employees).
     """
     require_any_role("System Manager")
 
@@ -152,10 +157,6 @@ def create_user(email, first_name, last_name=None, roles=None, send_welcome_emai
     # Set a random password (user will reset via email)
     user_doc.new_password = random_string(16)
 
-    # SECURITY: ignore_permissions is safe here because:
-    # - Function is protected by require_any_role("System Manager")
-    # - This is an administrative operation to create users
-    # - Regular users don't have create permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.insert()
 
@@ -204,10 +205,6 @@ def update_user(user_id, data):
     if "first_name" in data or "last_name" in data:
         user_doc.full_name = f"{user_doc.first_name or ''} {user_doc.last_name or ''}".strip()
 
-    # SECURITY: ignore_permissions is safe here because:
-    # - Function is protected by require_any_role("System Manager")
-    # - This is an administrative operation to update users
-    # - Regular users don't have write permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.save()
     frappe.db.commit()
@@ -242,10 +239,6 @@ def delete_user(user_id):
 
     user_doc = frappe.get_doc("User", user_id)
     user_doc.enabled = 0
-    # SECURITY: ignore_permissions is safe here because:
-    # - Function is protected by require_any_role("System Manager")
-    # - This is an administrative operation to disable users
-    # - Regular users don't have write permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.save()
     frappe.db.commit()
@@ -266,10 +259,6 @@ def get_roles():
     """
     require_any_role("System Manager")
 
-    # SECURITY: ignore_permissions is safe here because:
-    # - Function is protected by require_any_role("System Manager")
-    # - This is an administrative operation to list all available roles
-    # - Regular users don't have read access to Role doctype
     # Get all non-disabled roles
     roles = frappe.get_list("Role",
         filters={"disabled": 0},
@@ -285,6 +274,7 @@ def get_roles():
 
 
 @frappe.whitelist()
+@rate_limit(limit=20, window=60, identifier="user")  # Rate Limiting: 20 requests/min PER USER to allow batch operations while preventing abuse
 def assign_role(user_id, role):
     """
     Assign a role to a user.
@@ -295,6 +285,14 @@ def assign_role(user_id, role):
 
     Returns:
         dict: Updated user with roles
+
+    Rate Limiting Strategy:
+    - Limit: 20 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: Role assignment is critical for access control. The limit is higher
+      than other admin operations to allow batch role assignments during onboarding
+      or reorganization, while still preventing automated privilege escalation attacks.
+    - Protection: Prevents attackers from rapidly assigning administrative roles to
+      compromised accounts or performing mass permission changes.
     """
     require_any_role("System Manager")
 
@@ -317,10 +315,6 @@ def assign_role(user_id, role):
 
     # Add the role
     user_doc.append("roles", {"role": role})
-    # SECURITY: ignore_permissions is safe here because:
-    # - Function is protected by require_any_role("System Manager")
-    # - This is an administrative operation to assign roles
-    # - Regular users don't have write permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.save()
     frappe.db.commit()
@@ -333,6 +327,7 @@ def assign_role(user_id, role):
 
 
 @frappe.whitelist()
+@rate_limit(limit=20, window=60, identifier="user")  # Rate Limiting: 20 requests/min PER USER to allow batch operations while preventing abuse
 def remove_role(user_id, role):
     """
     Remove a role from a user.
@@ -343,6 +338,13 @@ def remove_role(user_id, role):
 
     Returns:
         dict: Updated user with roles
+
+    Rate Limiting Strategy:
+    - Limit: 20 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: Role removal is as sensitive as assignment. The limit allows batch
+      operations during access reviews or offboarding while preventing abuse.
+    - Protection: Prevents attackers from rapidly stripping permissions from legitimate
+      users or performing mass permission changes to disrupt operations.
     """
     require_any_role("System Manager")
 
@@ -366,10 +368,6 @@ def remove_role(user_id, role):
             "roles": [r.role for r in user_doc.roles]
         }
 
-    # SECURITY: ignore_permissions is safe here because:
-    # - Function is protected by require_any_role("System Manager")
-    # - This is an administrative operation to remove roles
-    # - Regular users don't have write permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.save()
     frappe.db.commit()
@@ -382,6 +380,7 @@ def remove_role(user_id, role):
 
 
 @frappe.whitelist()
+@rate_limit(limit=10, window=60, identifier="user")  # Rate Limiting: 10 requests/min PER USER to prevent invitation spam
 def send_invitation(email, first_name=None, roles=None, message=None):
     """
     Send an invitation email to a new user.
@@ -395,6 +394,14 @@ def send_invitation(email, first_name=None, roles=None, message=None):
 
     Returns:
         dict: Invitation result
+
+    Rate Limiting Strategy:
+    - Limit: 10 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: Invitation sending triggers email delivery, which could be abused for
+      spam or to overwhelm email infrastructure. Rate limiting per user prevents abuse
+      while allowing legitimate batch invitations.
+    - Protection: Prevents attackers from using the invitation system to send spam emails,
+      harass users, or cause email service disruption.
     """
     require_any_role("System Manager")
 
@@ -413,10 +420,6 @@ def send_invitation(email, first_name=None, roles=None, message=None):
         else:
             # Re-enable disabled user
             user_doc.enabled = 1
-            # SECURITY: ignore_permissions is safe here because:
-            # - Function is protected by require_any_role("System Manager")
-            # - This is an administrative operation to re-enable users
-            # - Regular users don't have write permission on User doctype
             user_doc.flags.ignore_permissions = True
             user_doc.save()
             user_doc.send_welcome_email()
@@ -442,10 +445,6 @@ def send_invitation(email, first_name=None, roles=None, message=None):
             if frappe.db.exists("Role", role_name):
                 user_doc.append("roles", {"role": role_name})
 
-    # SECURITY: ignore_permissions is safe here because:
-    # - Function is protected by require_any_role("System Manager")
-    # - This is an administrative operation to create users via invitation
-    # - Regular users don't have create permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.insert()
 

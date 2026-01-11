@@ -1,2 +1,1 @@
-# Copyright (c) 2024, Vibe and contributors
-# For license information, please see license.txt
+# Tests for WorkHub Frappe App
