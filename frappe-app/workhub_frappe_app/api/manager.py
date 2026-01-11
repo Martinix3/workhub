@@ -7,6 +7,10 @@ from frappe.utils import nowdate, getdate, add_days, date_diff
 import json
 
 from workhub_frappe_app.api.utils import require_auth, require_any_role
+from workhub_frappe_app.services.ai_recommendations import (
+    detect_at_risk_tasks as detect_at_risk_service,
+    analyze_workload_balance
+)
 
 
 @frappe.whitelist()
@@ -102,6 +106,58 @@ def get_overview():
         if m.get("project"):
             m["project_title"] = frappe.db.get_value("WH Project", m["project"], "title")
 
+    # AI-detected at-risk tasks
+    at_risk_tasks = []
+    try:
+        at_risk_data = detect_at_risk_service(user=None, limit=10)
+        for item in at_risk_data:
+            task = item["task"]
+            at_risk_tasks.append({
+                "task_id": task["name"],
+                "title": task["title"],
+                "status": task["status"],
+                "priority": task["priority"],
+                "assigned_to": task.get("assigned_to"),
+                "assigned_name": frappe.db.get_value("User", task["assigned_to"], "full_name") if task.get("assigned_to") else None,
+                "project": task.get("project"),
+                "project_title": frappe.db.get_value("WH Project", task["project"], "title") if task.get("project") else None,
+                "due_date": task.get("due_date"),
+                "days_remaining": date_diff(task["due_date"], nowdate()) if task.get("due_date") else None,
+                "risk_score": round(item["risk_score"] * 100, 1),
+                "risk_level": item["risk_level"],
+                "reason": item["reason"]
+            })
+    except Exception as e:
+        frappe.log_error(f"Error getting AI at-risk tasks: {str(e)}", "Manager Overview AI")
+
+    # AI workload balance suggestions
+    workload_balance_suggestions = []
+    try:
+        workload_data = analyze_workload_balance(department=None)
+
+        # Enhance user data with names
+        for user_data in workload_data.get("users", []):
+            if user_data.get("user"):
+                user_info = frappe.db.get_value("User", user_data["user"],
+                    ["full_name", "user_image"], as_dict=True)
+                if user_info:
+                    user_data.update(user_info)
+
+        # Format suggestions
+        for suggestion in workload_data.get("suggestions", []):
+            workload_balance_suggestions.append({
+                "type": suggestion["type"],
+                "from_user": suggestion["from_user"],
+                "from_user_name": frappe.db.get_value("User", suggestion["from_user"], "full_name"),
+                "to_user": suggestion["to_user"],
+                "to_user_name": frappe.db.get_value("User", suggestion["to_user"], "full_name"),
+                "reason": suggestion["reason"],
+                "from_workload": suggestion["from_workload"],
+                "to_workload": suggestion["to_workload"]
+            })
+    except Exception as e:
+        frappe.log_error(f"Error getting AI workload suggestions: {str(e)}", "Manager Overview AI")
+
     return {
         "projects_by_health": projects_by_health,
         "critical_tasks": critical_tasks,
@@ -109,11 +165,15 @@ def get_overview():
         "team_workload": team_workload,
         "recent_completions": recent_completions,
         "upcoming_milestones": upcoming_milestones,
+        "at_risk_tasks": at_risk_tasks,
+        "workload_balance_suggestions": workload_balance_suggestions,
         "summary": {
             "projects_at_risk": len(projects_by_health["RED"]),
             "projects_warning": len(projects_by_health["YELLOW"]),
             "critical_count": len(critical_tasks),
-            "blocked_count": len(blocked_tasks)
+            "blocked_count": len(blocked_tasks),
+            "at_risk_count": len(at_risk_tasks),
+            "workload_suggestions_count": len(workload_balance_suggestions)
         }
     }
 

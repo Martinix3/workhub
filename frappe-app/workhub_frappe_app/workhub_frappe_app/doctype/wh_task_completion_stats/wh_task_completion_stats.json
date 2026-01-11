@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-01-10 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "task_type",
+  "department",
+  "similar_task_title_pattern",
+  "column_break_1",
+  "completion_count",
+  "avg_duration_hours",
+  "median_duration_hours"
+ ],
+ "fields": [
+  {
+   "fieldname": "task_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Tipo de Tarea",
+   "reqd": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Departamento",
+   "options": "SALES\nOPS\nMKT",
+   "reqd": 1
+  },
+  {
+   "fieldname": "similar_task_title_pattern",
+   "fieldtype": "Data",
+   "label": "Patron de Titulo Similar",
+   "reqd": 0
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "completion_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Cantidad de Completadas",
+   "reqd": 1
+  },
+  {
+   "default": "0.0",
+   "fieldname": "avg_duration_hours",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Duracion Promedio (horas)",
+   "precision": "2",
+   "reqd": 1
+  },
+  {
+   "default": "0.0",
+   "fieldname": "median_duration_hours",
+   "fieldtype": "Float",
+   "label": "Duracion Mediana (horas)",
+   "precision": "2",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Workhub Frappe App",
+ "name": "WH Task Completion Stats",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "All"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

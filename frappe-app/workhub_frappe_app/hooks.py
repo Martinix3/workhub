@@ -166,6 +166,10 @@ scheduler_events = {
 			"workhub_frappe_app.api.notifications.send_daily_emails"
 		]
 	},
+	"daily": [
+		# Agregar estadísticas de tareas completadas para AI
+		"workhub_frappe_app.services.ai_recommendations.aggregate_task_completion_stats"
+	],
 	"hourly": [
 		# Alertas de tareas vencidas
 		"workhub_frappe_app.api.notifications.send_overdue_alerts",
@@ -174,7 +178,9 @@ scheduler_events = {
 		# Notificar dependencias bloqueadas
 		"workhub_frappe_app.api.notifications.notify_blocked_dependencies",
 		# Recalcular KPIs de proyectos
-		"workhub_frappe_app.doctype.wh_project.wh_project.recalculate_all_projects"
+		"workhub_frappe_app.doctype.wh_project.wh_project.recalculate_all_projects",
+		# Generar alertas de AI para tareas en riesgo
+		"workhub_frappe_app.services.ai_recommendations.generate_at_risk_alerts"
 	],
 }
 

@@ -47,7 +47,11 @@
   "section_break_ai",
   "ai_suggested",
   "ai_confidence",
-  "trigger_rule"
+  "trigger_rule",
+  "column_break_ai",
+  "estimated_duration_ai",
+  "duration_confidence",
+  "risk_score"
  ],
  "fields": [
   {
@@ -294,6 +298,27 @@
    "fieldname": "trigger_rule",
    "fieldtype": "Data",
    "label": "Regla Trigger"
+  },
+  {
+   "fieldname": "column_break_ai",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0.0",
+   "fieldname": "estimated_duration_ai",
+   "fieldtype": "Float",
+   "label": "Duracion Estimada IA (horas)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "duration_confidence",
+   "fieldtype": "Percent",
+   "label": "Confianza Estimacion"
+  },
+  {
+   "fieldname": "risk_score",
+   "fieldtype": "Percent",
+   "label": "Score de Riesgo"
   }
  ],
  "index_web_pages_for_search": 1,
