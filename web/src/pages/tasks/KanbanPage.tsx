@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { AssigneeAvatarGroup } from '../../components/ui/AssigneeAvatarGroup'
 import { useKanban, useTaskMutations } from '../../api'
 import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
 
@@ -329,17 +330,6 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCar
   const priority = priorityConfig[task.priority]
   const isDone = task.status === 'DONE'
 
-  // Get initials from assigned_to_name or assigned_to
-  const getInitials = () => {
-    const name = task.assigned_to_name || task.assigned_to || ''
-    if (!name) return '?'
-    const parts = name.split(/[@\s]/)
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
-  }
-
   return (
     <div
       draggable
@@ -395,16 +385,13 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCar
         {/* Footer */}
         <div className="flex items-center justify-between text-xs text-stone-500">
           <div className="flex items-center gap-2">
-            {/* Avatar */}
-            {task.assigned_to && (
-              <div className="
-                w-6 h-6 flex items-center justify-center
-                bg-stone-200
-                border border-stone-900
-                text-[10px] font-bold
-              " title={task.assigned_to_name || task.assigned_to}>
-                {getInitials()}
-              </div>
+            {/* Assignees */}
+            {task.assignees && task.assignees.length > 0 && (
+              <AssigneeAvatarGroup
+                assignees={task.assignees}
+                size="sm"
+                maxVisible={3}
+              />
             )}
           </div>
           <div className="flex items-center gap-2">
