@@ -84,105 +84,78 @@ def clear_old_notifications(days=30):
 
 # ========== SCHEDULER FUNCTIONS ==========
 
-def send_daily_emails():
-    """Scheduler: Enviar email diario a las 8am"""
-    # Obtener usuarios con email diario activado
-    # Por ahora, todos los usuarios con tareas asignadas
+def send_daily_digests():
+    """
+    Scheduler: Send daily digest emails at 8am to users with frequency='daily'.
+    Fetches all users with daily notification frequency and sends digest emails.
+    """
+    # Get all users with daily notification frequency and email enabled
     users = frappe.db.sql("""
-        SELECT DISTINCT assigned_to as user
-        FROM `tabWH Task`
-        WHERE status NOT IN ('DONE')
+        SELECT user
+        FROM `tabWH Notification Preferences`
+        WHERE frequency = 'daily'
+        AND email_enabled = 1
     """, as_dict=True)
+
+    if not users:
+        frappe.logger().info("No users with daily digest frequency found")
+        return
+
+    sent_count = 0
+    error_count = 0
 
     for user_row in users:
         user = user_row.get("user")
         if not user or user == "Administrator":
             continue
 
-        user_email = frappe.db.get_value("User", user, "email")
-        if not user_email:
+        try:
+            result = send_digest_email(user, digest_type='daily')
+            if result.get('sent'):
+                sent_count += 1
+                frappe.logger().info(f"Daily digest sent to {user}: {result.get('count')} notifications")
+        except Exception as e:
+            error_count += 1
+            frappe.log_error(f"Error sending daily digest to {user}: {e}", "Daily Digest Error")
+
+    frappe.logger().info(f"Daily digest batch complete: {sent_count} sent, {error_count} errors")
+
+
+def send_weekly_digests():
+    """
+    Scheduler: Send weekly digest emails on Mondays at 8am to users with frequency='weekly'.
+    Fetches all users with weekly notification frequency and sends digest emails.
+    """
+    # Get all users with weekly notification frequency and email enabled
+    users = frappe.db.sql("""
+        SELECT user
+        FROM `tabWH Notification Preferences`
+        WHERE frequency = 'weekly'
+        AND email_enabled = 1
+    """, as_dict=True)
+
+    if not users:
+        frappe.logger().info("No users with weekly digest frequency found")
+        return
+
+    sent_count = 0
+    error_count = 0
+
+    for user_row in users:
+        user = user_row.get("user")
+        if not user or user == "Administrator":
             continue
 
         try:
-            _send_daily_digest(user, user_email)
+            result = send_digest_email(user, digest_type='weekly')
+            if result.get('sent'):
+                sent_count += 1
+                frappe.logger().info(f"Weekly digest sent to {user}: {result.get('count')} notifications")
         except Exception as e:
-            frappe.log_error(f"Error sending daily email to {user}: {e}")
+            error_count += 1
+            frappe.log_error(f"Error sending weekly digest to {user}: {e}", "Weekly Digest Error")
 
-
-def _send_daily_digest(user, email):
-    """Enviar digest diario a un usuario"""
-    today = nowdate()
-
-    # Tareas para hoy
-    today_tasks = frappe.get_all("WH Task",
-        filters={
-            "assigned_to": user,
-            "status": ["in", ["DOING", "NEXT"]],
-            "due_date": today
-        },
-        fields=["title", "priority", "project"],
-        limit=10)
-
-    # Vencidas
-    overdue = frappe.get_all("WH Task",
-        filters={
-            "assigned_to": user,
-            "status": ["not in", ["DONE"]],
-            "due_date": ["<", today]
-        },
-        fields=["title", "priority", "due_date"],
-        limit=5)
-
-    # Bloqueadas
-    blocked = frappe.get_all("WH Task",
-        filters={"assigned_to": user, "status": "BLOCKED"},
-        fields=["title", "blocked_reason"],
-        limit=5)
-
-    # Si no hay nada relevante, no enviar
-    if not today_tasks and not overdue and not blocked:
-        return
-
-    # Construir mensaje
-    subject = f"Tu dia: {len(today_tasks)} tareas"
-    if overdue:
-        subject += f" ({len(overdue)} vencidas)"
-
-    message = f"""
-    <h2>Buenos dias!</h2>
-    <p>Aqui esta tu resumen para hoy:</p>
-
-    <h3>Para Hoy ({len(today_tasks)})</h3>
-    <ul>
-    {"".join([f"<li><strong>[{t['priority']}]</strong> {t['title']}</li>" for t in today_tasks]) or "<li>No hay tareas para hoy</li>"}
-    </ul>
-    """
-
-    if overdue:
-        message += f"""
-        <h3 style="color: red;">Vencidas ({len(overdue)})</h3>
-        <ul>
-        {"".join([f"<li><strong>{t['title']}</strong> (vencio {t['due_date']})</li>" for t in overdue])}
-        </ul>
-        """
-
-    if blocked:
-        message += f"""
-        <h3 style="color: orange;">Bloqueadas ({len(blocked)})</h3>
-        <ul>
-        {"".join([f"<li>{t['title']} - {t.get('blocked_reason', 'Sin razon')}</li>" for t in blocked])}
-        </ul>
-        """
-
-    message += """
-    <p><a href="/app/wh-task">Ver todas mis tareas</a></p>
-    """
-
-    frappe.sendmail(
-        recipients=[email],
-        subject=subject,
-        message=message
-    )
+    frappe.logger().info(f"Weekly digest batch complete: {sent_count} sent, {error_count} errors")
 
 
 def send_overdue_alerts():
