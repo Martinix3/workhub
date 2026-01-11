@@ -475,8 +475,7 @@ def get_assigned_sell_out_orders(status_filter=None, limit=50, offset=0):
                 "actual_delivery_date", "status", "total_qty", "total_amount", "issue_notes"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="order_date desc",
-        ignore_permissions=True
+        order_by="order_date desc"
     )
 
     # Transform to React SellOutOrder interface
@@ -486,8 +485,7 @@ def get_assigned_sell_out_orders(status_filter=None, limit=50, offset=0):
         items = frappe.get_list("Distributor Sell Out Order Item",
             filters={"parent": order.name},
             fields=["item_code", "item_name", "qty", "rate", "amount"],
-            order_by="idx asc",
-            ignore_permissions=True
+            order_by="idx asc"
         )
 
         orders.append({
