@@ -10,6 +10,7 @@ import type {
   Activity,
   SalesTrends
 } from '../../components/sections/sell-in-operations/types'
+import type { OrderDetail } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
 import {
   isInBypassMode,
   sampleSalesKPIs,
@@ -17,7 +18,8 @@ import {
   sampleRecentActivity,
   sampleCustomers,
   sampleOrders,
-  sampleOpportunities
+  sampleOpportunities,
+  sampleOrderDetail
 } from '../sample-data'
 
 interface UseDataState<T> {
@@ -265,4 +267,36 @@ export function useCreateOrder() {
   }, [])
 
   return { createOrder, loading, error }
+}
+
+export function useOrderDetail(orderId: string | null): UseDataState<OrderDetail> {
+  const [data, setData] = useState<OrderDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    if (!orderId) {
+      setData(null)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const orderDetail = await salesApi.getOrderDetail(orderId)
+      setData(orderDetail)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleOrderDetail)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch order detail'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [orderId])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
 }
