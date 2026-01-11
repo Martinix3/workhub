@@ -10,6 +10,7 @@ from frappe.utils import cstr, now_datetime, random_string
 import json
 
 from workhub_frappe_app.api.utils import require_auth, require_any_role, validate_json_input
+from workhub_frappe_app.api.rate_limiter import rate_limit
 
 
 @frappe.whitelist()
@@ -101,6 +102,7 @@ def get_user_detail(user_id):
 
 
 @frappe.whitelist()
+@rate_limit(limit=10, window=60, identifier="user")
 def create_user(email, first_name, last_name=None, roles=None, send_welcome_email=True):
     """
     Create a new user.
