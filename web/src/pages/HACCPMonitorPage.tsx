@@ -54,9 +54,8 @@ export function HACCPMonitorPage() {
 
   const handleModalSubmit = async (data: ReadingSubmission) => {
     try {
-      // Call recordReading API
-      // Note: correctiveAction parameter will be added in subtask 3.1
-      await recordReading(data.ccpId, data.value, data.lotNumber)
+      // Call recordReading API with corrective action
+      await recordReading(data.ccpId, data.value, data.lotNumber, data.correctiveAction)
 
       // Refresh data to show the new reading
       await refetch()
