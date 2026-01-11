@@ -1,7 +1,7 @@
 // React hooks for Sales data
 import { useState, useEffect, useCallback } from 'react'
 import salesApi from '../services/sales'
-import type { Product, CreateOrderData, CreateOrderResponse } from '../services/sales'
+import type { Product, CreateOrderData, CreateOrderResponse, UpdateOrderData } from '../services/sales'
 import type {
   KPIs,
   Customer,
@@ -299,4 +299,33 @@ export function useOrderDetail(orderId: string | null): UseDataState<OrderDetail
 
   useEffect(() => { fetch() }, [fetch])
   return { data, loading, error, refetch: fetch }
+}
+
+export function useUpdateOrder() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const updateOrder = useCallback(async (orderId: string, data: UpdateOrderData): Promise<OrderDetail | null> => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await salesApi.updateOrder(orderId, data)
+      return result
+    } catch (err) {
+      if (isInBypassMode()) {
+        // Simulate order update in bypass mode by returning updated sample data
+        return {
+          ...sampleOrderDetail,
+          ...data,
+          items: data.items || sampleOrderDetail.items
+        }
+      }
+      setError(err instanceof Error ? err : new Error('Failed to update order'))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { updateOrder, loading, error }
 }
