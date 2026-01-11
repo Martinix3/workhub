@@ -183,13 +183,16 @@ def delete_custom_kpi(name):
 @frappe.whitelist()
 def update_kpi_order(kpi_order):
 	"""
-	Update display order for multiple KPIs
+	Update display order for multiple KPIs (drag-and-drop reordering)
 
 	Args:
 		kpi_order: List of KPI names in desired order (JSON string or list)
 
 	Returns:
-		dict: Success message
+		dict: Success message with count of updated KPIs
+
+	Raises:
+		frappe.ValidationError: If user doesn't own or have access to any KPI in the list
 	"""
 	require_auth()
 
@@ -197,18 +200,39 @@ def update_kpi_order(kpi_order):
 	if isinstance(kpi_order, str):
 		kpi_order = json.loads(kpi_order)
 
-	# Update display_order for each KPI
-	for index, kpi_name in enumerate(kpi_order):
+	if not isinstance(kpi_order, list) or len(kpi_order) == 0:
+		frappe.throw(_("kpi_order must be a non-empty list of KPI names"))
+
+	# First, validate that user has permission to reorder all KPIs
+	current_user = frappe.session.user
+	validated_kpis = []
+
+	for kpi_name in kpi_order:
+		if not frappe.db.exists("WH Custom KPI", kpi_name):
+			frappe.throw(_("KPI {0} does not exist").format(kpi_name))
+
 		doc = frappe.get_doc("WH Custom KPI", kpi_name)
 
-		# Verify user owns this KPI or it's shared
-		if doc.owner_user != frappe.session.user and not doc.is_shared:
-			continue
+		# Verify user owns this KPI or it's shared with them
+		# Only owners can reorder their KPIs; shared KPIs cannot be reordered by non-owners
+		if doc.owner_user != current_user:
+			frappe.throw(
+				_("You don't have permission to reorder KPI '{0}'. Only the owner can reorder KPIs.").format(
+					doc.title or kpi_name
+				)
+			)
 
+		validated_kpis.append(doc)
+
+	# All validations passed, now update display_order
+	for index, doc in enumerate(validated_kpis):
 		doc.display_order = index
 		doc.save(ignore_permissions=True)
 
-	return {"message": "KPI order updated successfully"}
+	return {
+		"message": "KPI order updated successfully",
+		"updated_count": len(validated_kpis)
+	}
 
 
 @frappe.whitelist()
