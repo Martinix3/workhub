@@ -266,6 +266,7 @@ def get_roles():
 
 
 @frappe.whitelist()
+@rate_limit(limit=20, window=60, identifier="user")
 def assign_role(user_id, role):
     """
     Assign a role to a user.
@@ -310,6 +311,7 @@ def assign_role(user_id, role):
 
 
 @frappe.whitelist()
+@rate_limit(limit=20, window=60, identifier="user")
 def remove_role(user_id, role):
     """
     Remove a role from a user.
