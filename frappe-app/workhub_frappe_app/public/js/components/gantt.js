@@ -71,6 +71,19 @@
 				previewElement: null
 			};
 
+			// Resize state
+			this.resizeState = {
+				isResizing: false,
+				taskId: null,
+				handle: null, // 'left' or 'right'
+				startX: 0,
+				startLeft: 0,
+				startWidth: 0,
+				columnOffset: 0,
+				originalTask: null,
+				previewElement: null
+			};
+
 			// Elements
 			this.elements = {
 				timeline: null,
@@ -480,6 +493,9 @@
 
 		// Add drag event listener to task bar (but not resize handles)
 		this._setupTaskBarDrag(bar, task);
+
+		// Add resize event listeners to handles
+		this._setupResizeHandles(bar, task, handleLeft, handleRight);
 
 		return bar;
 	}
@@ -1613,11 +1629,342 @@
 	}
 
 	/**
+	 * Setup resize handles
+	 * @private
+	 */
+	_setupResizeHandles(barElement, task, handleLeft, handleRight) {
+		// Store task reference on element
+		barElement._taskData = task;
+
+		// Left handle - adjusts start date
+		handleLeft.addEventListener('mousedown', (e) => {
+			// Only left mouse button
+			if (e.button !== 0) return;
+
+			e.preventDefault();
+			e.stopPropagation();
+
+			this._startResize(barElement, task, 'left', e);
+		});
+
+		// Right handle - adjusts end date
+		handleRight.addEventListener('mousedown', (e) => {
+			// Only left mouse button
+			if (e.button !== 0) return;
+
+			e.preventDefault();
+			e.stopPropagation();
+
+			this._startResize(barElement, task, 'right', e);
+		});
+	}
+
+	/**
+	 * Start resize operation
+	 * @private
+	 */
+	_startResize(barElement, task, handle, event) {
+		// Set resize state
+		this.resizeState.isResizing = true;
+		this.resizeState.taskId = task.name;
+		this.resizeState.handle = handle;
+		this.resizeState.startX = event.clientX;
+		this.resizeState.startLeft = parseFloat(barElement.style.left) || 0;
+		this.resizeState.startWidth = parseFloat(barElement.style.width) || 0;
+		this.resizeState.columnOffset = 0;
+		this.resizeState.originalTask = { ...task };
+
+		// Add resizing class to bar
+		barElement.classList.add('gantt-task-bar--resizing');
+
+		// Create preview tooltip
+		this._createResizePreview(task);
+
+		// Add document-level event listeners
+		this._onResizeMoveHandler = (e) => this._onResizeMove(e, barElement, task);
+		this._onResizeEndHandler = (e) => this._onResizeEnd(e, barElement, task);
+
+		document.addEventListener('mousemove', this._onResizeMoveHandler);
+		document.addEventListener('mouseup', this._onResizeEndHandler);
+
+		// Prevent text selection during resize
+		document.body.style.userSelect = 'none';
+	}
+
+	/**
+	 * Handle resize move
+	 * @private
+	 */
+	_onResizeMove(event, barElement, task) {
+		if (!this.resizeState.isResizing) return;
+
+		event.preventDefault();
+
+		// Calculate movement distance
+		const deltaX = event.clientX - this.resizeState.startX;
+
+		// Calculate new dimensions based on which handle is being dragged
+		const columnWidth = this._getColumnWidth();
+		let newLeft = this.resizeState.startLeft;
+		let newWidth = this.resizeState.startWidth;
+
+		if (this.resizeState.handle === 'left') {
+			// Left handle: adjust start position and width
+			newLeft = this.resizeState.startLeft + deltaX;
+			newWidth = this.resizeState.startWidth - deltaX;
+
+			// Snap to column boundaries
+			const columnOffset = Math.round(newLeft / columnWidth);
+			const snappedLeft = columnOffset * columnWidth;
+			const snappedWidth = this.resizeState.startWidth + (this.resizeState.startLeft - snappedLeft);
+
+			// Enforce minimum 1 column width
+			if (snappedWidth >= columnWidth) {
+				this.resizeState.columnOffset = columnOffset;
+				newLeft = snappedLeft;
+				newWidth = snappedWidth;
+
+				// Calculate new dates
+				const { newStartDate, newDueDate } = this._calculateNewDatesFromResize(task, 'left', columnOffset);
+
+				// Update preview tooltip
+				this._updateResizePreview(event, newStartDate, newDueDate);
+			} else {
+				// Don't allow resize below minimum
+				return;
+			}
+		} else {
+			// Right handle: adjust width only
+			newWidth = this.resizeState.startWidth + deltaX;
+
+			// Snap to column boundaries
+			const columnCount = Math.round(newWidth / columnWidth);
+			const snappedWidth = columnCount * columnWidth;
+
+			// Enforce minimum 1 column width
+			if (snappedWidth >= columnWidth) {
+				this.resizeState.columnOffset = columnCount;
+				newWidth = snappedWidth;
+
+				// Calculate new dates
+				const { newStartDate, newDueDate } = this._calculateNewDatesFromResize(task, 'right', columnCount);
+
+				// Update preview tooltip
+				this._updateResizePreview(event, newStartDate, newDueDate);
+			} else {
+				// Don't allow resize below minimum
+				return;
+			}
+		}
+
+		// Update visual dimensions
+		barElement.style.left = `${newLeft}px`;
+		barElement.style.width = `${newWidth}px`;
+	}
+
+	/**
+	 * Handle resize end
+	 * @private
+	 */
+	_onResizeEnd(event, barElement, task) {
+		if (!this.resizeState.isResizing) return;
+
+		event.preventDefault();
+
+		// Remove event listeners
+		document.removeEventListener('mousemove', this._onResizeMoveHandler);
+		document.removeEventListener('mouseup', this._onResizeEndHandler);
+
+		// Restore user selection
+		document.body.style.userSelect = '';
+
+		// Remove resizing class
+		barElement.classList.remove('gantt-task-bar--resizing');
+
+		// Remove preview tooltip
+		this._removeResizePreview();
+
+		// Calculate final dates
+		let hasChanges = false;
+		let newStartDate, newDueDate;
+
+		if (this.resizeState.handle === 'left') {
+			const result = this._calculateNewDatesFromResize(task, 'left', this.resizeState.columnOffset);
+			newStartDate = result.newStartDate;
+			newDueDate = result.newDueDate;
+
+			// Check if start date changed
+			const originalStart = this._parseDate(this.resizeState.originalTask.start_date);
+			if (newStartDate && originalStart && newStartDate.getTime() !== originalStart.getTime()) {
+				hasChanges = true;
+			}
+		} else {
+			const result = this._calculateNewDatesFromResize(task, 'right', this.resizeState.columnOffset);
+			newStartDate = result.newStartDate;
+			newDueDate = result.newDueDate;
+
+			// Check if due date changed
+			const originalDue = this._parseDate(this.resizeState.originalTask.due_date);
+			if (newDueDate && originalDue && newDueDate.getTime() !== originalDue.getTime()) {
+				hasChanges = true;
+			}
+		}
+
+		// If dates changed, update task data
+		if (hasChanges && newStartDate && newDueDate) {
+			// Update task data
+			task.start_date = this._formatDateForAPI(newStartDate);
+			task.due_date = this._formatDateForAPI(newDueDate);
+
+			// Re-render the chart to reflect changes
+			this.render();
+
+			// Emit event for external listeners (will be used in Phase 4.3 for API save)
+			this._emitEvent('taskDateChanged', {
+				taskId: task.name,
+				startDate: task.start_date,
+				dueDate: task.due_date,
+				originalStartDate: this.resizeState.originalTask.start_date,
+				originalDueDate: this.resizeState.originalTask.due_date
+			});
+		} else {
+			// No change, snap back to original position
+			const position = this._calculateTaskBarPosition(task);
+			barElement.style.left = `${position.left}px`;
+			barElement.style.width = `${position.width}px`;
+		}
+
+		// Reset resize state
+		this.resizeState.isResizing = false;
+		this.resizeState.taskId = null;
+		this.resizeState.handle = null;
+		this.resizeState.startX = 0;
+		this.resizeState.startLeft = 0;
+		this.resizeState.startWidth = 0;
+		this.resizeState.columnOffset = 0;
+		this.resizeState.originalTask = null;
+	}
+
+	/**
+	 * Calculate new dates from resize
+	 * @private
+	 */
+	_calculateNewDatesFromResize(task, handle, columnOffsetOrCount) {
+		const startDate = this._parseDate(task.start_date);
+		const dueDate = this._parseDate(task.due_date);
+
+		if (!startDate || !dueDate) {
+			return { newStartDate: null, newDueDate: null };
+		}
+
+		let newStartDate, newDueDate;
+
+		if (handle === 'left') {
+			// Left handle: adjust start date based on column offset
+			const startColumnIndex = this._findColumnIndexForDate(startDate);
+			const newStartColumnIndex = columnOffsetOrCount;
+
+			// Calculate offset in days
+			let offsetDays = 0;
+			switch (this.currentZoom) {
+				case 'day':
+					offsetDays = (newStartColumnIndex - startColumnIndex);
+					break;
+				case 'week':
+					offsetDays = (newStartColumnIndex - startColumnIndex) * 7;
+					break;
+				case 'month':
+					offsetDays = (newStartColumnIndex - startColumnIndex) * 30;
+					break;
+				case 'quarter':
+					offsetDays = (newStartColumnIndex - startColumnIndex) * 90;
+					break;
+			}
+
+			newStartDate = new Date(startDate);
+			newStartDate.setDate(newStartDate.getDate() + offsetDays);
+			newDueDate = new Date(dueDate); // Keep end date same
+		} else {
+			// Right handle: adjust end date based on column count
+			const columnCount = columnOffsetOrCount;
+
+			// Calculate duration in days based on column count and zoom
+			let durationDays = 0;
+			switch (this.currentZoom) {
+				case 'day':
+					durationDays = columnCount - 1; // columnCount includes start day
+					break;
+				case 'week':
+					durationDays = (columnCount * 7) - 1;
+					break;
+				case 'month':
+					durationDays = (columnCount * 30) - 1;
+					break;
+				case 'quarter':
+					durationDays = (columnCount * 90) - 1;
+					break;
+			}
+
+			newStartDate = new Date(startDate); // Keep start date same
+			newDueDate = new Date(startDate);
+			newDueDate.setDate(newDueDate.getDate() + durationDays);
+		}
+
+		return { newStartDate, newDueDate };
+	}
+
+	/**
+	 * Create resize preview tooltip
+	 * @private
+	 */
+	_createResizePreview(task) {
+		const preview = document.createElement('div');
+		preview.className = 'gantt-drag-preview'; // Reuse drag preview styles
+		preview.style.display = 'none'; // Initially hidden
+		this.resizeState.previewElement = preview;
+		document.body.appendChild(preview);
+	}
+
+	/**
+	 * Update resize preview tooltip
+	 * @private
+	 */
+	_updateResizePreview(event, newStartDate, newDueDate) {
+		if (!this.resizeState.previewElement) return;
+
+		// Format dates for display
+		const startStr = this._formatDate(this._formatDateForAPI(newStartDate));
+		const dueStr = this._formatDate(this._formatDateForAPI(newDueDate));
+
+		// Update content
+		this.resizeState.previewElement.textContent = `${startStr} - ${dueStr}`;
+
+		// Position near cursor
+		this.resizeState.previewElement.style.left = `${event.clientX + 15}px`;
+		this.resizeState.previewElement.style.top = `${event.clientY - 10}px`;
+		this.resizeState.previewElement.style.display = 'block';
+	}
+
+	/**
+	 * Remove resize preview tooltip
+	 * @private
+	 */
+	_removeResizePreview() {
+		if (this.resizeState.previewElement && this.resizeState.previewElement.parentNode) {
+			this.resizeState.previewElement.parentNode.removeChild(this.resizeState.previewElement);
+			this.resizeState.previewElement = null;
+		}
+	}
+
+	/**
 	 * Destroy the component
 		 */
 		destroy() {
 			// Remove drag preview if exists
 			this._removeDragPreview();
+
+			// Remove resize preview if exists
+			this._removeResizePreview();
 
 			// Clear container
 			this.container.innerHTML = '';
