@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, ArrowRight, Save, Loader2, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Save, Loader2, X, Users } from 'lucide-react'
 import { Modal } from '../ui/Modal'
 import { MetricSelector } from './MetricSelector'
 import { ThresholdEditor } from './ThresholdEditor'
@@ -50,6 +50,7 @@ export function KPIBuilderModal({
     critical_threshold: null
   })
   const [visualizationType, setVisualizationType] = useState<VisualizationType>('number')
+  const [isShared, setIsShared] = useState(false)
 
   const { createKPI, updateKPI, loading, error } = useCustomKPIMutations(onSuccess)
 
@@ -64,6 +65,7 @@ export function KPIBuilderModal({
         critical_threshold: editKPI.critical_threshold
       })
       setVisualizationType(editKPI.visualization_type)
+      setIsShared(editKPI.is_shared)
     }
   }, [editKPI])
 
@@ -80,6 +82,7 @@ export function KPIBuilderModal({
           critical_threshold: null
         })
         setVisualizationType('number')
+        setIsShared(false)
       }, 300)
     }
   }, [isOpen])
@@ -118,7 +121,8 @@ export function KPIBuilderModal({
         target_value: thresholds.target_value ?? undefined,
         warning_threshold: thresholds.warning_threshold ?? undefined,
         critical_threshold: thresholds.critical_threshold ?? undefined,
-        visualization_type: visualizationType
+        visualization_type: visualizationType,
+        is_shared: isShared
       }
 
       const result = await updateKPI(editKPI.name, updates)
@@ -135,7 +139,7 @@ export function KPIBuilderModal({
         warning_threshold: thresholds.warning_threshold ?? undefined,
         critical_threshold: thresholds.critical_threshold ?? undefined,
         visualization_type: visualizationType,
-        is_shared: false
+        is_shared: isShared
       }
 
       const result = await createKPI(kpiData)
@@ -149,6 +153,7 @@ export function KPIBuilderModal({
     department,
     thresholds,
     visualizationType,
+    isShared,
     editKPI,
     createKPI,
     updateKPI,
@@ -224,12 +229,45 @@ export function KPIBuilderModal({
 
         {/* Step: Choose Visualization */}
         {step === 'visualization' && selectedMetric && (
-          <VisualizationPicker
-            value={visualizationType}
-            onChange={setVisualizationType}
-            currentValue={75}
-            valueType={selectedMetric.value_type}
-          />
+          <>
+            <VisualizationPicker
+              value={visualizationType}
+              onChange={setVisualizationType}
+              currentValue={75}
+              valueType={selectedMetric.value_type}
+            />
+
+            {/* Sharing Toggle */}
+            <div className="space-y-3 pt-4 border-t-2 border-stone-900 dark:border-stone-100">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={isShared}
+                  onChange={(e) => setIsShared(e.target.checked)}
+                  className="
+                    mt-1 h-5 w-5
+                    border-2 border-stone-900 dark:border-stone-100
+                    text-amber-500
+                    focus:ring-0 focus:ring-offset-0
+                    cursor-pointer
+                  "
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Users size={16} className="text-stone-600 dark:text-stone-400" />
+                    <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+                      Share with department
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">
+                    {isShared
+                      ? `All members of the ${department} department will see this KPI on their dashboard.`
+                      : 'This KPI will only be visible to you.'}
+                  </p>
+                </div>
+              </label>
+            </div>
+          </>
         )}
 
         {/* Error message */}
