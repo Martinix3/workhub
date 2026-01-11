@@ -8,18 +8,23 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: process.env.CI ? 1 : undefined,
   reporter: [
+    ['list'],
     ['html'],
     ['json', { outputFile: 'test-results/results.json' }],
     ...(process.env.CI ? [['github'] as const] : []),
   ],
+  timeout: 30 * 1000,
 
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
+    expect: {
+      timeout: 5 * 1000,
+    },
   },
 
   projects: [
