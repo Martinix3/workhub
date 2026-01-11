@@ -40,6 +40,7 @@ def get_user_info():
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=10, window=60)
 def get_social_login_url(provider="google", redirect_to=None):
     """Get the OAuth authorization URL for a provider.
 
