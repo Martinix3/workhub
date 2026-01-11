@@ -143,8 +143,7 @@ def get_lines():
     workstations = frappe.get_list("Workstation",
         fields=["name", "workstation_name", "description", "production_capacity",
                 "hour_rate", "holiday_list"],
-        order_by="workstation_name",
-        ignore_permissions=True
+        order_by="workstation_name"
     )
 
     # Add current status for each
