@@ -1,7 +1,13 @@
 // MyDay Component - TDAH-friendly task view
-import { useState, useMemo } from 'react'
-import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Play, Check, AlertTriangle, X, Plus, Clock, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Link2 } from 'lucide-react'
 import type { Task, TaskStatus, TaskPriority, MyDayData } from './types'
+import { useWorkLinkSuggestions } from '../../../api/hooks/useWorkLinkSuggestions'
+import { WorkLinkSuggestions } from './WorkLinkSuggestions'
+import { DOCTYPE_CONFIG } from './WorkLinkSuggestions'
+import type { WorkLinkDocType } from './types'
+import workLinkSuggestionsApi from '../../../api/services/worklink-suggestions'
+import { tasksApi } from '../../../api/services/tasks'
 
 interface MyDayProps {
   data: MyDayData
@@ -38,6 +44,32 @@ export function MyDay({
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>('P2')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedWorkLink, setSelectedWorkLink] = useState<{
+    doctype: string
+    docId: string
+    docName?: string
+    confidence: number
+  } | null>(null)
+
+  // WorkLink suggestions hook
+  const {
+    suggestions,
+    loading: suggestionsLoading,
+    error: suggestionsError
+  } = useWorkLinkSuggestions({
+    title: quickAddTitle,
+    enabled: showQuickAdd && quickAddTitle.trim().length > 3 && !selectedWorkLink,
+    debounceMs: 500
+  })
+
+  // Auto-expand suggestions when they first appear
+  useEffect(() => {
+    if (suggestions.length > 0 && !showSuggestions && !selectedWorkLink) {
+      setShowSuggestions(true)
+    }
+  }, [suggestions.length, showSuggestions, selectedWorkLink])
 
   const allTasks = [...data.today, ...data.upcoming]
   const focusedTask = focusedTaskId ? allTasks.find(t => t.name === focusedTaskId) : null
@@ -52,12 +84,60 @@ export function MyDay({
     setFocusedTaskId(null)
   }
 
-  const handleQuickAddSubmit = (e: React.FormEvent) => {
+  const handleAcceptSuggestion = (doctype: string, docId: string, confidence: number) => {
+    const suggestion = suggestions.find(s => s.doctype === doctype && s.doc_id === docId)
+    setSelectedWorkLink({
+      doctype,
+      docId,
+      docName: suggestion?.doc_name || docId,
+      confidence
+    })
+    setShowSuggestions(false)
+  }
+
+  const handleDismissSuggestion = (doctype: string, docId: string, confidence: number) => {
+    // Just remove from UI - we'll record dismissal with task ID later if needed
+    // For now, we just hide it from the suggestions list
+  }
+
+  const handleQuickAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (quickAddTitle.trim()) {
+    if (!quickAddTitle.trim() || isSubmitting) return
+
+    setIsSubmitting(true)
+
+    try {
+      // Create the task using the API directly
+      const task = await tasksApi.quickAdd(quickAddTitle.trim(), quickAddPriority)
+
+      // If there's a selected worklink, accept the suggestion
+      if (selectedWorkLink && task.name) {
+        try {
+          await workLinkSuggestionsApi.acceptSuggestion({
+            taskId: task.name,
+            doctype: selectedWorkLink.doctype,
+            docId: selectedWorkLink.docId,
+            confidence: selectedWorkLink.confidence
+          })
+        } catch (error) {
+          console.error('Failed to link WorkLink:', error)
+          // Don't fail the whole operation if worklink fails
+        }
+      }
+
+      // Call the parent callback for any additional handling (e.g., refresh data)
       onQuickAdd?.(quickAddTitle.trim(), quickAddPriority)
+
+      // Reset state
       setQuickAddTitle('')
+      setSelectedWorkLink(null)
+      setShowSuggestions(false)
       setShowQuickAdd(false)
+    } catch (error) {
+      console.error('Failed to create task:', error)
+      // TODO: Show error to user
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -341,25 +421,102 @@ export function MyDay({
                     )
                   })}
                 </div>
+
+                {/* Selected WorkLink Display */}
+                {selectedWorkLink && (
+                  <div className="mt-4 p-3 bg-green-50 border-2 border-green-500">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Link2 size={16} className="text-green-600" />
+                        <div>
+                          <p className="text-xs font-medium text-green-700 uppercase tracking-wider">
+                            {DOCTYPE_CONFIG[selectedWorkLink.doctype as WorkLinkDocType]?.label || selectedWorkLink.doctype}
+                          </p>
+                          <p className="text-sm font-medium text-green-900">
+                            {selectedWorkLink.docName}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedWorkLink(null)}
+                        className="p-1 text-green-600 hover:text-green-800"
+                        title="Quitar WorkLink"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* WorkLink Suggestions - Collapsible */}
+                {!selectedWorkLink && quickAddTitle.trim().length > 3 && (
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowSuggestions(!showSuggestions)}
+                      className="
+                        w-full flex items-center justify-between px-3 py-2
+                        bg-stone-100 hover:bg-stone-200
+                        border-2 border-stone-300
+                        text-stone-700 font-medium text-sm
+                        transition-colors
+                      "
+                    >
+                      <span className="flex items-center gap-2">
+                        <Link2 size={14} />
+                        Sugerencias de WorkLink
+                        {suggestions.length > 0 && (
+                          <span className="px-1.5 py-0.5 bg-cyan-500 text-white text-xs font-bold rounded-full">
+                            {suggestions.length}
+                          </span>
+                        )}
+                      </span>
+                      {showSuggestions ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+
+                    {showSuggestions && (
+                      <div className="mt-2">
+                        <WorkLinkSuggestions
+                          suggestions={suggestions}
+                          loading={suggestionsLoading}
+                          error={suggestionsError}
+                          onAccept={handleAcceptSuggestion}
+                          onDismiss={handleDismissSuggestion}
+                          className="shadow-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="p-4 border-t border-stone-200 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowQuickAdd(false)}
-                  className="px-4 py-2 text-stone-500 font-medium"
+                  onClick={() => {
+                    setShowQuickAdd(false)
+                    setQuickAddTitle('')
+                    setSelectedWorkLink(null)
+                    setShowSuggestions(false)
+                  }}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-stone-500 font-medium disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
+                  disabled={isSubmitting || !quickAddTitle.trim()}
                   className="
                     px-4 py-2
                     bg-amber-400 hover:bg-amber-500
                     text-stone-900 font-medium uppercase tracking-wider text-sm
                     border-2 border-stone-900
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-colors
                   "
                 >
-                  Agregar
+                  {isSubmitting ? 'Creando...' : 'Agregar'}
                 </button>
               </div>
             </form>
