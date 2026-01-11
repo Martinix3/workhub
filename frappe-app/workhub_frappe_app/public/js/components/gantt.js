@@ -179,13 +179,23 @@
 		 */
 		_formatDateForZoom(date) {
 			const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+			const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 			switch (this.currentZoom) {
 				case 'day':
+					// Show day number and month abbreviation for first day of month
+					// Otherwise just day number
+					if (date.getDate() === 1) {
+						return `${date.getDate()} ${months[date.getMonth()]}`;
+					}
 					return `${date.getDate()}`;
 				case 'week':
 					const weekEnd = new Date(date);
 					weekEnd.setDate(weekEnd.getDate() + 6);
+					// If week spans across months, show both months
+					if (date.getMonth() !== weekEnd.getMonth()) {
+						return `${date.getDate()} ${months[date.getMonth()]} - ${weekEnd.getDate()} ${months[weekEnd.getMonth()]}`;
+					}
 					return `${date.getDate()}-${weekEnd.getDate()} ${months[date.getMonth()]}`;
 				case 'month':
 					return `${months[date.getMonth()]} ${date.getFullYear()}`;
@@ -650,12 +660,54 @@
 				throw new Error(`Invalid zoom level: ${zoom}`);
 			}
 
+			// Don't do anything if already at this zoom level
+			if (this.currentZoom === zoom) {
+				return;
+			}
+
+			// Store scroll position (relative to timeline)
+			const scrollContainer = this.container.parentElement;
+			const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+			const scrollPercentage = scrollContainer
+				? scrollLeft / (scrollContainer.scrollWidth - scrollContainer.clientWidth || 1)
+				: 0;
+
+			// Update zoom level
+			const previousZoom = this.currentZoom;
 			this.currentZoom = zoom;
 			this.container.setAttribute('data-zoom', zoom);
+
+			// Add transitioning class for smooth animation
+			this.container.classList.add('gantt-chart--transitioning');
 
 			// Regenerate date columns and re-render
 			this._generateDateColumns();
 			this.render();
+
+			// Restore approximate scroll position based on percentage
+			if (scrollContainer) {
+				// Use requestAnimationFrame to ensure DOM has updated
+				requestAnimationFrame(() => {
+					const newScrollLeft = scrollPercentage * (scrollContainer.scrollWidth - scrollContainer.clientWidth);
+					scrollContainer.scrollLeft = newScrollLeft;
+
+					// Remove transitioning class after animation completes
+					setTimeout(() => {
+						this.container.classList.remove('gantt-chart--transitioning');
+					}, 300);
+				});
+			} else {
+				// Remove transitioning class after animation completes
+				setTimeout(() => {
+					this.container.classList.remove('gantt-chart--transitioning');
+				}, 300);
+			}
+
+			// Emit zoom change event for external listeners
+			this._emitEvent('zoomChanged', {
+				previousZoom,
+				currentZoom: zoom
+			});
 		}
 
 		/**
@@ -1155,6 +1207,19 @@
 		}
 
 		return path;
+	}
+
+	/**
+	 * Emit custom event for external listeners
+	 * @private
+	 */
+	_emitEvent(eventName, data = {}) {
+		const event = new CustomEvent(`gantt:${eventName}`, {
+			detail: data,
+			bubbles: true,
+			cancelable: true
+		});
+		this.container.dispatchEvent(event);
 	}
 
 	/**

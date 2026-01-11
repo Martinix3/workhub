@@ -13,6 +13,17 @@
 	background: var(--surface-1);
 }
 
+/* Transitioning state for smooth zoom changes */
+.gantt-chart--transitioning {
+	pointer-events: none;
+}
+
+.gantt-chart--transitioning .gantt-task-bar,
+.gantt-chart--transitioning .gantt-milestone,
+.gantt-chart--transitioning .gantt-today-line {
+	transition: left 0.3s ease, width 0.3s ease;
+}
+
 /* === TIMELINE GRID === */
 .gantt-timeline {
 	display: flex;
@@ -450,28 +461,33 @@
 /* Default: Month view */
 .gantt-timeline__date-cell {
 	width: 120px;
+	transition: width 0.3s ease, font-size 0.3s ease;
 }
 
 .gantt-task-row__grid-cell {
 	width: 120px;
+	transition: width 0.3s ease;
 }
 
 /* Day view */
 .gantt-chart[data-zoom="day"] .gantt-timeline__date-cell {
 	width: 40px;
+	font-size: 10px;
+	padding: var(--space-2) var(--space-1);
 }
 
 .gantt-chart[data-zoom="day"] .gantt-task-row__grid-cell {
 	width: 40px;
 }
 
-.gantt-chart[data-zoom="day"] .gantt-timeline__date-cell {
-	font-size: 11px;
-}
-
 /* Week view */
 .gantt-chart[data-zoom="week"] .gantt-timeline__date-cell {
 	width: 80px;
+	font-size: 10px;
+	padding: var(--space-2) var(--space-1);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .gantt-chart[data-zoom="week"] .gantt-task-row__grid-cell {
