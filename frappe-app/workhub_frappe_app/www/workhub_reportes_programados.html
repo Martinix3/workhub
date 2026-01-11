@@ -393,6 +393,8 @@
 {% block script %}
 <!-- Load Schedule Modal JS -->
 <script src="/assets/workhub_frappe_app/js/schedule_modal.js"></script>
+<!-- Load Schedule History JS -->
+<script src="/assets/workhub_frappe_app/js/report_schedule_history.js"></script>
 
 <script>
 // Frappe call wrapper for www pages
@@ -543,134 +545,30 @@ function editSchedule(scheduleId) {
 // Ver historial de ejecuciones
 function viewHistory(scheduleId, scheduleName) {
 	$('#historyModal').modal('show');
-	$('#history-content').html(`
-		<div class="text-center py-3">
-			<div class="spinner-border text-primary" role="status">
-				<span class="sr-only">Cargando...</span>
-			</div>
-		</div>
-	`);
 
-	frappe.call({
-		method: 'workhub_frappe_app.api.report_scheduler.get_schedule_history',
-		args: {
-			schedule_id: scheduleId,
-			limit: 20
-		},
-		callback: function(r) {
-			if (r.message && r.message.success) {
-				renderHistory(r.message.history, r.message.statistics, scheduleName);
-			} else {
-				$('#history-content').html(`
-					<div class="alert alert-danger">Error al cargar el historial</div>
-				`);
+	// Use the new comprehensive history module
+	if (window.reportScheduleHistory) {
+		window.reportScheduleHistory.renderHistory(
+			'history-content',
+			scheduleId,
+			scheduleName,
+			{
+				limit: 20,
+				showStats: true,
+				showRecipients: true
 			}
-		},
-		error: function(err) {
-			console.error('Error loading history:', err);
-			$('#history-content').html(`
-				<div class="alert alert-danger">Error al cargar el historial</div>
-			`);
-		}
-	});
-}
-
-// Renderizar historial
-function renderHistory(history, stats, scheduleName) {
-	let html = `
-		<h6 class="mb-3">${scheduleName}</h6>
-		<div class="row mb-3">
-			<div class="col-md-4">
-				<div class="card">
-					<div class="card-body text-center">
-						<small class="text-muted">Total Ejecuciones</small>
-						<h4>${stats.total_executions}</h4>
-					</div>
-				</div>
-			</div>
-			<div class="col-md-4">
-				<div class="card">
-					<div class="card-body text-center">
-						<small class="text-muted">Exitosas</small>
-						<h4 class="text-success">${stats.successful_executions}</h4>
-					</div>
-				</div>
-			</div>
-			<div class="col-md-4">
-				<div class="card">
-					<div class="card-body text-center">
-						<small class="text-muted">Tasa de Éxito</small>
-						<h4 class="text-info">${stats.success_rate}%</h4>
-					</div>
-				</div>
-			</div>
-		</div>
-	`;
-
-	if (history && history.length > 0) {
-		html += `
-			<table class="table table-sm table-hover">
-				<thead>
-					<tr>
-						<th>Fecha</th>
-						<th>Estado</th>
-						<th>Formato</th>
-						<th>Usuario</th>
-						<th>Acciones</th>
-					</tr>
-				</thead>
-				<tbody>
-		`;
-
-		history.forEach(item => {
-			const date = new Date(item.generated_at);
-			const dateStr = date.toLocaleDateString('es-ES');
-			const timeStr = date.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'});
-
-			let statusBadge = '';
-			if (item.status === 'Completed') {
-				statusBadge = '<span class="badge badge-success">Exitoso</span>';
-			} else if (item.status === 'Failed') {
-				statusBadge = '<span class="badge badge-danger">Fallido</span>';
-			} else {
-				statusBadge = '<span class="badge badge-secondary">Pendiente</span>';
-			}
-
-			let formatBadge = '';
-			if (item.export_format === 'PDF') {
-				formatBadge = '<span class="badge badge-danger">PDF</span>';
-			} else if (item.export_format === 'Excel') {
-				formatBadge = '<span class="badge badge-success">Excel</span>';
-			} else if (item.export_format === 'CSV') {
-				formatBadge = '<span class="badge badge-primary">CSV</span>';
-			}
-
-			html += `
-				<tr>
-					<td><small>${dateStr}<br>${timeStr}</small></td>
-					<td>${statusBadge}</td>
-					<td>${formatBadge}</td>
-					<td><small>${item.generated_by_name || item.generated_by || '-'}</small></td>
-					<td>
-						${item.file_url ? `<a href="${item.file_url}" class="btn btn-sm btn-outline-primary" download>Descargar</a>` : '-'}
-					</td>
-				</tr>
-			`;
+		).catch(error => {
+			console.error('Error rendering history:', error);
 		});
-
-		html += `
-				</tbody>
-			</table>
-		`;
 	} else {
-		html += `
-			<div class="alert alert-info">
-				No hay ejecuciones registradas para esta programación.
+		// Fallback if module not loaded
+		console.error('Report schedule history module not loaded');
+		$('#history-content').html(`
+			<div class="alert alert-danger">
+				Error: Módulo de historial no disponible
 			</div>
-		`;
+		`);
 	}
-
-	$('#history-content').html(html);
 }
 
 // Pausar/Reanudar programación

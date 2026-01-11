@@ -755,3 +755,78 @@ def send_scheduled_report_email(schedule_doc, report_def, file_url, generated_re
 		error_message = f"Error sending scheduled report email: {str(e)}"
 		frappe.log_error(error_message, f"Scheduled Report Email Error - {schedule_doc.name}")
 		return {"success": False, "message": error_message}
+
+
+@frappe.whitelist()
+def resend_report(generated_report_id, schedule_id):
+	"""
+	Re-send a previously generated report to recipients
+
+	This is useful for re-sending failed deliveries or sending a report
+	to updated recipients.
+
+	Args:
+		generated_report_id: ID of the WH Generated Report to re-send
+		schedule_id: ID of the WH Scheduled Report (for recipient info)
+
+	Returns:
+		Dict with success status and delivery info
+	"""
+	require_permission("WH Scheduled Report", "write")
+
+	if not generated_report_id:
+		frappe.throw(_("Generated Report ID is required"))
+
+	if not schedule_id:
+		frappe.throw(_("Schedule ID is required"))
+
+	try:
+		# Get the generated report
+		generated_report = frappe.get_doc("WH Generated Report", generated_report_id)
+
+		if not generated_report.file_url:
+			frappe.throw(_("Cannot re-send report without a generated file"))
+
+		# Get the schedule
+		schedule_doc = frappe.get_doc("WH Scheduled Report", schedule_id)
+
+		# Get the report definition
+		report_def = frappe.get_doc("WH Report Definition", generated_report.report_definition)
+
+		frappe.logger().info(f"Re-sending report {generated_report_id} for schedule {schedule_id}")
+
+		# Send email to current recipients
+		send_result = send_scheduled_report_email(
+			schedule_doc=schedule_doc,
+			report_def=report_def,
+			file_url=generated_report.file_url,
+			generated_report_id=generated_report_id
+		)
+
+		if send_result.get("success"):
+			# Update generated report status to Completed if it was Failed
+			if generated_report.status == "Failed":
+				generated_report.status = "Completed"
+				generated_report.save(ignore_permissions=True)
+
+			frappe.logger().info(f"Report {generated_report_id} re-sent successfully to {send_result.get('recipients_sent', 0)} recipients")
+
+			return {
+				"success": True,
+				"message": _("Report re-sent successfully to {0} recipients").format(send_result.get("recipients_sent", 0)),
+				"recipients_sent": send_result.get("recipients_sent", 0),
+				"recipients": send_result.get("recipients", [])
+			}
+		else:
+			error_message = send_result.get("message", "Email delivery failed")
+			frappe.logger().warning(f"Failed to re-send report {generated_report_id}: {error_message}")
+
+			return {
+				"success": False,
+				"message": _("Failed to re-send report: {0}").format(error_message)
+			}
+
+	except Exception as e:
+		error_message = f"Error re-sending report: {str(e)}"
+		frappe.log_error(error_message, f"Report Re-send Error - {generated_report_id}")
+		frappe.throw(_(error_message))
