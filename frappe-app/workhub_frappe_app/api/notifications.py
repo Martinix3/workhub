@@ -480,7 +480,7 @@ def create_notification(user, notification_type, title, message, reference_docty
     # 2. Email is enabled in user preferences
     if notify_now and prefs.get('email_enabled'):
         try:
-            _send_immediate_notification_email(user, title, message, action_url, reference_doctype, reference_name)
+            send_immediate_email(user, title, message, action_url, reference_doctype, reference_name)
         except Exception as e:
             # Log error but don't fail notification creation
             frappe.log_error(f"Error sending immediate notification email to {user}: {e}", "Notification Email Error")
@@ -488,10 +488,10 @@ def create_notification(user, notification_type, title, message, reference_docty
     return doc.name
 
 
-def _send_immediate_notification_email(user, title, message, action_url=None, reference_doctype=None, reference_name=None):
+def send_immediate_email(user, title, message, action_url=None, reference_doctype=None, reference_name=None):
     """
     Send an immediate notification email to a user.
-    This is a basic implementation - will be enhanced in subtask 2.3 with proper template.
+    Includes unsubscribe link and notification preferences link.
 
     Args:
         user: User email/name
@@ -506,19 +506,37 @@ def _send_immediate_notification_email(user, title, message, action_url=None, re
     if not user_email:
         return
 
-    # Build email content
+    # Get site URL for absolute links
+    site_url = frappe.utils.get_url()
+
+    # Build email content with enhanced styling and required links
     email_body = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">{title}</h2>
-        <p style="color: #666; line-height: 1.6;">{message}</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Main Content -->
+        <div style="background-color: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #1a1a1a; margin-top: 0; margin-bottom: 16px; font-size: 24px; font-weight: 600;">{title}</h2>
+            <p style="color: #4a5568; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">{message}</p>
 
-        {f'<p><a href="{action_url}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Ver detalles</a></p>' if action_url else ''}
+            {f'<p style="margin-top: 24px;"><a href="{site_url}{action_url}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Ver detalles</a></p>' if action_url else ''}
+        </div>
 
-        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        <!-- Footer -->
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="color: #718096; font-size: 13px; margin: 0 0 12px 0;">
+                <a href="{site_url}/app/user-settings/notifications" style="color: #007bff; text-decoration: none;">⚙️ Configurar preferencias de notificaciones</a>
+            </p>
+            <p style="color: #a0aec0; font-size: 12px; margin: 0;">
+                ¿No quieres recibir estos emails?
+                <a href="{site_url}/app/user-settings/notifications?tab=notifications" style="color: #007bff; text-decoration: none;">Cancelar suscripción</a>
+            </p>
+        </div>
 
-        <p style="color: #999; font-size: 12px;">
-            <a href="/app/user-settings/notifications" style="color: #007bff;">Configurar preferencias de notificaciones</a>
-        </p>
+        <!-- Branding -->
+        <div style="margin-top: 20px; text-align: center;">
+            <p style="color: #cbd5e0; font-size: 11px; margin: 0;">
+                Enviado por <strong>WorkHub</strong>
+            </p>
+        </div>
     </div>
     """
 
