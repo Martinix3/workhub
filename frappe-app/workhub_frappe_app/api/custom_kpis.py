@@ -209,3 +209,40 @@ def update_kpi_order(kpi_order):
 		doc.save(ignore_permissions=True)
 
 	return {"message": "KPI order updated successfully"}
+
+
+@frappe.whitelist()
+def get_available_metrics(department=None):
+	"""
+	Get list of available metrics for the builder UI
+
+	Args:
+		department: Filter by department (optional, returns metrics for ALL departments if not specified)
+
+	Returns:
+		list: List of metric dictionaries with metadata (label, description, value_type, etc.)
+	"""
+	require_auth()
+
+	filters = {"is_active": 1}
+
+	if department:
+		# Get metrics for specific department or ALL
+		filters["department"] = ["in", [department, "ALL"]]
+
+	metrics = frappe.get_all(
+		"WH KPI Metric",
+		filters=filters,
+		fields=[
+			"name",
+			"metric_code",
+			"label",
+			"description",
+			"department",
+			"value_type",
+			"aggregation"
+		],
+		order_by="department, label"
+	)
+
+	return metrics
