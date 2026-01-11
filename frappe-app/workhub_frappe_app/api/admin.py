@@ -355,6 +355,7 @@ def remove_role(user_id, role):
 
 
 @frappe.whitelist()
+@rate_limit(limit=10, window=60, identifier="user")
 def send_invitation(email, first_name=None, roles=None, message=None):
     """
     Send an invitation email to a new user.
