@@ -1,0 +1,625 @@
+/**
+ * WorkHub Mobile Styles - Neobrutalismo Editorial
+ * Mobile-first responsive design with touch-optimized targets
+ * Safe area insets for notched devices (iOS, Android)
+ */
+
+/* === MOBILE BREAKPOINTS === */
+:root {
+	/* Mobile device breakpoints */
+	--mobile-xs: 320px;   /* iPhone SE, small phones */
+	--mobile-sm: 375px;   /* iPhone 12 mini, standard phones */
+	--mobile-md: 428px;   /* iPhone 14 Pro Max, large phones */
+	--tablet: 768px;      /* iPad, tablets */
+	--desktop: 1024px;    /* Desktop breakpoint */
+
+	/* Touch-friendly spacing - minimum 44px for tap targets */
+	--touch-target-min: 44px;
+	--touch-target-comfortable: 48px;
+	--touch-target-large: 56px;
+
+	/* Mobile-specific spacing */
+	--mobile-gutter: var(--space-4);      /* 24px - Side margins on mobile */
+	--mobile-section-gap: var(--space-5); /* 32px - Between sections */
+	--mobile-card-gap: var(--space-3);    /* 16px - Between cards */
+
+	/* Safe area insets for notched devices (iOS, Android) */
+	--safe-area-top: env(safe-area-inset-top, 0px);
+	--safe-area-right: env(safe-area-inset-right, 0px);
+	--safe-area-bottom: env(safe-area-inset-bottom, 0px);
+	--safe-area-left: env(safe-area-inset-left, 0px);
+
+	/* Mobile-adjusted header/nav heights (accounting for safe areas) */
+	--mobile-header-height: calc(56px + var(--safe-area-top));
+	--mobile-bottom-nav-height: calc(64px + var(--safe-area-bottom));
+
+	/* Mobile font size adjustments */
+	--mobile-text-xs: 0.8125rem;  /* 13px - Minimum readable size */
+	--mobile-text-sm: 0.9375rem;  /* 15px */
+	--mobile-text-base: 1rem;     /* 16px - iOS minimum for no auto-zoom */
+	--mobile-text-lg: 1.125rem;   /* 18px */
+	--mobile-text-xl: 1.25rem;    /* 20px */
+
+	/* Mobile transitions - slightly faster for better feel */
+	--mobile-transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+	--mobile-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* === VIEWPORT-FIT COVER SUPPORT === */
+/* Ensures content extends to edges on notched devices */
+@supports (padding: max(0px)) {
+	body {
+		/* Apply safe area insets to body padding */
+		padding-left: var(--safe-area-left);
+		padding-right: var(--safe-area-right);
+	}
+}
+
+/* === MOBILE BASE ADJUSTMENTS === */
+@media (max-width: 768px) {
+	/* Prevent text size adjustment on mobile browsers */
+	html {
+		-webkit-text-size-adjust: 100%;
+		-moz-text-size-adjust: 100%;
+		-ms-text-size-adjust: 100%;
+		text-size-adjust: 100%;
+	}
+
+	/* Improve touch scrolling on iOS */
+	body {
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-y: none; /* Prevent bounce scroll */
+	}
+
+	/* Minimum font size for form inputs (prevents iOS zoom) */
+	input,
+	textarea,
+	select {
+		font-size: var(--mobile-text-base) !important;
+	}
+
+	/* Better tap highlight color */
+	* {
+		-webkit-tap-highlight-color: rgba(245, 206, 62, 0.2); /* Primary soft */
+	}
+}
+
+/* === MOBILE UTILITY CLASSES === */
+
+/* Touch-friendly tap targets */
+.touch-target {
+	min-height: var(--touch-target-min);
+	min-width: var(--touch-target-min);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.touch-target-comfortable {
+	min-height: var(--touch-target-comfortable);
+	min-width: var(--touch-target-comfortable);
+}
+
+.touch-target-large {
+	min-height: var(--touch-target-large);
+	min-width: var(--touch-target-large);
+}
+
+/* Mobile padding utilities */
+.mobile-gutter {
+	padding-left: var(--mobile-gutter);
+	padding-right: var(--mobile-gutter);
+}
+
+.mobile-section-spacing {
+	padding-top: var(--mobile-section-gap);
+	padding-bottom: var(--mobile-section-gap);
+}
+
+/* Safe area utilities */
+.safe-area-top {
+	padding-top: var(--safe-area-top);
+}
+
+.safe-area-bottom {
+	padding-bottom: var(--safe-area-bottom);
+}
+
+.safe-area-left {
+	padding-left: var(--safe-area-left);
+}
+
+.safe-area-right {
+	padding-right: var(--safe-area-right);
+}
+
+.safe-area-inset {
+	padding-top: var(--safe-area-top);
+	padding-right: var(--safe-area-right);
+	padding-bottom: var(--safe-area-bottom);
+	padding-left: var(--safe-area-left);
+}
+
+/* Mobile-specific display utilities */
+.mobile-hidden {
+	display: none !important;
+}
+
+.mobile-visible {
+	display: block !important;
+}
+
+.mobile-flex {
+	display: flex !important;
+}
+
+.mobile-inline-flex {
+	display: inline-flex !important;
+}
+
+.mobile-grid {
+	display: grid !important;
+}
+
+/* Mobile text size utilities */
+.mobile-text-xs { font-size: var(--mobile-text-xs); }
+.mobile-text-sm { font-size: var(--mobile-text-sm); }
+.mobile-text-base { font-size: var(--mobile-text-base); }
+.mobile-text-lg { font-size: var(--mobile-text-lg); }
+.mobile-text-xl { font-size: var(--mobile-text-xl); }
+
+/* Mobile stacking utilities */
+.mobile-stack {
+	flex-direction: column !important;
+}
+
+.mobile-full-width {
+	width: 100% !important;
+}
+
+.mobile-no-shadow {
+	box-shadow: none !important;
+}
+
+/* === RESPONSIVE BREAKPOINT UTILITIES === */
+
+/* Desktop: Hide on mobile, show on desktop */
+@media (max-width: 1023px) {
+	.desktop-only {
+		display: none !important;
+	}
+}
+
+@media (min-width: 1024px) {
+	.desktop-only {
+		display: block !important;
+	}
+}
+
+/* Tablet and up: Hide below tablet */
+@media (max-width: 767px) {
+	.tablet-up {
+		display: none !important;
+	}
+}
+
+@media (min-width: 768px) {
+	.tablet-up {
+		display: block !important;
+	}
+
+	/* Remove mobile utilities on tablet+ */
+	.mobile-hidden {
+		display: block !important;
+	}
+
+	.mobile-visible {
+		display: none !important;
+	}
+}
+
+/* Mobile only: Hide on tablet and above */
+@media (min-width: 768px) {
+	.mobile-only {
+		display: none !important;
+	}
+}
+
+@media (max-width: 767px) {
+	.mobile-only {
+		display: block !important;
+	}
+}
+
+/* === MOBILE LAYOUT CONTAINERS === */
+
+/* Mobile-friendly container with safe gutters */
+.mobile-container {
+	width: 100%;
+	margin: 0 auto;
+	padding-left: var(--mobile-gutter);
+	padding-right: var(--mobile-gutter);
+}
+
+@media (min-width: 768px) {
+	.mobile-container {
+		max-width: 720px;
+	}
+}
+
+@media (min-width: 1024px) {
+	.mobile-container {
+		max-width: 960px;
+	}
+}
+
+/* Mobile card layout */
+.mobile-card-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--mobile-card-gap);
+}
+
+/* Horizontal scroll container for mobile */
+.mobile-scroll-x {
+	display: flex;
+	overflow-x: auto;
+	overflow-y: hidden;
+	-webkit-overflow-scrolling: touch;
+	scroll-snap-type: x mandatory;
+	gap: var(--space-3);
+	padding: var(--space-2) var(--mobile-gutter);
+	margin: 0 calc(var(--mobile-gutter) * -1);
+}
+
+.mobile-scroll-x::-webkit-scrollbar {
+	display: none; /* Hide scrollbar on mobile */
+}
+
+.mobile-scroll-x > * {
+	flex-shrink: 0;
+	scroll-snap-align: start;
+}
+
+/* === MOBILE INTERACTION HELPERS === */
+
+/* Prevent text selection during gestures */
+.no-select {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+/* Smooth momentum scrolling */
+.smooth-scroll {
+	-webkit-overflow-scrolling: touch;
+	scroll-behavior: smooth;
+}
+
+/* Prevent pull-to-refresh (can be overridden by feature) */
+.no-overscroll {
+	overscroll-behavior: none;
+}
+
+/* Touch feedback - active state */
+.touch-feedback:active {
+	opacity: 0.7;
+	transform: scale(0.98);
+	transition: all 0.1s ease-out;
+}
+
+/* === MOBILE GRID SYSTEM === */
+
+/* Mobile-first grid that stacks on small screens */
+.mobile-grid {
+	display: grid;
+	gap: var(--mobile-card-gap);
+	grid-template-columns: 1fr;
+}
+
+/* 2 columns on larger phones */
+@media (min-width: 375px) {
+	.mobile-grid-2 {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+/* 3 columns on tablets */
+@media (min-width: 768px) {
+	.mobile-grid-3 {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+/* === MOBILE FORM OPTIMIZATIONS === */
+@media (max-width: 767px) {
+	/* Stack form groups vertically */
+	.form-group,
+	.form-row {
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	/* Full-width form inputs */
+	input:not([type="checkbox"]):not([type="radio"]),
+	select,
+	textarea {
+		width: 100%;
+	}
+
+	/* Touch-friendly form controls */
+	button,
+	.btn,
+	input[type="submit"],
+	input[type="button"] {
+		min-height: var(--touch-target-min);
+	}
+
+	/* Larger checkboxes and radios */
+	input[type="checkbox"],
+	input[type="radio"] {
+		min-width: 20px;
+		min-height: 20px;
+	}
+}
+
+/* === MOBILE ACCESSIBILITY === */
+
+/* Focus visible for keyboard/switch control users */
+@media (max-width: 767px) {
+	*:focus-visible {
+		outline: 3px solid var(--primary);
+		outline-offset: 2px;
+	}
+}
+
+/* Larger focus targets for accessibility */
+.focus-large:focus {
+	outline-width: 3px;
+	outline-offset: 4px;
+}
+
+/* === PERFORMANCE OPTIMIZATIONS === */
+
+/**
+ * GPU Acceleration Strategy for 60fps Animations
+ *
+ * Best practices for smooth mobile animations:
+ * 1. Use GPU-accelerated properties only: transform, opacity, filter
+ * 2. Avoid animating: width, height, top, left, margin, padding (triggers layout)
+ * 3. Use will-change sparingly - add before animation, remove after
+ * 4. Prefer transform: translate() over position changes
+ * 5. Use transform: scale() instead of width/height changes
+ * 6. Batch DOM reads and writes (avoid layout thrashing)
+ * 7. Use requestAnimationFrame for JavaScript animations
+ * 8. Keep animations under 300ms for perceived instant feedback
+ */
+
+/* GPU acceleration for animations on mobile */
+@media (max-width: 767px) {
+	/* Base GPU acceleration - applied always */
+	.mobile-accelerate,
+	.btn,
+	.modal,
+	.sidebar {
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+	}
+
+	/* will-change hint - only for actively animating elements */
+	.mobile-accelerate.animating,
+	.btn:active,
+	.modal.opening,
+	.modal.closing,
+	.sidebar.transitioning {
+		will-change: transform, opacity;
+	}
+
+	/* Remove will-change after animation completes */
+	.mobile-accelerate.animation-done,
+	.btn:not(:active),
+	.modal.open,
+	.modal.closed,
+	.sidebar.open,
+	.sidebar.closed {
+		will-change: auto;
+	}
+}
+
+/* GPU-accelerated animations - always use transform & opacity */
+@media (max-width: 767px) {
+	/* Slide animations - use translate instead of left/right */
+	.slide-in-left {
+		animation: mobile-slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.slide-in-right {
+		animation: mobile-slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.slide-in-up {
+		animation: mobile-slide-in-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.slide-in-down {
+		animation: mobile-slide-in-down 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* Fade animations - opacity only */
+	.fade-in {
+		animation: mobile-fade-in 0.25s ease-out;
+	}
+
+	.fade-out {
+		animation: mobile-fade-out 0.25s ease-out;
+	}
+
+	/* Scale animations - use transform scale */
+	.scale-in {
+		animation: mobile-scale-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	.scale-out {
+		animation: mobile-scale-out 0.2s ease-out;
+	}
+}
+
+/* 60fps Animation Keyframes - GPU-accelerated only */
+@keyframes mobile-slide-in-left {
+	from {
+		transform: translateX(-100%) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-slide-in-right {
+	from {
+		transform: translateX(100%) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-slide-in-up {
+	from {
+		transform: translateY(100%) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-slide-in-down {
+	from {
+		transform: translateY(-100%) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-fade-in {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes mobile-fade-out {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+
+@keyframes mobile-scale-in {
+	from {
+		transform: scale(0.9) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-scale-out {
+	from {
+		transform: scale(1) translateZ(0);
+		opacity: 1;
+	}
+	to {
+		transform: scale(0.9) translateZ(0);
+		opacity: 0;
+	}
+}
+
+/* Performance monitoring classes */
+.perf-monitor {
+	/* Use to identify elements that might cause performance issues */
+	outline: 2px dashed red;
+	outline-offset: 2px;
+}
+
+.perf-monitor::after {
+	content: '⚠️ Performance Warning';
+	position: absolute;
+	top: -20px;
+	left: 0;
+	background: red;
+	color: white;
+	padding: 2px 8px;
+	font-size: 10px;
+	z-index: 10000;
+}
+
+/* === LANDSCAPE ORIENTATION ADJUSTMENTS === */
+@media (max-width: 767px) and (orientation: landscape) {
+	/* Reduce header height in landscape */
+	:root {
+		--mobile-header-height: calc(48px + var(--safe-area-top));
+	}
+
+	/* Adjust spacing in landscape for more content */
+	.mobile-section-spacing {
+		padding-top: var(--space-4);
+		padding-bottom: var(--space-4);
+	}
+}
+
+/* === PRINT STYLES === */
+@media print {
+	/* Hide navigation and interactive elements */
+	.mobile-only,
+	.mobile-bottom-nav,
+	.mobile-header-actions,
+	.btn {
+		display: none !important;
+	}
+
+	/* Remove shadows and borders for cleaner print */
+	* {
+		box-shadow: none !important;
+		border-width: 1px !important;
+	}
+}
+
+/* === DARK MODE SUPPORT (FUTURE) === */
+/* Placeholder for dark mode media query */
+@media (prefers-color-scheme: dark) {
+	/* Dark mode variables will go here in future enhancement */
+	/* For now, respect system preference but keep current colors */
+}
+
+/* === HIGH CONTRAST MODE === */
+@media (prefers-contrast: high) {
+	/* Increase border width for better visibility */
+	.btn,
+	.card,
+	.mobile-card-list > * {
+		border-width: 3px !important;
+	}
+}
+
+/* === REDUCED MOTION === */
+@media (prefers-reduced-motion: reduce) {
+	/* Disable animations for accessibility */
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

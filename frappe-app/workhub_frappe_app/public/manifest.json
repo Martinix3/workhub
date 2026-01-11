@@ -1,0 +1,71 @@
+{
+  "name": "WorkHub - Project Management & ERP",
+  "short_name": "WorkHub",
+  "description": "WorkHub: Integrated project management with Leantime and ERPNext. Manage tasks, track progress, and connect with business documents - all in one place.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#f5ce3e",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/assets/workhub_frappe_app/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/workhub_frappe_app/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "productivity",
+    "business"
+  ],
+  "shortcuts": [
+    {
+      "name": "New Task",
+      "short_name": "New Task",
+      "description": "Create a new task quickly",
+      "url": "/app?action=new-task",
+      "icons": [
+        {
+          "src": "/assets/workhub_frappe_app/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "My Tasks",
+      "short_name": "My Tasks",
+      "description": "View your assigned tasks",
+      "url": "/app?view=my-tasks",
+      "icons": [
+        {
+          "src": "/assets/workhub_frappe_app/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your dashboard",
+      "url": "/app",
+      "icons": [
+        {
+          "src": "/assets/workhub_frappe_app/img/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false,
+  "lang": "en",
+  "dir": "ltr"
+}

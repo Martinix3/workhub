@@ -2,8 +2,11 @@
 <html lang="es">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>{% block title %}WorkHub{% endblock %} - Santa Brisa</title>
+
+	<!-- PWA Support -->
+	{% include "templates/includes/workhub_head.html" %}
 
 	<!-- Google Fonts: Neobrutalismo Editorial -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,6 +19,7 @@
 	<!-- WorkHub Design System CSS -->
 	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/system/variables.css">
 	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/system/typography.css">
+	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/system/mobile.css">
 
 	<!-- WorkHub Shell Components -->
 	<link rel="stylesheet" href="/assets/workhub_frappe_app/css/components/sidebar.css">

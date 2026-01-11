@@ -8,6 +8,7 @@
 /* === Design System === */
 @import url('/assets/workhub_frappe_app/css/system/variables.css');
 @import url('/assets/workhub_frappe_app/css/system/typography.css');
+@import url('/assets/workhub_frappe_app/css/system/mobile.css');
 
 /* === Shell Components === */
 @import url('/assets/workhub_frappe_app/css/components/sidebar.css');
@@ -21,6 +22,13 @@
 @import url('/assets/workhub_frappe_app/css/components/data-table.css');
 @import url('/assets/workhub_frappe_app/css/components/command-palette.css');
 @import url('/assets/workhub_frappe_app/css/components/charts.css');
+
+/* === Mobile Components === */
+@import url('/assets/workhub_frappe_app/css/components/swipeable-task.css');
+@import url('/assets/workhub_frappe_app/css/components/mobile-forms.css');
+@import url('/assets/workhub_frappe_app/css/components/mobile-drawer.css');
+@import url('/assets/workhub_frappe_app/css/components/offline-indicator.css');
+@import url('/assets/workhub_frappe_app/css/components/fab.css');
 
 /* === Layout Utilities === */
 .wh-container {

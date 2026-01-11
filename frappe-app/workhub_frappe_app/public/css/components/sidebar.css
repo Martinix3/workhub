@@ -352,18 +352,156 @@ body:has(.wh-sidebar.collapsed) .main-section {
 
 /* === Mobile === */
 @media (max-width: 768px) {
+	/* Sidebar - Hidden by default, slide in from left */
 	.wh-sidebar {
 		transform: translateX(-100%);
 		box-shadow: none;
+		transition: transform var(--mobile-transition-normal), box-shadow var(--mobile-transition-normal);
+		/* GPU acceleration for smooth animation */
+		-webkit-transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+		will-change: transform;
 	}
 
+	/* Open state - Smooth 300ms slide-in animation */
 	.wh-sidebar.mobile-open {
 		transform: translateX(0);
 		box-shadow: 8px 0 24px rgba(0, 0, 0, 0.3);
 	}
 
+	/* Touch-friendly nav items - 44px minimum height */
+	.wh-nav-item {
+		min-height: var(--touch-target-min);
+		padding: var(--space-3) var(--space-4);
+		font-size: var(--mobile-text-sm);
+	}
+
+	.wh-nav-subitem {
+		min-height: var(--touch-target-min);
+		padding: var(--space-3) var(--space-4);
+		font-size: var(--mobile-text-xs);
+	}
+
+	/* Enhanced active state for better visibility on mobile */
+	.wh-nav-item.active {
+		border-left-width: 6px;
+		background: #334155;
+		font-weight: 700;
+	}
+
+	/* Better touch feedback */
+	.wh-nav-item:active,
+	.wh-nav-subitem:active {
+		background: #475569;
+		transform: scale(0.98);
+		transition: all 0.1s ease-out;
+	}
+
+	/* Sidebar header - touch-friendly toggle */
+	.wh-sidebar-toggle {
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
+		padding: var(--space-3);
+	}
+
+	.wh-sidebar-toggle svg {
+		width: 24px;
+		height: 24px;
+	}
+
+	/* User section - touch-friendly */
+	.wh-sidebar-user {
+		min-height: var(--touch-target-min);
+		padding: var(--space-3) var(--space-4);
+	}
+
+	.wh-sidebar-user-avatar {
+		width: 36px;
+		height: 36px;
+		font-size: 14px;
+	}
+
+	/* Main section - no left margin on mobile */
 	.main-section {
 		margin-left: 0 !important;
+	}
+}
+
+/* === Mobile Backdrop for Sidebar === */
+/* Backdrop overlay when sidebar is open - tap to close */
+.wh-sidebar-backdrop {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.7);
+	z-index: 999;
+	opacity: 0;
+	transition: opacity var(--mobile-transition-normal);
+	/* Disable pointer events by default */
+	pointer-events: none;
+	/* GPU acceleration */
+	-webkit-transform: translateZ(0);
+	transform: translateZ(0);
+}
+
+@media (max-width: 768px) {
+	/* Show backdrop on mobile */
+	.wh-sidebar-backdrop {
+		display: block;
+	}
+
+	/* Active state when sidebar is open */
+	.wh-sidebar-backdrop.active {
+		opacity: 1;
+		pointer-events: auto;
+	}
+}
+
+/* === Swipe Gesture Preparation === */
+/* Classes for swipe-to-close gesture (implemented in JS) */
+@media (max-width: 768px) {
+	/* During swipe - sidebar follows finger */
+	.wh-sidebar.swiping {
+		transition: none;
+		will-change: transform;
+	}
+
+	/* Swipe hint - subtle visual cue at edge */
+	.wh-sidebar::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 4px;
+		height: 64px;
+		background: linear-gradient(to right, rgba(245, 206, 62, 0.3), transparent);
+		opacity: 0;
+		transition: opacity 0.3s ease;
+		pointer-events: none;
+	}
+
+	.wh-sidebar.mobile-open::before {
+		opacity: 0;
+	}
+
+	/* Safe area handling for notched devices */
+	.wh-sidebar-header {
+		padding-top: calc(16px + var(--safe-area-top));
+	}
+
+	.wh-sidebar-footer {
+		padding-bottom: calc(12px + var(--safe-area-bottom));
+	}
+
+	/* Better scrolling on mobile */
+	.wh-sidebar-nav {
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
 	}
 }
 

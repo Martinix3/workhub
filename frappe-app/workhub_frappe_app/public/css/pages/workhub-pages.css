@@ -139,7 +139,153 @@
 	opacity: 0.5;
 }
 
-/* Responsive */
+/* === QUICK ACTIONS BAR MOBILE === */
+/* Mobile-responsive quick actions with horizontal scroll and visual indicators */
+
+@media (max-width: 767px) {
+	/* Quick Actions Bar - Horizontal Scroll on Mobile */
+	.wh-quick-actions {
+		/* Enable horizontal scrolling */
+		display: flex;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
+		scroll-snap-type: x mandatory;
+
+		/* Adjust spacing for mobile */
+		gap: var(--space-2); /* 12px between buttons */
+		padding: var(--space-3) var(--mobile-gutter); /* 16px 24px */
+		margin-bottom: var(--space-4); /* Reduce margin on mobile */
+
+		/* Hide scrollbar but keep functionality */
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE/Edge */
+
+		/* Position relative for fade indicators */
+		position: relative;
+
+		/* GPU acceleration for smooth scrolling */
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+	}
+
+	/* Hide scrollbar for webkit browsers */
+	.wh-quick-actions::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* Title stays at start, doesn't scroll */
+	.wh-quick-actions__title {
+		flex-shrink: 0;
+		margin-right: var(--space-3); /* 16px */
+		font-size: var(--mobile-text-xs); /* 13px */
+	}
+
+	/* Buttons don't shrink, enable scroll snapping */
+	.wh-quick-actions .btn {
+		flex-shrink: 0;
+		scroll-snap-align: start;
+		min-height: var(--touch-target-min); /* 44px - already in buttons.css */
+		white-space: nowrap;
+
+		/* Ensure readable text on mobile */
+		font-size: var(--mobile-text-sm); /* 15px */
+	}
+
+	/* Fade indicators to show scrollability */
+	.wh-quick-actions::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 40px;
+		background: linear-gradient(to left, var(--surface-1), transparent);
+		pointer-events: none;
+		opacity: 1;
+		transition: opacity var(--mobile-transition-fast);
+		z-index: 1;
+	}
+
+	/* Fade indicator on left when scrolled */
+	.wh-quick-actions::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: 40px;
+		background: linear-gradient(to right, var(--surface-1), transparent);
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity var(--mobile-transition-fast);
+		z-index: 1;
+	}
+
+	/* Show left fade when scrolled (requires JS, but CSS is ready) */
+	.wh-quick-actions.is-scrolled::before {
+		opacity: 1;
+	}
+
+	/* Hide right fade when scrolled to end (requires JS, but CSS is ready) */
+	.wh-quick-actions.is-scrolled-end::after {
+		opacity: 0;
+	}
+
+	/* Very small screens - even more compact */
+	@media (max-width: 374px) {
+		.wh-quick-actions {
+			gap: var(--space-1); /* 6px */
+			padding: var(--space-2) var(--mobile-gutter); /* 12px 24px */
+		}
+
+		.wh-quick-actions__title {
+			font-size: 11px;
+			margin-right: var(--space-2); /* 12px */
+		}
+
+		.wh-quick-actions .btn {
+			padding: var(--space-2) var(--space-3); /* Compact padding */
+			font-size: var(--mobile-text-xs); /* 13px */
+			min-height: 40px; /* Slightly smaller on very small screens */
+		}
+	}
+
+	/* Landscape mobile - more horizontal space available */
+	@media (orientation: landscape) {
+		.wh-quick-actions {
+			padding: var(--space-2) var(--mobile-gutter); /* Reduce vertical padding */
+		}
+	}
+}
+
+/* Tablet - hybrid approach (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+	.wh-quick-actions {
+		/* Allow wrapping on tablet if needed */
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		padding: var(--space-4);
+	}
+
+	.wh-quick-actions .btn {
+		/* Touch-friendly on tablet */
+		min-height: var(--touch-target-min);
+	}
+}
+
+/* Remove hover effects on touch devices */
+@media (hover: none) {
+	.wh-quick-actions {
+		/* Disable shadow transitions on touch */
+		transition: none;
+	}
+}
+
+/* === RESPONSIVE === */
 @media (max-width: 768px) {
 	.wh-page-container {
 		padding: 16px;
