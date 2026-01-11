@@ -70,7 +70,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Departamento",
-   "options": "SALES\nOPS\nMKT",
+   "options": "SALES\nOPS\nMKT\nPRODUCTION",
    "reqd": 1
   },
   {

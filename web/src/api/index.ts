@@ -9,7 +9,6 @@ export { default as distributorsApi } from './services/distributors'
 export { default as productionApi } from './services/production'
 export { default as marketingApi } from './services/marketing'
 export { default as tasksApi } from './services/tasks'
-export { default as managerAnalyticsApi } from './services/manager-analytics'
 
 // Sales Hooks
 export {
@@ -26,9 +25,6 @@ export {
 
 // Sales types
 export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem } from './services/sales'
-
-// Settings types
-export type { UserSettings, UserProfile, Department, UpdateSettingsData, UpdateProfileData } from './services/settings'
 
 // Command Center Hooks
 export {
@@ -105,15 +101,12 @@ export {
   useGantt,
   useKanban,
   useTaskKPIs,
-  useTaskDashboard,
-  useBlockedTasks
+  useTaskDashboard
 } from './hooks/useTasks'
 
-// Manager Analytics Hooks
+// Template Management Hooks
 export {
-  useTeamWorkload,
-  useVelocityTrends,
-  useBlockerAnalysis,
-  useOverdueTrends,
-  useManagerAnalyticsDashboard
-} from './hooks/useManagerAnalytics'
+  useTemplates,
+  useTemplatePreview,
+  useTemplateMutations
+} from './hooks/useTemplates'

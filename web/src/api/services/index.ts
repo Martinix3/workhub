@@ -7,7 +7,7 @@ export { default as marketingApi } from './marketing'
 export { default as settingsApi } from './settings'
 export { default as adminApi } from './admin'
 export { default as notepadApi } from './notepad'
-export { default as managerAnalyticsApi } from './manager-analytics'
+export { default as templatesApi } from './templates'
 
 // Re-export types
 export type {
@@ -28,16 +28,13 @@ export type {
 } from './admin'
 
 export type {
-  TeamMemberWorkload,
-  TeamWorkloadResponse,
-  VelocityDataPoint,
-  VelocityTrendsResponse,
-  BlockedArea,
-  BlockedTask,
-  BlockerAnalysisResponse,
-  DepartmentOverdueStats,
-  OverdueWeekData,
-  OverdueTrendsResponse,
-  ManagerDashboardResponse,
-  ExportAnalyticsResponse
-} from './manager-analytics'
+  TemplateListItem,
+  TemplatePreview,
+  TemplateTask,
+  TemplateMilestone,
+  TemplateDependency,
+  CreateTemplateData,
+  UpdateTemplateData,
+  CreateFromTemplateData,
+  SaveProjectAsTemplateData
+} from './templates'

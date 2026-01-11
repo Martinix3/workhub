@@ -87,19 +87,20 @@ app_include_js = "/assets/workhub_frappe_app/js/workhub.bundle.js"
 
 # before_install = "workhub_frappe_app.install.before_install"
 # after_install = "workhub_frappe_app.install.after_install"
-after_install = [
-	"workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm_lite",
-	"workhub_frappe_app.api.standard_reports.setup_standard_reports"
-]
+after_install = "workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm_lite"
 
 # Fixtures
 # --------
+# Fixtures allow exporting DocType data to JSON for version control and migration portability.
+# Run `bench export-fixtures` to generate JSON files in workhub_frappe_app/fixtures/
+# These fixtures are automatically imported when installing the app on a new site.
 fixtures = [
-    {"dt": "Custom Field", "filters": [
-        ["dt", "in", ["Sales Order", "Customer"]],
-        ["fieldname", "in", ["sales_type", "assigned_distributor", "can_create_orders"]]
-    ]},
-    # Project templates con sus tareas
+    # Custom fields for Sales Order
+    {"dt": "Custom Field", "filters": [["dt", "=", "Sales Order"], ["fieldname", "=", "sales_type"]]},
+
+    # WH Project Templates with child tasks for department workflows
+    # Exports all active templates (is_active=1) including their task definitions
+    # Child table (WH Project Template Task) is automatically included
     {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]}
 ]
 
@@ -108,10 +109,7 @@ fixtures = [
 # boot_session = "workhub_frappe_app.workhub_frappe_app.boot.boot_session"
 
 # Run again on migrations (idempotent) to keep UX entry points available.
-after_migrate = [
-	"workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm_lite",
-	"workhub_frappe_app.api.standard_reports.setup_standard_reports"
-]
+after_migrate = ["workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm_lite"]
 
 # Uninstallation
 # ------------
@@ -157,13 +155,13 @@ after_migrate = [
 # ---------------
 # Hook on document methods and events
 
-doc_events = {
-	"Sales Order": {
-		"on_submit": "workhub_frappe_app.api.notifications.on_sales_order_change",
-		"on_cancel": "workhub_frappe_app.api.notifications.on_sales_order_change",
-		"on_update_after_submit": "workhub_frappe_app.api.notifications.on_sales_order_change"
-	}
-}
+# doc_events = {
+# 	"*": {
+# 		"on_update": "method",
+# 		"on_cancel": "method",
+# 		"on_trash": "method"
+# 	}
+# }
 
 # Scheduled Tasks
 # ---------------
@@ -173,16 +171,8 @@ scheduler_events = {
 		# Email diario a las 8am (hora local)
 		"0 8 * * *": [
 			"workhub_frappe_app.api.notifications.send_daily_emails"
-		],
-		# Procesar reportes programados cada 15 minutos
-		"*/15 * * * *": [
-			"workhub_frappe_app.api.report_scheduler.process_scheduled_reports"
 		]
 	},
-	"daily": [
-		# Agregar estadísticas de tareas completadas para AI
-		"workhub_frappe_app.services.ai_recommendations.aggregate_task_completion_stats"
-	],
 	"hourly": [
 		# Alertas de tareas vencidas
 		"workhub_frappe_app.api.notifications.send_overdue_alerts",
@@ -191,9 +181,7 @@ scheduler_events = {
 		# Notificar dependencias bloqueadas
 		"workhub_frappe_app.api.notifications.notify_blocked_dependencies",
 		# Recalcular KPIs de proyectos
-		"workhub_frappe_app.doctype.wh_project.wh_project.recalculate_all_projects",
-		# Generar alertas de AI para tareas en riesgo
-		"workhub_frappe_app.services.ai_recommendations.generate_at_risk_alerts"
+		"workhub_frappe_app.doctype.wh_project.wh_project.recalculate_all_projects"
 	],
 }
 
@@ -235,13 +223,8 @@ scheduler_events = {
 
 # Request Events
 # ----------------
-# Cookie authentication middleware runs before each request
-before_request = ["workhub_frappe_app.api.middleware.authenticate_with_cookie"]
-
-# CORS credentials header middleware runs after each request
-# Adds Access-Control-Allow-Credentials: true to enable cookie-based auth
-# with cross-origin requests (required for credentials: 'include')
-after_request = ["workhub_frappe_app.api.middleware.add_cors_credentials_header"]
+# before_request = ["workhub_frappe_app.utils.before_request"]
+# after_request = ["workhub_frappe_app.utils.after_request"]
 
 # Job Events
 # ----------

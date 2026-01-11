@@ -1,11 +1,12 @@
 // Admin Layout with sidebar navigation
 import { NavLink, Outlet } from 'react-router-dom'
-import { Users, Shield, Mail, ArrowLeft } from 'lucide-react'
+import { Users, Shield, Mail, Layers, ArrowLeft } from 'lucide-react'
 
 const navItems = [
   { path: '/admin/users', label: 'Usuarios', icon: Users },
   { path: '/admin/roles', label: 'Roles', icon: Shield },
   { path: '/admin/invitations', label: 'Invitaciones', icon: Mail },
+  { path: '/admin/templates', label: 'Plantillas', icon: Layers },
 ]
 
 export function AdminLayout() {

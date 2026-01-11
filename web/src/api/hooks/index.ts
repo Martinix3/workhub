@@ -1,9 +1,5 @@
 // API Hooks index
 
-// Factory
-export { createDataHook } from './createDataHook'
-export type { UseDataState } from './createDataHook'
-
 // Sales
 export {
   useSalesKPIs,
@@ -86,7 +82,9 @@ export {
   useItemSearch
 } from './useNotepad'
 
-// Notifications
+// Templates
 export {
-  useNotifications
-} from './useNotifications'
+  useTemplates,
+  useTemplatePreview,
+  useTemplateMutations
+} from './useTemplates'

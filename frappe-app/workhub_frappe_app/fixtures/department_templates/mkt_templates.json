@@ -1,0 +1,549 @@
+[
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Marketing Campaign",
+    "description": "Comprehensive workflow for planning, executing, and measuring a multi-channel marketing campaign from strategy through post-campaign analysis",
+    "department": "MKT",
+    "default_duration_days": 60,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Define campaign goals and KPIs",
+        "description": "Establish clear objectives (brand awareness, lead generation, conversions), target audience, and measurable success metrics",
+        "offset_days": 0,
+        "duration_days": 3,
+        "default_assignee_role": "Marketing Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Conduct market research and competitive analysis",
+        "description": "Research target audience behaviors, analyze competitor campaigns, identify market opportunities and gaps",
+        "offset_days": 3,
+        "duration_days": 5,
+        "default_assignee_role": "Marketing Analyst",
+        "depends_on_sequence": 1,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 3,
+        "title": "Develop campaign strategy and messaging",
+        "description": "Create core messaging framework, value propositions, key talking points, and campaign narrative",
+        "offset_days": 8,
+        "duration_days": 4,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 2,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 4,
+        "title": "Plan budget and channel allocation",
+        "description": "Allocate budget across channels (digital ads, social, email, content), estimate ROI by channel",
+        "offset_days": 12,
+        "duration_days": 3,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 5,
+        "title": "Create content calendar and asset plan",
+        "description": "Map out content schedule across all channels, identify required assets (videos, graphics, copy)",
+        "offset_days": 15,
+        "duration_days": 3,
+        "default_assignee_role": "Content Marketing Specialist",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Design creative assets",
+        "description": "Create graphics, videos, ad creatives, landing pages, email templates aligned with campaign messaging",
+        "offset_days": 18,
+        "duration_days": 10,
+        "default_assignee_role": "Graphic Designer",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 7,
+        "title": "Write campaign copy and content",
+        "description": "Develop ad copy, email sequences, blog posts, social media posts, and landing page copy",
+        "offset_days": 18,
+        "duration_days": 8,
+        "default_assignee_role": "Content Writer",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Set up tracking and analytics",
+        "description": "Configure UTM parameters, conversion tracking, attribution models, and analytics dashboards",
+        "offset_days": 26,
+        "duration_days": 3,
+        "default_assignee_role": "Marketing Analyst",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Review and approve campaign assets",
+        "description": "Internal review of all creative assets, copy, and setup. Make final revisions and get stakeholder approval",
+        "offset_days": 28,
+        "duration_days": 3,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 6,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 10,
+        "title": "Configure campaign channels and automation",
+        "description": "Set up email automation, ad campaigns, social media scheduling, landing pages, and lead capture forms",
+        "offset_days": 31,
+        "duration_days": 4,
+        "default_assignee_role": "Digital Marketing Specialist",
+        "depends_on_sequence": 9,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Launch campaign across all channels",
+        "description": "Go live with ads, publish content, send emails, activate social media - coordinated multi-channel launch",
+        "offset_days": 35,
+        "duration_days": 1,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 10,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 12,
+        "title": "Monitor daily performance metrics",
+        "description": "Track campaign performance daily: impressions, clicks, conversions, costs. Identify issues early",
+        "offset_days": 36,
+        "duration_days": 14,
+        "default_assignee_role": "Marketing Analyst",
+        "depends_on_sequence": 11,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 13,
+        "title": "Optimize campaign based on data",
+        "description": "A/B test variations, pause underperforming ads, scale winning channels, adjust targeting and bids",
+        "offset_days": 40,
+        "duration_days": 10,
+        "default_assignee_role": "Digital Marketing Specialist",
+        "depends_on_sequence": 12,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 14,
+        "title": "Nurture leads through follow-up sequences",
+        "description": "Engage leads with automated email sequences, retargeting ads, and personalized content",
+        "offset_days": 45,
+        "duration_days": 10,
+        "default_assignee_role": "Content Marketing Specialist",
+        "depends_on_sequence": 11,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 15,
+        "title": "Close campaign and compile final data",
+        "description": "Stop all active campaigns, download final metrics, export lead data, close out ad accounts",
+        "offset_days": 50,
+        "duration_days": 2,
+        "default_assignee_role": "Digital Marketing Specialist",
+        "depends_on_sequence": 13,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 16,
+        "title": "Analyze campaign ROI and performance",
+        "description": "Calculate ROI, cost per acquisition, conversion rates by channel. Compare results to goals and benchmarks",
+        "offset_days": 52,
+        "duration_days": 5,
+        "default_assignee_role": "Marketing Analyst",
+        "depends_on_sequence": 15,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 17,
+        "title": "Present results and document learnings",
+        "description": "Create campaign report with insights, recommendations, and lessons learned for future campaigns",
+        "offset_days": 57,
+        "duration_days": 3,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 16,
+        "is_milestone": 1
+      }
+    ]
+  },
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Social Media Launch",
+    "description": "Strategic workflow for launching a product, service, or brand initiative on social media platforms with coordinated content and community engagement",
+    "department": "MKT",
+    "default_duration_days": 45,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Define social media objectives and target audience",
+        "description": "Set goals for reach, engagement, followers, conversions. Define target audience personas and behaviors",
+        "offset_days": 0,
+        "duration_days": 2,
+        "default_assignee_role": "Social Media Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Select social media platforms",
+        "description": "Choose platforms based on audience presence (Instagram, LinkedIn, Twitter, TikTok, Facebook, etc.)",
+        "offset_days": 2,
+        "duration_days": 1,
+        "default_assignee_role": "Social Media Manager",
+        "depends_on_sequence": 1,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 3,
+        "title": "Audit and optimize social profiles",
+        "description": "Update profile images, bios, links, highlights. Ensure brand consistency across all platforms",
+        "offset_days": 3,
+        "duration_days": 3,
+        "default_assignee_role": "Social Media Coordinator",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Develop content strategy and themes",
+        "description": "Create content pillars, hashtag strategy, posting cadence, engagement tactics, and brand voice guidelines",
+        "offset_days": 6,
+        "duration_days": 4,
+        "default_assignee_role": "Social Media Manager",
+        "depends_on_sequence": 1,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 5,
+        "title": "Create launch content calendar",
+        "description": "Plan pre-launch, launch day, and post-launch content with specific dates, times, and platform assignments",
+        "offset_days": 10,
+        "duration_days": 3,
+        "default_assignee_role": "Social Media Coordinator",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Design social media graphics and videos",
+        "description": "Create announcement graphics, teaser videos, product showcases, stories, reels, and carousel posts",
+        "offset_days": 13,
+        "duration_days": 7,
+        "default_assignee_role": "Graphic Designer",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 7,
+        "title": "Write social copy and captions",
+        "description": "Craft engaging captions, calls-to-action, hashtags, and messaging for each platform and post",
+        "offset_days": 13,
+        "duration_days": 5,
+        "default_assignee_role": "Content Writer",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Identify and reach out to influencers",
+        "description": "Research relevant influencers, negotiate partnerships, coordinate launch day amplification and content sharing",
+        "offset_days": 18,
+        "duration_days": 7,
+        "default_assignee_role": "Influencer Marketing Specialist",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Build pre-launch buzz with teasers",
+        "description": "Post countdown content, behind-the-scenes, sneak peeks to generate anticipation and engagement",
+        "offset_days": 20,
+        "duration_days": 7,
+        "default_assignee_role": "Social Media Coordinator",
+        "depends_on_sequence": 6,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 10,
+        "title": "Set up paid social advertising",
+        "description": "Configure Facebook/Instagram ads, LinkedIn sponsored posts, TikTok ads to amplify organic reach",
+        "offset_days": 25,
+        "duration_days": 3,
+        "default_assignee_role": "Digital Marketing Specialist",
+        "depends_on_sequence": 6,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Execute launch day social media blitz",
+        "description": "Post announcement across all platforms, go live on Instagram/Facebook, share launch video, engage with comments",
+        "offset_days": 27,
+        "duration_days": 1,
+        "default_assignee_role": "Social Media Manager",
+        "depends_on_sequence": 9,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 12,
+        "title": "Monitor and respond to social engagement",
+        "description": "Reply to comments, messages, and mentions. Foster community engagement and answer questions",
+        "offset_days": 28,
+        "duration_days": 7,
+        "default_assignee_role": "Social Media Coordinator",
+        "depends_on_sequence": 11,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 13,
+        "title": "Share user-generated content and testimonials",
+        "description": "Curate and repost customer content, reviews, unboxings. Build social proof and community",
+        "offset_days": 30,
+        "duration_days": 10,
+        "default_assignee_role": "Social Media Coordinator",
+        "depends_on_sequence": 11,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 14,
+        "title": "Run post-launch engagement campaigns",
+        "description": "Host giveaways, contests, Q&As, polls to maintain momentum and grow following",
+        "offset_days": 32,
+        "duration_days": 10,
+        "default_assignee_role": "Social Media Manager",
+        "depends_on_sequence": 11,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 15,
+        "title": "Analyze social media performance metrics",
+        "description": "Review reach, impressions, engagement rate, follower growth, click-through rates, conversions by platform",
+        "offset_days": 40,
+        "duration_days": 3,
+        "default_assignee_role": "Marketing Analyst",
+        "depends_on_sequence": 14,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 16,
+        "title": "Create launch performance report",
+        "description": "Compile results vs goals, top performing content, audience insights, recommendations for ongoing strategy",
+        "offset_days": 43,
+        "duration_days": 2,
+        "default_assignee_role": "Social Media Manager",
+        "depends_on_sequence": 15,
+        "is_milestone": 1
+      }
+    ]
+  },
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Event Planning",
+    "description": "End-to-end workflow for planning and executing a marketing event from concept through post-event follow-up and ROI analysis",
+    "department": "MKT",
+    "default_duration_days": 90,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Define event objectives and target audience",
+        "description": "Establish event goals (leads, brand awareness, partnerships), define target attendees, and success criteria",
+        "offset_days": 0,
+        "duration_days": 3,
+        "default_assignee_role": "Marketing Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Determine event format and budget",
+        "description": "Choose event type (conference, workshop, webinar, trade show), set budget for venue, catering, marketing, etc.",
+        "offset_days": 3,
+        "duration_days": 3,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 1,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 3,
+        "title": "Select and book venue",
+        "description": "Research venues, conduct site visits, negotiate contracts, book space and confirm dates",
+        "offset_days": 6,
+        "duration_days": 10,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Develop event agenda and program",
+        "description": "Create schedule with sessions, speakers, breaks. Plan content flow and attendee experience",
+        "offset_days": 16,
+        "duration_days": 5,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 5,
+        "title": "Secure speakers and presenters",
+        "description": "Identify, invite, and confirm keynote speakers, panelists, workshop leaders. Coordinate their requirements",
+        "offset_days": 21,
+        "duration_days": 14,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 4,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 6,
+        "title": "Arrange catering and vendors",
+        "description": "Book catering services, audio-visual equipment, photographers, decorators, and other event vendors",
+        "offset_days": 25,
+        "duration_days": 10,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 7,
+        "title": "Create event branding and materials",
+        "description": "Design event logo, banners, signage, name badges, programs, swag, presentation templates",
+        "offset_days": 30,
+        "duration_days": 10,
+        "default_assignee_role": "Graphic Designer",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Set up event registration system",
+        "description": "Configure registration platform, payment processing, email confirmations, waitlist management",
+        "offset_days": 35,
+        "duration_days": 5,
+        "default_assignee_role": "Digital Marketing Specialist",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Launch event marketing campaign",
+        "description": "Promote event via email, social media, paid ads, partner networks, press releases",
+        "offset_days": 40,
+        "duration_days": 30,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 8,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 10,
+        "title": "Manage registrations and communications",
+        "description": "Send confirmation emails, reminders, pre-event information, parking/travel details to registrants",
+        "offset_days": 45,
+        "duration_days": 25,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 8,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Coordinate speaker logistics",
+        "description": "Confirm speaker A/V needs, travel arrangements, hotel bookings, session timing, and presentation files",
+        "offset_days": 60,
+        "duration_days": 10,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 12,
+        "title": "Finalize event run-of-show",
+        "description": "Create detailed timeline, staff assignments, contingency plans, emergency procedures, contact lists",
+        "offset_days": 70,
+        "duration_days": 5,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 11,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 13,
+        "title": "Conduct pre-event venue walkthrough",
+        "description": "Visit venue with team and vendors, test A/V, finalize room setup, signage placement, registration flow",
+        "offset_days": 77,
+        "duration_days": 1,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 12,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 14,
+        "title": "Execute event day operations",
+        "description": "Manage registration, coordinate vendors, support speakers, handle issues, ensure smooth attendee experience",
+        "offset_days": 78,
+        "duration_days": 2,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 13,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 15,
+        "title": "Capture event content and photos",
+        "description": "Record sessions, photograph event highlights, gather attendee testimonials, collect presentation files",
+        "offset_days": 78,
+        "duration_days": 2,
+        "default_assignee_role": "Content Marketing Specialist",
+        "depends_on_sequence": 13,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 16,
+        "title": "Send post-event thank you emails",
+        "description": "Thank attendees, speakers, sponsors. Share session recordings, slides, and next steps",
+        "offset_days": 80,
+        "duration_days": 2,
+        "default_assignee_role": "Event Coordinator",
+        "depends_on_sequence": 14,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 17,
+        "title": "Follow up with leads and attendees",
+        "description": "Engage hot leads with sales outreach, nurture attendees with relevant content, schedule follow-up meetings",
+        "offset_days": 82,
+        "duration_days": 5,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 16,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 18,
+        "title": "Analyze event ROI and performance",
+        "description": "Calculate cost per lead, attendee satisfaction scores, lead quality, conversion rates, revenue attribution",
+        "offset_days": 85,
+        "duration_days": 3,
+        "default_assignee_role": "Marketing Analyst",
+        "depends_on_sequence": 17,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 19,
+        "title": "Create event recap and learnings report",
+        "description": "Document successes, challenges, budget actuals, attendee feedback, recommendations for future events",
+        "offset_days": 88,
+        "duration_days": 2,
+        "default_assignee_role": "Marketing Manager",
+        "depends_on_sequence": 18,
+        "is_milestone": 1
+      }
+    ]
+  }
+]

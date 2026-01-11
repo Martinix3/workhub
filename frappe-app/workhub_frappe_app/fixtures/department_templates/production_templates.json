@@ -1,0 +1,499 @@
+[
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Product Launch",
+    "description": "Complete workflow for launching a new product from prototype through production ramp-up and quality certification",
+    "department": "PRODUCTION",
+    "default_duration_days": 90,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Review product specifications and design",
+        "description": "Analyze final product design, materials specifications, tolerances, and packaging requirements",
+        "offset_days": 0,
+        "duration_days": 3,
+        "default_assignee_role": "Production Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Conduct manufacturability assessment",
+        "description": "Evaluate design for production feasibility, identify potential issues, suggest optimizations",
+        "offset_days": 3,
+        "duration_days": 5,
+        "default_assignee_role": "Production Engineer",
+        "depends_on_sequence": 1,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 3,
+        "title": "Source and qualify raw materials",
+        "description": "Identify suppliers for required materials, request samples, conduct quality testing",
+        "offset_days": 8,
+        "duration_days": 10,
+        "default_assignee_role": "Production Coordinator",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Develop Bill of Materials (BOM)",
+        "description": "Create detailed BOM with quantities, specifications, and supplier information in ERPNext",
+        "offset_days": 18,
+        "duration_days": 3,
+        "default_assignee_role": "Production Engineer",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 5,
+        "title": "Create production routing and work instructions",
+        "description": "Document step-by-step manufacturing process, equipment requirements, and quality checkpoints",
+        "offset_days": 21,
+        "duration_days": 5,
+        "default_assignee_role": "Production Engineer",
+        "depends_on_sequence": 4,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 6,
+        "title": "Set up tooling and equipment",
+        "description": "Configure machinery, create jigs and fixtures, calibrate equipment for new product",
+        "offset_days": 26,
+        "duration_days": 10,
+        "default_assignee_role": "Production Technician",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 7,
+        "title": "Train production staff on new product",
+        "description": "Conduct training sessions on assembly procedures, quality standards, and safety requirements",
+        "offset_days": 36,
+        "duration_days": 3,
+        "default_assignee_role": "Production Manager",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Produce pilot batch (First Article)",
+        "description": "Manufacture small pilot run to validate process, identify issues, refine procedures",
+        "offset_days": 39,
+        "duration_days": 7,
+        "default_assignee_role": "Production Technician",
+        "depends_on_sequence": 6,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 9,
+        "title": "Conduct First Article Inspection (FAI)",
+        "description": "Comprehensive inspection of pilot units against specifications, document all measurements",
+        "offset_days": 46,
+        "duration_days": 3,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 8,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 10,
+        "title": "Address pilot issues and refine process",
+        "description": "Implement improvements based on pilot findings, update work instructions and BOM",
+        "offset_days": 49,
+        "duration_days": 7,
+        "default_assignee_role": "Production Engineer",
+        "depends_on_sequence": 9,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Produce validation batch",
+        "description": "Second production run with refined process to confirm consistency and quality",
+        "offset_days": 56,
+        "duration_days": 7,
+        "default_assignee_role": "Production Technician",
+        "depends_on_sequence": 10,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 12,
+        "title": "Conduct final quality certification",
+        "description": "Complete quality audit, performance testing, and regulatory compliance verification",
+        "offset_days": 63,
+        "duration_days": 5,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 11,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 13,
+        "title": "Obtain management approval for production",
+        "description": "Present validation results and cost analysis to management for production sign-off",
+        "offset_days": 68,
+        "duration_days": 3,
+        "default_assignee_role": "Production Manager",
+        "depends_on_sequence": 12,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 14,
+        "title": "Set up inventory and item master in ERPNext",
+        "description": "Configure finished goods item, set reorder levels, establish costing methods",
+        "offset_days": 71,
+        "duration_days": 2,
+        "default_assignee_role": "Production Coordinator",
+        "depends_on_sequence": 13,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 15,
+        "title": "Establish safety stock and supplier lead times",
+        "description": "Set minimum inventory levels, finalize supplier agreements, schedule regular deliveries",
+        "offset_days": 73,
+        "duration_days": 4,
+        "default_assignee_role": "Production Coordinator",
+        "depends_on_sequence": 14,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 16,
+        "title": "Launch full-scale production",
+        "description": "Begin regular production runs, monitor quality metrics, track efficiency and yield",
+        "offset_days": 77,
+        "duration_days": 10,
+        "default_assignee_role": "Production Manager",
+        "depends_on_sequence": 15,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 17,
+        "title": "Post-launch review and optimization",
+        "description": "Analyze production metrics, identify bottlenecks, implement continuous improvements",
+        "offset_days": 87,
+        "duration_days": 3,
+        "default_assignee_role": "Production Manager",
+        "depends_on_sequence": 16,
+        "is_milestone": 1
+      }
+    ]
+  },
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Quality Audit",
+    "description": "Comprehensive quality management system audit to ensure compliance with standards and identify improvement opportunities",
+    "department": "PRODUCTION",
+    "default_duration_days": 30,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Define audit scope and objectives",
+        "description": "Determine which processes, products, or standards to audit. Set clear audit objectives and success criteria",
+        "offset_days": 0,
+        "duration_days": 2,
+        "default_assignee_role": "Quality Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Assemble audit team and assign roles",
+        "description": "Select qualified auditors, assign lead auditor, define responsibilities and areas of focus",
+        "offset_days": 2,
+        "duration_days": 2,
+        "default_assignee_role": "Quality Manager",
+        "depends_on_sequence": 1,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 3,
+        "title": "Review documentation and previous audits",
+        "description": "Study quality manuals, procedures, work instructions, and previous audit findings",
+        "offset_days": 4,
+        "duration_days": 3,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Develop audit checklist and schedule",
+        "description": "Create detailed checklist based on standards, schedule interviews and observations with production areas",
+        "offset_days": 7,
+        "duration_days": 2,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 3,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 5,
+        "title": "Conduct opening meeting with stakeholders",
+        "description": "Brief production team on audit scope, timeline, and expectations. Address questions",
+        "offset_days": 9,
+        "duration_days": 1,
+        "default_assignee_role": "Quality Manager",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Audit production processes and procedures",
+        "description": "Observe manufacturing operations, verify adherence to procedures, interview operators",
+        "offset_days": 10,
+        "duration_days": 5,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 7,
+        "title": "Review quality records and documentation",
+        "description": "Examine inspection reports, calibration records, training logs, nonconformance reports",
+        "offset_days": 15,
+        "duration_days": 3,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Inspect equipment calibration and maintenance",
+        "description": "Verify measurement equipment is calibrated, check preventive maintenance records",
+        "offset_days": 18,
+        "duration_days": 2,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 6,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Evaluate supplier quality management",
+        "description": "Review supplier qualification process, incoming inspection data, supplier performance metrics",
+        "offset_days": 20,
+        "duration_days": 2,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 7,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 10,
+        "title": "Document findings and evidence",
+        "description": "Compile all observations, nonconformances, and evidence. Organize by severity and category",
+        "offset_days": 22,
+        "duration_days": 2,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 9,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 11,
+        "title": "Prepare draft audit report",
+        "description": "Write comprehensive report detailing findings, nonconformances, and recommendations",
+        "offset_days": 24,
+        "duration_days": 2,
+        "default_assignee_role": "Quality Manager",
+        "depends_on_sequence": 10,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 12,
+        "title": "Conduct closing meeting",
+        "description": "Present findings to management and production team, discuss major issues and timelines",
+        "offset_days": 26,
+        "duration_days": 1,
+        "default_assignee_role": "Quality Manager",
+        "depends_on_sequence": 11,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 13,
+        "title": "Finalize and distribute audit report",
+        "description": "Incorporate feedback, issue final report to stakeholders, track acknowledgment",
+        "offset_days": 27,
+        "duration_days": 1,
+        "default_assignee_role": "Quality Manager",
+        "depends_on_sequence": 12,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 14,
+        "title": "Develop corrective action plan",
+        "description": "Work with production to create action plan addressing each nonconformance with owners and deadlines",
+        "offset_days": 28,
+        "duration_days": 2,
+        "default_assignee_role": "Production Manager",
+        "depends_on_sequence": 13,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 15,
+        "title": "Schedule follow-up verification audit",
+        "description": "Set date for follow-up to verify corrective actions have been implemented effectively",
+        "offset_days": 30,
+        "duration_days": 1,
+        "default_assignee_role": "Quality Manager",
+        "depends_on_sequence": 14,
+        "is_milestone": 1
+      }
+    ]
+  },
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Production Run",
+    "description": "Standard workflow for executing a production run from planning through completion and inventory receipt",
+    "department": "PRODUCTION",
+    "default_duration_days": 14,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Review production order and requirements",
+        "description": "Analyze work order quantity, delivery date, special requirements, and customer specifications",
+        "offset_days": 0,
+        "duration_days": 1,
+        "default_assignee_role": "Production Coordinator",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Verify material availability",
+        "description": "Check inventory levels for all BOM items, identify shortages, expedite procurement if needed",
+        "offset_days": 1,
+        "duration_days": 1,
+        "default_assignee_role": "Production Coordinator",
+        "depends_on_sequence": 1,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 3,
+        "title": "Schedule production slots and resources",
+        "description": "Reserve equipment time, assign operators, coordinate with other production runs",
+        "offset_days": 2,
+        "duration_days": 1,
+        "default_assignee_role": "Production Manager",
+        "depends_on_sequence": 2,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 4,
+        "title": "Issue raw materials from warehouse",
+        "description": "Create material transfer in ERPNext, pull materials from stock, stage at production area",
+        "offset_days": 3,
+        "duration_days": 1,
+        "default_assignee_role": "Production Coordinator",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 5,
+        "title": "Conduct pre-production quality check",
+        "description": "Inspect raw materials for defects, verify specifications, check equipment calibration",
+        "offset_days": 4,
+        "duration_days": 1,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Set up production line and tooling",
+        "description": "Configure equipment, install fixtures, perform test runs, adjust settings as needed",
+        "offset_days": 5,
+        "duration_days": 1,
+        "default_assignee_role": "Production Technician",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 7,
+        "title": "Begin production - first piece inspection",
+        "description": "Produce first units, conduct detailed inspection, verify conformance before full run",
+        "offset_days": 6,
+        "duration_days": 1,
+        "default_assignee_role": "Production Technician",
+        "depends_on_sequence": 6,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 8,
+        "title": "Execute full production run",
+        "description": "Manufacture complete order quantity following work instructions, record lot numbers",
+        "offset_days": 7,
+        "duration_days": 3,
+        "default_assignee_role": "Production Technician",
+        "depends_on_sequence": 7,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Perform in-process quality inspections",
+        "description": "Conduct periodic inspections during production run, document measurements, address issues",
+        "offset_days": 7,
+        "duration_days": 3,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 7,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 10,
+        "title": "Document production metrics and yield",
+        "description": "Record actual quantities produced, scrap/rework amounts, cycle times, downtime",
+        "offset_days": 10,
+        "duration_days": 1,
+        "default_assignee_role": "Production Coordinator",
+        "depends_on_sequence": 8,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Conduct final inspection and testing",
+        "description": "Comprehensive inspection of finished goods, functional testing, cosmetic inspection",
+        "offset_days": 11,
+        "duration_days": 1,
+        "default_assignee_role": "Quality Inspector",
+        "depends_on_sequence": 8,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 12,
+        "title": "Package and label finished goods",
+        "description": "Package products per specifications, apply labels with lot numbers and dates",
+        "offset_days": 12,
+        "duration_days": 1,
+        "default_assignee_role": "Production Technician",
+        "depends_on_sequence": 11,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 13,
+        "title": "Complete work order in ERPNext",
+        "description": "Update system with actual quantities, material consumption, labor hours, and completion date",
+        "offset_days": 13,
+        "duration_days": 1,
+        "default_assignee_role": "Production Coordinator",
+        "depends_on_sequence": 12,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 14,
+        "title": "Transfer finished goods to warehouse",
+        "description": "Move completed products to finished goods inventory, update stock levels in ERPNext",
+        "offset_days": 14,
+        "duration_days": 1,
+        "default_assignee_role": "Production Coordinator",
+        "depends_on_sequence": 13,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 15,
+        "title": "Notify sales/operations of completion",
+        "description": "Inform downstream teams that order is ready for shipment, provide lot numbers and COAs",
+        "offset_days": 14,
+        "duration_days": 1,
+        "default_assignee_role": "Production Manager",
+        "depends_on_sequence": 14,
+        "is_milestone": 1
+      }
+    ]
+  }
+]

@@ -170,12 +170,32 @@ def update_project(project_id, data):
 
 
 @frappe.whitelist()
-def get_templates():
-    """Get available project templates"""
+def get_templates(department=None):
+    """Get available project templates with optional department filter"""
     require_auth()
-    return frappe.get_all("WH Project Template",
-        filters={"is_active": 1},
-        fields=["name", "description", "department", "default_duration_days"])
+
+    # Build filters
+    filters = {"is_active": 1}
+    if department:
+        filters["department"] = department
+
+    # Get templates
+    templates = frappe.get_all("WH Project Template",
+        filters=filters,
+        fields=["name", "description", "department", "default_duration_days"],
+        order_by="department asc, name asc")
+
+    # Enrich with task count
+    for template in templates:
+        # Count tasks in this template
+        task_count = frappe.db.count("WH Project Template Task",
+            filters={"parent": template["name"]})
+        template["task_count"] = task_count
+
+        # Rename for clarity
+        template["estimated_duration_days"] = template.pop("default_duration_days")
+
+    return templates
 
 
 @frappe.whitelist()
@@ -248,30 +268,57 @@ def create_from_template(template_id, data):
 
 @frappe.whitelist()
 def preview_template(template_id):
-    """Preview what a template would create"""
+    """Preview what a template would create - full task breakdown with milestones and dependencies"""
     require_auth()
     template = frappe.get_doc("WH Project Template", template_id)
 
     tasks = []
+    milestones = []
+    dependencies = []
+
     for task_template in template.tasks:
-        tasks.append({
+        task_data = {
             "sequence": task_template.sequence,
             "title": task_template.title,
             "description": task_template.description,
             "offset_days": task_template.offset_days,
             "duration_days": task_template.duration_days,
+            "default_assignee_role": task_template.default_assignee_role,
             "is_milestone": task_template.is_milestone,
-            "depends_on": task_template.depends_on_sequence
-        })
+            "depends_on_sequence": task_template.depends_on_sequence
+        }
+        tasks.append(task_data)
+
+        # Collect milestones separately
+        if task_template.is_milestone:
+            milestones.append({
+                "sequence": task_template.sequence,
+                "title": task_template.title,
+                "offset_days": task_template.offset_days,
+                "duration_days": task_template.duration_days
+            })
+
+        # Build dependency relationships
+        if task_template.depends_on_sequence:
+            dependencies.append({
+                "from_sequence": task_template.depends_on_sequence,
+                "to_sequence": task_template.sequence,
+                "from_title": next((t.title for t in template.tasks if t.sequence == task_template.depends_on_sequence), None),
+                "to_title": task_template.title
+            })
 
     return {
         "template": {
             "name": template.name,
             "description": template.description,
             "department": template.department,
-            "default_duration_days": template.default_duration_days
+            "estimated_duration_days": template.default_duration_days,
+            "task_count": len(tasks),
+            "milestone_count": len(milestones)
         },
-        "tasks": tasks
+        "tasks": tasks,
+        "milestones": milestones,
+        "dependencies": dependencies
     }
 
 
