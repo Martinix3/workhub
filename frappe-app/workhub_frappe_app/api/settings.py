@@ -9,6 +9,7 @@ from frappe.utils import cstr
 import json
 
 from workhub_frappe_app.api.utils import require_auth, validate_json_input
+from workhub_frappe_app.api.notifications import get_user_notification_preferences
 
 
 # Department to Role mapping
@@ -31,7 +32,14 @@ def get_user_settings():
         dict: {
             theme: 'light' | 'dark' | 'system',
             language: 'es' | 'en',
-            notifications: { email: bool, push: bool, digest: 'daily'|'weekly'|'none' },
+            notifications: {
+                frequency: 'realtime' | 'daily' | 'weekly' | 'off',
+                quiet_hours_enabled: bool,
+                quiet_hours_start: str (HH:MM:SS),
+                quiet_hours_end: str (HH:MM:SS),
+                priority_bypass_enabled: bool,
+                email_enabled: bool
+            },
             department_access: ['SALES', 'OPS', 'MKT']
         }
     """
@@ -46,15 +54,10 @@ def get_user_settings():
     theme = getattr(user_doc, 'workhub_theme', None) or 'system'
     language = user_doc.language or 'es'
 
-    # Notification settings (stored as JSON in custom field or defaults)
-    notifications_json = getattr(user_doc, 'workhub_notifications', None)
-    if notifications_json:
-        try:
-            notifications = json.loads(notifications_json)
-        except (json.JSONDecodeError, TypeError):
-            notifications = {"email": True, "push": False, "digest": "daily"}
-    else:
-        notifications = {"email": True, "push": False, "digest": "daily"}
+    # Get notification preferences from WH Notification Preferences DocType
+    # This returns: frequency, quiet_hours_enabled, quiet_hours_start, quiet_hours_end,
+    # priority_bypass_enabled, email_enabled
+    notifications = get_user_notification_preferences(user)
 
     # Department access based on user roles
     department_access = get_user_departments(user)
