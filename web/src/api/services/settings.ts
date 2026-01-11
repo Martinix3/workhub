@@ -6,9 +6,12 @@ export interface UserSettings {
   theme: 'light' | 'dark' | 'system'
   language: 'es' | 'en'
   notifications: {
-    email: boolean
-    push: boolean
-    digest: 'daily' | 'weekly' | 'none'
+    frequency: 'realtime' | 'daily' | 'weekly' | 'off'
+    quiet_hours_enabled: boolean
+    quiet_hours_start: string // HH:MM:SS format
+    quiet_hours_end: string // HH:MM:SS format
+    priority_bypass_enabled: boolean
+    email_enabled: boolean
   }
   department_access: string[]
 }
@@ -39,9 +42,12 @@ export interface UpdateSettingsData {
   theme?: 'light' | 'dark' | 'system'
   language?: 'es' | 'en'
   notifications?: {
-    email?: boolean
-    push?: boolean
-    digest?: 'daily' | 'weekly' | 'none'
+    frequency?: 'realtime' | 'daily' | 'weekly' | 'off'
+    quiet_hours_enabled?: boolean
+    quiet_hours_start?: string // HH:MM:SS format
+    quiet_hours_end?: string // HH:MM:SS format
+    priority_bypass_enabled?: boolean
+    email_enabled?: boolean
   }
 }
 
