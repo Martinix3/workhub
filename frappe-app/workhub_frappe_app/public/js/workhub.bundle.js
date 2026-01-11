@@ -2332,6 +2332,35 @@ frappe.workhub.offlineIndicator = {
  * - Opens MobileTaskDrawer in edit mode
  * - Handles task updates and UI refresh
  * - Works with existing task list rendering
+ * - Event delegation for dynamically added tasks
+ * - DOM mutation observer for auto-initialization
+ *
+ * Usage:
+ * To enable edit functionality on a task element, add the data-task-id attribute
+ * and optionally include other task data attributes:
+ *
+ * <div class="wh-swipeable-task"
+ *      data-task-id="123"
+ *      data-task-status="DOING"
+ *      data-task-priority="P1"
+ *      data-task-department="SALES">
+ *   <div class="wh-swipeable-task-content">
+ *     <div class="task-name">Task name here</div>
+ *     <div class="task-description">Task description here</div>
+ *   </div>
+ * </div>
+ *
+ * Supported data attributes:
+ * - data-task-id (required) - Leantime task ID
+ * - data-task-status - Task status (BACKLOG, NEXT, DOING, BLOCKED, DONE)
+ * - data-task-priority - Priority (P0, P1, P2)
+ * - data-task-department - Department (SALES, OPS, MKT)
+ * - data-task-due-date - Due date (YYYY-MM-DD)
+ * - data-task-assigned - Assigned user email/name
+ *
+ * The module will automatically detect clicks on task elements and open
+ * the MobileTaskDrawer in edit mode. It skips clicks on action buttons
+ * (.task-action, .task-complete-btn, .task-delete-btn) and during swipe gestures.
  */
 frappe.workhub.taskEditor = {
     /**

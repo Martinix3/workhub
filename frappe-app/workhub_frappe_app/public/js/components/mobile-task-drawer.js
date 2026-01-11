@@ -14,6 +14,38 @@
  * - Due date picker
  * - Integrates with Leantime API
  * - Works with mobile-drawer.css and mobile-forms.css
+ *
+ * Usage:
+ *
+ * 1. Create new task (standalone):
+ *    frappe.workhub.MobileTaskDrawer.openNewTaskDrawer({
+ *      onSave: (task) => console.log('Task created:', task)
+ *    });
+ *
+ * 2. Edit existing task (standalone):
+ *    frappe.workhub.MobileTaskDrawer.openEditTaskDrawer({
+ *      id: '123',
+ *      name: 'Task name',
+ *      description: 'Description',
+ *      status: 'DOING',
+ *      priority: 'P1',
+ *      department: 'SALES',
+ *      dueDate: '2026-01-15',
+ *      assignedTo: 'user@example.com'
+ *    }, {
+ *      onSave: (task) => console.log('Task updated:', task)
+ *    });
+ *
+ * 3. Automatic editing via taskEditor module (recommended):
+ *    Simply add data-task-id attribute to task elements and the
+ *    taskEditor module in workhub.bundle.js will automatically
+ *    handle click events to open this drawer. See taskEditor
+ *    module documentation for HTML structure examples.
+ *
+ * Integration with task lists:
+ * The drawer automatically integrates with the taskEditor module
+ * which handles click events on task elements. When a user clicks
+ * on a task with [data-task-id], the drawer opens in edit mode.
  */
 
 frappe.workhub = frappe.workhub || {};
