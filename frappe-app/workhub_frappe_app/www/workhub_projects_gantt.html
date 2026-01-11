@@ -371,18 +371,32 @@
 		criticalPath: {{ critical_path | tojson }}
 	};
 
+	// Global gantt instance
+	let ganttChart = null;
+
 	// Initialize Gantt chart when ready
 	document.addEventListener('DOMContentLoaded', function() {
-		console.log('Gantt data loaded:', window.ganttData);
+		// Initialize GanttChart component
+		if (frappe.workhub && frappe.workhub.GanttChart) {
+			ganttChart = new frappe.workhub.GanttChart('#gantt-chart', {
+				zoom: 'month',
+				showWeekends: true,
+				showToday: true
+			});
 
-		// TODO: Initialize GanttChart component
-		// This will be implemented in subtask 2.1
-		// const gantt = new frappe.workhub.GanttChart('#gantt-chart', window.ganttData);
+			// Bind data
+			ganttChart.setData(window.ganttData);
+
+			// Render chart
+			ganttChart.render();
+		} else {
+			console.error('GanttChart component not loaded');
+		}
 
 		// Setup sidebar controls
 		setupSidebarControls();
 
-		// Setup toolbar button handlers (placeholders)
+		// Setup toolbar button handlers
 		setupToolbarHandlers();
 	});
 
@@ -402,7 +416,7 @@
 	}
 
 	function setupToolbarHandlers() {
-		// Zoom controls (placeholders for now)
+		// Zoom controls
 		['day', 'week', 'month', 'quarter'].forEach(zoom => {
 			const btn = document.getElementById('zoom-' + zoom);
 			btn.addEventListener('click', function() {
@@ -412,35 +426,41 @@
 				});
 				// Add active to clicked
 				this.classList.add('active');
-				console.log('Zoom changed to:', zoom);
-				// TODO: Trigger gantt zoom change
+
+				// Change gantt zoom
+				if (ganttChart) {
+					ganttChart.setZoom(zoom);
+				}
 			});
 		});
 
 		// Today button
 		document.getElementById('btn-today').addEventListener('click', function() {
-			console.log('Scroll to today');
-			// TODO: Implement scroll to today
+			if (ganttChart) {
+				ganttChart.scrollToToday();
+			}
 		});
 
 		// Critical path toggle
 		document.getElementById('btn-critical-path').addEventListener('click', function() {
 			this.classList.toggle('active');
 			const isActive = this.classList.contains('active');
-			console.log('Critical path:', isActive ? 'enabled' : 'disabled');
-			// TODO: Toggle critical path visualization
+
+			if (ganttChart) {
+				ganttChart.toggleCriticalPath(isActive);
+			}
 		});
 
 		// Auto-schedule
 		document.getElementById('btn-auto-schedule').addEventListener('click', function() {
-			console.log('Auto-schedule requested');
-			// TODO: Show confirmation and call API
+			// TODO: Show confirmation and call API (Phase 6)
+			frappe.msgprint('Auto-schedule será implementado en Phase 6');
 		});
 
 		// Export
 		document.getElementById('btn-export').addEventListener('click', function() {
-			console.log('Export requested');
-			// TODO: Export as PNG
+			// TODO: Export as PNG (Phase 6)
+			frappe.msgprint('Export será implementado en Phase 6');
 		});
 	}
 </script>
