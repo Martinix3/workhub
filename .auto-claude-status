@@ -3,23 +3,23 @@
   "spec": "020-advanced-reporting-export",
   "state": "building",
   "subtasks": {
-    "completed": 21,
+    "completed": 24,
     "total": 42,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Standard Report Templates",
+    "current": "Report Builder UI",
     "id": null,
-    "total": 4
+    "total": 5
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 141,
+    "number": 498,
     "started_at": "2026-01-10T21:23:41.964627"
   },
-  "last_update": "2026-01-10T22:50:17.859733"
+  "last_update": "2026-01-11T04:43:34.536777"
 }

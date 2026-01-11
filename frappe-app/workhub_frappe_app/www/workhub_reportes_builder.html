@@ -40,8 +40,7 @@
 				<div class="component-item"
 					 draggable="true"
 					 data-type="{{ section_type.id }}"
-					 data-label="{{ section_type.label }}"
-					 ondragstart="handleDragStart(event)">
+					 data-label="{{ section_type.label }}">
 					<div class="component-icon" style="background: {{ section_type.color }}20; color: {{ section_type.color }};">
 						{{ section_type.icon }}
 					</div>
@@ -117,11 +116,7 @@
 			</div>
 
 			<!-- Canvas Drop Zone -->
-			<div class="canvas-drop-zone"
-				 id="canvas-drop-zone"
-				 ondrop="handleDrop(event)"
-				 ondragover="handleDragOver(event)"
-				 ondragleave="handleDragLeave(event)">
+			<div class="canvas-drop-zone" id="canvas-drop-zone">
 				<div class="canvas-placeholder" id="canvas-placeholder">
 					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 64px; height: 64px; margin: 0 auto; color: #ccc;">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -356,6 +351,16 @@
 	cursor: grabbing;
 }
 
+.section-card.drop-above {
+	border-top: 3px solid #007bff;
+	margin-top: -3px;
+}
+
+.section-card.drop-below {
+	border-bottom: 3px solid #007bff;
+	margin-bottom: -3px;
+}
+
 .section-header {
 	display: flex;
 	align-items: center;
@@ -484,445 +489,31 @@
 {% endblock %}
 
 {% block script %}
+<!-- Load external report builder JavaScript -->
+<script src="/assets/workhub_frappe_app/js/report_builder.js"></script>
+
 <script>
-// Global state
-let reportData = {{ report | tojson }};
-let sections = reportData.sections || [];
-let selectedSectionIndex = null;
-let draggedElement = null;
+// Initialize report builder context for external module
+window.reportBuilderContext = {
+	sectionTypes: {{ section_types | tojson }},
+	chartTypes: {{ chart_types | tojson }},
+	reportData: {{ report | tojson }},
+	dataSources: {{ data_sources | tojson }},
+	isNew: {{ 'true' if is_new else 'false' }}
+};
 
-// Data sources (will be loaded via API)
-let dataSources = {{ data_sources | tojson }};
-
-// Initialize
+// Initialize report builder when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-	renderSections();
-
-	// Hide placeholder if sections exist
-	if (sections.length > 0) {
-		document.getElementById('canvas-placeholder').style.display = 'none';
-	}
+	// Initialize the report builder module
+	frappe.workhub.reportBuilder.init(
+		window.reportBuilderContext.reportData,
+		window.reportBuilderContext.dataSources
+	);
 });
 
-// ===== DRAG AND DROP =====
-
-function handleDragStart(event) {
-	const type = event.target.closest('.component-item').dataset.type;
-	const label = event.target.closest('.component-item').dataset.label;
-	event.dataTransfer.effectAllowed = 'copy';
-	event.dataTransfer.setData('section-type', type);
-	event.dataTransfer.setData('section-label', label);
-}
-
-function handleDragOver(event) {
-	event.preventDefault();
-	event.dataTransfer.dropEffect = 'copy';
-	document.getElementById('canvas-drop-zone').classList.add('drag-over');
-}
-
-function handleDragLeave(event) {
-	if (event.target.id === 'canvas-drop-zone') {
-		document.getElementById('canvas-drop-zone').classList.remove('drag-over');
-	}
-}
-
-function handleDrop(event) {
-	event.preventDefault();
-	document.getElementById('canvas-drop-zone').classList.remove('drag-over');
-
-	const sectionType = event.dataTransfer.getData('section-type');
-	const sectionLabel = event.dataTransfer.getData('section-label');
-
-	if (sectionType) {
-		addSection(sectionType, sectionLabel);
-	}
-}
-
-// ===== SECTION MANAGEMENT =====
-
-function addSection(type, label) {
-	const newSection = {
-		section_type: type,
-		title: label || type,
-		data_source: '',
-		display_order: sections.length,
-		is_visible: 1,
-		config: getDefaultConfig(type)
-	};
-
-	sections.push(newSection);
-	renderSections();
-
-	// Hide placeholder
-	document.getElementById('canvas-placeholder').style.display = 'none';
-
-	// Select the new section
-	selectSection(sections.length - 1);
-}
-
-function getDefaultConfig(type) {
-	switch(type) {
-		case 'Chart':
-			return {
-				chart_type: 'bar',
-				x_field: '',
-				y_field: '',
-				colors: ['#007bff', '#28a745', '#ffc107']
-			};
-		case 'Table':
-			return {
-				columns: [],
-				show_totals: false,
-				page_size: 50
-			};
-		case 'KPI':
-			return {
-				kpis: []
-			};
-		case 'Text':
-			return {
-				content: ''
-			};
-		default:
-			return {};
-	}
-}
-
-function renderSections() {
-	const container = document.getElementById('sections-container');
-	container.innerHTML = '';
-
-	sections.forEach((section, index) => {
-		const card = createSectionCard(section, index);
-		container.appendChild(card);
-	});
-}
-
-function createSectionCard(section, index) {
-	const card = document.createElement('div');
-	card.className = 'section-card';
-	card.draggable = true;
-	card.dataset.index = index;
-
-	if (selectedSectionIndex === index) {
-		card.classList.add('selected');
-	}
-
-	// Get section type info
-	const sectionTypes = {{ section_types | tojson }};
-	const typeInfo = sectionTypes.find(t => t.id === section.section_type) || {};
-
-	card.innerHTML = `
-		<div class="section-header">
-			<span class="section-type-badge" style="background: ${typeInfo.color}20; color: ${typeInfo.color};">
-				${typeInfo.icon || '📄'} ${typeInfo.label || section.section_type}
-			</span>
-			<div class="section-actions">
-				<button onclick="selectSection(${index})" title="Configurar">⚙️</button>
-				<button onclick="moveSection(${index}, -1)" title="Mover arriba" ${index === 0 ? 'disabled' : ''}>⬆️</button>
-				<button onclick="moveSection(${index}, 1)" title="Mover abajo" ${index === sections.length - 1 ? 'disabled' : ''}>⬇️</button>
-				<button onclick="duplicateSection(${index})" title="Duplicar">📋</button>
-				<button onclick="deleteSection(${index})" title="Eliminar">🗑️</button>
-			</div>
-		</div>
-		<div class="section-title">${section.title}</div>
-		<div class="section-meta">
-			${section.data_source ? 'Origen: ' + section.data_source : 'Sin origen de datos'}
-		</div>
-	`;
-
-	card.addEventListener('click', (e) => {
-		if (!e.target.closest('button')) {
-			selectSection(index);
-		}
-	});
-
-	return card;
-}
-
-function selectSection(index) {
-	selectedSectionIndex = index;
-	renderSections();
-	renderProperties();
-}
-
-function moveSection(index, direction) {
-	const newIndex = index + direction;
-	if (newIndex < 0 || newIndex >= sections.length) return;
-
-	// Swap sections
-	[sections[index], sections[newIndex]] = [sections[newIndex], sections[index]];
-
-	// Update display_order
-	sections.forEach((s, i) => s.display_order = i);
-
-	// Update selected index
-	if (selectedSectionIndex === index) {
-		selectedSectionIndex = newIndex;
-	}
-
-	renderSections();
-}
-
-function duplicateSection(index) {
-	const section = sections[index];
-	const newSection = JSON.parse(JSON.stringify(section));
-	newSection.title = section.title + ' (Copia)';
-	newSection.display_order = sections.length;
-
-	sections.push(newSection);
-	renderSections();
-}
-
-function deleteSection(index) {
-	if (confirm('¿Eliminar esta sección?')) {
-		sections.splice(index, 1);
-
-		// Update display_order
-		sections.forEach((s, i) => s.display_order = i);
-
-		// Clear selection if deleted
-		if (selectedSectionIndex === index) {
-			selectedSectionIndex = null;
-		} else if (selectedSectionIndex > index) {
-			selectedSectionIndex--;
-		}
-
-		renderSections();
-		renderProperties();
-
-		// Show placeholder if empty
-		if (sections.length === 0) {
-			document.getElementById('canvas-placeholder').style.display = 'block';
-		}
-	}
-}
-
-// ===== PROPERTIES PANEL =====
-
-function renderProperties() {
-	const content = document.getElementById('properties-content');
-
-	if (selectedSectionIndex === null) {
-		content.innerHTML = `
-			<div class="no-selection">
-				<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px; height: 48px; margin: 0 auto; color: #ccc; display: block;">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
-				</svg>
-				<p class="text-muted mt-3 text-center">Selecciona una sección para configurar</p>
-			</div>
-		`;
-		return;
-	}
-
-	const section = sections[selectedSectionIndex];
-
-	// Base properties for all sections
-	let html = `
-		<div class="form-group">
-			<label>Título de la Sección *</label>
-			<input type="text" class="form-control" id="prop-title" value="${section.title}"
-				   onchange="updateSectionProperty('title', this.value)">
-		</div>
-		<div class="form-group">
-			<label>Visible</label>
-			<select class="form-control" id="prop-visible" onchange="updateSectionProperty('is_visible', parseInt(this.value))">
-				<option value="1" ${section.is_visible ? 'selected' : ''}>Sí</option>
-				<option value="0" ${!section.is_visible ? 'selected' : ''}>No</option>
-			</select>
-		</div>
-	`;
-
-	// Type-specific properties
-	if (section.section_type !== 'Header' && section.section_type !== 'Text') {
-		html += `
-			<div class="form-group">
-				<label>Origen de Datos</label>
-				<select class="form-control" id="prop-datasource" onchange="updateSectionProperty('data_source', this.value)">
-					<option value="">-- Seleccionar --</option>
-					${dataSources.map(ds => `
-						<option value="${ds.id}" ${section.data_source === ds.id ? 'selected' : ''}>${ds.label}</option>
-					`).join('')}
-				</select>
-			</div>
-		`;
-	}
-
-	// Chart-specific
-	if (section.section_type === 'Chart') {
-		const chartTypes = {{ chart_types | tojson }};
-		html += `
-			<div class="form-group">
-				<label>Tipo de Gráfico</label>
-				<select class="form-control" id="prop-chart-type" onchange="updateConfigProperty('chart_type', this.value)">
-					${chartTypes.map(ct => `
-						<option value="${ct.id}" ${section.config.chart_type === ct.id ? 'selected' : ''}>${ct.label}</option>
-					`).join('')}
-				</select>
-			</div>
-			<div class="form-group">
-				<label>Campo X (Eje horizontal)</label>
-				<input type="text" class="form-control" id="prop-x-field" value="${section.config.x_field || ''}"
-					   onchange="updateConfigProperty('x_field', this.value)" placeholder="Ej: month, category">
-			</div>
-			<div class="form-group">
-				<label>Campo Y (Eje vertical)</label>
-				<input type="text" class="form-control" id="prop-y-field" value="${section.config.y_field || ''}"
-					   onchange="updateConfigProperty('y_field', this.value)" placeholder="Ej: count, total">
-			</div>
-		`;
-	}
-
-	// Text-specific
-	if (section.section_type === 'Text') {
-		html += `
-			<div class="form-group">
-				<label>Contenido</label>
-				<textarea class="form-control" id="prop-content" rows="6"
-						  onchange="updateConfigProperty('content', this.value)"
-						  placeholder="Escribe el contenido de texto...">${section.config.content || ''}</textarea>
-			</div>
-		`;
-	}
-
-	// Table-specific
-	if (section.section_type === 'Table') {
-		html += `
-			<div class="form-group">
-				<label>Mostrar Totales</label>
-				<select class="form-control" id="prop-show-totals" onchange="updateConfigProperty('show_totals', this.value === 'true')">
-					<option value="false" ${!section.config.show_totals ? 'selected' : ''}>No</option>
-					<option value="true" ${section.config.show_totals ? 'selected' : ''}>Sí</option>
-				</select>
-			</div>
-			<div class="form-group">
-				<label>Filas por página</label>
-				<input type="number" class="form-control" id="prop-page-size" value="${section.config.page_size || 50}"
-					   onchange="updateConfigProperty('page_size', parseInt(this.value))" min="10" max="1000">
-			</div>
-			<div class="form-group">
-				<label>Columnas (JSON)</label>
-				<textarea class="form-control" id="prop-columns" rows="4"
-						  onchange="updateConfigPropertyJSON('columns', this.value)"
-						  placeholder='[{"field": "name", "label": "Nombre"}]'>${JSON.stringify(section.config.columns || [], null, 2)}</textarea>
-				<small class="text-muted">Define columnas en formato JSON</small>
-			</div>
-		`;
-	}
-
-	content.innerHTML = html;
-}
-
-function updateSectionProperty(key, value) {
-	if (selectedSectionIndex !== null) {
-		sections[selectedSectionIndex][key] = value;
-		renderSections();
-	}
-}
-
-function updateConfigProperty(key, value) {
-	if (selectedSectionIndex !== null) {
-		sections[selectedSectionIndex].config[key] = value;
-		renderSections();
-	}
-}
-
-function updateConfigPropertyJSON(key, value) {
-	try {
-		const parsed = JSON.parse(value);
-		updateConfigProperty(key, parsed);
-	} catch (e) {
-		frappe.show_alert({
-			message: 'JSON inválido: ' + e.message,
-			indicator: 'red'
-		});
-	}
-}
-
-// ===== SAVE REPORT =====
-
+// Global function for save button (used by onclick in template)
 function saveReport() {
-	const title = document.getElementById('report-title').value.trim();
-	const description = document.getElementById('report-description').value.trim();
-	const reportType = document.getElementById('report-type').value;
-	const category = document.getElementById('report-category').value;
-	const isActive = parseInt(document.getElementById('report-active').value);
-
-	if (!title) {
-		frappe.show_alert({
-			message: 'El título es requerido',
-			indicator: 'red'
-		});
-		return;
-	}
-
-	if (sections.length === 0) {
-		frappe.show_alert({
-			message: 'Agrega al menos una sección al reporte',
-			indicator: 'orange'
-		});
-		return;
-	}
-
-	// Show loading
-	frappe.show_progress('Guardando...', 50, 100, 'Guardando reporte...');
-
-	// Prepare data
-	const reportId = reportData.name;
-	const isNew = {{ 'true' if is_new else 'false' }};
-
-	const data = {
-		title: title,
-		description: description,
-		report_type: reportType,
-		category: category,
-		is_active: isActive,
-		sections: sections.map(s => ({
-			section_type: s.section_type,
-			title: s.title,
-			data_source: s.data_source || '',
-			display_order: s.display_order,
-			is_visible: s.is_visible,
-			config: JSON.stringify(s.config)
-		}))
-	};
-
-	const method = isNew ?
-		'workhub_frappe_app.api.reports.create_report' :
-		'workhub_frappe_app.api.reports.update_report';
-
-	const args = isNew ? data : { report_id: reportId, ...data };
-
-	frappe.call({
-		method: method,
-		args: args,
-		callback: function(r) {
-			frappe.hide_progress();
-			if (r.message && r.message.success) {
-				frappe.show_alert({
-					message: 'Reporte guardado exitosamente',
-					indicator: 'green'
-				});
-
-				// Redirect to reports list after short delay
-				setTimeout(() => {
-					window.location.href = '/workhub_reportes';
-				}, 1000);
-			} else {
-				frappe.show_alert({
-					message: 'Error al guardar el reporte',
-					indicator: 'red'
-				});
-			}
-		},
-		error: function(err) {
-			frappe.hide_progress();
-			frappe.show_alert({
-				message: 'Error al guardar el reporte: ' + (err.message || 'Error desconocido'),
-				indicator: 'red'
-			});
-		}
-	});
+	frappe.workhub.reportBuilder.saveReport(window.reportBuilderContext.isNew);
 }
 </script>
 {% endblock %}
