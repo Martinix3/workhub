@@ -350,6 +350,169 @@ def get_user_context(user: Optional[str] = None) -> Dict:
     return context
 
 
+def analyze_user_patterns(user: Optional[str] = None, days: int = 90) -> Dict:
+    """
+    Analyze user's past acceptance/dismissal patterns from WorkLink Suggestion Log.
+
+    Args:
+        user: User email (defaults to current session user)
+        days: Number of days to analyze (default: 90)
+
+    Returns:
+        dict with:
+        - accepted_doctypes: Dict of doctype -> acceptance count
+        - dismissed_doctypes: Dict of doctype -> dismissal count
+        - accepted_keywords: Dict of keyword -> occurrence count in accepted suggestions
+        - total_accepted: Total number of accepted suggestions
+        - total_dismissed: Total number of dismissed suggestions
+    """
+    if not user:
+        user = frappe.session.user
+
+    patterns = {
+        "accepted_doctypes": {},
+        "dismissed_doctypes": {},
+        "accepted_keywords": {},
+        "total_accepted": 0,
+        "total_dismissed": 0
+    }
+
+    try:
+        # Get suggestion logs for this user from the last N days
+        from frappe.utils import add_days, nowdate
+
+        logs = frappe.get_all(
+            "WorkLink Suggestion Log",
+            filters={
+                "user": user,
+                "created_at": [">", add_days(nowdate(), -days)]
+            },
+            fields=["action", "suggested_doctype", "task_keywords"],
+            order_by="created_at desc"
+        )
+
+        for log in logs:
+            action = log.action
+            doctype = log.suggested_doctype
+            keywords = log.task_keywords or ""
+
+            if action == "accepted":
+                patterns["total_accepted"] += 1
+
+                # Count doctype acceptances
+                patterns["accepted_doctypes"][doctype] = patterns["accepted_doctypes"].get(doctype, 0) + 1
+
+                # Extract and count keywords from accepted suggestions
+                if keywords:
+                    for keyword in keywords.split():
+                        keyword_lower = keyword.lower()
+                        if len(keyword_lower) > 3:  # Only meaningful keywords
+                            patterns["accepted_keywords"][keyword_lower] = \
+                                patterns["accepted_keywords"].get(keyword_lower, 0) + 1
+
+            elif action == "dismissed":
+                patterns["total_dismissed"] += 1
+
+                # Count doctype dismissals
+                patterns["dismissed_doctypes"][doctype] = patterns["dismissed_doctypes"].get(doctype, 0) + 1
+
+    except Exception as e:
+        frappe.log_error(f"Error analyzing user patterns for {user}: {str(e)}")
+
+    return patterns
+
+
+def apply_pattern_learning(
+    suggestions: List[Dict],
+    task_keywords: Dict[str, List[str]],
+    user: Optional[str] = None
+) -> List[Dict]:
+    """
+    Apply pattern learning to boost or deprioritize suggestions based on user history.
+
+    Args:
+        suggestions: List of document suggestions
+        task_keywords: Extracted keywords from current task (from extract_keywords())
+        user: User email (defaults to current session user)
+
+    Returns:
+        Suggestions with adjusted confidence scores based on learned patterns
+    """
+    if not suggestions:
+        return []
+
+    # Get user's historical patterns
+    patterns = analyze_user_patterns(user)
+
+    # If user has no history, return unchanged
+    if patterns["total_accepted"] == 0 and patterns["total_dismissed"] == 0:
+        return suggestions
+
+    # Build keyword set from current task (for matching with historical patterns)
+    current_keywords = set()
+    for keyword_list in task_keywords.values():
+        if isinstance(keyword_list, list):
+            for item in keyword_list:
+                if isinstance(item, dict) and "value" in item:
+                    current_keywords.add(item["value"].lower())
+                elif isinstance(item, str):
+                    current_keywords.add(item.lower())
+
+    adjusted_suggestions = []
+
+    for suggestion in suggestions:
+        doctype = suggestion["doctype"]
+        confidence = suggestion["confidence"]
+
+        # Calculate doctype pattern boost/penalty
+        doctype_boost = 1.0
+
+        # Boost if this doctype has been frequently accepted
+        accepted_count = patterns["accepted_doctypes"].get(doctype, 0)
+        if accepted_count > 0 and patterns["total_accepted"] > 0:
+            acceptance_rate = accepted_count / patterns["total_accepted"]
+            # Up to 20% boost for frequently accepted doctypes
+            doctype_boost += min(acceptance_rate * 0.4, 0.20)
+
+        # Penalize if this doctype has been frequently dismissed
+        dismissed_count = patterns["dismissed_doctypes"].get(doctype, 0)
+        if dismissed_count > 0 and patterns["total_dismissed"] > 0:
+            dismissal_rate = dismissed_count / patterns["total_dismissed"]
+            # Up to 30% penalty for frequently dismissed doctypes
+            doctype_boost -= min(dismissal_rate * 0.6, 0.30)
+
+        # Ensure boost is at least 0.5 (don't completely eliminate suggestions)
+        doctype_boost = max(doctype_boost, 0.5)
+
+        # Calculate keyword pattern boost
+        keyword_boost = 1.0
+        matched_keywords = 0
+
+        # Check if current task keywords match historically successful keywords
+        for keyword in current_keywords:
+            if keyword in patterns["accepted_keywords"]:
+                matched_keywords += 1
+
+        if matched_keywords > 0:
+            # Up to 15% boost for keyword matches
+            keyword_boost = 1.0 + min(matched_keywords * 0.05, 0.15)
+
+        # Apply combined boost
+        pattern_boost = doctype_boost * keyword_boost
+        adjusted_confidence = min(confidence * pattern_boost, 0.99)
+
+        suggestion["confidence"] = adjusted_confidence
+        suggestion["pattern_boosted"] = pattern_boost > 1.0
+        suggestion["pattern_penalized"] = pattern_boost < 1.0
+
+        adjusted_suggestions.append(suggestion)
+
+    # Re-sort by adjusted confidence
+    adjusted_suggestions.sort(key=lambda x: x["confidence"], reverse=True)
+
+    return adjusted_suggestions
+
+
 def apply_context_filter(
     suggestions: List[Dict],
     user_context: Optional[Dict] = None,
@@ -496,7 +659,14 @@ def match_documents(
         department
     )
 
-    return filtered_suggestions[:limit]
+    # Apply pattern learning to further refine suggestions based on user history
+    pattern_learned_suggestions = apply_pattern_learning(
+        filtered_suggestions,
+        keywords,
+        user
+    )
+
+    return pattern_learned_suggestions[:limit]
 
 
 def _match_by_document_number(doc_number: str, doctype: str) -> List[Dict]:

@@ -96,7 +96,7 @@ def get_suggestions(title, description="", department=None, project_id=None, lim
 
 
 @frappe.whitelist()
-def accept_suggestion(task_id, doctype, doc_id, notes=""):
+def accept_suggestion(task_id, doctype, doc_id, notes="", confidence_score=None):
     """
     Accept a suggestion and create the WorkLink connection.
     Updates the task with the WorkLink reference.
@@ -107,6 +107,7 @@ def accept_suggestion(task_id, doctype, doc_id, notes=""):
         doctype: Document type (Sales Order, Batch, etc.)
         doc_id: Document ID
         notes: Optional notes about the link (default: "")
+        confidence_score: Optional confidence score of the suggestion (for pattern learning)
 
     Returns:
         Success response with worklink_id
@@ -123,6 +124,13 @@ def accept_suggestion(task_id, doctype, doc_id, notes=""):
     # Validate that the document exists
     if not frappe.db.exists(doctype, doc_id):
         frappe.throw(_("{0} {1} not found").format(doctype, doc_id))
+
+    # Parse confidence score if provided
+    if confidence_score is not None:
+        try:
+            confidence_score = float(confidence_score)
+        except (ValueError, TypeError):
+            confidence_score = None
 
     try:
         # Check if WorkLink already exists for this ERP doc
@@ -158,7 +166,8 @@ def accept_suggestion(task_id, doctype, doc_id, notes=""):
             doctype=doctype,
             doc_id=doc_id,
             action="accepted",
-            notes=notes
+            notes=notes,
+            confidence_score=confidence_score
         )
 
         frappe.db.commit()
@@ -177,7 +186,7 @@ def accept_suggestion(task_id, doctype, doc_id, notes=""):
 
 
 @frappe.whitelist()
-def dismiss_suggestion(task_id, doctype, doc_id, reason=""):
+def dismiss_suggestion(task_id, doctype, doc_id, reason="", confidence_score=None):
     """
     Record when user dismisses a suggestion.
     This is used for pattern learning to improve future suggestions.
@@ -187,6 +196,7 @@ def dismiss_suggestion(task_id, doctype, doc_id, reason=""):
         doctype: Document type that was suggested
         doc_id: Document ID that was suggested
         reason: Optional reason for dismissal
+        confidence_score: Optional confidence score of the suggestion (for pattern learning)
 
     Returns:
         Success response
@@ -200,6 +210,13 @@ def dismiss_suggestion(task_id, doctype, doc_id, reason=""):
     if not frappe.db.exists("WH Task", task_id):
         frappe.throw(_("Task {0} not found").format(task_id))
 
+    # Parse confidence score if provided
+    if confidence_score is not None:
+        try:
+            confidence_score = float(confidence_score)
+        except (ValueError, TypeError):
+            confidence_score = None
+
     try:
         # Record dismissal for pattern learning (Phase 3)
         # This will be used by the WorkLink Suggestion Log DocType when implemented
@@ -208,7 +225,8 @@ def dismiss_suggestion(task_id, doctype, doc_id, reason=""):
             doctype=doctype,
             doc_id=doc_id,
             action="dismissed",
-            notes=reason
+            notes=reason,
+            confidence_score=confidence_score
         )
 
         frappe.db.commit()
