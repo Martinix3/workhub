@@ -223,6 +223,24 @@
 	border-radius: var(--radius-sm);
 }
 
+/* Slack Time Badge */
+.gantt-task-bar__slack {
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	padding: 2px 6px;
+	background: var(--info);
+	color: white;
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: var(--weight-bold);
+	border: 2px solid var(--border-1);
+	box-shadow: var(--shadow-xs);
+	z-index: 10;
+	pointer-events: none;
+	white-space: nowrap;
+}
+
 /* Resize Handles */
 .gantt-task-bar__handle {
 	position: absolute;
@@ -631,23 +649,6 @@
 	left: 100%;
 	top: 0;
 	margin-left: -2px;
-}
-
-/* === SLACK TIME INDICATOR === */
-.gantt-task-bar__slack {
-	position: absolute;
-	right: -8px;
-	top: 50%;
-	transform: translateY(-50%);
-	padding: var(--space-1) var(--space-2);
-	background: var(--success-soft);
-	border: 1px solid var(--success);
-	font-family: var(--font-mono);
-	font-size: 10px;
-	font-weight: var(--weight-bold);
-	color: var(--success);
-	white-space: nowrap;
-	pointer-events: none;
 }
 
 /* === LOADING STATE === */

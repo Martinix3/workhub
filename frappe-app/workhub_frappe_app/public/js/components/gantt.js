@@ -49,6 +49,7 @@
 			this.dependencies = [];
 			this.milestones = [];
 			this.criticalPath = [];
+		this.slackTimes = {}; // Slack time for each task (in days)
 
 			// Date range
 			this.startDate = null;
@@ -482,6 +483,18 @@
 			bar.appendChild(progressOverlay);
 		}
 
+		// Slack time badge for non-critical tasks (when critical path is shown)
+		if (this.showCriticalPath && !this.criticalPath.includes(task.name)) {
+			const slack = this.slackTimes[task.name];
+			if (slack !== undefined && slack > 0) {
+				const slackBadge = document.createElement('div');
+				slackBadge.className = 'gantt-task-bar__slack';
+				slackBadge.textContent = `+${slack}d`;
+				slackBadge.title = `Holgura: ${slack} días`;
+				bar.appendChild(slackBadge);
+			}
+		}
+
 		// Drag handles (for future drag-and-drop - Phase 4)
 		const handleLeft = document.createElement('div');
 		handleLeft.className = 'gantt-task-bar__handle gantt-task-bar__handle--left';
@@ -865,8 +878,66 @@
 		 */
 		toggleCriticalPath(show) {
 			this.showCriticalPath = show;
-			// TODO: Implement critical path highlighting in phase 6
-			this.render();
+
+			if (show) {
+				// Call backend API to calculate critical path and slack times
+				this._calculateCriticalPath();
+			} else {
+				// Just re-render without critical path highlighting
+				this.render();
+			}
+		}
+
+		/**
+		 * Calculate critical path by calling backend API
+		 * @private
+		 */
+		_calculateCriticalPath() {
+			if (!this.project || !this.project.name) {
+				frappe.msgprint(__('No se pudo calcular la ruta crítica: proyecto no cargado'));
+				return;
+			}
+
+			// Show loading indicator
+			frappe.freeze(__('Calculando ruta crítica...'));
+
+			// Call API
+			frappe.call({
+				method: 'workhub_frappe_app.api.gantt.get_critical_path',
+				args: {
+					project_id: this.project.name
+				},
+				callback: (response) => {
+					frappe.unfreeze();
+
+					if (response.message) {
+						// Update critical path and slack times
+						this.criticalPath = response.message.critical_path || [];
+						this.slackTimes = response.message.slack_times || {};
+
+						// Re-render to show highlighting
+						this.render();
+
+						// Show success message with project duration
+						const duration = response.message.project_duration || 0;
+						const criticalCount = this.criticalPath.length;
+
+						frappe.show_alert({
+							message: __(`Ruta crítica calculada: ${criticalCount} tareas críticas, duración del proyecto: ${duration} días`),
+							indicator: 'green'
+						}, 5);
+					}
+				},
+				error: (error) => {
+					frappe.unfreeze();
+					frappe.msgprint({
+						title: __('Error'),
+						message: __('No se pudo calcular la ruta crítica'),
+						indicator: 'red'
+					});
+					console.error('Critical path calculation error:', error);
+				}
+			});
 		}
 
 		/**
