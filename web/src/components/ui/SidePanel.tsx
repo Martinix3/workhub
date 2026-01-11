@@ -1,5 +1,6 @@
-import { useEffect, useCallback, type ReactNode } from 'react'
+import { useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { useFocusTrap } from '../../hooks'
 
 interface SidePanelProps {
   isOpen: boolean
@@ -23,6 +24,12 @@ export function SidePanel({
   children,
   width = 'lg'
 }: SidePanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const titleId = `sidepanel-title-${useRef(Math.random().toString(36).slice(2, 11)).current}`
+
+  // Trap focus within the panel when open
+  useFocusTrap(panelRef, isOpen)
+
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }, [onClose])
@@ -49,7 +56,12 @@ export function SidePanel({
       />
 
       {/* Panel - slides from right */}
-      <div className={`
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        className={`
         ml-auto relative ${widthClasses[width]}
         h-full
         bg-white dark:bg-stone-900
@@ -61,11 +73,12 @@ export function SidePanel({
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b-2 border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-800">
-            <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            <h2 id={titleId} className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
               {title}
             </h2>
             <button
               onClick={onClose}
+              aria-label="Close panel"
               className="p-1.5 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
             >
               <X size={20} className="text-stone-500" />
@@ -77,6 +90,7 @@ export function SidePanel({
         {!title && (
           <button
             onClick={onClose}
+            aria-label="Close panel"
             className="absolute top-4 right-4 p-1.5 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors z-10"
           >
             <X size={20} className="text-stone-500" />
