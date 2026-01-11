@@ -20,6 +20,10 @@ def get_custom_kpis(department=None, user=None, include_shared=True):
 
 	Returns:
 		list: List of custom KPI dictionaries with current values
+		      - User's own KPIs (marked with is_owned=True)
+		      - Shared KPIs from same department (marked with is_owned=False)
+		      If department is specified, only returns KPIs from that department.
+		      If department is not specified, returns KPIs from all user's departments.
 	"""
 	require_auth()
 
@@ -44,25 +48,42 @@ def get_custom_kpis(department=None, user=None, include_shared=True):
 		kpi["is_owned"] = True
 
 	# Get shared KPIs if requested
-	if include_shared and department:
-		shared_filters = {
-			"is_shared": 1,
-			"department": department,
-			"owner_user": ["!=", user]
-		}
+	if include_shared:
+		if department:
+			# If department is specified, get shared KPIs from that department only
+			shared_filters = {
+				"is_shared": 1,
+				"department": department,
+				"owner_user": ["!=", user]
+			}
+		else:
+			# If no department specified, get shared KPIs from user's departments
+			from workhub_frappe_app.api.settings import get_user_departments
+			user_departments = get_user_departments(user)
 
-		shared_kpis = frappe.get_all(
-			"WH Custom KPI",
-			filters=shared_filters,
-			fields=["*"],
-			order_by="display_order, creation"
-		)
+			if user_departments:
+				shared_filters = {
+					"is_shared": 1,
+					"department": ["in", user_departments],
+					"owner_user": ["!=", user]
+				}
+			else:
+				# User has no departments, skip shared KPIs
+				shared_filters = None
 
-		# Mark as shared
-		for kpi in shared_kpis:
-			kpi["is_owned"] = False
+		if shared_filters:
+			shared_kpis = frappe.get_all(
+				"WH Custom KPI",
+				filters=shared_filters,
+				fields=["*"],
+				order_by="display_order, creation"
+			)
 
-		kpis.extend(shared_kpis)
+			# Mark as shared
+			for kpi in shared_kpis:
+				kpi["is_owned"] = False
+
+			kpis.extend(shared_kpis)
 
 	# Get current values for each KPI
 	for kpi in kpis:
@@ -312,9 +333,17 @@ def calculate_kpi_value(kpi_name, date_from=None, date_to=None, use_cache=True):
 	kpi_doc = frappe.get_doc("WH Custom KPI", kpi_name)
 
 	# Verify user has access to this KPI
-	if kpi_doc.owner_user != frappe.session.user and not kpi_doc.is_shared:
-		if not frappe.has_permission("WH Custom KPI", "read", kpi_doc):
-			frappe.throw(_("You don't have permission to view this KPI"))
+	if kpi_doc.owner_user != frappe.session.user:
+		# If not owner, check if it's shared with user's department
+		if kpi_doc.is_shared:
+			from workhub_frappe_app.api.settings import get_user_departments
+			user_departments = get_user_departments(frappe.session.user)
+			if kpi_doc.department not in user_departments:
+				frappe.throw(_("You don't have permission to view this KPI"))
+		else:
+			# Not shared, check standard permissions
+			if not frappe.has_permission("WH Custom KPI", "read", kpi_doc):
+				frappe.throw(_("You don't have permission to view this KPI"))
 
 	# Calculate current period value
 	current_result = kpi_doc.get_current_value(date_from=date_from, date_to=date_to)
