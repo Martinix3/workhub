@@ -5,7 +5,7 @@ import type { NavigationSection } from './components/shell/types'
 import { AuthProvider, useAuth, LoginPage, ProtectedRoute, RoleGuard } from './auth'
 import { LoadingState } from './components/ui/LoadingState'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { SmartNotepadFAB } from './components/smart-notepad'
+import { GlobalActions } from './components/GlobalActions'
 
 // Lazy-loaded Page Components (code splitting)
 const CommandCenterPage = lazy(() => import('./pages/CommandCenterPage').then(m => ({ default: m.CommandCenterPage })))
@@ -205,8 +205,8 @@ function AppContent() {
         </Suspense>
       </ErrorBoundary>
 
-      {/* Smart Notepad FAB - available on all pages */}
-      <SmartNotepadFAB />
+      {/* Global Actions (Smart Notepad + Quick Task) - available on all pages */}
+      <GlobalActions />
     </AppShell>
   )
 }
