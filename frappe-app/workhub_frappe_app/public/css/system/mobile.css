@@ -382,8 +382,23 @@
 
 /* === PERFORMANCE OPTIMIZATIONS === */
 
+/**
+ * GPU Acceleration Strategy for 60fps Animations
+ *
+ * Best practices for smooth mobile animations:
+ * 1. Use GPU-accelerated properties only: transform, opacity, filter
+ * 2. Avoid animating: width, height, top, left, margin, padding (triggers layout)
+ * 3. Use will-change sparingly - add before animation, remove after
+ * 4. Prefer transform: translate() over position changes
+ * 5. Use transform: scale() instead of width/height changes
+ * 6. Batch DOM reads and writes (avoid layout thrashing)
+ * 7. Use requestAnimationFrame for JavaScript animations
+ * 8. Keep animations under 300ms for perceived instant feedback
+ */
+
 /* GPU acceleration for animations on mobile */
 @media (max-width: 767px) {
+	/* Base GPU acceleration - applied always */
 	.mobile-accelerate,
 	.btn,
 	.modal,
@@ -392,8 +407,160 @@
 		transform: translateZ(0);
 		-webkit-backface-visibility: hidden;
 		backface-visibility: hidden;
-		will-change: transform;
 	}
+
+	/* will-change hint - only for actively animating elements */
+	.mobile-accelerate.animating,
+	.btn:active,
+	.modal.opening,
+	.modal.closing,
+	.sidebar.transitioning {
+		will-change: transform, opacity;
+	}
+
+	/* Remove will-change after animation completes */
+	.mobile-accelerate.animation-done,
+	.btn:not(:active),
+	.modal.open,
+	.modal.closed,
+	.sidebar.open,
+	.sidebar.closed {
+		will-change: auto;
+	}
+}
+
+/* GPU-accelerated animations - always use transform & opacity */
+@media (max-width: 767px) {
+	/* Slide animations - use translate instead of left/right */
+	.slide-in-left {
+		animation: mobile-slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.slide-in-right {
+		animation: mobile-slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.slide-in-up {
+		animation: mobile-slide-in-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.slide-in-down {
+		animation: mobile-slide-in-down 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* Fade animations - opacity only */
+	.fade-in {
+		animation: mobile-fade-in 0.25s ease-out;
+	}
+
+	.fade-out {
+		animation: mobile-fade-out 0.25s ease-out;
+	}
+
+	/* Scale animations - use transform scale */
+	.scale-in {
+		animation: mobile-scale-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	.scale-out {
+		animation: mobile-scale-out 0.2s ease-out;
+	}
+}
+
+/* 60fps Animation Keyframes - GPU-accelerated only */
+@keyframes mobile-slide-in-left {
+	from {
+		transform: translateX(-100%) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-slide-in-right {
+	from {
+		transform: translateX(100%) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-slide-in-up {
+	from {
+		transform: translateY(100%) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-slide-in-down {
+	from {
+		transform: translateY(-100%) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-fade-in {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes mobile-fade-out {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+
+@keyframes mobile-scale-in {
+	from {
+		transform: scale(0.9) translateZ(0);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1) translateZ(0);
+		opacity: 1;
+	}
+}
+
+@keyframes mobile-scale-out {
+	from {
+		transform: scale(1) translateZ(0);
+		opacity: 1;
+	}
+	to {
+		transform: scale(0.9) translateZ(0);
+		opacity: 0;
+	}
+}
+
+/* Performance monitoring classes */
+.perf-monitor {
+	/* Use to identify elements that might cause performance issues */
+	outline: 2px dashed red;
+	outline-offset: 2px;
+}
+
+.perf-monitor::after {
+	content: '⚠️ Performance Warning';
+	position: absolute;
+	top: -20px;
+	left: 0;
+	background: red;
+	color: white;
+	padding: 2px 8px;
+	font-size: 10px;
+	z-index: 10000;
 }
 
 /* === LANDSCAPE ORIENTATION ADJUSTMENTS === */

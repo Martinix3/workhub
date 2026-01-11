@@ -29,7 +29,6 @@
 	transform: translateZ(0);
 	-webkit-backface-visibility: hidden;
 	backface-visibility: hidden;
-	will-change: transform;
 	/* Prevent text selection */
 	-webkit-user-select: none;
 	user-select: none;
@@ -52,6 +51,12 @@
 	transform: translateZ(0) scale(0.95);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
 	            0 1px 4px rgba(0, 0, 0, 0.1);
+	will-change: transform; /* Add will-change during active state */
+}
+
+/* Remove will-change when not active */
+.wh-fab:not(:active) {
+	will-change: auto;
 }
 
 /* Hidden state */

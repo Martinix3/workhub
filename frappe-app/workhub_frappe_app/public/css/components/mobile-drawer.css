@@ -48,20 +48,30 @@
 	-webkit-transform: translateZ(0) translateY(100%);
 	-webkit-backface-visibility: hidden;
 	backface-visibility: hidden;
-	will-change: transform;
 	/* Neobrutalismo shadow */
 	box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Add will-change during opening animation */
+.wh-drawer.opening {
+	will-change: transform;
 }
 
 /* Open state */
 .wh-drawer.open {
 	transform: translateY(0);
 	-webkit-transform: translateZ(0) translateY(0);
+	will-change: auto; /* Remove will-change when stable */
 }
 
 /* During swipe gesture - no transition */
 .wh-drawer.dragging {
 	transition: none;
+	will-change: transform;
+}
+
+/* Add will-change during closing animation */
+.wh-drawer.closing {
 	will-change: transform;
 }
 

@@ -15,7 +15,17 @@
 	/* GPU acceleration for smooth swipe animations */
 	transform: translateZ(0);
 	backface-visibility: hidden;
+}
+
+/* Add will-change only during swipe gesture */
+.wh-swipeable-task.swiping {
 	will-change: transform;
+}
+
+/* Remove will-change after swipe completes */
+.wh-swipeable-task.completed,
+.wh-swipeable-task.resetting {
+	will-change: auto;
 }
 
 /* === Task Content Wrapper (slides during swipe) === */
