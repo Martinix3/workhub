@@ -291,7 +291,17 @@ def notify_blocked_dependencies():
 # ========== HELPER FUNCTIONS ==========
 
 def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None):
-    """Crear una notificacion"""
+    """
+    Crear una notificacion
+
+    SECURITY: This is an internal helper function for creating system-generated notifications.
+    - NOT exposed as an API endpoint (not decorated with @frappe.whitelist())
+    - Called by scheduler functions (send_overdue_alerts, check_project_health, notify_blocked_dependencies)
+    - Called by internal notification helpers (notify_task_assigned, notify_task_completed)
+    - Creates notifications FOR users, not BY users (system-generated)
+    - Regular users don't have create permission on WH Notification doctype
+    - Enables automated notification system without requiring user permissions
+    """
     doc = frappe.new_doc("WH Notification")
     doc.user = user
     doc.type = notification_type
@@ -302,7 +312,7 @@ def create_notification(user, notification_type, title, message, reference_docty
     doc.priority = priority
     doc.action_url = action_url
     doc.created_at = now_datetime()
-    doc.insert(ignore_permissions=True)
+    doc.insert(ignore_permissions=True)  # Safe: Internal function for system notifications (see docstring)
     return doc.name
 
 
