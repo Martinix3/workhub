@@ -43,9 +43,12 @@ def get_custom_kpis(department=None, user=None, include_shared=True):
 		order_by="display_order, creation"
 	)
 
-	# Mark as owned
+	# Mark as owned and add owner name
 	for kpi in kpis:
 		kpi["is_owned"] = True
+		# Add owner's full name
+		owner_name = frappe.db.get_value("User", kpi.get("owner_user"), "full_name")
+		kpi["owner_name"] = owner_name or kpi.get("owner_user")
 
 	# Get shared KPIs if requested
 	if include_shared:
@@ -79,9 +82,12 @@ def get_custom_kpis(department=None, user=None, include_shared=True):
 				order_by="display_order, creation"
 			)
 
-			# Mark as shared
+			# Mark as shared and add owner name
 			for kpi in shared_kpis:
 				kpi["is_owned"] = False
+				# Add owner's full name
+				owner_name = frappe.db.get_value("User", kpi.get("owner_user"), "full_name")
+				kpi["owner_name"] = owner_name or kpi.get("owner_user")
 
 			kpis.extend(shared_kpis)
 

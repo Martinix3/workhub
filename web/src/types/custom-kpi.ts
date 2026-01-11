@@ -103,6 +103,8 @@ export interface CustomKPI extends ThresholdConfig {
   department: Exclude<Department, 'ALL'>
   /** User who owns this KPI */
   owner_user: string
+  /** Owner's full name (added by API) */
+  owner_name?: string
   /** How to visualize this KPI */
   visualization_type: VisualizationType
   /** Whether this KPI is shared with department members */

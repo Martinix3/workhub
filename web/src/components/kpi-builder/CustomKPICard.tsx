@@ -358,7 +358,7 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
         className={`
           relative
           bg-white dark:bg-stone-900
-          border-2 ${getStatusBorderColor()}
+          ${kpi.is_owned ? `border-2 ${getStatusBorderColor()}` : 'border-2 border-dashed border-stone-400 dark:border-stone-500'}
           p-4 lg:p-6
           shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
           ${onClick ? 'hover:shadow-[2px_2px_0_#1c1917] dark:hover:shadow-[2px_2px_0_#fafaf9] hover:translate-x-[2px] hover:translate-y-[2px] cursor-pointer' : ''}
@@ -370,7 +370,10 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
         {!kpi.is_owned && (
           <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
             <Users size={12} />
-            <span className="hidden lg:inline">Shared</span>
+            <span className="hidden sm:inline">
+              Shared by {kpi.owner_name || kpi.owner_user}
+            </span>
+            <span className="sm:hidden">Shared</span>
           </div>
         )}
 
