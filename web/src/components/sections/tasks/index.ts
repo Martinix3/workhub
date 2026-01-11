@@ -1,4 +1,4 @@
 // Task Management Components
 export { MyDay } from './MyDay'
-export { WorkLinkSuggestions } from './WorkLinkSuggestions'
+export { WorkLinkSuggestions, DOCTYPE_CONFIG } from './WorkLinkSuggestions'
 export type * from './types'

@@ -2,6 +2,7 @@
 // Displays document suggestions with accept/dismiss actions
 import { Check, X, FileText, Package, TrendingUp, DollarSign, Briefcase, Calendar, AlertCircle, Search } from 'lucide-react'
 import type { WorkLinkSuggestion } from '../../../api/services/worklink-suggestions'
+import type { WorkLinkDocType, WorkLinkDocTypeConfig } from './types'
 
 interface WorkLinkSuggestionsProps {
   suggestions: WorkLinkSuggestion[]
@@ -14,7 +15,7 @@ interface WorkLinkSuggestionsProps {
 }
 
 // Map DocTypes to icons and Spanish labels
-const DOCTYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+export const DOCTYPE_CONFIG: Record<WorkLinkDocType, WorkLinkDocTypeConfig> = {
   'Sales Order': { icon: <DollarSign size={16} />, label: 'Pedido', color: 'text-green-600' },
   'Delivery Note': { icon: <Package size={16} />, label: 'Entrega', color: 'text-blue-600' },
   'Sales Invoice': { icon: <FileText size={16} />, label: 'Factura', color: 'text-purple-600' },
@@ -34,8 +35,8 @@ const DOCTYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string; col
 }
 
 // Get config for a DocType with fallback
-function getDocTypeConfig(doctype: string) {
-  return DOCTYPE_CONFIG[doctype] || {
+function getDocTypeConfig(doctype: string): WorkLinkDocTypeConfig {
+  return DOCTYPE_CONFIG[doctype as WorkLinkDocType] || {
     icon: <FileText size={16} />,
     label: doctype,
     color: 'text-stone-600'
