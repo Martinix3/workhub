@@ -3,7 +3,7 @@
   "spec": "023-worklink-auto-suggestions",
   "state": "building",
   "subtasks": {
-    "completed": 8,
+    "completed": 9,
     "total": 17,
     "in_progress": 1,
     "failed": 0
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 6,
+    "number": 7,
     "started_at": "2026-01-11T07:56:17.904672"
   },
-  "last_update": "2026-01-11T08:08:58.770094"
+  "last_update": "2026-01-11T08:11:59.519520"
 }
