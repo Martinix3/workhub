@@ -5,6 +5,8 @@ import frappe
 from frappe import _
 from frappe.utils import today, nowdate, add_days
 
+from workhub_frappe_app.api.utils import sanitize_search_term
+
 
 def execute_actions(parsed_note: dict, customer_id: str) -> list:
     """
@@ -324,6 +326,7 @@ def find_item_by_description(description: str) -> str:
         return None
 
     description = description.strip().lower()
+    description = sanitize_search_term(description)
 
     # Try exact match
     item = frappe.db.get_value(
@@ -340,9 +343,10 @@ def find_item_by_description(description: str) -> str:
     for keyword in keywords:
         if len(keyword) < 3:
             continue
+        sanitized_keyword = sanitize_search_term(keyword)
         item = frappe.db.get_value(
             "Item",
-            {"item_name": ["like", f"%{keyword}%"], "disabled": 0},
+            {"item_name": ["like", f"%{sanitized_keyword}%"], "disabled": 0},
             "name"
         )
         if item:
