@@ -9,6 +9,29 @@ import json
 from workhub_frappe_app.api.utils import require_auth, require_permission
 
 
+def _enrich_task_assignees(task):
+    """Enrich task with assignees data including user info"""
+    if not task.get("name"):
+        return []
+
+    assignees = frappe.get_all("WH Task Assignee",
+        filters={"parent": task["name"]},
+        fields=["user", "role", "added_at", "added_by"],
+        order_by="idx"
+    )
+
+    # Enrich with user info
+    for assignee in assignees:
+        if assignee.get("user"):
+            user_info = frappe.db.get_value("User", assignee["user"],
+                ["full_name", "email"], as_dict=True)
+            if user_info:
+                assignee["user_name"] = user_info.full_name
+                assignee["user_email"] = user_info.email
+
+    return assignees
+
+
 @frappe.whitelist()
 def get_projects(filters=None, limit=50, offset=0):
     """Get project list with optional filters"""
@@ -77,10 +100,16 @@ def get_project(project_id):
     # Get tasks grouped by status
     tasks_by_status = {}
     for status in ["BACKLOG", "NEXT", "DOING", "BLOCKED", "DONE"]:
-        tasks_by_status[status] = frappe.get_all("WH Task",
+        tasks = frappe.get_all("WH Task",
             filters={"project": project_id, "status": status},
             fields=["name", "title", "priority", "assigned_to", "due_date", "is_milestone"],
             order_by="priority asc, due_date asc")
+
+        # Enrich with assignees
+        for task in tasks:
+            task["assignees"] = _enrich_task_assignees(task)
+
+        tasks_by_status[status] = tasks
 
     # Get milestones
     milestones = frappe.get_all("WH Task",
@@ -88,12 +117,13 @@ def get_project(project_id):
         fields=["name", "title", "status", "due_date"],
         order_by="due_date asc")
 
-    # Get team members
+    # Get team members (from assignees table)
     team = frappe.db.sql("""
-        SELECT assigned_to as user, COUNT(*) as task_count
-        FROM `tabWH Task`
-        WHERE project = %s
-        GROUP BY assigned_to
+        SELECT ta.user, COUNT(DISTINCT ta.parent) as task_count
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON ta.parent = t.name
+        WHERE t.project = %s
+        GROUP BY ta.user
     """, (project_id,), as_dict=True)
 
     for member in team:
@@ -485,8 +515,11 @@ def get_board(project_id=None, filters=None):
             ],
             order_by="priority asc, due_date asc")
 
-        # Enrich with project info and overdue flag
+        # Enrich with project info, assignees, and overdue flag
         for task in tasks:
+            # Add assignees
+            task["assignees"] = _enrich_task_assignees(task)
+
             if task.get("due_date") and status != "DONE":
                 task["is_overdue"] = getdate(task["due_date"]) < getdate(nowdate())
             else:
