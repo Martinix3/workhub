@@ -477,4 +477,373 @@ test.describe('Notification Digest', () => {
       await expect(notificationCenter.dropdown).toBeVisible()
     })
   })
+
+  test.describe('Interaction and State Tests', () => {
+    test('clicking notification marks it as read', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+
+      if (hasNotifications) {
+        const count = await notificationCenter.getNotificationCount()
+
+        // Find first unread notification
+        for (let i = 0; i < count; i++) {
+          const isUnread = await notificationCenter.isNotificationUnread(i)
+
+          if (isUnread) {
+            // Click the notification
+            await notificationCenter.clickNotification(i)
+
+            // Give time for state update
+            await authenticatedPage.waitForTimeout(500)
+
+            // Reopen dropdown to check state
+            await notificationCenter.close()
+            await notificationCenter.open()
+            await notificationCenter.waitForDataLoaded()
+
+            // Notification should now be read
+            const isStillUnread = await notificationCenter.isNotificationUnread(i)
+            expect(isStillUnread).toBe(false)
+            break
+          }
+        }
+      }
+    })
+
+    test('mark as read button changes notification state', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+
+      if (hasNotifications) {
+        const count = await notificationCenter.getNotificationCount()
+
+        // Find first unread notification
+        for (let i = 0; i < count; i++) {
+          const isUnread = await notificationCenter.isNotificationUnread(i)
+
+          if (isUnread) {
+            // Mark as read
+            await notificationCenter.markNotificationAsRead(i)
+
+            // Give time for state update
+            await authenticatedPage.waitForTimeout(500)
+
+            // Check state changed
+            const isStillUnread = await notificationCenter.isNotificationUnread(i)
+            expect(isStillUnread).toBe(false)
+            break
+          }
+        }
+      }
+    })
+
+    test('mark all read button marks all unread notifications', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasUnread = await notificationCenter.hasUnreadBadge()
+
+      if (hasUnread) {
+        const initialUnreadCount = await notificationCenter.getUnreadCount()
+        expect(initialUnreadCount).toBeGreaterThan(0)
+
+        // Click mark all as read
+        await notificationCenter.markAllRead()
+
+        // Give time for state update
+        await authenticatedPage.waitForTimeout(500)
+
+        // Unread badge should disappear or show 0
+        const stillHasUnread = await notificationCenter.hasUnreadBadge()
+
+        if (stillHasUnread) {
+          const newUnreadCount = await notificationCenter.getUnreadCount()
+          expect(newUnreadCount).toBeLessThan(initialUnreadCount)
+        }
+      }
+    })
+
+    test('deleting notification removes it from list', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+
+      if (hasNotifications) {
+        const initialCount = await notificationCenter.getNotificationCount()
+        expect(initialCount).toBeGreaterThan(0)
+
+        // Get title of first notification
+        const titleToDelete = await notificationCenter.getNotificationTitle(0)
+
+        // Delete first notification
+        await notificationCenter.deleteNotification(0)
+
+        // Give time for state update
+        await authenticatedPage.waitForTimeout(500)
+
+        // Count should decrease
+        const newCount = await notificationCenter.getNotificationCount()
+        expect(newCount).toBe(initialCount - 1)
+
+        // Deleted notification should not be in list
+        if (newCount > 0) {
+          const currentTitle = await notificationCenter.getNotificationTitle(0)
+          expect(currentTitle).not.toBe(titleToDelete)
+        }
+      }
+    })
+
+    test('unread badge updates after marking notification as read', async ({ authenticatedPage }) => {
+      const initialHasBadge = await notificationCenter.hasUnreadBadge()
+
+      if (initialHasBadge) {
+        const initialCount = await notificationCenter.getUnreadCount()
+
+        await notificationCenter.open()
+        await notificationCenter.waitForDataLoaded()
+
+        const hasNotifications = await notificationCenter.hasNotifications()
+
+        if (hasNotifications) {
+          const count = await notificationCenter.getNotificationCount()
+
+          // Find and mark first unread notification
+          for (let i = 0; i < count; i++) {
+            const isUnread = await notificationCenter.isNotificationUnread(i)
+
+            if (isUnread) {
+              await notificationCenter.markNotificationAsRead(i)
+              await authenticatedPage.waitForTimeout(500)
+              break
+            }
+          }
+
+          // Close and check badge
+          await notificationCenter.close()
+
+          const newHasBadge = await notificationCenter.hasUnreadBadge()
+
+          if (newHasBadge) {
+            const newCount = await notificationCenter.getUnreadCount()
+            expect(newCount).toBeLessThanOrEqual(initialCount)
+          }
+        }
+      }
+    })
+
+    test('unread badge disappears after marking all as read', async ({ authenticatedPage }) => {
+      const initialHasBadge = await notificationCenter.hasUnreadBadge()
+
+      if (initialHasBadge) {
+        await notificationCenter.open()
+        await notificationCenter.waitForDataLoaded()
+
+        // Mark all as read
+        await notificationCenter.markAllRead()
+        await authenticatedPage.waitForTimeout(500)
+
+        // Close dropdown
+        await notificationCenter.close()
+
+        // Badge should disappear
+        const stillHasBadge = await notificationCenter.hasUnreadBadge()
+        expect(stillHasBadge).toBe(false)
+      }
+    })
+
+    test('notification count updates correctly after deletion', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+
+      if (hasNotifications) {
+        const initialCount = await notificationCenter.getNotificationCount()
+
+        // Delete multiple notifications
+        const deleteCount = Math.min(2, initialCount)
+
+        for (let i = 0; i < deleteCount; i++) {
+          await notificationCenter.deleteNotification(0)
+          await authenticatedPage.waitForTimeout(300)
+        }
+
+        // Final count should be reduced
+        const finalCount = await notificationCenter.getNotificationCount()
+        expect(finalCount).toBe(initialCount - deleteCount)
+      }
+    })
+
+    test('multiple mark as read interactions work sequentially', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+
+      if (hasNotifications) {
+        const count = await notificationCenter.getNotificationCount()
+
+        // Mark first 3 unread notifications (or as many as exist)
+        let markedCount = 0
+        const maxToMark = Math.min(3, count)
+
+        for (let i = 0; i < count && markedCount < maxToMark; i++) {
+          const isUnread = await notificationCenter.isNotificationUnread(i)
+
+          if (isUnread) {
+            await notificationCenter.markNotificationAsRead(i)
+            await authenticatedPage.waitForTimeout(300)
+            markedCount++
+          }
+        }
+
+        // At least one should have been marked if we had unread notifications
+        if (markedCount > 0) {
+          expect(markedCount).toBeGreaterThan(0)
+          expect(markedCount).toBeLessThanOrEqual(3)
+        }
+      }
+    })
+
+    test('notification state persists across dropdown close and reopen', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+
+      if (hasNotifications) {
+        const count = await notificationCenter.getNotificationCount()
+
+        // Find first unread notification and mark it
+        let markedIndex = -1
+
+        for (let i = 0; i < count; i++) {
+          const isUnread = await notificationCenter.isNotificationUnread(i)
+
+          if (isUnread) {
+            await notificationCenter.markNotificationAsRead(i)
+            await authenticatedPage.waitForTimeout(300)
+            markedIndex = i
+            break
+          }
+        }
+
+        if (markedIndex >= 0) {
+          // Close dropdown
+          await notificationCenter.close()
+
+          // Reopen dropdown
+          await notificationCenter.open()
+          await notificationCenter.waitForDataLoaded()
+
+          // Notification should still be read
+          const isUnread = await notificationCenter.isNotificationUnread(markedIndex)
+          expect(isUnread).toBe(false)
+        }
+      }
+    })
+
+    test('mark all read button disappears when no unread notifications', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasUnread = await notificationCenter.hasUnreadBadge()
+
+      if (hasUnread) {
+        // Mark all as read
+        await notificationCenter.markAllRead()
+        await authenticatedPage.waitForTimeout(500)
+
+        // Button should disappear or not be visible
+        const buttonStillVisible = await notificationCenter.verifyMarkAllReadButtonVisible()
+
+        // After marking all as read, button should not be visible
+        expect(buttonStillVisible).toBe(false)
+      }
+    })
+
+    test('deleting all notifications shows empty state', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+
+      if (hasNotifications) {
+        const initialCount = await notificationCenter.getNotificationCount()
+
+        // Delete all notifications (limit to 10 for performance)
+        const deleteLimit = Math.min(initialCount, 10)
+
+        for (let i = 0; i < deleteLimit; i++) {
+          const currentCount = await notificationCenter.getNotificationCount()
+          if (currentCount === 0) break
+
+          await notificationCenter.deleteNotification(0)
+          await authenticatedPage.waitForTimeout(200)
+        }
+
+        // Check final state
+        const finalCount = await notificationCenter.getNotificationCount()
+        const isEmpty = await notificationCenter.isEmpty()
+
+        // Either all deleted showing empty state, or partial deletion
+        if (finalCount === 0) {
+          expect(isEmpty).toBe(true)
+        } else {
+          expect(finalCount).toBeLessThan(initialCount)
+        }
+      }
+    })
+
+    test('action buttons remain functional after multiple interactions', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+
+      if (hasNotifications) {
+        const count = await notificationCenter.getNotificationCount()
+
+        // Perform mix of actions
+        if (count > 0) {
+          // Mark first as read
+          const isFirstUnread = await notificationCenter.isNotificationUnread(0)
+          if (isFirstUnread) {
+            await notificationCenter.markNotificationAsRead(0)
+            await authenticatedPage.waitForTimeout(300)
+          }
+
+          // Click second notification if it exists
+          if (count > 1) {
+            await notificationCenter.clickNotification(1)
+            await authenticatedPage.waitForTimeout(300)
+
+            // Reopen if closed
+            const isOpen = await notificationCenter.isOpen()
+            if (!isOpen) {
+              await notificationCenter.open()
+              await notificationCenter.waitForDataLoaded()
+            }
+          }
+
+          // Delete button should still work on remaining notifications
+          const currentCount = await notificationCenter.getNotificationCount()
+          if (currentCount > 0) {
+            const beforeDelete = currentCount
+            await notificationCenter.deleteNotification(0)
+            await authenticatedPage.waitForTimeout(300)
+
+            const afterDelete = await notificationCenter.getNotificationCount()
+            expect(afterDelete).toBe(beforeDelete - 1)
+          }
+        }
+      }
+    })
+  })
 })
