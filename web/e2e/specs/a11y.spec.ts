@@ -102,27 +102,78 @@ test.describe('Accessibility - WCAG 2.1 AA', () => {
     })
 
     test('focus visible en elementos interactivos', async ({ authenticatedPage }) => {
-      await authenticatedPage.goto('/')
+      await authenticatedPage.goto('/ventas/pedidos')
       await authenticatedPage.waitForLoadState('domcontentloaded')
+      await authenticatedPage.waitForTimeout(500) // Wait for page to stabilize
 
-      // Tab to first focusable element
-      await authenticatedPage.keyboard.press('Tab')
+      // Tab through multiple elements to verify focus indicators
+      let foundFocusableElement = false
+      let testedElements = 0
+      const maxTabs = 10
 
-      // Check if focus is visible (outline or box-shadow)
-      const hasVisibleFocus = await authenticatedPage.evaluate(() => {
-        const el = document.activeElement
-        if (!el) return false
-        const styles = window.getComputedStyle(el)
-        return (
-          styles.outlineWidth !== '0px' ||
-          styles.outlineStyle !== 'none' ||
-          styles.boxShadow !== 'none'
-        )
-      })
+      for (let i = 0; i < maxTabs; i++) {
+        await authenticatedPage.keyboard.press('Tab')
 
-      // This may need adjustment based on actual focus styles
-      // For now, just verify we can tab
-      expect(hasVisibleFocus).toBeDefined()
+        // Get focused element info
+        const focusInfo = await authenticatedPage.evaluate(() => {
+          const el = document.activeElement
+          if (!el) return null
+
+          const tagName = el.tagName
+          const isInteractive = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(tagName)
+
+          if (!isInteractive) return null
+
+          const styles = window.getComputedStyle(el)
+
+          // Check for visible focus indicators
+          // Tailwind's ring utilities use box-shadow, so we need to check for that
+          const hasOutline = styles.outlineWidth !== '0px' &&
+                           styles.outlineWidth !== '' &&
+                           styles.outlineStyle !== 'none'
+
+          const hasBoxShadow = styles.boxShadow !== 'none' &&
+                             styles.boxShadow !== ''
+
+          // Check for ring width specifically (Tailwind focus:ring-2)
+          const hasVisibleRing = hasBoxShadow &&
+                               !styles.boxShadow.includes('0px 0px')
+
+          return {
+            tagName,
+            outlineWidth: styles.outlineWidth,
+            outlineStyle: styles.outlineStyle,
+            boxShadow: styles.boxShadow,
+            hasOutline,
+            hasBoxShadow,
+            hasVisibleRing,
+            hasVisibleFocus: hasOutline || hasVisibleRing
+          }
+        })
+
+        // If we found an interactive element, test it
+        if (focusInfo) {
+          foundFocusableElement = true
+          testedElements++
+
+          // Assert that the element has a visible focus indicator
+          expect(focusInfo.hasVisibleFocus,
+            `Element ${focusInfo.tagName} must have visible focus indicator. ` +
+            `Outline: ${focusInfo.outlineWidth}/${focusInfo.outlineStyle}, ` +
+            `BoxShadow: ${focusInfo.boxShadow}`
+          ).toBe(true)
+
+          // If we've successfully tested at least 3 interactive elements, we're done
+          if (testedElements >= 3) {
+            break
+          }
+        }
+      }
+
+      // Ensure we found and tested at least one focusable element
+      expect(foundFocusableElement,
+        'Should find at least one focusable element to test focus visibility'
+      ).toBe(true)
     })
   })
 

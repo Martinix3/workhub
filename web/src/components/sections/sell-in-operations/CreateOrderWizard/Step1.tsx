@@ -135,7 +135,7 @@ export function Step1({ formData, onFormDataChange, onNext, onCancel, isSaved }:
             bg-white dark:bg-stone-800
             border-2 border-stone-900 dark:border-stone-100
             text-sm text-stone-900 dark:text-stone-100
-            focus:outline-none focus:ring-0
+            focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-300
           "
         />
       </div>
