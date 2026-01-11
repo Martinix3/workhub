@@ -198,3 +198,35 @@ export const SCREENSHOT_WAIT_OPTIONS = {
 export const DISABLE_ANIMATIONS = {
   reducedMotion: 'reduce' as const,
 }
+
+/**
+ * Unified visual configuration object
+ * Consolidates all visual regression settings
+ */
+export const VISUAL_CONFIG = {
+  viewports: {
+    mobile: {
+      small: { width: 375, height: 667 },
+      medium: { width: 390, height: 844 },
+      large: { width: 414, height: 896 },
+    },
+    tablet: {
+      small: { width: 768, height: 1024 },
+      medium: { width: 834, height: 1194 },
+      large: { width: 1024, height: 1366 },
+    },
+    desktop: {
+      hd: { width: 1280, height: 720 },
+      fhd: { width: 1920, height: 1080 },
+      '2k': { width: 1440, height: 900 },
+    },
+  },
+  screenshots: {
+    thresholds: {
+      component: 100,
+      page: { maxDiffPixelRatio: 0.01 },
+      chart: 500,
+      animation: 200,
+    },
+  },
+} as const
