@@ -1,7 +1,7 @@
 // React hooks for Sales data
 import { useState, useEffect, useCallback } from 'react'
 import salesApi from '../services/sales'
-import type { Product, CreateOrderData, CreateOrderResponse, UpdateOrderData } from '../services/sales'
+import type { Product, CreateOrderData, CreateOrderResponse, UpdateOrderData, CancelOrderResponse } from '../services/sales'
 import type {
   KPIs,
   Customer,
@@ -328,4 +328,33 @@ export function useUpdateOrder() {
   }, [])
 
   return { updateOrder, loading, error }
+}
+
+export function useCancelOrder() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const cancelOrder = useCallback(async (orderId: string): Promise<CancelOrderResponse | null> => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await salesApi.cancelOrder(orderId)
+      return result
+    } catch (err) {
+      if (isInBypassMode()) {
+        // Simulate order cancellation in bypass mode
+        return {
+          success: true,
+          order_id: orderId,
+          message: 'Order cancelled successfully (bypass mode)'
+        }
+      }
+      setError(err instanceof Error ? err : new Error('Failed to cancel order'))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { cancelOrder, loading, error }
 }
