@@ -444,8 +444,7 @@ def get_products(search=None, limit=20):
         filters=filters,
         fields=["name", "item_name", "item_code", "stock_uom", "standard_rate", "image"],
         limit_page_length=int(limit),
-        order_by="item_name asc",
-        ignore_permissions=True
+        order_by="item_name asc"
     )
 
     # Add available stock for each item
