@@ -3,7 +3,7 @@ from frappe import _
 from frappe.utils import flt, today, get_first_day, get_last_day, add_months, add_days, now_datetime
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.utils import require_auth, require_permission, sanitize_search_term
 
 
 @frappe.whitelist()
@@ -120,7 +120,8 @@ def get_orders(filters=None, limit=50, offset=0):
         if filters.get("status"):
             filter_conditions["status"] = filters["status"]
         if filters.get("production_item"):
-            filter_conditions["production_item"] = ["like", f"%{filters['production_item']}%"]
+            sanitized_production_item = sanitize_search_term(filters['production_item'])
+            filter_conditions["production_item"] = ["like", f"%{sanitized_production_item}%"]
 
     orders = frappe.get_list("Work Order",
         filters=filter_conditions,
@@ -171,9 +172,11 @@ def get_lots(filters=None, limit=50, offset=0):
 
     if filters:
         if filters.get("item"):
-            filter_conditions["item"] = ["like", f"%{filters['item']}%"]
+            sanitized_item = sanitize_search_term(filters['item'])
+            filter_conditions["item"] = ["like", f"%{sanitized_item}%"]
         if filters.get("batch_id"):
-            filter_conditions["batch_id"] = ["like", f"%{filters['batch_id']}%"]
+            sanitized_batch_id = sanitize_search_term(filters['batch_id'])
+            filter_conditions["batch_id"] = ["like", f"%{sanitized_batch_id}%"]
 
     batches = frappe.get_list("Batch",
         filters=filter_conditions,
