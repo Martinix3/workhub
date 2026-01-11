@@ -6,12 +6,16 @@ from frappe import _
 from frappe.utils import nowdate
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.utils import require_auth, require_permission, require_any_role
 
 
 @frappe.whitelist()
 def get_reports(filters=None, limit=50, offset=0):
-	"""Get report list with optional filters"""
+	"""Get report list with optional filters
+
+	Permissions:
+		- All authenticated users can view reports
+	"""
 	require_auth()
 	if filters and isinstance(filters, str):
 		filters = json.loads(filters)
@@ -61,7 +65,11 @@ def get_reports(filters=None, limit=50, offset=0):
 
 @frappe.whitelist()
 def get_report_detail(report_id):
-	"""Get single report with full details including sections"""
+	"""Get single report with full details including sections
+
+	Permissions:
+		- All authenticated users can view reports
+	"""
 	require_auth()
 	if not report_id:
 		frappe.throw(_("Report ID is required"))
@@ -112,7 +120,13 @@ def get_report_detail(report_id):
 
 @frappe.whitelist()
 def create_report(data):
-	"""Create a new report definition"""
+	"""Create a new report definition
+
+	Permissions:
+		- Report Manager can create reports
+		- System Manager can create reports
+	"""
+	require_any_role("Report Manager", "System Manager")
 	require_permission("WH Report Definition", "create")
 	if isinstance(data, str):
 		data = json.loads(data)
@@ -145,7 +159,13 @@ def create_report(data):
 
 @frappe.whitelist()
 def update_report(report_id, data):
-	"""Update an existing report definition"""
+	"""Update an existing report definition
+
+	Permissions:
+		- Report Manager can edit reports
+		- System Manager can edit reports
+	"""
+	require_any_role("Report Manager", "System Manager")
 	require_permission("WH Report Definition", "write")
 	if isinstance(data, str):
 		data = json.loads(data)
@@ -186,7 +206,13 @@ def update_report(report_id, data):
 
 @frappe.whitelist()
 def delete_report(report_id):
-	"""Delete a report definition"""
+	"""Delete a report definition
+
+	Permissions:
+		- Report Manager can delete reports
+		- System Manager can delete reports
+	"""
+	require_any_role("Report Manager", "System Manager")
 	require_permission("WH Report Definition", "delete")
 	if not report_id:
 		frappe.throw(_("Report ID is required"))
@@ -207,7 +233,13 @@ def delete_report(report_id):
 
 @frappe.whitelist()
 def duplicate_report(report_id, new_title=None):
-	"""Duplicate an existing report"""
+	"""Duplicate an existing report
+
+	Permissions:
+		- Report Manager can duplicate reports
+		- System Manager can duplicate reports
+	"""
+	require_any_role("Report Manager", "System Manager")
 	require_permission("WH Report Definition", "create")
 	if not report_id:
 		frappe.throw(_("Report ID is required"))
@@ -244,7 +276,11 @@ def duplicate_report(report_id, new_title=None):
 
 @frappe.whitelist()
 def get_report_data_sources():
-	"""List available data sources for reports"""
+	"""List available data sources for reports
+
+	Permissions:
+		- All authenticated users can view data sources
+	"""
 	require_auth()
 
 	# Define available data sources with metadata
@@ -354,7 +390,11 @@ def get_report_data_sources():
 
 @frappe.whitelist()
 def execute_data_source(data_source_id, filters=None, config=None):
-	"""Execute a data source query and return formatted data"""
+	"""Execute a data source query and return formatted data
+
+	Permissions:
+		- All authenticated users can execute data sources
+	"""
 	require_auth()
 
 	if isinstance(filters, str):
@@ -769,7 +809,11 @@ def _execute_quality_metrics_data_source(filters, config):
 
 @frappe.whitelist()
 def generate_report(report_id, filters=None, config=None):
-	"""Generate a complete report with all section data"""
+	"""Generate a complete report with all section data
+
+	Permissions:
+		- All authenticated users can generate/view reports
+	"""
 	require_auth()
 
 	if isinstance(filters, str):
@@ -891,7 +935,13 @@ def generate_report(report_id, filters=None, config=None):
 
 @frappe.whitelist()
 def add_section(report_id, section_data):
-	"""Add a new section to a report"""
+	"""Add a new section to a report
+
+	Permissions:
+		- Report Manager can add sections
+		- System Manager can add sections
+	"""
+	require_any_role("Report Manager", "System Manager")
 	require_permission("WH Report Definition", "write")
 
 	if isinstance(section_data, str):
@@ -950,7 +1000,13 @@ def add_section(report_id, section_data):
 
 @frappe.whitelist()
 def update_section(report_id, section_name, section_data):
-	"""Update an existing section"""
+	"""Update an existing section
+
+	Permissions:
+		- Report Manager can update sections
+		- System Manager can update sections
+	"""
+	require_any_role("Report Manager", "System Manager")
 	require_permission("WH Report Definition", "write")
 
 	if isinstance(section_data, str):
@@ -1010,7 +1066,13 @@ def update_section(report_id, section_name, section_data):
 
 @frappe.whitelist()
 def delete_section(report_id, section_name):
-	"""Delete a section from a report"""
+	"""Delete a section from a report
+
+	Permissions:
+		- Report Manager can delete sections
+		- System Manager can delete sections
+	"""
+	require_any_role("Report Manager", "System Manager")
 	require_permission("WH Report Definition", "write")
 
 	if not report_id:
@@ -1055,7 +1117,13 @@ def delete_section(report_id, section_name):
 
 @frappe.whitelist()
 def reorder_sections(report_id, section_order):
-	"""Reorder sections in a report"""
+	"""Reorder sections in a report
+
+	Permissions:
+		- Report Manager can reorder sections
+		- System Manager can reorder sections
+	"""
+	require_any_role("Report Manager", "System Manager")
 	require_permission("WH Report Definition", "write")
 
 	if isinstance(section_order, str):

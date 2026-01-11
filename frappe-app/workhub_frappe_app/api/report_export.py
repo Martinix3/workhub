@@ -1002,6 +1002,9 @@ def export_report(report_id, format, filters=None):
 	Main API endpoint for report exports. Routes to appropriate export function
 	based on format parameter.
 
+	Permissions:
+		- All authenticated users can export reports
+
 	Args:
 		report_id: Report definition ID
 		format: Export format (PDF/Excel/CSV)
@@ -1057,6 +1060,9 @@ def get_export_status(job_id):
 
 	Used for checking async export status. Returns the current status
 	and file URL if completed.
+
+	Permissions:
+		- All authenticated users can check export status
 
 	Args:
 		job_id: WH Generated Report ID (the export job identifier)
@@ -1130,6 +1136,9 @@ def download_report(generated_report_id):
 
 	Returns the file URL for direct download of a previously generated report.
 
+	Permissions:
+		- All authenticated users can download generated reports
+
 	Args:
 		generated_report_id: WH Generated Report ID
 
@@ -1194,6 +1203,9 @@ def send_report_email(report_id, recipients, export_format="PDF", filters=None,
 	"""
 	Generate a report and send it via email to specified recipients
 	This is a general-purpose function for ad-hoc report sharing
+
+	Permissions:
+		- All authenticated users can send reports via email
 
 	Args:
 		report_id: ID of the WH Report Definition to generate

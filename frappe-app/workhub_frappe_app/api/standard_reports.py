@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.utils import require_auth, require_permission, require_any_role
 
 
 def setup_standard_reports():
@@ -934,8 +934,11 @@ def install_standard_reports():
 	"""
 	Install all standard report templates
 	Called during app installation or migration
+
+	Permissions:
+		- System Manager can install standard reports
 	"""
-	require_auth()
+	require_any_role("System Manager")
 	require_permission("WH Report Definition", "create")
 
 	created_reports = []
@@ -977,6 +980,9 @@ def install_standard_reports():
 def get_standard_reports():
 	"""
 	Get list of available standard reports
+
+	Permissions:
+		- All authenticated users can view standard reports
 	"""
 	require_auth()
 

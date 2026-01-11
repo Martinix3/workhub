@@ -6,13 +6,17 @@ from frappe import _
 from frappe.utils import now_datetime, get_datetime, format_datetime
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.utils import require_auth, require_permission, require_any_role
 
 
 @frappe.whitelist()
 def get_scheduled_reports(filters=None, limit=50, offset=0):
 	"""
 	Get list of scheduled reports with optional filters
+
+	Permissions:
+		- System Manager can view scheduled reports
+		- Report Manager can view scheduled reports
 
 	Args:
 		filters: Optional dict with filter criteria (report_definition, is_active, schedule_type)
@@ -22,7 +26,7 @@ def get_scheduled_reports(filters=None, limit=50, offset=0):
 	Returns:
 		List of scheduled reports with enriched data
 	"""
-	require_auth()
+	require_any_role("System Manager", "Report Manager")
 
 	if filters and isinstance(filters, str):
 		filters = json.loads(filters)
@@ -99,12 +103,17 @@ def create_schedule(data):
 	"""
 	Create a new scheduled report
 
+	Permissions:
+		- System Manager can create schedules
+		- Report Manager can create schedules
+
 	Args:
 		data: Dict with schedule configuration (report_definition, schedule_name, schedule_type, etc.)
 
 	Returns:
 		Dict with success status and created schedule ID
 	"""
+	require_any_role("System Manager", "Report Manager")
 	require_permission("WH Scheduled Report", "create")
 
 	if isinstance(data, str):
@@ -165,6 +174,10 @@ def update_schedule(schedule_id, data):
 	"""
 	Update an existing scheduled report
 
+	Permissions:
+		- System Manager can update schedules
+		- Report Manager can update schedules
+
 	Args:
 		schedule_id: ID of the schedule to update
 		data: Dict with updated fields
@@ -172,6 +185,7 @@ def update_schedule(schedule_id, data):
 	Returns:
 		Dict with success status
 	"""
+	require_any_role("System Manager", "Report Manager")
 	require_permission("WH Scheduled Report", "write")
 
 	if isinstance(data, str):
@@ -222,12 +236,17 @@ def delete_schedule(schedule_id):
 	"""
 	Delete a scheduled report
 
+	Permissions:
+		- System Manager can delete schedules
+		- Report Manager can delete schedules
+
 	Args:
 		schedule_id: ID of the schedule to delete
 
 	Returns:
 		Dict with success status
 	"""
+	require_any_role("System Manager", "Report Manager")
 	require_permission("WH Scheduled Report", "delete")
 
 	if not schedule_id:
@@ -244,6 +263,10 @@ def toggle_schedule(schedule_id, is_active=None):
 	"""
 	Toggle the active status of a scheduled report
 
+	Permissions:
+		- System Manager can toggle schedules
+		- Report Manager can toggle schedules
+
 	Args:
 		schedule_id: ID of the schedule to toggle
 		is_active: Optional explicit value (0 or 1). If not provided, toggles current state.
@@ -251,6 +274,7 @@ def toggle_schedule(schedule_id, is_active=None):
 	Returns:
 		Dict with success status and new active state
 	"""
+	require_any_role("System Manager", "Report Manager")
 	require_permission("WH Scheduled Report", "write")
 
 	if not schedule_id:
@@ -281,6 +305,10 @@ def get_schedule_history(schedule_id, limit=50, offset=0):
 	"""
 	Get execution history for a scheduled report
 
+	Permissions:
+		- System Manager can view schedule history
+		- Report Manager can view schedule history
+
 	Args:
 		schedule_id: ID of the scheduled report
 		limit: Maximum number of records to return
@@ -289,7 +317,7 @@ def get_schedule_history(schedule_id, limit=50, offset=0):
 	Returns:
 		List of report generation records for this schedule
 	"""
-	require_auth()
+	require_any_role("System Manager", "Report Manager")
 
 	if not schedule_id:
 		frappe.throw(_("Schedule ID is required"))
@@ -765,6 +793,10 @@ def resend_report(generated_report_id, schedule_id):
 	This is useful for re-sending failed deliveries or sending a report
 	to updated recipients.
 
+	Permissions:
+		- System Manager can resend scheduled reports
+		- Report Manager can resend scheduled reports
+
 	Args:
 		generated_report_id: ID of the WH Generated Report to re-send
 		schedule_id: ID of the WH Scheduled Report (for recipient info)
@@ -772,6 +804,7 @@ def resend_report(generated_report_id, schedule_id):
 	Returns:
 		Dict with success status and delivery info
 	"""
+	require_any_role("System Manager", "Report Manager")
 	require_permission("WH Scheduled Report", "write")
 
 	if not generated_report_id:
