@@ -1,0 +1,653 @@
+<!-- Page: Reportes Programados -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Reportes Programados") }}{% endblock %}
+{% block breadcrumb %}Reportes Programados{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<div class="d-flex justify-content-between align-items-center">
+			<div>
+				<h1>⏰ Reportes Programados</h1>
+				<p class="text-muted">Gestiona la entrega automática de reportes por email</p>
+			</div>
+			<div>
+				<a href="/workhub_reportes" class="btn btn-outline-secondary">
+					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+					</svg>
+					Volver a Reportes
+				</a>
+				<button class="btn btn-primary ml-2" onclick="createSchedule()">
+					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+					</svg>
+					Nueva Programación
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- KPIs -->
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card kpi-card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Total Programados</h5>
+					<h2 class="kpi-value">{{ kpis.total }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card kpi-card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Activos</h5>
+					<h2 class="kpi-value text-success">{{ kpis.active }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card kpi-card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Pausados</h5>
+					<h2 class="kpi-value text-warning">{{ kpis.paused }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card kpi-card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Exitosos</h5>
+					<h2 class="kpi-value text-info">{{ kpis.successful }}</h2>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Filtros y Búsqueda -->
+	<div class="card mt-4">
+		<div class="card-header">
+			<h5>🔍 Buscar y Filtrar</h5>
+		</div>
+		<div class="card-body">
+			<form method="get" action="/workhub_reportes_programados" id="filter-form">
+				<div class="row">
+					<div class="col-md-3">
+						<div class="form-group">
+							<label>Búsqueda</label>
+							<input type="text" name="search" class="form-control" placeholder="Buscar por nombre..." value="{{ current_filters.search }}">
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label>Frecuencia</label>
+							<select name="schedule_type" class="form-control">
+								<option value="">Todas</option>
+								{% for type in schedule_types %}
+								<option value="{{ type }}" {% if current_filters.schedule_type == type %}selected{% endif %}>{{ type }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label>Formato</label>
+							<select name="export_format" class="form-control">
+								<option value="">Todos</option>
+								{% for format in export_formats %}
+								<option value="{{ format }}" {% if current_filters.export_format == format %}selected{% endif %}>{{ format }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label>Estado</label>
+							<select name="is_active" class="form-control">
+								<option value="">Todos</option>
+								<option value="1" {% if current_filters.is_active == '1' %}selected{% endif %}>Activos</option>
+								<option value="0" {% if current_filters.is_active == '0' %}selected{% endif %}>Pausados</option>
+							</select>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="form-group">
+							<label>&nbsp;</label>
+							<div class="d-flex">
+								<button type="submit" class="btn btn-primary mr-2">Filtrar</button>
+								<a href="/workhub_reportes_programados" class="btn btn-outline-secondary">Limpiar</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Listado de Reportes Programados -->
+	<div class="card mt-4">
+		<div class="card-header d-flex justify-content-between align-items-center">
+			<h5>📋 Programaciones</h5>
+			<span class="badge badge-secondary">{{ schedules|length }} resultados</span>
+		</div>
+		<div class="card-body">
+			{% if schedules %}
+			<div class="table-responsive">
+				<table class="table table-hover schedules-table">
+					<thead>
+						<tr>
+							<th style="width: 25%;">Nombre / Reporte</th>
+							<th style="width: 15%;">Frecuencia</th>
+							<th style="width: 12%;">Próxima Ejecución</th>
+							<th style="width: 12%;">Última Ejecución</th>
+							<th style="width: 8%;">Destinatarios</th>
+							<th style="width: 8%;">Formato</th>
+							<th style="width: 8%;">Estado</th>
+							<th style="width: 12%;">Acciones</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for schedule in schedules %}
+						<tr class="{% if schedule.is_overdue %}table-warning{% endif %}">
+							<td>
+								<div class="schedule-info">
+									<strong>{{ schedule.schedule_name }}</strong>
+									<br>
+									<small class="text-muted">
+										{{ schedule.report_title or schedule.report_definition }}
+										{% if schedule.report_category %}
+										<span class="badge badge-sm {% if schedule.report_category == 'Team' %}badge-success{% elif schedule.report_category == 'Project' %}badge-warning{% elif schedule.report_category == 'HACCP' %}badge-danger{% else %}badge-secondary{% endif %}">
+											{{ schedule.report_category }}
+										</span>
+										{% endif %}
+									</small>
+								</div>
+							</td>
+							<td>
+								<small>{{ schedule.schedule_description }}</small>
+							</td>
+							<td>
+								{% if schedule.next_run %}
+								<small>
+									{{ schedule.next_run.strftime('%d/%m/%Y') }}<br>
+									<span class="text-muted">{{ schedule.next_run.strftime('%H:%M') }}</span>
+									{% if schedule.is_overdue %}
+									<br><span class="badge badge-warning">Vencido</span>
+									{% endif %}
+								</small>
+								{% else %}
+								<small class="text-muted">-</small>
+								{% endif %}
+							</td>
+							<td>
+								{% if schedule.last_run %}
+								<small>
+									{{ schedule.last_run.strftime('%d/%m/%Y') }}<br>
+									<span class="text-muted">{{ schedule.last_run.strftime('%H:%M') }}</span>
+									{% if schedule.last_status %}
+									<br>
+									{% if schedule.last_status == 'Success' %}
+									<span class="badge badge-success">Exitoso</span>
+									{% elif schedule.last_status == 'Failed' %}
+									<span class="badge badge-danger">Fallido</span>
+									{% else %}
+									<span class="badge badge-secondary">{{ schedule.last_status }}</span>
+									{% endif %}
+									{% endif %}
+								</small>
+								{% else %}
+								<small class="text-muted">Nunca</small>
+								{% endif %}
+							</td>
+							<td class="text-center">
+								<span class="badge badge-pill badge-info">{{ schedule.recipient_count }}</span>
+								{% if schedule.execution_count > 0 %}
+								<br><small class="text-muted" title="Total ejecuciones: {{ schedule.execution_count }}, Exitosas: {{ schedule.successful_count }}, Fallidas: {{ schedule.failed_count }}">
+									{{ schedule.execution_count }} envíos
+								</small>
+								{% endif %}
+							</td>
+							<td>
+								{% if schedule.export_format == 'PDF' %}
+								<span class="badge badge-danger">PDF</span>
+								{% elif schedule.export_format == 'Excel' %}
+								<span class="badge badge-success">Excel</span>
+								{% elif schedule.export_format == 'CSV' %}
+								<span class="badge badge-primary">CSV</span>
+								{% else %}
+								<span class="badge badge-secondary">{{ schedule.export_format }}</span>
+								{% endif %}
+							</td>
+							<td>
+								{% if schedule.is_active %}
+								<span class="status-badge active">Activo</span>
+								{% else %}
+								<span class="status-badge inactive">Pausado</span>
+								{% endif %}
+							</td>
+							<td>
+								<div class="action-buttons">
+									<!-- Ver historial -->
+									<button class="btn btn-sm btn-outline-primary" title="Ver historial" onclick="viewHistory('{{ schedule.name }}', '{{ schedule.schedule_name }}')">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+										</svg>
+									</button>
+									<!-- Editar -->
+									<button class="btn btn-sm btn-outline-secondary ml-1" title="Editar" onclick="editSchedule('{{ schedule.name }}')">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+										</svg>
+									</button>
+									<!-- Pausar/Reanudar -->
+									{% if schedule.is_active %}
+									<button class="btn btn-sm btn-outline-warning ml-1" title="Pausar" onclick="toggleSchedule('{{ schedule.name }}', '{{ schedule.schedule_name }}', false)">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+										</svg>
+									</button>
+									{% else %}
+									<button class="btn btn-sm btn-outline-success ml-1" title="Reanudar" onclick="toggleSchedule('{{ schedule.name }}', '{{ schedule.schedule_name }}', true)">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+										</svg>
+									</button>
+									{% endif %}
+									<!-- Ejecutar ahora -->
+									<button class="btn btn-sm btn-outline-info ml-1" title="Ejecutar ahora" onclick="runNow('{{ schedule.name }}', '{{ schedule.schedule_name }}')">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+										</svg>
+									</button>
+								</div>
+							</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% else %}
+			<div class="text-center py-5">
+				<div class="empty-state">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 64px; height: 64px; margin: 0 auto; color: #ccc;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+					</svg>
+					<h4 class="mt-3">No hay programaciones</h4>
+					<p class="text-muted">Crea una nueva programación para automatizar la entrega de reportes</p>
+					<button class="btn btn-primary mt-3" onclick="createSchedule()">
+						<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+						</svg>
+						Nueva Programación
+					</button>
+				</div>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+<!-- Modal: Historial de Ejecuciones -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Historial de Ejecuciones</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div id="history-content">
+					<div class="text-center py-3">
+						<div class="spinner-border text-primary" role="status">
+							<span class="sr-only">Cargando...</span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+/* Estilos adicionales para la tabla de programaciones */
+.schedules-table td {
+	vertical-align: middle;
+}
+
+.schedule-info strong {
+	display: block;
+	margin-bottom: 4px;
+}
+
+.status-badge {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.status-badge.active {
+	background-color: #d4edda;
+	color: #155724;
+}
+
+.status-badge.inactive {
+	background-color: #fff3cd;
+	color: #856404;
+}
+
+.action-buttons {
+	display: flex;
+	align-items: center;
+}
+
+.action-buttons .btn {
+	padding: 4px 8px;
+}
+
+.kpi-card {
+	border: 2px solid var(--border-1);
+	box-shadow: var(--shadow);
+	transition: all var(--transition);
+}
+
+.kpi-card:hover {
+	box-shadow: var(--shadow-hover);
+	transform: var(--hover-shift);
+}
+
+.kpi-value {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin: 0;
+}
+
+.empty-state {
+	max-width: 400px;
+	margin: 0 auto;
+}
+
+.badge-sm {
+	font-size: 0.7rem;
+	padding: 2px 6px;
+}
+
+.table-warning {
+	background-color: #fff3cd !important;
+}
+</style>
+
+{% endblock %}
+
+{% block script %}
+<!-- Load Schedule Modal JS -->
+<script src="/assets/workhub_frappe_app/js/schedule_modal.js"></script>
+<!-- Load Schedule History JS -->
+<script src="/assets/workhub_frappe_app/js/report_schedule_history.js"></script>
+
+<script>
+// Frappe call wrapper for www pages
+if (!frappe.call) {
+	frappe.call = function(opts) {
+		return fetch('/api/method/' + opts.method, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Frappe-CSRF-Token': frappe.csrf_token || ''
+			},
+			body: JSON.stringify(opts.args || {})
+		})
+		.then(r => r.json())
+		.then(data => {
+			if (opts.callback) {
+				opts.callback({message: data.message});
+			}
+			return data;
+		})
+		.catch(error => {
+			console.error('API Error:', error);
+			if (opts.error) {
+				opts.error(error);
+			}
+		});
+	};
+}
+
+// Frappe alerts for www pages
+if (!frappe.show_alert) {
+	frappe.show_alert = function(message, indicator) {
+		const color = indicator === 'green' ? 'success' :
+		              indicator === 'red' ? 'danger' :
+		              indicator === 'orange' ? 'warning' : 'info';
+
+		const alertHtml = `
+			<div class="alert alert-${color} alert-dismissible fade show" role="alert" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+				${typeof message === 'string' ? message : message.message}
+				<button type="button" class="close" data-dismiss="alert">
+					<span>&times;</span>
+				</button>
+			</div>
+		`;
+
+		$('body').append(alertHtml);
+		setTimeout(() => {
+			$('.alert').fadeOut(() => {
+				$('.alert').remove();
+			});
+		}, 3000);
+	};
+}
+
+// Crear nueva programación
+function createSchedule() {
+	// Show modal to select report first
+	showReportSelectionDialog();
+}
+
+// Show report selection dialog
+function showReportSelectionDialog() {
+	// Create modal if it doesn't exist
+	if ($('#selectReportModal').length === 0) {
+		const modalHtml = `
+			<div class="modal fade" id="selectReportModal" tabindex="-1" role="dialog">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title">Seleccionar Reporte</h5>
+							<button type="button" class="close" data-dismiss="modal">
+								<span>&times;</span>
+							</button>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<label>Reporte a Programar *</label>
+								<select class="form-control" id="selectedReportId">
+									<option value="">Cargando reportes...</option>
+								</select>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+							<button type="button" class="btn btn-primary" id="confirmReportSelection">Continuar</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
+		$('body').append(modalHtml);
+
+		// Bind confirm button
+		$('#confirmReportSelection').on('click', function() {
+			const reportId = $('#selectedReportId').val();
+			const reportTitle = $('#selectedReportId option:selected').text();
+
+			if (!reportId) {
+				frappe.show_alert({message: 'Por favor selecciona un reporte', indicator: 'red'});
+				return;
+			}
+
+			$('#selectReportModal').modal('hide');
+
+			// Open schedule configuration modal
+			if (frappe.workhub && frappe.workhub.scheduleModal) {
+				frappe.workhub.scheduleModal.create(reportId, reportTitle);
+			}
+		});
+	}
+
+	// Load reports
+	frappe.call({
+		method: 'workhub_frappe_app.api.reports.get_reports',
+		args: {
+			filters: JSON.stringify({is_active: 1})
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				const reports = r.message.reports || [];
+				let options = '<option value="">-- Seleccionar Reporte --</option>';
+				reports.forEach(report => {
+					options += `<option value="${report.name}">${report.title}</option>`;
+				});
+				$('#selectedReportId').html(options);
+			}
+		},
+		error: function(err) {
+			frappe.show_alert({message: 'Error al cargar reportes', indicator: 'red'});
+		}
+	});
+
+	$('#selectReportModal').modal('show');
+}
+
+// Editar programación
+function editSchedule(scheduleId) {
+	if (frappe.workhub && frappe.workhub.scheduleModal) {
+		frappe.workhub.scheduleModal.edit(scheduleId);
+	} else {
+		frappe.show_alert({
+			message: 'Error: Módulo de programación no disponible',
+			indicator: 'red'
+		});
+	}
+}
+
+// Ver historial de ejecuciones
+function viewHistory(scheduleId, scheduleName) {
+	$('#historyModal').modal('show');
+
+	// Use the new comprehensive history module
+	if (window.reportScheduleHistory) {
+		window.reportScheduleHistory.renderHistory(
+			'history-content',
+			scheduleId,
+			scheduleName,
+			{
+				limit: 20,
+				showStats: true,
+				showRecipients: true
+			}
+		).catch(error => {
+			console.error('Error rendering history:', error);
+		});
+	} else {
+		// Fallback if module not loaded
+		console.error('Report schedule history module not loaded');
+		$('#history-content').html(`
+			<div class="alert alert-danger">
+				Error: Módulo de historial no disponible
+			</div>
+		`);
+	}
+}
+
+// Pausar/Reanudar programación
+function toggleSchedule(scheduleId, scheduleName, activate) {
+	const action = activate ? 'reanudar' : 'pausar';
+
+	if (!confirm(`¿Seguro que deseas ${action} la programación "${scheduleName}"?`)) {
+		return;
+	}
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.report_scheduler.toggle_schedule',
+		args: {
+			schedule_id: scheduleId,
+			is_active: activate ? 1 : 0
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.show_alert({
+					message: r.message.message || 'Programación actualizada',
+					indicator: 'green'
+				});
+				setTimeout(() => {
+					window.location.reload();
+				}, 1000);
+			} else {
+				frappe.show_alert({
+					message: 'Error al actualizar la programación',
+					indicator: 'red'
+				});
+			}
+		},
+		error: function(err) {
+			console.error('Error toggling schedule:', err);
+			frappe.show_alert({
+				message: 'Error al actualizar la programación',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+// Ejecutar ahora
+function runNow(scheduleId, scheduleName) {
+	if (!confirm(`¿Seguro que deseas ejecutar ahora la programación "${scheduleName}"?\n\nEsto generará y enviará el reporte inmediatamente.`)) {
+		return;
+	}
+
+	frappe.show_alert({
+		message: 'Ejecutando reporte programado...',
+		indicator: 'blue'
+	});
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.report_scheduler.execute_scheduled_report',
+		args: {
+			schedule_id: scheduleId
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.show_alert({
+					message: r.message.message || 'Reporte ejecutado y enviado exitosamente',
+					indicator: 'green'
+				});
+				setTimeout(() => {
+					window.location.reload();
+				}, 2000);
+			} else {
+				frappe.show_alert({
+					message: r.message ? r.message.message : 'Error al ejecutar el reporte',
+					indicator: 'red'
+				});
+			}
+		},
+		error: function(err) {
+			console.error('Error running schedule:', err);
+			frappe.show_alert({
+				message: 'Error al ejecutar el reporte programado',
+				indicator: 'red'
+			});
+		}
+	});
+}
+</script>
+{% endblock %}

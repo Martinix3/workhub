@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a4d8f 0%, #2563ab 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+        .header-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+        .header-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        .header-report-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+        .content {
+            padding: 24px;
+        }
+        .intro-message {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 15px;
+        }
+        .report-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .detail-row {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            width: 140px;
+            flex-shrink: 0;
+        }
+        .detail-value {
+            color: #1a1a1a;
+            flex: 1;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge.standard {
+            background: #e7f3ff;
+            color: #0066cc;
+        }
+        .badge.custom {
+            background: #f3e7ff;
+            color: #6f42c1;
+        }
+        .badge.team {
+            background: #e7f8f0;
+            color: #28a745;
+        }
+        .badge.project {
+            background: #fff3e0;
+            color: #fd7e14;
+        }
+        .badge.haccp {
+            background: #ffeaea;
+            color: #dc3545;
+        }
+        .format-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #1a4d8f;
+            color: white;
+        }
+        .summary-section {
+            margin-bottom: 24px;
+        }
+        .summary-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #1a4d8f;
+            color: #1a1a1a;
+        }
+        .summary-content {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .sections-preview {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 12px;
+        }
+        .section-item {
+            padding: 6px 0;
+            color: #495057;
+            font-size: 14px;
+        }
+        .section-item::before {
+            content: "• ";
+            color: #1a4d8f;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .download-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .download-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        .download-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+        .btn-secondary {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        .btn-secondary:hover {
+            background: #f8f9fa;
+        }
+        .attachment-notice {
+            background: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 24px;
+        }
+        .attachment-notice-icon {
+            font-size: 16px;
+            margin-right: 8px;
+        }
+        .attachment-notice-text {
+            color: #004085;
+            font-size: 14px;
+        }
+        .schedule-info {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 24px;
+        }
+        .schedule-info-text {
+            color: #856404;
+            font-size: 13px;
+        }
+        .footer {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+        .footer-logo {
+            font-weight: 700;
+            color: #1a4d8f;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">📊</div>
+            <div class="header-title">Reporte Programado</div>
+            <h1 class="header-report-title">{{ report_title }}</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Intro Message -->
+            <p class="intro-message">
+                {% if schedule_name %}
+                Tu reporte programado "<strong>{{ schedule_name }}</strong>" ha sido generado exitosamente y está adjunto a este correo.
+                {% else %}
+                Tu reporte programado ha sido generado exitosamente y está adjunto a este correo.
+                {% endif %}
+            </p>
+
+            <!-- Schedule Info (if recurring) -->
+            {% if schedule_type and schedule_type != 'Once' %}
+            <div class="schedule-info">
+                <div class="schedule-info-text">
+                    📅 Este es un reporte <strong>{{ schedule_type|lower }}</strong>.
+                    {% if next_run %}
+                    Próximo envío: <strong>{{ next_run }}</strong>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Attachment Notice -->
+            <div class="attachment-notice">
+                <span class="attachment-notice-icon">📎</span>
+                <span class="attachment-notice-text">
+                    <strong>Archivo adjunto:</strong> El reporte en formato <strong>{{ export_format }}</strong> está adjunto a este correo.
+                </span>
+            </div>
+
+            <!-- Report Details -->
+            <div class="report-details">
+                <div class="detail-row">
+                    <div class="detail-label">Reporte:</div>
+                    <div class="detail-value">{{ report_title }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Tipo:</div>
+                    <div class="detail-value">
+                        <span class="badge {{ report_type|lower }}">{{ report_type }}</span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Categoría:</div>
+                    <div class="detail-value">
+                        <span class="badge {{ category|lower }}">{{ category }}</span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Generado:</div>
+                    <div class="detail-value">{{ generated_at }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Formato:</div>
+                    <div class="detail-value">
+                        <span class="format-badge">{{ export_format }}</span>
+                    </div>
+                </div>
+                {% if generated_by_name %}
+                <div class="detail-row">
+                    <div class="detail-label">Generado por:</div>
+                    <div class="detail-value">{{ generated_by_name }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Summary Preview -->
+            {% if report_description or sections_count %}
+            <div class="summary-section">
+                <div class="summary-title">📋 Resumen del Reporte</div>
+                <div class="summary-content">
+                    {% if report_description %}
+                    <p>{{ report_description }}</p>
+                    {% endif %}
+
+                    {% if sections_count %}
+                    <p>Este reporte incluye <strong>{{ sections_count }} secciones</strong>:</p>
+                    <div class="sections-preview">
+                        {% for section in sections_preview %}
+                        <div class="section-item">{{ section }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Download Section -->
+            <div class="download-section">
+                <div class="download-title">
+                    También puedes acceder al reporte desde el sistema
+                </div>
+                <div class="download-buttons">
+                    {% if download_url %}
+                    <a href="{{ download_url }}" class="btn btn-primary">⬇️ Descargar Reporte</a>
+                    {% endif %}
+                    {% if view_url %}
+                    <a href="{{ view_url }}" class="btn btn-secondary">👁️ Ver en Sistema</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            {% if custom_message %}
+            <div style="padding: 16px; background: #f8f9fa; border-radius: 6px; margin-bottom: 24px;">
+                <div style="color: #495057; font-size: 14px;">
+                    {{ custom_message|safe }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="footer-logo">WorkHub Reporting System</div>
+                <p>Este correo fue enviado automáticamente por el sistema de reportes de WorkHub</p>
+                {% if unsubscribe_url %}
+                <p><a href="{{ unsubscribe_url }}" style="color: #999;">Gestionar suscripciones</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -87,7 +87,10 @@ app_include_js = "/assets/workhub_frappe_app/js/workhub.bundle.js"
 
 # before_install = "workhub_frappe_app.install.before_install"
 # after_install = "workhub_frappe_app.install.after_install"
-after_install = "workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm_lite"
+after_install = [
+	"workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm_lite",
+	"workhub_frappe_app.api.standard_reports.setup_standard_reports"
+]
 
 # Fixtures
 # --------
@@ -105,7 +108,10 @@ fixtures = [
 # boot_session = "workhub_frappe_app.workhub_frappe_app.boot.boot_session"
 
 # Run again on migrations (idempotent) to keep UX entry points available.
-after_migrate = ["workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm_lite"]
+after_migrate = [
+	"workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm_lite",
+	"workhub_frappe_app.api.standard_reports.setup_standard_reports"
+]
 
 # Uninstallation
 # ------------
@@ -167,6 +173,10 @@ scheduler_events = {
 		# Email diario a las 8am (hora local)
 		"0 8 * * *": [
 			"workhub_frappe_app.api.notifications.send_daily_emails"
+		],
+		# Procesar reportes programados cada 15 minutos
+		"*/15 * * * *": [
+			"workhub_frappe_app.api.report_scheduler.process_scheduled_reports"
 		]
 	},
 	"daily": [

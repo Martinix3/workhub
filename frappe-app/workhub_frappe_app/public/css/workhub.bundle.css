@@ -31,6 +31,10 @@
 @import url('/assets/workhub_frappe_app/css/components/offline-indicator.css');
 @import url('/assets/workhub_frappe_app/css/components/fab.css');
 
+/* === Reporting System === */
+@import url('/assets/workhub_frappe_app/css/reports.css');
+@import url('/assets/workhub_frappe_app/css/schedule_modal.css');
+
 /* === Layout Utilities === */
 .wh-container {
 	max-width: 1400px;

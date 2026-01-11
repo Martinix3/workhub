@@ -1,0 +1,514 @@
+<!-- Page: Reportes -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Reportes") }}{% endblock %}
+{% block breadcrumb %}Reportes{% endblock %}
+
+{% block page_content %}
+<div class="wh-page-container">
+	<div class="wh-page-header">
+		<div class="d-flex justify-content-between align-items-center">
+			<div>
+				<h1>📊 Reportes</h1>
+				<p class="text-muted">Sistema de reportes avanzado con exportación y programación</p>
+			</div>
+			<div>
+				<a href="/workhub_reportes_builder?new=1" class="btn btn-primary">
+					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+					</svg>
+					Crear Reporte
+				</a>
+				<a href="/workhub_reportes_programados" class="btn btn-outline-secondary ml-2">
+					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+					</svg>
+					Programados
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- KPIs -->
+	<div class="row mt-4">
+		<div class="col-md-3">
+			<div class="card kpi-card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Total Reportes</h5>
+					<h2 class="kpi-value">{{ kpis.total }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card kpi-card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Activos</h5>
+					<h2 class="kpi-value text-success">{{ kpis.active }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card kpi-card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Estándar</h5>
+					<h2 class="kpi-value text-primary">{{ kpis.standard }}</h2>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="card kpi-card">
+				<div class="card-body text-center">
+					<h5 class="text-muted">Personalizados</h5>
+					<h2 class="kpi-value text-info">{{ kpis.custom }}</h2>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Reportes Recientes -->
+	{% if recent_reports %}
+	<div class="card mt-4">
+		<div class="card-header">
+			<h5>📌 Reportes Recientes</h5>
+		</div>
+		<div class="card-body">
+			<div class="recent-reports-list">
+				{% for report in recent_reports %}
+				<div class="recent-report-item">
+					<div class="recent-report-info">
+						<strong>{{ report.title }}</strong>
+						<span class="text-muted ml-2">•</span>
+						<span class="text-muted ml-2">{{ report.export_format }}</span>
+						<span class="text-muted ml-2">•</span>
+						<small class="text-muted ml-2">{{ report.generated_at.strftime('%d/%m/%Y %H:%M') if report.generated_at else '-' }}</small>
+					</div>
+					<a href="/workhub_reportes_viewer?report={{ report.report_definition }}" class="btn btn-sm btn-outline-primary">Ver</a>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+	{% endif %}
+
+	<!-- Filtros y Búsqueda -->
+	<div class="card mt-4">
+		<div class="card-header">
+			<h5>🔍 Buscar y Filtrar</h5>
+		</div>
+		<div class="card-body">
+			<form method="get" action="/workhub_reportes" id="filter-form">
+				<div class="row">
+					<div class="col-md-4">
+						<div class="form-group">
+							<label>Búsqueda</label>
+							<input type="text" name="search" class="form-control" placeholder="Buscar por título..." value="{{ current_filters.search }}">
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label>Tipo</label>
+							<select name="report_type" class="form-control">
+								<option value="">Todos</option>
+								{% for type in report_types %}
+								<option value="{{ type }}" {% if current_filters.report_type == type %}selected{% endif %}>{{ type }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label>Categoría</label>
+							<select name="category" class="form-control">
+								<option value="">Todas</option>
+								{% for cat in categories %}
+								<option value="{{ cat }}" {% if current_filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label>Estado</label>
+							<select name="is_active" class="form-control">
+								<option value="">Todos</option>
+								<option value="1" {% if current_filters.is_active == '1' %}selected{% endif %}>Activos</option>
+								<option value="0" {% if current_filters.is_active == '0' %}selected{% endif %}>Inactivos</option>
+							</select>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label>&nbsp;</label>
+							<div class="d-flex">
+								<button type="submit" class="btn btn-primary mr-2">Filtrar</button>
+								<a href="/workhub_reportes" class="btn btn-outline-secondary">Limpiar</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Listado de Reportes -->
+	<div class="card mt-4">
+		<div class="card-header d-flex justify-content-between align-items-center">
+			<h5>📋 Todos los Reportes</h5>
+			<span class="badge badge-secondary">{{ reports|length }} resultados</span>
+		</div>
+		<div class="card-body">
+			{% if reports %}
+			<div class="table-responsive">
+				<table class="table table-hover reports-table">
+					<thead>
+						<tr>
+							<th style="width: 30%;">Título</th>
+							<th style="width: 15%;">Tipo</th>
+							<th style="width: 15%;">Categoría</th>
+							<th style="width: 10%;">Secciones</th>
+							<th style="width: 10%;">Estado</th>
+							<th style="width: 10%;">Modificado</th>
+							<th style="width: 10%;">Acciones</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for report in reports %}
+						<tr>
+							<td>
+								<div class="report-title-cell">
+									<strong>{{ report.title }}</strong>
+									{% if report.description %}
+									<br><small class="text-muted">{{ report.description[:80] }}{% if report.description|length > 80 %}...{% endif %}</small>
+									{% endif %}
+								</div>
+							</td>
+							<td>
+								{% if report.report_type == 'Standard' %}
+								<span class="badge badge-primary">{{ report.report_type }}</span>
+								{% else %}
+								<span class="badge badge-info">{{ report.report_type }}</span>
+								{% endif %}
+							</td>
+							<td>
+								{% if report.category == 'Team' %}
+								<span class="badge badge-success">{{ report.category }}</span>
+								{% elif report.category == 'Project' %}
+								<span class="badge badge-warning">{{ report.category }}</span>
+								{% elif report.category == 'HACCP' %}
+								<span class="badge badge-danger">{{ report.category }}</span>
+								{% else %}
+								<span class="badge badge-secondary">{{ report.category }}</span>
+								{% endif %}
+							</td>
+							<td>
+								<span class="section-count">{{ report.section_count }}</span>
+							</td>
+							<td>
+								{% if report.is_active %}
+								<span class="status-badge active">Activo</span>
+								{% else %}
+								<span class="status-badge inactive">Inactivo</span>
+								{% endif %}
+							</td>
+							<td>
+								<small>{{ report.modified.strftime('%d/%m/%Y') if report.modified else '-' }}</small>
+							</td>
+							<td>
+								<div class="action-buttons">
+									<a href="/workhub_reportes_viewer?report={{ report.name }}" class="btn btn-sm btn-outline-primary" title="Ver reporte">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+										</svg>
+									</a>
+									<a href="/workhub_reportes_builder?report={{ report.name }}" class="btn btn-sm btn-outline-secondary ml-1" title="Editar reporte">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+										</svg>
+									</a>
+									<button class="btn btn-sm btn-outline-success ml-1" title="Exportar" onclick="showExportModal('{{ report.name }}', '{{ report.title }}')">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+										</svg>
+									</button>
+									<button class="btn btn-sm btn-outline-warning ml-1" title="Programar" onclick="showScheduleModal('{{ report.name }}', '{{ report.title }}')">
+										<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+										</svg>
+									</button>
+								</div>
+							</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% else %}
+			<div class="text-center py-5">
+				<div class="empty-state">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 64px; height: 64px; margin: 0 auto; color: #ccc;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+					</svg>
+					<h3 class="mt-3">No se encontraron reportes</h3>
+					<p class="text-muted">Intenta ajustar los filtros o crea un nuevo reporte</p>
+					<a href="/workhub_reportes_builder?new=1" class="btn btn-primary mt-3">Crear Primer Reporte</a>
+				</div>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Exportar Reporte</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<p><strong id="export-report-title"></strong></p>
+				<div class="form-group">
+					<label>Formato de Exportación</label>
+					<select id="export-format" class="form-control">
+						<option value="PDF">PDF (Presentación ejecutiva)</option>
+						<option value="Excel">Excel (Hojas de cálculo)</option>
+						<option value="CSV">CSV (Datos tabulares)</option>
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-primary" onclick="exportReport()">Exportar</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Schedule Modal -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Programar Reporte</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<p><strong id="schedule-report-title"></strong></p>
+				<p class="text-muted">Los reportes programados se envían automáticamente por correo.</p>
+				<a href="/workhub_reportes_programados" class="btn btn-outline-primary btn-block">
+					Ir a Reportes Programados
+				</a>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.wh-page-container {
+	padding: 20px;
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+.wh-page-header {
+	margin-bottom: 30px;
+}
+
+.wh-page-header h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 20px;
+	border: 1px solid #e0e0e0;
+}
+
+.kpi-card {
+	transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kpi-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.kpi-value {
+	font-size: 36px;
+	font-weight: 700;
+	margin: 0;
+}
+
+.recent-reports-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.recent-report-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12px;
+	background: #f8f9fa;
+	border-radius: 6px;
+	transition: background 0.2s;
+}
+
+.recent-report-item:hover {
+	background: #e9ecef;
+}
+
+.recent-report-info {
+	flex: 1;
+}
+
+.reports-table {
+	font-size: 14px;
+}
+
+.reports-table th {
+	background: #f8f9fa;
+	font-weight: 600;
+	border-bottom: 2px solid #dee2e6;
+}
+
+.report-title-cell strong {
+	color: #333;
+}
+
+.section-count {
+	display: inline-block;
+	padding: 4px 12px;
+	background: #e9ecef;
+	border-radius: 12px;
+	font-weight: 600;
+}
+
+.status-badge {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.status-badge.active {
+	background: #d4edda;
+	color: #155724;
+}
+
+.status-badge.inactive {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+.action-buttons {
+	display: flex;
+	gap: 4px;
+}
+
+.action-buttons .btn {
+	padding: 4px 8px;
+}
+
+.empty-state {
+	padding: 40px 20px;
+}
+
+.empty-state h3 {
+	color: #666;
+	margin-top: 20px;
+}
+
+.btn-icon {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+	.wh-page-header .d-flex {
+		flex-direction: column;
+		align-items: flex-start !important;
+	}
+
+	.wh-page-header .d-flex > div:last-child {
+		margin-top: 15px;
+	}
+
+	.action-buttons {
+		flex-wrap: wrap;
+	}
+}
+</style>
+
+{% endblock %}
+
+{% block script %}
+<script src="/assets/workhub_frappe_app/js/report_export_ui.js"></script>
+<script src="/assets/workhub_frappe_app/js/schedule_modal.js"></script>
+<script>
+let currentReportId = null;
+let currentReportTitle = null;
+
+function showExportModal(reportId, reportTitle) {
+	currentReportId = reportId;
+	currentReportTitle = reportTitle;
+	document.getElementById('export-report-title').textContent = reportTitle;
+	$('#exportModal').modal('show');
+}
+
+function showScheduleModal(reportId, reportTitle) {
+	// Use the new schedule modal
+	if (frappe.workhub && frappe.workhub.scheduleModal) {
+		frappe.workhub.scheduleModal.create(reportId, reportTitle);
+	} else {
+		// Fallback to old behavior
+		currentReportId = reportId;
+		currentReportTitle = reportTitle;
+		document.getElementById('schedule-report-title').textContent = reportTitle;
+		$('#scheduleModal').modal('show');
+	}
+}
+
+function exportReport() {
+	const format = document.getElementById('export-format').value;
+
+	// Use the export UI module
+	window.reportExportUI.exportReport(currentReportId, format, {},
+		// Success callback
+		function(result) {
+			$('#exportModal').modal('hide');
+		},
+		// Error callback (already handled by module)
+		null
+	);
+}
+
+// Auto-submit form on filter change (optional)
+document.addEventListener('DOMContentLoaded', function() {
+	const filterForm = document.getElementById('filter-form');
+	if (filterForm) {
+		const selects = filterForm.querySelectorAll('select');
+		selects.forEach(select => {
+			select.addEventListener('change', function() {
+				// Uncomment to enable auto-submit
+				// filterForm.submit();
+			});
+		});
+	}
+});
+</script>
+{% endblock %}
