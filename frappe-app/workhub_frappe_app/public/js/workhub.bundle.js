@@ -550,7 +550,7 @@ frappe.workhub.header = {
             </div>
             <div class="wh-header-right">
                 <!-- Notificaciones -->
-                <div class="wh-header-action" data-action="notifications">
+                <button class="wh-header-action" data-action="notifications" aria-label="Abrir notificaciones">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -558,7 +558,7 @@ frappe.workhub.header = {
                     <div class="wh-notification-badge has-count" data-count="0" style="display: none;">
                         0
                     </div>
-                </div>
+                </button>
 
                 <!-- User Menu -->
                 <div class="wh-user-menu">
