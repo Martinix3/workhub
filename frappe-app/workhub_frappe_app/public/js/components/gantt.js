@@ -239,6 +239,9 @@
 
 			// Render task rows
 			this._renderTaskRows();
+
+			// Render milestones
+			this._renderMilestones();
 		}
 
 		/**
@@ -739,6 +742,167 @@
 			this.showCriticalPath = show;
 			// TODO: Implement critical path highlighting in phase 6
 			this.render();
+		}
+
+		/**
+		 * Render milestones on the timeline
+		 * @private
+		 */
+		_renderMilestones() {
+			if (!this.milestones || this.milestones.length === 0) {
+				return;
+			}
+
+			// Render each milestone
+			this.milestones.forEach(milestone => {
+				if (milestone.due_date) {
+					const milestoneElement = this._createMilestone(milestone);
+					if (milestoneElement) {
+						this.elements.body.appendChild(milestoneElement);
+					}
+				}
+			});
+		}
+
+		/**
+		 * Create a milestone diamond marker
+		 * @private
+		 */
+		_createMilestone(milestone) {
+			const dueDate = this._parseDate(milestone.due_date);
+			if (!dueDate) {
+				return null;
+			}
+
+			// Find the column index for the due date
+			const columnIndex = this._findColumnIndexForDate(dueDate);
+			if (columnIndex === -1) {
+				return null; // Milestone is outside visible range
+			}
+
+			// Calculate position
+			const columnWidth = this._getColumnWidth();
+			const leftOffset = 240; // Task label width
+			const position = leftOffset + (columnIndex * columnWidth) + (columnWidth / 2) - 10; // Center the 20px diamond
+
+			// Create milestone element
+			const milestoneEl = document.createElement('div');
+			milestoneEl.className = 'gantt-milestone';
+			milestoneEl.dataset.milestoneId = milestone.name;
+			milestoneEl.style.left = `${position}px`;
+
+			// Add status class
+			const status = (milestone.status || 'backlog').toLowerCase();
+			milestoneEl.classList.add(`gantt-milestone--${status}`);
+
+			// Add critical path class if applicable
+			if (this.showCriticalPath && this.criticalPath.includes(milestone.name)) {
+				milestoneEl.classList.add('gantt-milestone--critical');
+			}
+
+			// Add tooltip on hover
+			this._addMilestoneTooltip(milestoneEl, milestone);
+
+			return milestoneEl;
+		}
+
+		/**
+		 * Add tooltip to milestone
+		 * @private
+		 */
+		_addMilestoneTooltip(milestoneEl, milestone) {
+			let tooltip = null;
+
+			// Show tooltip on mouse enter
+			milestoneEl.addEventListener('mouseenter', (e) => {
+				// Create tooltip element
+				tooltip = document.createElement('div');
+				tooltip.className = 'gantt-tooltip';
+
+				// Tooltip title
+				const title = document.createElement('div');
+				title.className = 'gantt-tooltip__title';
+				title.textContent = milestone.title || milestone.name;
+				tooltip.appendChild(title);
+
+				// Due date
+				const dueDateItem = document.createElement('div');
+				dueDateItem.className = 'gantt-tooltip__item';
+				dueDateItem.innerHTML = `
+					<span class="gantt-tooltip__label">Fecha:</span>
+					<span class="gantt-tooltip__value">${this._formatDate(milestone.due_date)}</span>
+				`;
+				tooltip.appendChild(dueDateItem);
+
+				// Status
+				const statusItem = document.createElement('div');
+				statusItem.className = 'gantt-tooltip__item';
+				statusItem.innerHTML = `
+					<span class="gantt-tooltip__label">Estado:</span>
+					<span class="gantt-tooltip__value">${this._formatStatus(milestone.status)}</span>
+				`;
+				tooltip.appendChild(statusItem);
+
+				// Assigned to
+				if (milestone.assigned_to) {
+					const assignedItem = document.createElement('div');
+					assignedItem.className = 'gantt-tooltip__item';
+					assignedItem.innerHTML = `
+						<span class="gantt-tooltip__label">Asignado:</span>
+						<span class="gantt-tooltip__value">${milestone.assigned_name || milestone.assigned_to}</span>
+					`;
+					tooltip.appendChild(assignedItem);
+				}
+
+				// Position tooltip near cursor
+				const rect = milestoneEl.getBoundingClientRect();
+				tooltip.style.left = `${rect.left + 30}px`;
+				tooltip.style.top = `${rect.top}px`;
+
+				// Add to body
+				document.body.appendChild(tooltip);
+			});
+
+			// Hide tooltip on mouse leave
+			milestoneEl.addEventListener('mouseleave', () => {
+				if (tooltip && tooltip.parentNode) {
+					tooltip.parentNode.removeChild(tooltip);
+					tooltip = null;
+				}
+			});
+		}
+
+		/**
+		 * Format date for display
+		 * @private
+		 */
+		_formatDate(dateStr) {
+			if (!dateStr) return '';
+
+			const date = this._parseDate(dateStr);
+			if (!date) return '';
+
+			const day = date.getDate();
+			const month = date.getMonth() + 1;
+			const year = date.getFullYear();
+
+			return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+		}
+
+		/**
+		 * Format status for display
+		 * @private
+		 */
+		_formatStatus(status) {
+			const statusMap = {
+				'backlog': 'Backlog',
+				'next': 'Próximo',
+				'doing': 'En curso',
+				'blocked': 'Bloqueado',
+				'done': 'Completado'
+			};
+
+			return statusMap[status.toLowerCase()] || status;
 		}
 
 		/**
