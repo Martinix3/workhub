@@ -96,8 +96,7 @@ def get_customers(filters=None, limit=50, offset=0):
         fields=["name", "customer_name", "customer_group", "territory", "mobile_no", "email_id", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     # Transform to React Customer interface
