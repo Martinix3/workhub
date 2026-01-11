@@ -3203,6 +3203,167 @@
 	}
 
 	/**
+	 * Export Gantt chart as PNG
+	 * Captures the project header and chart area and downloads as an image
+	 */
+	async exportAsPNG() {
+		// Load html2canvas library if not already loaded
+		if (!window.html2canvas) {
+			await this._loadHtml2Canvas();
+		}
+
+		// Show loading indicator
+		frappe.freeze('Generando imagen...');
+
+		try {
+			// Find the elements to capture
+			const toolbar = document.querySelector('.gantt-toolbar');
+			const projectHeader = document.querySelector('.gantt-project-header');
+			const ganttContainer = document.querySelector('.gantt-container');
+
+			if (!ganttContainer) {
+				throw new Error('No se encontró el contenedor del Gantt');
+			}
+
+			// Create a temporary wrapper to capture all elements together
+			const wrapper = document.createElement('div');
+			wrapper.style.cssText = `
+				position: absolute;
+				left: -9999px;
+				top: 0;
+				background: white;
+				padding: 20px;
+			`;
+
+			// Clone elements
+			const toolbarClone = toolbar ? toolbar.cloneNode(true) : null;
+			const headerClone = projectHeader ? projectHeader.cloneNode(true) : null;
+			const chartClone = ganttContainer.cloneNode(true);
+
+			// Remove toolbar buttons we don't need in export
+			if (toolbarClone) {
+				const rightButtons = toolbarClone.querySelector('.gantt-toolbar__right');
+				if (rightButtons) {
+					rightButtons.remove();
+				}
+				wrapper.appendChild(toolbarClone);
+			}
+
+			// Add header and chart
+			if (headerClone) {
+				wrapper.appendChild(headerClone);
+			}
+
+			// Make chart container non-scrollable for export
+			chartClone.style.overflow = 'visible';
+			chartClone.style.height = 'auto';
+			const chartInner = chartClone.querySelector('.gantt-chart');
+			if (chartInner) {
+				chartInner.style.minHeight = 'auto';
+			}
+
+			wrapper.appendChild(chartClone);
+
+			// Add to DOM temporarily
+			document.body.appendChild(wrapper);
+
+			// Generate canvas
+			const canvas = await html2canvas(wrapper, {
+				backgroundColor: '#ffffff',
+				scale: 2, // Higher quality
+				logging: false,
+				useCORS: true,
+				allowTaint: true,
+				width: wrapper.scrollWidth,
+				height: wrapper.scrollHeight
+			});
+
+			// Remove temporary wrapper
+			document.body.removeChild(wrapper);
+
+			// Convert to blob and download
+			canvas.toBlob((blob) => {
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement('a');
+				const projectName = this.project ? this.project.title : 'Timeline';
+				const timestamp = new Date().toISOString().split('T')[0];
+				link.download = `${projectName}_${timestamp}.png`;
+				link.href = url;
+				link.click();
+
+				// Clean up
+				URL.revokeObjectURL(url);
+
+				frappe.unfreeze();
+
+				// Show success message
+				frappe.show_alert({
+					message: 'Timeline exportado exitosamente',
+					indicator: 'green'
+				}, 3);
+			}, 'image/png');
+
+		} catch (error) {
+			frappe.unfreeze();
+
+			frappe.msgprint({
+				title: 'Error',
+				message: 'No se pudo exportar el timeline: ' + (error.message || 'Error desconocido'),
+				indicator: 'red'
+			});
+
+			console.error('Export error:', error);
+		}
+	}
+
+	/**
+	 * Load html2canvas library dynamically
+	 * @private
+	 */
+	_loadHtml2Canvas() {
+		return new Promise((resolve, reject) => {
+			// Check if already loaded
+			if (window.html2canvas) {
+				resolve();
+				return;
+			}
+
+			// Load from CDN
+			const script = document.createElement('script');
+			script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+			script.integrity = 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==';
+			script.crossOrigin = 'anonymous';
+			script.onload = () => resolve();
+			script.onerror = () => reject(new Error('No se pudo cargar html2canvas'));
+			document.head.appendChild(script);
+		});
+	}
+
+	/**
+	 * Print Gantt chart
+	 * Opens browser print dialog with print-optimized view
+	 */
+	printChart() {
+		// Save scroll position
+		const scrollContainer = this._getScrollContainer();
+		const savedScroll = scrollContainer ? scrollContainer.scrollLeft : 0;
+
+		// Add print class to hide interactive elements
+		document.body.classList.add('gantt-printing');
+
+		// Print
+		window.print();
+
+		// Restore after print
+		setTimeout(() => {
+			document.body.classList.remove('gantt-printing');
+			if (scrollContainer) {
+				scrollContainer.scrollLeft = savedScroll;
+			}
+		}, 100);
+	}
+
+	/**
 	 * Destroy the component
 		 */
 		destroy() {

@@ -563,6 +563,81 @@
 .text-success {
 	color: var(--success) !important;
 }
+
+/* Export Menu */
+.gantt-export-menu {
+	display: flex;
+	flex-direction: column;
+}
+
+.gantt-export-menu__item {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-3) var(--space-4);
+	cursor: pointer;
+	background: var(--surface-1);
+	border-bottom: 2px solid var(--border-2);
+	transition: all var(--transition);
+	font-family: var(--font-body);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--text-1);
+}
+
+.gantt-export-menu__item:last-child {
+	border-bottom: none;
+}
+
+.gantt-export-menu__item:hover {
+	background: var(--surface-2);
+	color: var(--primary);
+}
+
+.gantt-export-menu__item svg {
+	flex-shrink: 0;
+}
+
+/* Print-specific styles */
+@media print {
+	/* Hide UI elements during print */
+	.gantt-toolbar__right,
+	.task-detail-sidebar,
+	.sidebar-overlay,
+	.gantt-export-menu {
+		display: none !important;
+	}
+
+	/* Make sure project header is visible */
+	.gantt-toolbar,
+	.gantt-project-header,
+	.gantt-container {
+		border: 2px solid var(--border-1) !important;
+		box-shadow: none !important;
+		page-break-inside: avoid;
+	}
+
+	/* Ensure chart is visible */
+	.gantt-container {
+		overflow: visible !important;
+		height: auto !important;
+	}
+
+	.gantt-chart {
+		min-height: auto !important;
+	}
+
+	/* Page setup */
+	@page {
+		size: landscape;
+		margin: 1cm;
+	}
+
+	body {
+		print-color-adjust: exact;
+		-webkit-print-color-adjust: exact;
+	}
+}
 </style>
 
 {% endblock %}
@@ -675,10 +750,72 @@
 			);
 		});
 
-		// Export
-		document.getElementById('btn-export').addEventListener('click', function() {
-			// TODO: Export as PNG (Phase 6)
-			frappe.msgprint('Export será implementado en Phase 6');
+		// Export - show menu with options
+		document.getElementById('btn-export').addEventListener('click', function(e) {
+			if (!ganttChart) {
+				frappe.msgprint('El gráfico no está cargado');
+				return;
+			}
+
+			// Create export menu
+			const menu = document.createElement('div');
+			menu.className = 'gantt-export-menu';
+			menu.style.cssText = `
+				position: fixed;
+				top: ${e.clientY}px;
+				left: ${e.clientX}px;
+				background: var(--surface-1);
+				border: 3px solid var(--border-1);
+				box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+				z-index: 1001;
+				min-width: 180px;
+			`;
+
+			menu.innerHTML = `
+				<div class="gantt-export-menu__item" data-action="png">
+					<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+					</svg>
+					<span>Exportar como PNG</span>
+				</div>
+				<div class="gantt-export-menu__item" data-action="print">
+					<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+					</svg>
+					<span>Imprimir</span>
+				</div>
+			`;
+
+			document.body.appendChild(menu);
+
+			// Handle menu item clicks
+			menu.querySelectorAll('.gantt-export-menu__item').forEach(item => {
+				item.addEventListener('click', function() {
+					const action = this.getAttribute('data-action');
+
+					if (action === 'png') {
+						ganttChart.exportAsPNG();
+					} else if (action === 'print') {
+						ganttChart.printChart();
+					}
+
+					// Remove menu
+					document.body.removeChild(menu);
+				});
+			});
+
+			// Close menu on click outside
+			const closeMenu = function(evt) {
+				if (!menu.contains(evt.target)) {
+					if (document.body.contains(menu)) {
+						document.body.removeChild(menu);
+					}
+					document.removeEventListener('click', closeMenu);
+				}
+			};
+			setTimeout(() => {
+				document.addEventListener('click', closeMenu);
+			}, 10);
 		});
 	}
 
