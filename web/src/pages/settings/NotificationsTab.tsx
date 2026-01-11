@@ -4,6 +4,7 @@ import { Save, Loader2, Bell, BellOff, Clock, Zap } from 'lucide-react'
 import { useUserSettings } from '../../api'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { TimePicker } from '../../components/ui/TimePicker'
 
 type NotificationFrequency = 'realtime' | 'daily' | 'weekly' | 'off'
 
@@ -186,29 +187,17 @@ export function NotificationsTab() {
         </div>
 
         {notifications.quiet_hours_enabled && (
-          <div className="grid grid-cols-2 gap-4 p-4 bg-stone-50 rounded-xl">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Hora de inicio
-              </label>
-              <input
-                type="time"
-                value={notifications.quiet_hours_start.substring(0, 5)}
-                onChange={(e) => handleChange('quiet_hours_start', `${e.target.value}:00`)}
-                className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Hora de fin
-              </label>
-              <input
-                type="time"
-                value={notifications.quiet_hours_end.substring(0, 5)}
-                onChange={(e) => handleChange('quiet_hours_end', `${e.target.value}:00`)}
-                className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-stone-50 rounded-xl">
+            <TimePicker
+              value={notifications.quiet_hours_start}
+              onChange={(value) => handleChange('quiet_hours_start', value)}
+              label="Hora de inicio"
+            />
+            <TimePicker
+              value={notifications.quiet_hours_end}
+              onChange={(value) => handleChange('quiet_hours_end', value)}
+              label="Hora de fin"
+            />
           </div>
         )}
       </div>
