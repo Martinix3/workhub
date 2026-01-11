@@ -562,9 +562,9 @@ frappe.workhub.header = {
 
                 <!-- User Menu -->
                 <div class="wh-user-menu">
-                    <div class="wh-user-avatar" data-action="user-menu">
+                    <button class="wh-user-avatar" data-action="user-menu" aria-label="Abrir menu de usuario">
                         ${this.getUserInitials()}
-                    </div>
+                    </button>
                 </div>
             </div>
         `;
