@@ -13,11 +13,14 @@ export default defineConfig(({ mode }) => {
       port: 5177,
       proxy: {
         // Proxy API requests to Frappe backend
+        // This enables cookie-based authentication in development:
+        // - Cookies from backend are automatically forwarded to/from the browser
+        // - cookieDomainRewrite ensures cookies work across different ports on localhost
+        // - changeOrigin ensures the Origin header matches the backend URL
         '/api': {
           target: frappeUrl,
           changeOrigin: true,
           secure: false,
-          // Forward cookies
           cookieDomainRewrite: 'localhost',
         },
       },
