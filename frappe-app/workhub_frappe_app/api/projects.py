@@ -102,11 +102,19 @@ def get_project(project_id):
         if user_data:
             member.update(user_data)
 
+    # Check if project has tasks with dates (suitable for Gantt view)
+    has_gantt_view = frappe.db.exists("WH Task", {
+        "project": project_id,
+        "start_date": ["is", "set"],
+        "due_date": ["is", "set"]
+    })
+
     return {
         "project": project.as_dict(),
         "tasks_by_status": tasks_by_status,
         "milestones": milestones,
-        "team": team
+        "team": team,
+        "has_gantt_view": bool(has_gantt_view)
     }
 
 
