@@ -40,6 +40,10 @@ def get_users(limit=50, offset=0, search=None):
     # Get total count
     total = frappe.db.count("User", filters)
 
+    # SECURITY: ignore_permissions is safe here because:
+    # - Function is protected by require_any_role("System Manager", "HR Manager")
+    # - This is an administrative operation to list all users in the system
+    # - Regular users don't have read access to User doctype
     # Get users
     users = frappe.get_list("User",
         filters=filters,
@@ -147,6 +151,10 @@ def create_user(email, first_name, last_name=None, roles=None, send_welcome_emai
     # Set a random password (user will reset via email)
     user_doc.new_password = random_string(16)
 
+    # SECURITY: ignore_permissions is safe here because:
+    # - Function is protected by require_any_role("System Manager")
+    # - This is an administrative operation to create users
+    # - Regular users don't have create permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.insert()
 
@@ -195,6 +203,10 @@ def update_user(user_id, data):
     if "first_name" in data or "last_name" in data:
         user_doc.full_name = f"{user_doc.first_name or ''} {user_doc.last_name or ''}".strip()
 
+    # SECURITY: ignore_permissions is safe here because:
+    # - Function is protected by require_any_role("System Manager")
+    # - This is an administrative operation to update users
+    # - Regular users don't have write permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.save()
     frappe.db.commit()
@@ -229,6 +241,10 @@ def delete_user(user_id):
 
     user_doc = frappe.get_doc("User", user_id)
     user_doc.enabled = 0
+    # SECURITY: ignore_permissions is safe here because:
+    # - Function is protected by require_any_role("System Manager")
+    # - This is an administrative operation to disable users
+    # - Regular users don't have write permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.save()
     frappe.db.commit()
@@ -249,6 +265,10 @@ def get_roles():
     """
     require_any_role("System Manager")
 
+    # SECURITY: ignore_permissions is safe here because:
+    # - Function is protected by require_any_role("System Manager")
+    # - This is an administrative operation to list all available roles
+    # - Regular users don't have read access to Role doctype
     # Get all non-disabled roles
     roles = frappe.get_list("Role",
         filters={"disabled": 0},
@@ -296,6 +316,10 @@ def assign_role(user_id, role):
 
     # Add the role
     user_doc.append("roles", {"role": role})
+    # SECURITY: ignore_permissions is safe here because:
+    # - Function is protected by require_any_role("System Manager")
+    # - This is an administrative operation to assign roles
+    # - Regular users don't have write permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.save()
     frappe.db.commit()
@@ -341,6 +365,10 @@ def remove_role(user_id, role):
             "roles": [r.role for r in user_doc.roles]
         }
 
+    # SECURITY: ignore_permissions is safe here because:
+    # - Function is protected by require_any_role("System Manager")
+    # - This is an administrative operation to remove roles
+    # - Regular users don't have write permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.save()
     frappe.db.commit()
@@ -384,6 +412,10 @@ def send_invitation(email, first_name=None, roles=None, message=None):
         else:
             # Re-enable disabled user
             user_doc.enabled = 1
+            # SECURITY: ignore_permissions is safe here because:
+            # - Function is protected by require_any_role("System Manager")
+            # - This is an administrative operation to re-enable users
+            # - Regular users don't have write permission on User doctype
             user_doc.flags.ignore_permissions = True
             user_doc.save()
             user_doc.send_welcome_email()
@@ -409,6 +441,10 @@ def send_invitation(email, first_name=None, roles=None, message=None):
             if frappe.db.exists("Role", role_name):
                 user_doc.append("roles", {"role": role_name})
 
+    # SECURITY: ignore_permissions is safe here because:
+    # - Function is protected by require_any_role("System Manager")
+    # - This is an administrative operation to create users via invitation
+    # - Regular users don't have create permission on User doctype
     user_doc.flags.ignore_permissions = True
     user_doc.insert()
 
