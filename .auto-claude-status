@@ -9,17 +9,17 @@
     "failed": 0
   },
   "phase": {
-    "current": "Cross-Origin Cookie Configuration",
+    "current": "Testing and Cleanup",
     "id": null,
-    "total": 2
+    "total": 3
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 10,
+    "number": 13,
     "started_at": "2026-01-11T10:22:22.848286"
   },
-  "last_update": "2026-01-11T10:43:40.256342"
+  "last_update": "2026-01-11T10:53:09.343280"
 }

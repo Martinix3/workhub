@@ -41,11 +41,11 @@ def get_social_login_url(provider="google", redirect_to=None):
     """Get the OAuth authorization URL for a provider.
 
     The OAuth flow redirects to /workhub_auth_callback which generates
-    an API token and redirects to the frontend with the token.
+    an API token and sets it in a secure HTTP-only cookie.
     """
     try:
-        # Use our custom callback page that generates the API token
-        # The callback will then redirect to the frontend with the token
+        # Use our custom callback page that generates and stores the API token
+        # The callback sets the token in a secure HTTP-only cookie
         callback_url = frappe.utils.get_url("/workhub_auth_callback")
         auth_url = get_oauth2_authorize_url(provider, callback_url)
         return {"url": auth_url}
