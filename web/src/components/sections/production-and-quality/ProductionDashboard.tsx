@@ -1,5 +1,7 @@
 import type { ProductionDashboardProps, ProductionKPIs, ProductionOrder, ProductionLine } from './types'
 import { TrendingUp, TrendingDown, Minus, Play, Pause, AlertTriangle, Wrench, Eye } from 'lucide-react'
+import { CustomKPIGrid } from '../../kpi-builder'
+import { useCustomKPIs } from '../../../api'
 
 interface KPICardProps {
   kpi: { value: number; previousValue: number; change: number; label: string }
@@ -190,6 +192,9 @@ export function ProductionDashboard({
     { key: 'unitsProduced', format: 'number' },
   ]
 
+  // Fetch custom KPIs for OPS department
+  const { data: customKPIs } = useCustomKPIs('OPS', true)
+
   const activeOrders = orders.filter(o => o.status === 'in_progress' || o.status === 'scheduled')
 
   return (
@@ -210,6 +215,27 @@ export function ProductionDashboard({
           <KPICard key={key} kpi={kpis[key]} format={format} />
         ))}
       </div>
+
+      {/* Custom KPIs Section - Only show if there are custom KPIs */}
+      {customKPIs && customKPIs.length > 0 && (
+        <div className="mb-8">
+          {/* Section Header */}
+          <div className="mb-4">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              KPIs Personalizados
+            </h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Tus indicadores personalizados de produccion
+            </p>
+          </div>
+
+          {/* Custom KPI Grid */}
+          <CustomKPIGrid
+            department="OPS"
+            includeShared={true}
+          />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Orders Table */}
