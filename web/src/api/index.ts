@@ -89,7 +89,8 @@ export {
 export {
   useUserSettings,
   useUserProfile,
-  useDepartments
+  useDepartments,
+  useUserKPIs
 } from './hooks/useSettings'
 
 // Admin Hooks

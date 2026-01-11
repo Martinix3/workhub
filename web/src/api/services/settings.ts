@@ -45,6 +45,22 @@ export interface UpdateSettingsData {
   }
 }
 
+export interface UserKPIs {
+  user: string
+  period: 'week' | 'month'
+  completed: number
+  velocity: number
+  work_days: number
+  active_projects: number
+  current: {
+    [status: string]: number
+  }
+  daily_trend: Array<{
+    date: string
+    count: number
+  }>
+}
+
 // API Methods
 const settingsApi = {
   // Get user settings
@@ -74,6 +90,14 @@ const settingsApi = {
   // Get available departments
   async getDepartments(): Promise<Department[]> {
     return frappe.call<Department[]>('workhub_frappe_app.api.settings.get_available_departments')
+  },
+
+  // Get user KPIs
+  async getUserKPIs(params?: { userId?: string; period?: 'week' | 'month' }): Promise<UserKPIs> {
+    return frappe.call<UserKPIs>('workhub_frappe_app.api.kpis.get_user_kpis', {
+      user_id: params?.userId,
+      period: params?.period
+    })
   }
 }
 

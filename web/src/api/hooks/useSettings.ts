@@ -1,9 +1,14 @@
 // React hooks for Settings
 import { useState, useEffect, useCallback } from 'react'
 import settingsApi from '../services/settings'
-import type { UserSettings, UserProfile, Department, UpdateSettingsData, UpdateProfileData } from '../services/settings'
-import { createDataHook, type UseDataState } from './createDataHook'
-import { sampleDepartments } from '../sample-data'
+import type { UserSettings, UserProfile, Department, UpdateSettingsData, UpdateProfileData, UserKPIs } from '../services/settings'
+
+interface UseDataState<T> {
+  data: T | null
+  loading: boolean
+  error: Error | null
+  refetch: () => Promise<void>
+}
 
 // Hook for user settings
 export function useUserSettings(): UseDataState<UserSettings> & {
@@ -90,8 +95,49 @@ export function useUserProfile(): UseDataState<UserProfile> & {
 }
 
 // Hook for departments
-export const useDepartments = createDataHook<Department[]>({
-  apiMethod: settingsApi.getDepartments,
-  sampleData: sampleDepartments,
-  errorMessage: 'Failed to fetch departments'
-})
+export function useDepartments(): UseDataState<Department[]> {
+  const [data, setData] = useState<Department[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const departments = await settingsApi.getDepartments()
+      setData(departments)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch departments'))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  return { data, loading, error, refetch: fetch }
+}
+
+// Hook for user KPIs
+export function useUserKPIs(period: 'week' | 'month' = 'week'): UseDataState<UserKPIs> {
+  const [data, setData] = useState<UserKPIs | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const kpis = await settingsApi.getUserKPIs({ period })
+      setData(kpis)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch user KPIs'))
+    } finally {
+      setLoading(false)
+    }
+  }, [period])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  return { data, loading, error, refetch: fetch }
+}

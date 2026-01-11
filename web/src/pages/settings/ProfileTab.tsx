@@ -4,6 +4,7 @@ import { Camera, Save, Loader2 } from 'lucide-react'
 import { useUserProfile } from '../../api'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { UserKPIWidget } from '../../components/settings/UserKPIWidget'
 
 export function ProfileTab() {
   const { data: profile, loading, error, refetch, updateProfile, updating } = useUserProfile()
@@ -103,6 +104,9 @@ export function ProfileTab() {
           </div>
         </div>
       </div>
+
+      {/* KPI Widget */}
+      <UserKPIWidget />
 
       {/* Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
