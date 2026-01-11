@@ -75,3 +75,29 @@ def authenticate_with_cookie():
         # Log any unexpected errors but don't break the request
         frappe.log_error(f"Error in cookie auth middleware: {e}", "Auth Middleware")
         return
+
+
+def add_cors_credentials_header():
+    """
+    Middleware to add Access-Control-Allow-Credentials header to responses.
+
+    This function runs after each request and adds the necessary CORS header
+    to allow cookies to be sent with cross-origin requests. This is required
+    for cookie-based authentication to work when the frontend and backend are
+    on different origins (e.g., different ports in development).
+
+    The Access-Control-Allow-Credentials header must be set to 'true' to allow
+    the browser to send cookies with cross-origin requests when using
+    credentials: 'include' in the frontend fetch options.
+
+    Returns:
+        None - Modifies response headers in place
+    """
+    # Skip if no response object
+    if not hasattr(frappe.local, "response") or not frappe.local.response:
+        return
+
+    # Add the Access-Control-Allow-Credentials header
+    # This tells the browser it's safe to expose the response to frontend JavaScript
+    # when the request's credentials mode is 'include'
+    frappe.local.response.headers["Access-Control-Allow-Credentials"] = "true"
