@@ -584,3 +584,53 @@ def recalculate_health(project_id):
         "health": project.health,
         "health_reason": project.health_reason
     }
+
+
+@frappe.whitelist()
+def bulk_change_status(project_ids, new_status):
+    """Change status for multiple projects"""
+    require_permission("WH Project", "write")
+    if isinstance(project_ids, str):
+        project_ids = json.loads(project_ids)
+
+    valid_statuses = ["ACTIVE", "PAUSED", "COMPLETED", "CANCELLED"]
+    if new_status not in valid_statuses:
+        frappe.throw(_("Invalid status: {0}").format(new_status))
+
+    for project_id in project_ids:
+        frappe.db.set_value("WH Project", project_id, "status", new_status)
+
+    return {"success": True, "count": len(project_ids)}
+
+
+@frappe.whitelist()
+def bulk_change_owner(project_ids, new_owner):
+    """Change owner for multiple projects"""
+    require_permission("WH Project", "write")
+    if isinstance(project_ids, str):
+        project_ids = json.loads(project_ids)
+
+    # Validate that new_owner is a valid User
+    if not frappe.db.exists("User", new_owner):
+        frappe.throw(_("Invalid user: {0}").format(new_owner))
+
+    for project_id in project_ids:
+        frappe.db.set_value("WH Project", project_id, "owner_user", new_owner)
+
+    return {"success": True, "count": len(project_ids)}
+
+
+@frappe.whitelist()
+def bulk_archive(project_ids):
+    """Archive multiple projects by setting status to CANCELLED and actual_end_date to today"""
+    require_permission("WH Project", "write")
+    if isinstance(project_ids, str):
+        project_ids = json.loads(project_ids)
+
+    for project_id in project_ids:
+        frappe.db.set_value("WH Project", project_id, {
+            "status": "CANCELLED",
+            "actual_end_date": nowdate()
+        })
+
+    return {"success": True, "count": len(project_ids)}
