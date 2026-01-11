@@ -23,6 +23,10 @@ export function AppShell({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
+  // Detect platform for keyboard shortcut hint
+  const isMac = typeof window !== 'undefined' &&
+    /Mac|iPhone|iPad|iPod/.test(window.navigator.platform)
+
   // Handle keyboard shortcuts for command palette
   const handleKeyboardShortcut = useCallback((e: KeyboardEvent) => {
     // Cmd/Ctrl+K to toggle command palette
@@ -138,9 +142,14 @@ export function AppShell({
                 className="flex-1 outline-none font-['Inter'] text-base"
                 autoFocus
               />
-              <kbd className="hidden sm:inline-block px-2 py-1 text-xs font-mono bg-stone-100 border border-stone-300">
-                ESC
-              </kbd>
+              <div className="hidden sm:flex items-center gap-2">
+                <kbd className="px-2 py-1 text-xs font-mono bg-stone-100 border border-stone-300">
+                  {isMac ? '⌘K' : 'Ctrl+K'}
+                </kbd>
+                <kbd className="px-2 py-1 text-xs font-mono bg-stone-100 border border-stone-300">
+                  ESC
+                </kbd>
+              </div>
             </div>
             <div className="p-4 text-sm text-stone-500">
               Escribe para buscar paginas, clientes, pedidos...
