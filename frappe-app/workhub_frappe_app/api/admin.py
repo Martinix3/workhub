@@ -9,7 +9,7 @@ from frappe import _
 from frappe.utils import cstr, now_datetime, random_string
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_any_role, validate_json_input
+from workhub_frappe_app.api.utils import require_auth, require_any_role, validate_json_input, sanitize_search_term
 
 
 @frappe.whitelist()
@@ -35,7 +35,8 @@ def get_users(limit=50, offset=0, search=None):
     filters = {"enabled": 1, "user_type": "System User"}
 
     if search:
-        filters["full_name"] = ["like", f"%{search}%"]
+        sanitized_search = sanitize_search_term(search)
+        filters["full_name"] = ["like", f"%{sanitized_search}%"]
 
     # Get total count
     total = frappe.db.count("User", filters)
