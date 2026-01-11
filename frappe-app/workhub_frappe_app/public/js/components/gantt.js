@@ -242,6 +242,9 @@
 
 			// Render milestones
 			this._renderMilestones();
+
+			// Render dependency arrows
+			this._renderDependencies();
 		}
 
 		/**
@@ -906,7 +909,256 @@
 		}
 
 		/**
-		 * Destroy the component
+	/**
+	 * Render dependency arrows between tasks
+	 * @private
+	 */
+	_renderDependencies() {
+		if (!this.dependencies || this.dependencies.length === 0) {
+			return;
+		}
+
+		// Create or get SVG layer
+		if (!this.elements.svg) {
+			this.elements.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+			this.elements.svg.setAttribute('class', 'gantt-dependencies');
+			this.elements.svg.style.position = 'absolute';
+			this.elements.svg.style.top = '0';
+			this.elements.svg.style.left = '0';
+			this.elements.svg.style.width = '100%';
+			this.elements.svg.style.height = '100%';
+			this.elements.svg.style.pointerEvents = 'none';
+			this.elements.svg.style.zIndex = '5';
+		} else {
+			// Clear existing paths
+			this.elements.svg.innerHTML = '';
+		}
+
+		// Define arrowhead marker
+		const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+		// Normal arrowhead
+		const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+		marker.setAttribute('id', 'arrowhead');
+		marker.setAttribute('markerWidth', '10');
+		marker.setAttribute('markerHeight', '10');
+		marker.setAttribute('refX', '9');
+		marker.setAttribute('refY', '3');
+		marker.setAttribute('orient', 'auto');
+
+		const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+		arrowPath.setAttribute('points', '0 0, 10 3, 0 6');
+		arrowPath.setAttribute('class', 'gantt-dependency__arrow');
+		marker.appendChild(arrowPath);
+		defs.appendChild(marker);
+
+		// Critical path arrowhead
+		const markerCritical = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+		markerCritical.setAttribute('id', 'arrowhead-critical');
+		markerCritical.setAttribute('markerWidth', '10');
+		markerCritical.setAttribute('markerHeight', '10');
+		markerCritical.setAttribute('refX', '9');
+		markerCritical.setAttribute('refY', '3');
+		markerCritical.setAttribute('orient', 'auto');
+
+		const arrowPathCritical = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+		arrowPathCritical.setAttribute('points', '0 0, 10 3, 0 6');
+		arrowPathCritical.setAttribute('class', 'gantt-dependency__arrow');
+		arrowPathCritical.style.fill = 'var(--danger)';
+		markerCritical.appendChild(arrowPathCritical);
+		defs.appendChild(markerCritical);
+
+		this.elements.svg.appendChild(defs);
+
+		// Render each dependency
+		this.dependencies.forEach(dep => {
+			const path = this._createDependencyArrow(dep);
+			if (path) {
+				this.elements.svg.appendChild(path);
+			}
+		});
+
+		// Add SVG to timeline body if not already added
+		if (!this.elements.svg.parentNode) {
+			this.elements.body.appendChild(this.elements.svg);
+		}
+	}
+
+	/**
+	 * Create SVG path for a dependency arrow
+	 * @private
+	 */
+	_createDependencyArrow(dependency) {
+		// Find predecessor and successor task bar elements
+		const predBar = this._getTaskBarElement(dependency.predecessor);
+		const succBar = this._getTaskBarElement(dependency.successor);
+
+		if (!predBar || !succBar) {
+			return null; // One or both tasks not rendered
+		}
+
+		// Get task bar positions
+		const predPos = this._getTaskBarPosition(predBar);
+		const succPos = this._getTaskBarPosition(succBar);
+
+		if (!predPos || !succPos) {
+			return null;
+		}
+
+		// Calculate dependency path based on type
+		const pathData = this._calculateDependencyPath(dependency.type || 'FS', predPos, succPos);
+
+		if (!pathData) {
+			return null;
+		}
+
+		// Create SVG path element
+		const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+		path.setAttribute('d', pathData);
+		path.setAttribute('class', 'gantt-dependency');
+
+		// Add dependency type class
+		const depType = (dependency.type || 'FS').toLowerCase();
+		path.classList.add(`gantt-dependency--${depType}`);
+
+		// Add critical path class if applicable
+		if (dependency.is_critical || (this.showCriticalPath && dependency.is_critical)) {
+			path.classList.add('gantt-dependency--critical');
+			path.setAttribute('marker-end', 'url(#arrowhead-critical)');
+		} else {
+			path.setAttribute('marker-end', 'url(#arrowhead)');
+		}
+
+		path.dataset.dependencyId = dependency.name;
+		path.dataset.predecessor = dependency.predecessor;
+		path.dataset.successor = dependency.successor;
+
+		return path;
+	}
+
+	/**
+	 * Get task bar DOM element by task ID
+	 * @private
+	 */
+	_getTaskBarElement(taskId) {
+		return this.elements.body.querySelector(`.gantt-task-bar[data-task-id="${taskId}"]`);
+	}
+
+	/**
+	 * Get task bar position and dimensions
+	 * @private
+	 */
+	_getTaskBarPosition(taskBarElement) {
+		if (!taskBarElement || !this.elements.body) {
+			return null;
+		}
+
+		const barRect = taskBarElement.getBoundingClientRect();
+		const bodyRect = this.elements.body.getBoundingClientRect();
+
+		// Calculate position relative to timeline body
+		return {
+			left: barRect.left - bodyRect.left,
+			top: barRect.top - bodyRect.top,
+			right: barRect.right - bodyRect.left,
+			bottom: barRect.bottom - bodyRect.top,
+			width: barRect.width,
+			height: barRect.height,
+			centerX: (barRect.left - bodyRect.left) + (barRect.width / 2),
+			centerY: (barRect.top - bodyRect.top) + (barRect.height / 2)
+		};
+	}
+
+	/**
+	 * Calculate SVG path for dependency based on type
+	 * @private
+	 */
+	_calculateDependencyPath(type, predPos, succPos) {
+		let startX, startY, endX, endY;
+
+		// Determine start and end points based on dependency type
+		switch (type.toUpperCase()) {
+			case 'FS': // Finish-to-Start (default)
+				startX = predPos.right;
+				startY = predPos.centerY;
+				endX = succPos.left;
+				endY = succPos.centerY;
+				break;
+
+			case 'SS': // Start-to-Start
+				startX = predPos.left;
+				startY = predPos.centerY;
+				endX = succPos.left;
+				endY = succPos.centerY;
+				break;
+
+			case 'FF': // Finish-to-Finish
+				startX = predPos.right;
+				startY = predPos.centerY;
+				endX = succPos.right;
+				endY = succPos.centerY;
+				break;
+
+			case 'SF': // Start-to-Finish
+				startX = predPos.left;
+				startY = predPos.centerY;
+				endX = succPos.right;
+				endY = succPos.centerY;
+				break;
+
+			default:
+				// Default to FS
+				startX = predPos.right;
+				startY = predPos.centerY;
+				endX = succPos.left;
+				endY = succPos.centerY;
+		}
+
+		// Calculate path with bezier curve for smooth arrows
+		// Use horizontal offset for control points to create smooth curves
+		const dx = endX - startX;
+		const dy = endY - startY;
+		const absDx = Math.abs(dx);
+		const absDy = Math.abs(dy);
+
+		// Control point offset (horizontal)
+		const cpOffset = Math.min(absDx / 2, 50);
+
+		// Build path
+		// For simple cases, use straight line with right angles
+		// For complex cases, use bezier curves
+		let path;
+
+		if (absDy < 10 && dx > 0) {
+			// Tasks on same row, moving forward - straight line
+			path = `M ${startX} ${startY} L ${endX} ${endY}`;
+		} else if (dx > 30) {
+			// Forward dependency with vertical offset - smooth S curve
+			const cp1X = startX + cpOffset;
+			const cp1Y = startY;
+			const cp2X = endX - cpOffset;
+			const cp2Y = endY;
+			path = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+		} else {
+			// Backward or tight dependency - use right-angle path
+			const midX = startX + 20;
+			const midY1 = startY;
+			const midY2 = endY;
+			const minX = endX - 20;
+
+			// Go right, down/up, left, then to end
+			path = `M ${startX} ${startY}
+					L ${midX} ${midY1}
+					L ${midX} ${midY2}
+					L ${minX} ${midY2}
+					L ${endX} ${endY}`;
+		}
+
+		return path;
+	}
+
+	/**
+	 * Destroy the component
 		 */
 		destroy() {
 			this.container.innerHTML = '';
