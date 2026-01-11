@@ -81,3 +81,10 @@ export {
   useCustomerSearch,
   useItemSearch
 } from './useNotepad'
+
+// Quick Task Creation
+export {
+  useQuickTask,
+  useQuickTaskOptions,
+  useWorkLinkSuggestions
+} from './useQuickTask'
