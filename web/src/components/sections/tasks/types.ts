@@ -5,6 +5,14 @@ export type TaskPriority = 'P0' | 'P1' | 'P2'
 export type Department = 'SALES' | 'OPS' | 'MKT'
 export type ProjectStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED'
 export type ProjectHealth = 'GREEN' | 'YELLOW' | 'RED'
+export type AssigneeRole = 'Owner' | 'Collaborator'
+
+export interface TaskAssignee {
+  user: string
+  role: AssigneeRole
+  user_name?: string
+  user_email?: string
+}
 
 export interface Task {
   name: string  // WHT-2024-00001
@@ -15,8 +23,8 @@ export interface Task {
   department: Department
   project?: string
   project_title?: string
-  assigned_to: string
-  assigned_to_name?: string
+  assignees: TaskAssignee[]
+  primary_owner?: string  // Computed field - user ID of the Owner role assignee
   created_by?: string
   start_date?: string
   due_date?: string
@@ -155,7 +163,7 @@ export interface TaskFilters {
   priority?: TaskPriority
   department?: Department
   project?: string
-  assigned_to?: string
+  assignee?: string  // Filter by any assignee (Owner or Collaborator)
   search?: string
 }
 
