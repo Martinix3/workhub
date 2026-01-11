@@ -58,6 +58,7 @@
 			// State
 			this.currentZoom = this.options.zoom;
 			this.showCriticalPath = false;
+			this.savedScrollPosition = 0;
 
 			// Elements
 			this.elements = {
@@ -81,6 +82,9 @@
 
 			// Clear container
 			this.container.innerHTML = '';
+
+			// Setup keyboard navigation
+			this._setupKeyboardNavigation();
 		}
 
 		/**
@@ -238,6 +242,9 @@
 				return;
 			}
 
+			// Save scroll position before re-render
+			this._saveScrollPosition();
+
 			// Clear container
 			this.container.innerHTML = '';
 
@@ -255,6 +262,9 @@
 
 			// Render dependency arrows
 			this._renderDependencies();
+
+			// Restore scroll position after re-render
+			this._restoreScrollPosition();
 		}
 
 		/**
@@ -778,13 +788,25 @@
 				return this._isToday(colDate);
 			});
 
-			if (todayColumn === -1) return;
+			if (todayColumn === -1) {
+				// Today is not in visible range
+				return;
+			}
+
+			// Get the scroll container (parent of gantt-chart)
+			const scrollContainer = this._getScrollContainer();
+			if (!scrollContainer) return;
 
 			const columnWidth = this._getColumnWidth();
-			const scrollLeft = (todayColumn * columnWidth) - (this.container.offsetWidth / 2);
+			const taskLabelWidth = 240; // Width of task label column
 
-			this.container.scrollTo({
-				left: scrollLeft,
+			// Calculate scroll position to center today's column
+			// Account for task label offset and center in viewport
+			const todayPosition = taskLabelWidth + (todayColumn * columnWidth);
+			const scrollLeft = todayPosition - (scrollContainer.offsetWidth / 2) + (columnWidth / 2);
+
+			scrollContainer.scrollTo({
+				left: Math.max(0, scrollLeft),
 				behavior: 'smooth'
 			});
 		}
@@ -1220,6 +1242,112 @@
 			cancelable: true
 		});
 		this.container.dispatchEvent(event);
+	}
+
+	/**
+	 * Get the scroll container element
+	 * @private
+	 * @returns {HTMLElement|null}
+	 */
+	_getScrollContainer() {
+		// The scroll container is the parent with class 'gantt-container'
+		let el = this.container;
+		while (el && el.parentElement) {
+			if (el.classList.contains('gantt-container')) {
+				return el;
+			}
+			el = el.parentElement;
+		}
+		// Fallback to container parent
+		return this.container.parentElement;
+	}
+
+	/**
+	 * Save current scroll position
+	 * @private
+	 */
+	_saveScrollPosition() {
+		const scrollContainer = this._getScrollContainer();
+		if (scrollContainer) {
+			this.savedScrollPosition = scrollContainer.scrollLeft;
+		}
+	}
+
+	/**
+	 * Restore saved scroll position
+	 * @private
+	 */
+	_restoreScrollPosition() {
+		const scrollContainer = this._getScrollContainer();
+		if (scrollContainer && this.savedScrollPosition !== undefined) {
+			// Use requestAnimationFrame to ensure DOM has been updated
+			requestAnimationFrame(() => {
+				scrollContainer.scrollLeft = this.savedScrollPosition;
+			});
+		}
+	}
+
+	/**
+	 * Setup keyboard navigation for the Gantt chart
+	 * @private
+	 */
+	_setupKeyboardNavigation() {
+		const scrollContainer = this._getScrollContainer();
+		if (!scrollContainer) return;
+
+		// Make scroll container focusable
+		if (!scrollContainer.hasAttribute('tabindex')) {
+			scrollContainer.setAttribute('tabindex', '0');
+		}
+
+		// Add keyboard event listener
+		scrollContainer.addEventListener('keydown', (e) => {
+			const columnWidth = this._getColumnWidth();
+			const scrollAmount = columnWidth * 2; // Scroll 2 columns at a time
+
+			switch (e.key) {
+				case 'ArrowLeft':
+					e.preventDefault();
+					scrollContainer.scrollBy({
+						left: -scrollAmount,
+						behavior: 'smooth'
+					});
+					break;
+
+				case 'ArrowRight':
+					e.preventDefault();
+					scrollContainer.scrollBy({
+						left: scrollAmount,
+						behavior: 'smooth'
+					});
+					break;
+
+				case 'Home':
+					e.preventDefault();
+					scrollContainer.scrollTo({
+						left: 0,
+						behavior: 'smooth'
+					});
+					break;
+
+				case 'End':
+					e.preventDefault();
+					scrollContainer.scrollTo({
+						left: scrollContainer.scrollWidth,
+						behavior: 'smooth'
+					});
+					break;
+
+				case 't':
+				case 'T':
+					// Press 't' to scroll to today
+					if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+						e.preventDefault();
+						this.scrollToToday();
+					}
+					break;
+			}
+		});
 	}
 
 	/**
