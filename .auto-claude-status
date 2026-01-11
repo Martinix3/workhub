@@ -1,25 +1,25 @@
 {
   "active": true,
   "spec": "040-auditor-a-reparaci-n-y-estabilizaci-n-de-tests-e2e",
-  "state": "building",
+  "state": "complete",
   "subtasks": {
-    "completed": 10,
+    "completed": 18,
     "total": 18,
-    "in_progress": 1,
+    "in_progress": 0,
     "failed": 0
   },
   "phase": {
-    "current": "Fix Issues",
-    "id": null,
-    "total": 5
+    "current": "",
+    "id": 0,
+    "total": 0
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 12,
-    "started_at": "2026-01-11T20:03:41.021077"
+    "number": 0,
+    "started_at": "2026-01-11T21:14:52.597098"
   },
-  "last_update": "2026-01-11T20:39:25.747242"
+  "last_update": "2026-01-11T21:14:52.653493"
 }
