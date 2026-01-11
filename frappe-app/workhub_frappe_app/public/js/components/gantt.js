@@ -503,6 +503,9 @@
 		// Add dependency drag connector
 		this._setupDependencyDrag(bar, task);
 
+		// Add context menu handler
+		this._setupTaskBarContextMenu(bar, task);
+
 		return bar;
 	}
 
@@ -2685,9 +2688,456 @@
 	}
 
 	/**
+	 * Setup context menu for task bar
+	 * @private
+	 */
+	_setupTaskBarContextMenu(barElement, task) {
+		barElement.addEventListener('contextmenu', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			// Close any existing context menu
+			this._closeContextMenu();
+
+			// Show context menu at cursor position
+			this._showContextMenu(task, e.clientX, e.clientY);
+		});
+	}
+
+	/**
+	 * Show context menu
+	 * @private
+	 */
+	_showContextMenu(task, x, y) {
+		// Create context menu element
+		const menu = document.createElement('div');
+		menu.className = 'gantt-context-menu';
+		menu.id = 'gantt-context-menu';
+
+		// Build menu items
+		const items = [
+			{
+				label: 'Editar tarea',
+				icon: '✏️',
+				action: () => {
+					this.openTaskDetail(task);
+					this._closeContextMenu();
+				}
+			},
+			{
+				type: 'divider'
+			},
+			{
+				label: 'Cambiar estado',
+				icon: '🔄',
+				submenu: [
+					{ label: 'Backlog', value: 'BACKLOG' },
+					{ label: 'Siguiente', value: 'NEXT' },
+					{ label: 'En progreso', value: 'DOING' },
+					{ label: 'Bloqueada', value: 'BLOCKED' },
+					{ label: 'Completada', value: 'DONE' }
+				],
+				action: null // Handled by submenu items
+			},
+			{
+				type: 'divider'
+			},
+			{
+				label: task.is_milestone ? 'Quitar hito' : 'Marcar como hito',
+				icon: task.is_milestone ? '◇' : '◆',
+				action: () => {
+					this._toggleMilestone(task);
+					this._closeContextMenu();
+				}
+			},
+			{
+				label: 'Ver dependencias',
+				icon: '🔗',
+				action: () => {
+					this._showDependenciesDialog(task);
+					this._closeContextMenu();
+				}
+			},
+			{
+				type: 'divider'
+			},
+			{
+				label: 'Eliminar dependencias',
+				icon: '🗑️',
+				className: 'gantt-context-menu__item--danger',
+				action: () => {
+					this._removeDependenciesDialog(task);
+					this._closeContextMenu();
+				}
+			}
+		];
+
+		// Render menu items
+		items.forEach(item => {
+			if (item.type === 'divider') {
+				const divider = document.createElement('div');
+				divider.className = 'gantt-context-menu__divider';
+				menu.appendChild(divider);
+			} else if (item.submenu) {
+				// Status change submenu
+				const menuItem = document.createElement('div');
+				menuItem.className = 'gantt-context-menu__item';
+				if (item.className) {
+					menuItem.classList.add(item.className);
+				}
+				menuItem.innerHTML = `${item.icon} ${item.label} ▸`;
+
+				// Create submenu
+				const submenu = document.createElement('div');
+				submenu.className = 'gantt-context-menu gantt-context-menu__submenu';
+				submenu.style.display = 'none';
+
+				item.submenu.forEach(subItem => {
+					const subMenuItem = document.createElement('div');
+					subMenuItem.className = 'gantt-context-menu__item';
+					subMenuItem.textContent = subItem.label;
+
+					// Highlight current status
+					if (subItem.value === task.status) {
+						subMenuItem.style.fontWeight = 'bold';
+						subMenuItem.style.background = 'var(--surface-2)';
+					}
+
+					subMenuItem.addEventListener('click', () => {
+						this._updateTaskStatus(task.name, subItem.value);
+						this._closeContextMenu();
+					});
+
+					submenu.appendChild(subMenuItem);
+				});
+
+				// Show/hide submenu on hover
+				menuItem.addEventListener('mouseenter', (e) => {
+					submenu.style.display = 'block';
+					const rect = menuItem.getBoundingClientRect();
+					submenu.style.position = 'fixed';
+					submenu.style.left = `${rect.right}px`;
+					submenu.style.top = `${rect.top}px`;
+				});
+
+				menuItem.addEventListener('mouseleave', (e) => {
+					// Keep submenu visible if mouse is over it
+					setTimeout(() => {
+						if (!submenu.matches(':hover')) {
+							submenu.style.display = 'none';
+						}
+					}, 100);
+				});
+
+				submenu.addEventListener('mouseleave', () => {
+					submenu.style.display = 'none';
+				});
+
+				menu.appendChild(menuItem);
+				document.body.appendChild(submenu);
+			} else {
+				// Regular menu item
+				const menuItem = document.createElement('div');
+				menuItem.className = 'gantt-context-menu__item';
+				if (item.className) {
+					menuItem.classList.add(item.className);
+				}
+				menuItem.innerHTML = `${item.icon} ${item.label}`;
+
+				menuItem.addEventListener('click', () => {
+					if (item.action) {
+						item.action();
+					}
+				});
+
+				menu.appendChild(menuItem);
+			}
+		});
+
+		// Position menu at cursor
+		menu.style.position = 'fixed';
+		menu.style.left = `${x}px`;
+		menu.style.top = `${y}px`;
+
+		// Add to document
+		document.body.appendChild(menu);
+
+		// Adjust position if menu goes off-screen
+		const rect = menu.getBoundingClientRect();
+		if (rect.right > window.innerWidth) {
+			menu.style.left = `${x - rect.width}px`;
+		}
+		if (rect.bottom > window.innerHeight) {
+			menu.style.top = `${y - rect.height}px`;
+		}
+
+		// Store reference
+		this.contextMenuState = {
+			isVisible: true,
+			taskId: task.name,
+			element: menu
+		};
+
+		// Setup click-outside to close
+		setTimeout(() => {
+			document.addEventListener('click', this._handleContextMenuClickOutside);
+		}, 0);
+	}
+
+	/**
+	 * Close context menu
+	 * @private
+	 */
+	_closeContextMenu() {
+		if (this.contextMenuState && this.contextMenuState.element) {
+			// Remove main menu
+			this.contextMenuState.element.remove();
+
+			// Remove any submenus
+			document.querySelectorAll('.gantt-context-menu__submenu').forEach(submenu => {
+				submenu.remove();
+			});
+
+			// Remove click listener
+			document.removeEventListener('click', this._handleContextMenuClickOutside);
+
+			// Reset state
+			this.contextMenuState = {
+				isVisible: false,
+				taskId: null,
+				element: null
+			};
+		}
+	}
+
+	/**
+	 * Handle click outside context menu
+	 * @private
+	 */
+	_handleContextMenuClickOutside = (e) => {
+		if (this.contextMenuState && this.contextMenuState.isVisible) {
+			const menu = this.contextMenuState.element;
+			if (menu && !menu.contains(e.target)) {
+				this._closeContextMenu();
+			}
+		}
+	}
+
+	/**
+	 * Toggle milestone status
+	 * @private
+	 */
+	_toggleMilestone(task) {
+		const newValue = !task.is_milestone;
+
+		// Show loading
+		frappe.freeze('Actualizando tarea...');
+
+		// Call API
+		frappe.call({
+			method: 'workhub_frappe_app.api.tasks.update_task',
+			args: {
+				task_id: task.name,
+				data: JSON.stringify({ is_milestone: newValue ? 1 : 0 })
+			},
+			callback: (response) => {
+				frappe.unfreeze();
+
+				if (response.message) {
+					// Show success message
+					frappe.show_alert({
+						message: newValue ? 'Tarea marcada como hito' : 'Hito removido',
+						indicator: 'green'
+					}, 3);
+
+					// Update local data and re-render
+					task.is_milestone = newValue;
+					this._refreshChartData();
+				}
+			},
+			error: (error) => {
+				frappe.unfreeze();
+
+				frappe.msgprint({
+					title: 'Error',
+					message: 'No se pudo actualizar la tarea',
+					indicator: 'red'
+				});
+
+				console.error('Error toggling milestone:', error);
+			}
+		});
+	}
+
+	/**
+	 * Show dependencies dialog
+	 * @private
+	 */
+	_showDependenciesDialog(task) {
+		// Get dependencies for this task
+		const predecessors = this.dependencies.filter(d => d.successor === task.name);
+		const successors = this.dependencies.filter(d => d.predecessor === task.name);
+
+		let message = `<h4>${task.title || task.name}</h4><br>`;
+
+		if (predecessors.length > 0) {
+			message += '<strong>Predecesoras:</strong><ul>';
+			predecessors.forEach(dep => {
+				const predTask = this.tasks.find(t => t.name === dep.predecessor);
+				const predTitle = predTask ? predTask.title || predTask.name : dep.predecessor;
+				message += `<li>${predTitle} (${dep.type})</li>`;
+			});
+			message += '</ul><br>';
+		}
+
+		if (successors.length > 0) {
+			message += '<strong>Sucesoras:</strong><ul>';
+			successors.forEach(dep => {
+				const succTask = this.tasks.find(t => t.name === dep.successor);
+				const succTitle = succTask ? succTask.title || succTask.name : dep.successor;
+				message += `<li>${succTitle} (${dep.type})</li>`;
+			});
+			message += '</ul>';
+		}
+
+		if (predecessors.length === 0 && successors.length === 0) {
+			message += '<p>Esta tarea no tiene dependencias.</p>';
+		}
+
+		frappe.msgprint({
+			title: 'Dependencias',
+			message: message,
+			indicator: 'blue'
+		});
+	}
+
+	/**
+	 * Show remove dependencies dialog
+	 * @private
+	 */
+	_removeDependenciesDialog(task) {
+		// Get dependencies for this task
+		const allDeps = this.dependencies.filter(
+			d => d.predecessor === task.name || d.successor === task.name
+		);
+
+		if (allDeps.length === 0) {
+			frappe.msgprint({
+				title: 'Sin dependencias',
+				message: 'Esta tarea no tiene dependencias para eliminar.',
+				indicator: 'blue'
+			});
+			return;
+		}
+
+		// Build list of dependencies to remove
+		let message = '<p>Selecciona las dependencias a eliminar:</p><div>';
+
+		allDeps.forEach(dep => {
+			const predTask = this.tasks.find(t => t.name === dep.predecessor);
+			const succTask = this.tasks.find(t => t.name === dep.successor);
+			const predTitle = predTask ? predTask.title || predTask.name : dep.predecessor;
+			const succTitle = succTask ? succTask.title || succTask.name : dep.successor;
+
+			message += `
+				<div style="margin: 8px 0;">
+					<label style="cursor: pointer;">
+						<input type="checkbox" class="dep-checkbox" data-dep-id="${dep.name}" style="margin-right: 8px;">
+						${predTitle} → ${succTitle} (${dep.type})
+					</label>
+				</div>
+			`;
+		});
+
+		message += '</div>';
+
+		const dialog = frappe.msgprint({
+			title: 'Eliminar dependencias',
+			message: message,
+			indicator: 'orange',
+			primary_action: {
+				label: 'Eliminar seleccionadas',
+				action: () => {
+					const checkboxes = dialog.$wrapper.find('.dep-checkbox:checked');
+					const depIds = [];
+
+					checkboxes.each(function() {
+						depIds.push($(this).data('dep-id'));
+					});
+
+					if (depIds.length === 0) {
+						frappe.show_alert({
+							message: 'No se seleccionaron dependencias',
+							indicator: 'orange'
+						}, 3);
+						return;
+					}
+
+					// Remove dependencies
+					this._removeDependencies(depIds);
+					dialog.hide();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Remove dependencies by IDs
+	 * @private
+	 */
+	_removeDependencies(depIds) {
+		frappe.freeze('Eliminando dependencias...');
+
+		// Remove each dependency via API
+		const promises = depIds.map(depId => {
+			return new Promise((resolve, reject) => {
+				frappe.call({
+					method: 'workhub_frappe_app.api.gantt.remove_dependency',
+					args: { dependency_id: depId },
+					callback: (response) => {
+						if (response.message && response.message.success) {
+							resolve();
+						} else {
+							reject();
+						}
+					},
+					error: reject
+				});
+			});
+		});
+
+		Promise.all(promises)
+			.then(() => {
+				frappe.unfreeze();
+
+				frappe.show_alert({
+					message: `${depIds.length} dependencia(s) eliminada(s)`,
+					indicator: 'green'
+				}, 3);
+
+				// Refresh chart
+				this._refreshChartData();
+			})
+			.catch((error) => {
+				frappe.unfreeze();
+
+				frappe.msgprint({
+					title: 'Error',
+					message: 'No se pudieron eliminar todas las dependencias',
+					indicator: 'red'
+				});
+
+				console.error('Error removing dependencies:', error);
+			});
+	}
+
+	/**
 	 * Destroy the component
 		 */
 		destroy() {
+			// Close context menu if open
+			this._closeContextMenu();
+
 			// Remove drag preview if exists
 			this._removeDragPreview();
 
