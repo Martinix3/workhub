@@ -7,7 +7,7 @@ from frappe.utils import nowdate, getdate, add_days, date_diff
 import json
 from collections import defaultdict
 
-from workhub_frappe_app.api.utils import require_auth
+from workhub_frappe_app.api.utils import require_auth, require_permission
 
 
 @frappe.whitelist()
@@ -402,13 +402,16 @@ def add_dependency(predecessor_id, successor_id, dep_type="FS", lag_days=0):
     if would_create_cycle(predecessor_id, successor_id):
         return {"success": False, "message": "Esto crearia un ciclo de dependencias"}
 
+    # Check user has permission to create dependencies
+    require_permission("WH Task Dependency", "create")
+
     doc = frappe.new_doc("WH Task Dependency")
     doc.predecessor = predecessor_id
     doc.successor = successor_id
     doc.type = dep_type
     doc.lag_days = lag_days
     doc.is_active = 1
-    doc.insert(ignore_permissions=True)
+    doc.insert()
 
     # Propagar fechas
     propagate_dates(predecessor_id)

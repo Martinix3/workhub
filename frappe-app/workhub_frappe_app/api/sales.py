@@ -96,8 +96,7 @@ def get_customers(filters=None, limit=50, offset=0):
         fields=["name", "customer_name", "customer_group", "territory", "mobile_no", "email_id", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     # Transform to React Customer interface
@@ -171,8 +170,7 @@ def get_orders(filters=None, limit=50, offset=0):
                 "grand_total", "net_total", "total_taxes_and_charges", "status", "per_delivered", "per_billed", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="transaction_date desc",
-        ignore_permissions=True
+        order_by="transaction_date desc"
     )
 
     # Transform to React SalesOrder interface:
@@ -229,8 +227,7 @@ def get_opportunities(filters=None, limit=50, offset=0):
                 "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="expected_closing asc",
-        ignore_permissions=True
+        order_by="expected_closing asc"
     )
 
     # Get stage summary for pipeline view
@@ -271,8 +268,7 @@ def get_recent_activity(limit=20):
         filters={"docstatus": 1},
         fields=["name", "customer_name", "grand_total", "creation", "owner"],
         limit_page_length=10,
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     for order in recent_orders:
@@ -289,8 +285,7 @@ def get_recent_activity(limit=20):
     recent_opps = frappe.get_list("Opportunity",
         fields=["name", "party_name", "sales_stage", "creation", "owner"],
         limit_page_length=10,
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     for opp in recent_opps:
@@ -400,15 +395,14 @@ def get_customer_details(customer_id):
     if not customer_id:
         frappe.throw(_("Customer ID is required"))
 
-    customer = frappe.get_doc("Customer", customer_id, ignore_permissions=True)
+    customer = frappe.get_doc("Customer", customer_id)
 
     # Get recent orders
     recent_orders = frappe.get_list("Sales Order",
         filters={"customer": customer_id, "docstatus": 1},
         fields=["name", "transaction_date", "grand_total", "status"],
         limit_page_length=10,
-        order_by="transaction_date desc",
-        ignore_permissions=True
+        order_by="transaction_date desc"
     )
 
     # Get total stats
@@ -450,8 +444,7 @@ def get_products(search=None, limit=20):
         filters=filters,
         fields=["name", "item_name", "item_code", "stock_uom", "standard_rate", "image"],
         limit_page_length=int(limit),
-        order_by="item_name asc",
-        ignore_permissions=True
+        order_by="item_name asc"
     )
 
     # Add available stock for each item

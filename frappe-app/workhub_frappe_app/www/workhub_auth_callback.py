@@ -1,21 +1,29 @@
 # WorkHub Auth Callback
-# Generates API token and sets it in a secure HTTP-only cookie
+# Generates API token and redirects to frontend with token in URL
 
 import frappe
 from frappe.utils.password import get_decrypted_password
-import os
 
 no_cache = 1
 
 def get_context(context):
-    """Generate API token for authenticated user and set it in a secure cookie"""
+    """
+    Generate API token for authenticated user and prepare redirect.
+
+    SECURITY: Uses ignore_permissions=True when saving API keys (line 40)
+    - Part of OAuth callback flow - user is already authenticated via OAuth
+    - User modifying their OWN User document (api_key/api_secret fields only)
+    - Regular users lack write permission on User doctype by default
+    - Safe because it's self-modification of authentication credentials only
+    - Called automatically by Frappe after successful OAuth authentication
+    """
     user = frappe.session.user
     frontend_url = frappe.conf.get("workhub_frontend_url", "http://localhost:5177")
-    is_production = os.environ.get("FRAPPE_ENV", "development") == "production"
 
     if user == "Guest":
         # Not logged in - redirect to frontend with error
         context.redirect_url = f"{frontend_url}?auth_error=not_authenticated"
+        context.token = None
         return context
 
     try:
@@ -38,27 +46,21 @@ def get_context(context):
 
             user_doc.api_key = api_key
             user_doc.api_secret = api_secret
+            # SECURITY: Safe - OAuth callback, user modifying own api_key/api_secret only
             user_doc.save(ignore_permissions=True)
             frappe.db.commit()
 
         token = f"{api_key}:{api_secret}"
 
-        # Set secure HTTP-only cookie
-        frappe.local.cookie_manager.set_cookie(
-            key="workhub_auth",
-            value=token,
-            httponly=True,
-            secure=is_production,  # Only HTTPS in production
-            samesite="Lax",  # CSRF protection while allowing OAuth redirect
-            max_age=86400 * 7,  # 7 days
-            path="/"
-        )
-
-        # Redirect to frontend without token in URL
-        context.redirect_url = f"{frontend_url}?auth_success=true"
+        # Get user info
+        context.user_email = user
+        context.user_name = user_doc.full_name or user
+        context.token = token
+        context.redirect_url = f"{frontend_url}?auth_success=true&token={token}"
 
     except Exception as e:
         frappe.log_error(f"Auth callback error: {e}")
         context.redirect_url = f"{frontend_url}?auth_error={str(e)}"
+        context.token = None
 
     return context

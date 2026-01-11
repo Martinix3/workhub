@@ -21,7 +21,14 @@ from pathlib import Path
 # ============================================================
 
 def import_customers(csv_path: str = None, dry_run: bool = False) -> dict:
-    """Importar clientes desde CSV"""
+    """
+    Importar clientes desde CSV
+
+    SECURITY: This is a data import utility that uses ignore_permissions=True. Safe because:
+    1. Not exposed as API endpoint - only runs via `bench execute` as Administrator
+    2. Used for initial data setup and bulk import operations
+    3. Requires server shell access to execute
+    """
     if not csv_path:
         csv_path = _find_csv("01_clientes.csv")
 
@@ -68,10 +75,12 @@ def import_customers(csv_path: str = None, dry_run: bool = False) -> dict:
                 if existing:
                     doc = frappe.get_doc("Customer", existing)
                     doc.update(customer_data)
+                    # SECURITY: Safe - runs as Administrator via bench execute
                     doc.save(ignore_permissions=True)
                     results["updated"] += 1
                 else:
                     doc = frappe.get_doc(customer_data)
+                    # SECURITY: Safe - runs as Administrator via bench execute
                     doc.insert(ignore_permissions=True)
                     results["created"] += 1
 
@@ -83,7 +92,14 @@ def import_customers(csv_path: str = None, dry_run: bool = False) -> dict:
 
 
 def import_distributors(csv_path: str = None, dry_run: bool = False) -> dict:
-    """Importar distribuidores desde CSV"""
+    """
+    Importar distribuidores desde CSV
+
+    SECURITY: This is a data import utility that uses ignore_permissions=True. Safe because:
+    1. Not exposed as API endpoint - only runs via `bench execute` as Administrator
+    2. Used for initial data setup and bulk import operations
+    3. Requires server shell access to execute
+    """
     if not csv_path:
         csv_path = _find_csv("02_distribuidores.csv")
 
@@ -125,6 +141,7 @@ def import_distributors(csv_path: str = None, dry_run: bool = False) -> dict:
                 if existing:
                     doc = frappe.get_doc("Customer", existing)
                     doc.update(customer_data)
+                    # SECURITY: Safe - runs as Administrator via bench execute
                     doc.save(ignore_permissions=True)
                     results["updated"] += 1
                 else:
@@ -132,6 +149,7 @@ def import_distributors(csv_path: str = None, dry_run: bool = False) -> dict:
                     if codigo:
                         customer_data["name"] = codigo
                     doc = frappe.get_doc(customer_data)
+                    # SECURITY: Safe - runs as Administrator via bench execute
                     doc.insert(ignore_permissions=True)
                     results["created"] += 1
 
@@ -143,7 +161,14 @@ def import_distributors(csv_path: str = None, dry_run: bool = False) -> dict:
 
 
 def import_products(csv_path: str = None, dry_run: bool = False) -> dict:
-    """Importar productos desde CSV"""
+    """
+    Importar productos desde CSV
+
+    SECURITY: This is a data import utility that uses ignore_permissions=True. Safe because:
+    1. Not exposed as API endpoint - only runs via `bench execute` as Administrator
+    2. Used for initial data setup and bulk import operations
+    3. Requires server shell access to execute
+    """
     if not csv_path:
         csv_path = _find_csv("03_productos.csv")
 
@@ -207,10 +232,12 @@ def import_products(csv_path: str = None, dry_run: bool = False) -> dict:
                 if existing:
                     doc = frappe.get_doc("Item", codigo)
                     doc.update(item_data)
+                    # SECURITY: Safe - runs as Administrator via bench execute
                     doc.save(ignore_permissions=True)
                     results["updated"] += 1
                 else:
                     doc = frappe.get_doc(item_data)
+                    # SECURITY: Safe - runs as Administrator via bench execute
                     doc.insert(ignore_permissions=True)
                     results["created"] += 1
 
@@ -222,7 +249,14 @@ def import_products(csv_path: str = None, dry_run: bool = False) -> dict:
 
 
 def import_sales(csv_path: str = None, dry_run: bool = False) -> dict:
-    """Importar ventas desde CSV (Sell In y Sell Out)"""
+    """
+    Importar ventas desde CSV (Sell In y Sell Out)
+
+    SECURITY: This is a data import utility that uses ignore_permissions=True. Safe because:
+    1. Not exposed as API endpoint - only runs via `bench execute` as Administrator
+    2. Used for initial data setup and bulk import operations
+    3. Requires server shell access to execute
+    """
     if not csv_path:
         csv_path = _find_csv("04_ventas.csv")
 
@@ -306,6 +340,7 @@ def import_sales(csv_path: str = None, dry_run: bool = False) -> dict:
                 "selling_price_list": "Standard Selling",
                 "items": items,
             })
+            # SECURITY: Safe - runs as Administrator via bench execute for bulk imports
             doc.insert(ignore_permissions=True)
             results["sell_in_created"] += 1
 
@@ -344,6 +379,7 @@ def import_sales(csv_path: str = None, dry_run: bool = False) -> dict:
                 "status": "Delivered",  # Historico = ya entregado
                 "items": items,
             })
+            # SECURITY: Safe - runs as Administrator via bench execute for bulk imports
             doc.insert(ignore_permissions=True)
             results["sell_out_created"] += 1
 

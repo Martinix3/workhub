@@ -48,8 +48,7 @@ def get_tasks(filters=None, limit=50, offset=0):
         ],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="priority asc, due_date asc",
-        ignore_permissions=True
+        order_by="priority asc, due_date asc"
     )
 
     # Enrich with project info
@@ -362,6 +361,7 @@ def get_subtasks(task_id):
 def link_to_erp(task_id, doctype, doc_id):
     """Link task to an ERP document via WorkLink"""
     require_permission("WH Task", "write")
+    require_permission("WorkLink", "create")
 
     # Check if WorkLink already exists for this ERP doc
     existing = frappe.db.get_value("WorkLink",
@@ -370,6 +370,7 @@ def link_to_erp(task_id, doctype, doc_id):
 
     if existing:
         # Update existing WorkLink
+        require_permission("WorkLink", "write", existing)
         frappe.db.set_value("WorkLink", existing, "wh_task", task_id)
         worklink_id = existing
     else:

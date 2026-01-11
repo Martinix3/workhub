@@ -130,8 +130,7 @@ def get_orders(filters=None, limit=50, offset=0):
                 "actual_start_date", "actual_end_date", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="planned_start_date desc",
-        ignore_permissions=True
+        order_by="planned_start_date desc"
     )
 
     # React expects array directly, not {data: [...]}
@@ -145,8 +144,7 @@ def get_lines():
     workstations = frappe.get_list("Workstation",
         fields=["name", "workstation_name", "description", "production_capacity",
                 "hour_rate", "holiday_list"],
-        order_by="workstation_name",
-        ignore_permissions=True
+        order_by="workstation_name"
     )
 
     # Add current status for each
@@ -184,8 +182,7 @@ def get_lots(filters=None, limit=50, offset=0):
                 "manufacturing_date", "batch_qty", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     # Add status and stock info
