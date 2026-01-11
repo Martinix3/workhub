@@ -8,7 +8,12 @@ import type {
   ProjectOption,
   AssignableUser
 } from '../services/tasks'
-import { isInBypassMode, sampleProjects } from '../sample-data'
+import {
+  isInBypassMode,
+  sampleProjectOptions,
+  sampleAssignableUsers,
+  sampleWorkLinkSuggestions
+} from '../sample-data'
 
 interface UseQuickTaskState {
   creating: boolean
@@ -110,20 +115,9 @@ export function useQuickTaskOptions() {
     } catch (err) {
       if (isInBypassMode()) {
         // Use sample data in bypass mode
-        const sampleProjectOptions: ProjectOption[] = sampleProjects.map(p => ({
-          name: p.name,
-          title: p.title
-        }))
-
-        const sampleUsers: AssignableUser[] = [
-          { name: 'user1@example.com', full_name: 'Carlos Mendez', user_image: null },
-          { name: 'user2@example.com', full_name: 'Ana Garcia', user_image: null },
-          { name: 'user3@example.com', full_name: 'Roberto Silva', user_image: null }
-        ]
-
         setState({
           projects: sampleProjectOptions,
-          users: sampleUsers,
+          users: sampleAssignableUsers,
           loading: false,
           error: null
         })
@@ -175,26 +169,9 @@ export function useWorkLinkSuggestions(doctype?: string, docId?: string, limit: 
       })
     } catch (err) {
       if (isInBypassMode()) {
-        // Sample WorkLink suggestions in bypass mode
-        const sampleSuggestions: WorkLinkSuggestion[] = [
-          {
-            source_doctype: 'Sales Order',
-            source_id: 'SAL-2025-047',
-            display_name: 'SAL-2025-047 - Distribuciones Norte SA',
-            modified: new Date().toISOString(),
-            has_worklink: false
-          },
-          {
-            source_doctype: 'Delivery Note',
-            source_id: 'DN-2025-023',
-            display_name: 'DN-2025-023 - Mezcaleria El Refugio',
-            modified: new Date(Date.now() - 86400000).toISOString(),
-            has_worklink: true
-          }
-        ]
-
+        // Use sample data in bypass mode
         setState({
-          suggestions: sampleSuggestions,
+          suggestions: sampleWorkLinkSuggestions,
           loading: false,
           error: null
         })

@@ -5,6 +5,7 @@ import type { KPIs, SalesTrends, Activity, Customer, SalesOrder, Opportunity } f
 import type { NetworkKPIs, Distributor } from '../components/sections/distributor-network/types'
 import type { ProductionKPIs, ProductionOrder, ProductionLine, Lot, HACCPPlan, CCPReading, QualityDocument, DocumentFolder, QualityKPIs, Inspection, NonConformance, WeeklyTrendPoint } from '../components/sections/production-and-quality/types'
 import type { MarketingKPIs, Campaign, SocialPost, PlatformStats } from '../components/sections/marketing-and-growth/types'
+import type { ProjectOption, AssignableUser, WorkLinkSuggestion } from './services/tasks'
 
 // Command Center
 export const sampleAreaSummaries: AreaSummary[] = [
@@ -432,6 +433,73 @@ export const sampleTaskKPIs: DashboardKPIs = {
     trend_delta: 10.5
   }
 }
+
+// Quick Task Creation
+export const sampleProjectOptions: ProjectOption[] = sampleProjects.map(p => ({
+  name: p.name,
+  title: p.title
+}))
+
+export const sampleAssignableUsers: AssignableUser[] = [
+  { name: 'martin@example.com', full_name: 'Martin Samperiz', user_image: null },
+  { name: 'carlos@example.com', full_name: 'Carlos Mendez', user_image: null },
+  { name: 'ana@example.com', full_name: 'Ana Garcia', user_image: null },
+  { name: 'maria@example.com', full_name: 'Maria Lopez', user_image: null },
+  { name: 'roberto@example.com', full_name: 'Roberto Silva', user_image: null },
+  { name: 'juan@example.com', full_name: 'Juan Perez', user_image: null }
+]
+
+export const sampleWorkLinkSuggestions: WorkLinkSuggestion[] = [
+  {
+    source_doctype: 'Sales Order',
+    source_id: 'SAL-2025-047',
+    display_name: 'SAL-2025-047 - Distribuciones Norte SA',
+    modified: new Date().toISOString(),
+    has_worklink: false
+  },
+  {
+    source_doctype: 'Sales Order',
+    source_id: 'SAL-2025-046',
+    display_name: 'SAL-2025-046 - Mezcaleria El Refugio',
+    modified: new Date(Date.now() - 86400000).toISOString(),
+    has_worklink: false
+  },
+  {
+    source_doctype: 'Delivery Note',
+    source_id: 'DN-2025-023',
+    display_name: 'DN-2025-023 - Mezcaleria El Refugio',
+    modified: new Date(Date.now() - 86400000).toISOString(),
+    has_worklink: true
+  },
+  {
+    source_doctype: 'Opportunity',
+    source_id: 'OPP-2025-012',
+    display_name: 'OPP-2025-012 - Expansion Zona Bajio',
+    modified: new Date(Date.now() - 86400000 * 2).toISOString(),
+    has_worklink: false
+  },
+  {
+    source_doctype: 'Batch',
+    source_id: 'LOT-2025-089',
+    display_name: 'LOT-2025-089 - Mezcal Espadin Joven',
+    modified: new Date(Date.now() - 86400000 * 3).toISOString(),
+    has_worklink: false
+  },
+  {
+    source_doctype: 'Quality Inspection',
+    source_id: 'QI-2025-045',
+    display_name: 'QI-2025-045 - LOT-2025-089',
+    modified: new Date(Date.now() - 86400000 * 1).toISOString(),
+    has_worklink: true
+  },
+  {
+    source_doctype: 'Campaign',
+    source_id: 'CAMP-2025-001',
+    display_name: 'CAMP-2025-001 - Lanzamiento Mezcal Premium',
+    modified: new Date(Date.now() - 86400000 * 5).toISOString(),
+    has_worklink: false
+  }
+]
 
 // Helper to check if in bypass mode
 export function isInBypassMode(): boolean {
