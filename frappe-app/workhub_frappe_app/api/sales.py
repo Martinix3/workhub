@@ -170,8 +170,7 @@ def get_orders(filters=None, limit=50, offset=0):
                 "grand_total", "net_total", "total_taxes_and_charges", "status", "per_delivered", "per_billed", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="transaction_date desc",
-        ignore_permissions=True
+        order_by="transaction_date desc"
     )
 
     # Transform to React SalesOrder interface:
