@@ -3,13 +3,13 @@
   "spec": "022-task-dependencies-blocker-visualization",
   "state": "building",
   "subtasks": {
-    "completed": 6,
+    "completed": 8,
     "total": 12,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Dependency Management UI",
+    "current": "Blocked Task Highlighting",
     "id": null,
     "total": 2
   },
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 2,
+    "number": 4,
     "started_at": "2026-01-11T04:46:54.292524"
   },
-  "last_update": "2026-01-11T04:49:16.875489"
+  "last_update": "2026-01-11T04:58:16.603273"
 }

@@ -541,3 +541,46 @@ def get_dependency_popover_data(task_id):
         "blocked_by_count": len(blocked_by),
         "blocks_count": len(blocks)
     }
+
+
+@frappe.whitelist()
+def get_dependency_counts(task_ids):
+    """Get dependency counts for multiple tasks (for Kanban board highlighting)"""
+    require_auth()
+
+    # Parse task_ids if it's a JSON string
+    if isinstance(task_ids, str):
+        task_ids = json.loads(task_ids)
+
+    if not task_ids or not isinstance(task_ids, list):
+        return []
+
+    # Get blocked_by counts (tasks blocking each task - where task is successor)
+    blocked_by_results = frappe.db.sql("""
+        SELECT successor as task_id, COUNT(*) as blocked_by_count
+        FROM `tabWH Task Dependency`
+        WHERE successor IN %(task_ids)s AND is_active = 1
+        GROUP BY successor
+    """, {"task_ids": task_ids}, as_dict=True)
+
+    # Get blocks counts (tasks each task is blocking - where task is predecessor)
+    blocks_results = frappe.db.sql("""
+        SELECT predecessor as task_id, COUNT(*) as blocks_count
+        FROM `tabWH Task Dependency`
+        WHERE predecessor IN %(task_ids)s AND is_active = 1
+        GROUP BY predecessor
+    """, {"task_ids": task_ids}, as_dict=True)
+
+    # Build lookup dictionaries
+    counts_map = {}
+    for row in blocked_by_results:
+        counts_map[row["task_id"]] = {"task_id": row["task_id"], "blocked_by_count": row["blocked_by_count"], "blocks_count": 0}
+
+    for row in blocks_results:
+        if row["task_id"] in counts_map:
+            counts_map[row["task_id"]]["blocks_count"] = row["blocks_count"]
+        else:
+            counts_map[row["task_id"]] = {"task_id": row["task_id"], "blocked_by_count": 0, "blocks_count": row["blocks_count"]}
+
+    # Return array of task dependency counts (only for tasks with dependencies)
+    return list(counts_map.values())

@@ -91,14 +91,16 @@
 /* === TASK CARD HIGHLIGHTING === */
 
 /* Blocked task card - highlighted with red accent */
-.task-card--blocked {
+.task-card--blocked,
+.kanban-card.task-card--blocked {
 	position: relative;
 	border-left: 3px solid var(--danger) !important;
-	background: linear-gradient(to right, var(--danger-soft) 0%, transparent 10%);
+	background: linear-gradient(to right, var(--danger-soft) 0%, transparent 10%) !important;
 }
 
 /* Subtle pulse animation for blocked tasks */
-.task-card--blocked::before {
+.task-card--blocked::before,
+.kanban-card.task-card--blocked::before {
 	content: '';
 	position: absolute;
 	top: 0;
@@ -107,6 +109,7 @@
 	height: 100%;
 	background: var(--danger);
 	animation: blocked-pulse 2s ease-in-out infinite;
+	z-index: 1;
 }
 
 @keyframes blocked-pulse {
@@ -115,7 +118,8 @@
 }
 
 /* Blocked indicator icon in corner */
-.task-card--blocked::after {
+.task-card--blocked::after,
+.kanban-card.task-card--blocked::after {
 	content: '⚠';
 	position: absolute;
 	top: var(--space-2);
@@ -123,11 +127,30 @@
 	font-size: var(--text-xs);
 	color: var(--danger);
 	opacity: 0.6;
+	pointer-events: none;
+	z-index: 2;
 }
 
 /* Kanban card specific blocked styling */
 .kanban-card.task-card--blocked {
-	box-shadow: 0 0 0 1px var(--danger-soft);
+	box-shadow: 0 0 0 1px var(--danger-soft) !important;
+}
+
+/* Frappe Kanban view specific adjustments */
+.kanban-board .kanban-card.task-card--blocked {
+	border-left-width: 4px;
+}
+
+/* List view blocked task highlighting */
+.list-row.task-card--blocked {
+	border-left: 3px solid var(--danger);
+	background: linear-gradient(to right, var(--danger-soft) 0%, transparent 5%);
+}
+
+/* Grid view blocked task highlighting */
+.grid-row.task-card--blocked {
+	border-left: 3px solid var(--danger);
+	background: linear-gradient(to right, var(--danger-soft) 0%, transparent 8%);
 }
 
 /* === DEPENDENCY POPOVER === */

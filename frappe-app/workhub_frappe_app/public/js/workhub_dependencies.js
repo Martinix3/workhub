@@ -322,19 +322,75 @@ frappe.workhub.dependencies = {
 	 */
 	initializeAll(containerSelector = '.task-card, .kanban-card') {
 		const taskCards = document.querySelectorAll(containerSelector);
+		const taskIdsToFetch = [];
+		const cardMap = {};
+
 		taskCards.forEach(card => {
 			const taskId = card.dataset.taskId || card.dataset.name;
 			if (taskId) {
 				// Try to get task data from card's data attributes
-				const taskData = {
-					name: taskId,
-					blocked_by_count: parseInt(card.dataset.blockedByCount || 0),
-					blocks_count: parseInt(card.dataset.blocksCount || 0)
-				};
+				const blockedByCount = parseInt(card.dataset.blockedByCount || 0);
+				const blocksCount = parseInt(card.dataset.blocksCount || 0);
 
-				if (taskData.blocked_by_count > 0 || taskData.blocks_count > 0) {
-					this.renderBadges(card, taskData);
+				// If data attributes are present, use them immediately
+				if (card.dataset.blockedByCount !== undefined || card.dataset.blocksCount !== undefined) {
+					const taskData = {
+						name: taskId,
+						blocked_by_count: blockedByCount,
+						blocks_count: blocksCount
+					};
+
+					if (taskData.blocked_by_count > 0 || taskData.blocks_count > 0) {
+						this.renderBadges(card, taskData);
+					}
+				} else {
+					// Otherwise, queue for batch fetch
+					taskIdsToFetch.push(taskId);
+					cardMap[taskId] = card;
 				}
+			}
+		});
+
+		// Fetch dependency counts for cards without data attributes
+		if (taskIdsToFetch.length > 0) {
+			this.fetchAndApplyDependencyCounts(taskIdsToFetch, cardMap);
+		}
+	},
+
+	/**
+	 * Fetch dependency counts for multiple tasks and apply highlighting
+	 * @param {Array} taskIds - Array of task IDs
+	 * @param {Object} cardMap - Map of task ID to card element
+	 */
+	fetchAndApplyDependencyCounts(taskIds, cardMap) {
+		if (!taskIds || taskIds.length === 0) return;
+
+		frappe.call({
+			method: 'workhub_frappe_app.api.tasks.get_dependency_counts',
+			args: { task_ids: taskIds },
+			callback: (r) => {
+				if (r.message) {
+					r.message.forEach(taskData => {
+						const card = cardMap[taskData.task_id];
+						if (card) {
+							// Store counts in data attributes for future use
+							card.dataset.blockedByCount = taskData.blocked_by_count || 0;
+							card.dataset.blocksCount = taskData.blocks_count || 0;
+
+							// Render badges and apply highlighting
+							if (taskData.blocked_by_count > 0 || taskData.blocks_count > 0) {
+								this.renderBadges(card, {
+									name: taskData.task_id,
+									blocked_by_count: taskData.blocked_by_count || 0,
+									blocks_count: taskData.blocks_count || 0
+								});
+							}
+						}
+					});
+				}
+			},
+			error: (err) => {
+				console.warn('Failed to fetch dependency counts:', err);
 			}
 		});
 	},
@@ -376,5 +432,55 @@ if (typeof frappe !== 'undefined' && typeof frappe.ready === 'function') {
 				frappe.workhub.dependencies.initializeAll();
 			}, 500);
 		});
+
+		// Re-initialize when Kanban board is rendered
+		// Frappe's Kanban board emits events when cards are added
+		if (frappe.views && frappe.views.KanbanView) {
+			const originalRender = frappe.views.KanbanView.prototype.render_cards;
+			if (originalRender) {
+				frappe.views.KanbanView.prototype.render_cards = function() {
+					const result = originalRender.apply(this, arguments);
+					setTimeout(() => {
+						frappe.workhub.dependencies.initializeAll('.kanban-card');
+					}, 200);
+					return result;
+				};
+			}
+		}
+
+		// Use MutationObserver to detect when new task cards are added to the DOM
+		// This handles dynamic loading in list/grid/kanban views
+		const observer = new MutationObserver((mutations) => {
+			let hasNewCards = false;
+			mutations.forEach((mutation) => {
+				mutation.addedNodes.forEach((node) => {
+					if (node.nodeType === 1) {
+						if (node.matches && (node.matches('.kanban-card') || node.matches('.list-row') || node.matches('.grid-row'))) {
+							hasNewCards = true;
+						} else if (node.querySelector) {
+							const cards = node.querySelectorAll('.kanban-card, .list-row, .grid-row');
+							if (cards.length > 0) {
+								hasNewCards = true;
+							}
+						}
+					}
+				});
+			});
+
+			if (hasNewCards) {
+				setTimeout(() => {
+					frappe.workhub.dependencies.initializeAll('.kanban-card, .list-row, .grid-row');
+				}, 100);
+			}
+		});
+
+		// Observe the main content area for changes
+		const contentArea = document.querySelector('.page-content, .layout-main, #page-Workspaces');
+		if (contentArea) {
+			observer.observe(contentArea, {
+				childList: true,
+				subtree: true
+			});
+		}
 	});
 }
