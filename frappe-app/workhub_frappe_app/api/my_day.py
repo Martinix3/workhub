@@ -3,19 +3,10 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate, add_days, now_datetime, get_datetime, time_diff_in_seconds
+from frappe.utils import nowdate, getdate, add_days
 import json
 
 from workhub_frappe_app.api.utils import require_auth
-
-
-def _get_user_task_ids(user):
-    """Get task IDs where user is assigned (any role)"""
-    task_ids = frappe.get_all("WH Task Assignee",
-        filters={"user": user},
-        pluck="parent"
-    )
-    return task_ids if task_ids else []
 
 
 @frappe.whitelist()
@@ -25,25 +16,10 @@ def get_my_day():
     user = frappe.session.user
     today = nowdate()
 
-    # Get all task IDs where user is assigned (any role)
-    my_task_ids = _get_user_task_ids(user)
-
-    if not my_task_ids:
-        # User has no assigned tasks
-        return {
-            "summary": {"today_count": 0, "overdue_count": 0, "blocked_count": 0, "inbox_count": 0},
-            "today": [],
-            "overdue": [],
-            "upcoming": [],
-            "blocked": [],
-            "blocking_others": [],
-            "inbox": []
-        }
-
     # Tareas para HOY (DOING o NEXT con due_date hoy)
     today_tasks = frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "status": ["in", ["DOING", "NEXT"]],
             "due_date": today
         },
@@ -53,7 +29,7 @@ def get_my_day():
     # Vencidas (due_date pasada, no completadas)
     overdue = frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "status": ["not in", ["DONE"]],
             "due_date": ["<", today]
         },
@@ -64,7 +40,7 @@ def get_my_day():
     # Proximos 3 dias
     upcoming = frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "status": ["not in", ["DONE"]],
             "due_date": ["between", [add_days(today, 1), add_days(today, 3)]]
         },
@@ -75,22 +51,58 @@ def get_my_day():
     # Mis bloqueadas
     blocked = frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "status": "BLOCKED"
         },
         fields=["name", "title", "priority", "project", "blocked_reason"],
         order_by="priority asc",
         limit=5)
 
+    # Enrich all task lists with dependency counts
+    all_tasks = today_tasks + overdue + upcoming + blocked
+    if all_tasks:
+        task_ids = [t["name"] for t in all_tasks]
+
+        # Get dependency counts in batch
+        blocked_by_results = frappe.db.sql("""
+            SELECT successor as task_id, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE successor IN %(task_ids)s AND is_active = 1
+            GROUP BY successor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        blocks_results = frappe.db.sql("""
+            SELECT predecessor as task_id, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE predecessor IN %(task_ids)s AND is_active = 1
+            GROUP BY predecessor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Build lookup dictionary
+        dependency_counts = {}
+        for row in blocked_by_results:
+            dependency_counts[row["task_id"]] = dependency_counts.get(row["task_id"], {})
+            dependency_counts[row["task_id"]]["blocked_by_count"] = row["count"]
+
+        for row in blocks_results:
+            dependency_counts[row["task_id"]] = dependency_counts.get(row["task_id"], {})
+            dependency_counts[row["task_id"]]["blocks_count"] = row["count"]
+
+        # Add counts to all tasks
+        for task in all_tasks:
+            task_deps = dependency_counts.get(task["name"], {})
+            task["blocked_by_count"] = task_deps.get("blocked_by_count", 0)
+            task["blocks_count"] = task_deps.get("blocks_count", 0)
+
     # Tareas que bloqueo a otros (soy predecessor de algo que espera)
-    my_non_done_task_ids = frappe.get_all("WH Task",
-        filters={"name": ["in", my_task_ids], "status": ["not in", ["DONE"]]},
+    my_task_ids = frappe.get_all("WH Task",
+        filters={"assigned_to": user, "status": ["not in", ["DONE"]]},
         pluck="name")
 
     blocking_others = []
-    if my_non_done_task_ids:
+    if my_task_ids:
         blocking_deps = frappe.get_all("WH Task Dependency",
-            filters={"predecessor": ["in", my_non_done_task_ids], "is_active": 1},
+            filters={"predecessor": ["in", my_task_ids], "is_active": 1},
             fields=["predecessor", "successor"])
 
         for dep in blocking_deps:
@@ -109,7 +121,7 @@ def get_my_day():
     # Inbox (tareas sueltas)
     inbox = frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "is_inbox": 1,
             "status": ["not in", ["DONE"]]
         },
@@ -117,11 +129,37 @@ def get_my_day():
         order_by="priority asc, creation desc",
         limit=10)
 
-    # Get active timer
-    active_timer = _get_active_timer_internal(user)
+    # Add dependency counts to inbox tasks
+    if inbox:
+        inbox_task_ids = [t["name"] for t in inbox]
 
-    # Get today's tracked time
-    today_time_data = _get_today_time_data(user, today)
+        blocked_by_inbox = frappe.db.sql("""
+            SELECT successor as task_id, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE successor IN %(task_ids)s AND is_active = 1
+            GROUP BY successor
+        """, {"task_ids": inbox_task_ids}, as_dict=True)
+
+        blocks_inbox = frappe.db.sql("""
+            SELECT predecessor as task_id, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE predecessor IN %(task_ids)s AND is_active = 1
+            GROUP BY predecessor
+        """, {"task_ids": inbox_task_ids}, as_dict=True)
+
+        inbox_deps = {}
+        for row in blocked_by_inbox:
+            inbox_deps[row["task_id"]] = inbox_deps.get(row["task_id"], {})
+            inbox_deps[row["task_id"]]["blocked_by_count"] = row["count"]
+
+        for row in blocks_inbox:
+            inbox_deps[row["task_id"]] = inbox_deps.get(row["task_id"], {})
+            inbox_deps[row["task_id"]]["blocks_count"] = row["count"]
+
+        for task in inbox:
+            task_deps = inbox_deps.get(task["name"], {})
+            task["blocked_by_count"] = task_deps.get("blocked_by_count", 0)
+            task["blocks_count"] = task_deps.get("blocks_count", 0)
 
     # Resumen rapido
     summary = {
@@ -138,110 +176,7 @@ def get_my_day():
         "upcoming": upcoming,
         "blocked": blocked,
         "blocking_others": blocking_others[:5],
-        "inbox": inbox,
-        "active_timer": active_timer,
-        "today_tracked_hours": today_time_data["total_hours"],
-        "today_time_by_task": today_time_data["by_task"]
-    }
-
-
-def _get_active_timer_internal(user):
-    """
-    Internal helper to get active timer info for a user.
-    Returns None if no active timer, or timer details dict.
-    """
-    # Find active timer (Running or Paused)
-    active_timer = frappe.db.get_value(
-        "WH Time Timer",
-        {"user": user, "status": ["in", ["Running", "Paused"]]},
-        ["name", "task", "start_time", "status", "accumulated_seconds"],
-        as_dict=True
-    )
-
-    if not active_timer:
-        return None
-
-    # Get task details
-    task = frappe.get_doc("WH Task", active_timer["task"])
-
-    # Calculate running duration
-    if active_timer["status"] == "Running":
-        # Calculate time from start_time to now
-        elapsed_seconds = time_diff_in_seconds(now_datetime(), get_datetime(active_timer["start_time"]))
-        total_seconds = (active_timer["accumulated_seconds"] or 0) + elapsed_seconds
-    else:  # Paused
-        # Just use accumulated_seconds
-        total_seconds = active_timer["accumulated_seconds"] or 0
-
-    # Convert to hours and minutes for display
-    total_minutes = int(total_seconds // 60)
-    hours = total_minutes // 60
-    minutes = total_minutes % 60
-
-    return {
-        "name": active_timer["name"],
-        "task": active_timer["task"],
-        "task_title": task.title,
-        "project": task.project,
-        "status": active_timer["status"],
-        "start_time": active_timer["start_time"],
-        "accumulated_seconds": active_timer["accumulated_seconds"],
-        "running_seconds": total_seconds,
-        "running_hours": hours,
-        "running_minutes": minutes
-    }
-
-
-def _get_today_time_data(user, today):
-    """
-    Internal helper to get today's time tracking data for a user.
-    Returns total hours and breakdown by task.
-    """
-    # Query today's work_log entries for this user
-    query = """
-        SELECT
-            wl.parent as task_id,
-            wl.hours,
-            wl.minutes,
-            wl.duration_hours,
-            t.title as task_title,
-            t.status as task_status,
-            t.priority as task_priority,
-            t.project
-        FROM `tabWH Task Work Log` wl
-        INNER JOIN `tabWH Task` t ON wl.parent = t.name
-        WHERE wl.user = %(user)s AND wl.date = %(today)s
-        ORDER BY wl.creation DESC
-    """
-
-    entries = frappe.db.sql(query, {"user": user, "today": today}, as_dict=True)
-
-    # Calculate total hours
-    total_hours = sum(entry.get("duration_hours") or 0 for entry in entries)
-
-    # Group by task
-    by_task = {}
-    for entry in entries:
-        task_id = entry.get("task_id")
-        duration = entry.get("duration_hours") or 0
-
-        if task_id not in by_task:
-            by_task[task_id] = {
-                "task_id": task_id,
-                "task_title": entry.get("task_title"),
-                "task_status": entry.get("task_status"),
-                "task_priority": entry.get("task_priority"),
-                "project": entry.get("project"),
-                "hours": 0
-            }
-        by_task[task_id]["hours"] += duration
-
-    # Convert to list and sort by hours descending
-    by_task_list = sorted(by_task.values(), key=lambda x: x["hours"], reverse=True)
-
-    return {
-        "total_hours": total_hours,
-        "by_task": by_task_list
+        "inbox": inbox
     }
 
 
@@ -251,15 +186,9 @@ def get_inbox():
     require_auth()
     user = frappe.session.user
 
-    # Get all task IDs where user is assigned (any role)
-    my_task_ids = _get_user_task_ids(user)
-
-    if not my_task_ids:
-        return []
-
     return frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "is_inbox": 1,
             "status": ["not in", ["DONE"]]
         },
@@ -278,19 +207,9 @@ def get_week_view():
     start_of_week = today - __import__('datetime').timedelta(days=today.weekday())
     end_of_week = start_of_week + __import__('datetime').timedelta(days=6)
 
-    # Get all task IDs where user is assigned (any role)
-    my_task_ids = _get_user_task_ids(user)
-
-    if not my_task_ids:
-        return {
-            "start_of_week": str(start_of_week),
-            "end_of_week": str(end_of_week),
-            "days": {}
-        }
-
     tasks = frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "status": ["not in", ["DONE"]],
             "due_date": ["between", [str(start_of_week), str(end_of_week)]]
         },
@@ -347,12 +266,6 @@ def get_focus_mode():
     require_auth()
     user = frappe.session.user
 
-    # Get all task IDs where user is assigned (any role)
-    my_task_ids = _get_user_task_ids(user)
-
-    if not my_task_ids:
-        return {"focus_task": None, "reason": "No hay tareas pendientes"}
-
     # Priority order:
     # 1. DOING tasks (already started)
     # 2. P0 NEXT tasks
@@ -361,7 +274,7 @@ def get_focus_mode():
 
     # Check for DOING first
     doing = frappe.get_all("WH Task",
-        filters={"name": ["in", my_task_ids], "status": "DOING"},
+        filters={"assigned_to": user, "status": "DOING"},
         fields=["name", "title", "priority", "project", "due_date"],
         order_by="priority asc",
         limit=1)
@@ -371,7 +284,7 @@ def get_focus_mode():
 
     # P0 NEXT
     p0_next = frappe.get_all("WH Task",
-        filters={"name": ["in", my_task_ids], "status": "NEXT", "priority": "P0"},
+        filters={"assigned_to": user, "status": "NEXT", "priority": "P0"},
         fields=["name", "title", "priority", "project", "due_date"],
         limit=1)
 
@@ -382,7 +295,7 @@ def get_focus_mode():
     today = nowdate()
     overdue = frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "status": ["not in", ["DONE"]],
             "due_date": ["<", today]
         },
@@ -396,7 +309,7 @@ def get_focus_mode():
     # Today's task
     today_task = frappe.get_all("WH Task",
         filters={
-            "name": ["in", my_task_ids],
+            "assigned_to": user,
             "status": "NEXT",
             "due_date": today
         },
@@ -409,7 +322,7 @@ def get_focus_mode():
 
     # Any NEXT task
     any_next = frappe.get_all("WH Task",
-        filters={"name": ["in", my_task_ids], "status": "NEXT"},
+        filters={"assigned_to": user, "status": "NEXT"},
         fields=["name", "title", "priority", "project", "due_date"],
         order_by="priority asc, due_date asc",
         limit=1)

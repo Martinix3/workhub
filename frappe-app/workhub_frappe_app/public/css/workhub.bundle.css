@@ -35,6 +35,9 @@
 @import url('/assets/workhub_frappe_app/css/reports.css');
 @import url('/assets/workhub_frappe_app/css/schedule_modal.css');
 
+/* === Feature: Task Dependencies === */
+@import url('/assets/workhub_frappe_app/css/workhub_dependencies.css');
+
 /* === Layout Utilities === */
 .wh-container {
 	max-width: 1400px;

@@ -3,33 +3,10 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate, add_days, now_datetime
+from frappe.utils import nowdate, getdate, add_days
 import json
 
 from workhub_frappe_app.api.utils import require_auth, require_permission
-
-
-def _enrich_task_assignees(task):
-    """Enrich task with assignees data including user info"""
-    if not task.get("name"):
-        return []
-
-    assignees = frappe.get_all("WH Task Assignee",
-        filters={"parent": task["name"]},
-        fields=["user", "role", "added_at", "added_by"],
-        order_by="idx"
-    )
-
-    # Enrich with user info
-    for assignee in assignees:
-        if assignee.get("user"):
-            user_info = frappe.db.get_value("User", assignee["user"],
-                ["full_name", "email"], as_dict=True)
-            if user_info:
-                assignee["user_name"] = user_info.full_name
-                assignee["user_email"] = user_info.email
-
-    return assignees
 
 
 @frappe.whitelist()
@@ -40,7 +17,6 @@ def get_tasks(filters=None, limit=50, offset=0):
         filters = json.loads(filters)
 
     filter_conditions = {}
-    assignee_filter = None
 
     if filters:
         if filters.get("status"):
@@ -54,27 +30,12 @@ def get_tasks(filters=None, limit=50, offset=0):
             filter_conditions["project"] = filters["project"]
         if filters.get("department"):
             filter_conditions["department"] = filters["department"]
-        # Support both assigned_to (legacy) and assignees filtering
         if filters.get("assigned_to"):
-            assignee_filter = filters["assigned_to"]
-        if filters.get("assignees"):
-            assignee_filter = filters["assignees"]
+            filter_conditions["assigned_to"] = filters["assigned_to"]
         if filters.get("is_inbox"):
             filter_conditions["is_inbox"] = 1
         if filters.get("search"):
             filter_conditions["title"] = ["like", f"%{filters['search']}%"]
-
-    # If filtering by assignee, get task IDs first
-    if assignee_filter:
-        task_ids = frappe.get_all("WH Task Assignee",
-            filters={"user": assignee_filter},
-            pluck="parent"
-        )
-        if task_ids:
-            filter_conditions["name"] = ["in", task_ids]
-        else:
-            # No tasks for this assignee
-            return []
 
     tasks = frappe.get_list("WH Task",
         filters=filter_conditions,
@@ -91,11 +52,38 @@ def get_tasks(filters=None, limit=50, offset=0):
         ignore_permissions=True
     )
 
-    # Enrich with project info and assignees
-    for task in tasks:
-        # Add assignees with user info
-        task["assignees"] = _enrich_task_assignees(task)
+    # Get dependency counts for all tasks in batch
+    dependency_counts = {}
+    if tasks:
+        task_ids = [t["name"] for t in tasks]
 
+        # Count blocked_by (tasks blocking this task - where this task is successor)
+        blocked_by_results = frappe.db.sql("""
+            SELECT successor, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE successor IN %(task_ids)s AND is_active = 1
+            GROUP BY successor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Count blocks (tasks this task is blocking - where this task is predecessor)
+        blocks_results = frappe.db.sql("""
+            SELECT predecessor, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE predecessor IN %(task_ids)s AND is_active = 1
+            GROUP BY predecessor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Build lookup dictionaries
+        for row in blocked_by_results:
+            dependency_counts[row["successor"]] = dependency_counts.get(row["successor"], {})
+            dependency_counts[row["successor"]]["blocked_by_count"] = row["count"]
+
+        for row in blocks_results:
+            dependency_counts[row["predecessor"]] = dependency_counts.get(row["predecessor"], {})
+            dependency_counts[row["predecessor"]]["blocks_count"] = row["count"]
+
+    # Enrich with project info and dependency counts
+    for task in tasks:
         if task.get("project"):
             project_data = frappe.db.get_value("WH Project", task["project"],
                 ["title", "health"], as_dict=True)
@@ -109,6 +97,11 @@ def get_tasks(filters=None, limit=50, offset=0):
         else:
             task["is_overdue"] = False
 
+        # Add dependency counts
+        task_deps = dependency_counts.get(task["name"], {})
+        task["blocked_by_count"] = task_deps.get("blocked_by_count", 0)
+        task["blocks_count"] = task_deps.get("blocks_count", 0)
+
     return tasks
 
 
@@ -120,10 +113,6 @@ def get_task(task_id):
         frappe.throw(_("Task ID is required"))
 
     task = frappe.get_doc("WH Task", task_id)
-    task_dict = task.as_dict()
-
-    # Get assignees with user info
-    task_dict["assignees"] = _enrich_task_assignees(task_dict)
 
     # Get dependencies
     predecessors = frappe.get_all("WH Task Dependency",
@@ -146,7 +135,7 @@ def get_task(task_id):
         fields=["name", "title", "status", "priority", "assigned_to"])
 
     return {
-        "task": task_dict,
+        "task": task.as_dict(),
         "predecessors": predecessors,
         "successors": successors,
         "subtasks": subtasks
@@ -170,28 +159,12 @@ def create_task(data):
     doc.priority = data.get("priority", "P1")
     doc.project = data.get("project")
     doc.department = data.get("department")
+    doc.assigned_to = data.get("assigned_to") or frappe.session.user
     doc.start_date = data.get("start_date")
     doc.due_date = data.get("due_date")
     doc.estimated_hours = data.get("estimated_hours")
     doc.is_milestone = data.get("is_milestone", 0)
     doc.parent_task = data.get("parent_task")
-
-    # Handle assignees - support both new array format and legacy assigned_to
-    if data.get("assignees"):
-        # New multi-assignee format
-        for assignee_data in data["assignees"]:
-            doc.append("assignees", {
-                "user": assignee_data.get("user"),
-                "role": assignee_data.get("role", "Collaborator"),
-                "added_at": now_datetime(),
-                "added_by": frappe.session.user
-            })
-    elif data.get("assigned_to"):
-        # Legacy single assignee - convert to Owner
-        doc.assigned_to = data["assigned_to"]
-    else:
-        # Default to current user as Owner
-        doc.assigned_to = frappe.session.user
 
     # If no project, mark as inbox
     if not doc.project and not doc.parent_task:
@@ -225,19 +198,6 @@ def update_task(task_id, data):
         if field in data:
             setattr(doc, field, data[field])
 
-    # Handle assignees update if provided
-    if "assignees" in data:
-        # Clear existing assignees
-        doc.assignees = []
-        # Add new assignees
-        for assignee_data in data["assignees"]:
-            doc.append("assignees", {
-                "user": assignee_data.get("user"),
-                "role": assignee_data.get("role", "Collaborator"),
-                "added_at": now_datetime(),
-                "added_by": frappe.session.user
-            })
-
     doc.save()
     return {"success": True, "task_id": doc.name}
 
@@ -264,7 +224,20 @@ def change_status(task_id, new_status):
     doc = frappe.get_doc("WH Task", task_id)
     doc.status = new_status
     doc.save()
-    return {"success": True, "status": doc.status}
+
+    result = {"success": True, "status": doc.status}
+
+    # Check if completing a task that blocks other incomplete tasks
+    if new_status == "DONE":
+        incomplete_blocked_tasks = _get_incomplete_blocked_tasks(task_id)
+        if incomplete_blocked_tasks:
+            result["warning"] = _("This task is blocking {0} incomplete task(s): {1}").format(
+                len(incomplete_blocked_tasks),
+                ", ".join([t["title"] for t in incomplete_blocked_tasks[:3]])
+            )
+            result["blocked_tasks"] = incomplete_blocked_tasks
+
+    return result
 
 
 @frappe.whitelist()
@@ -337,6 +310,21 @@ def _has_circular_dependency(predecessor_id, successor_id):
         stack.extend(predecessors)
 
     return False
+
+
+def _get_incomplete_blocked_tasks(task_id):
+    """Get incomplete tasks that are blocked by this task"""
+    # Get all active dependencies where this task is the predecessor
+    successors = frappe.db.sql("""
+        SELECT d.successor, t.title, t.status
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.successor = t.name
+        WHERE d.predecessor = %(task_id)s
+        AND d.is_active = 1
+        AND t.status != 'DONE'
+    """, {"task_id": task_id}, as_dict=True)
+
+    return successors
 
 
 @frappe.whitelist()
@@ -445,10 +433,7 @@ def link_to_erp(task_id, doctype, doc_id):
 
     if existing:
         # Update existing WorkLink
-        worklink = frappe.get_doc("WorkLink", existing)
-        worklink.wh_task = task_id
-        worklink.sync_assignees()
-        worklink.save()
+        frappe.db.set_value("WorkLink", existing, "wh_task", task_id)
         worklink_id = existing
     else:
         # Create new WorkLink
@@ -503,65 +488,99 @@ def quick_add(title, priority="P1", department=None, assigned_to=None):
 
 
 @frappe.whitelist()
-def add_assignee(task_id, user, role="Collaborator"):
-    """Add an assignee to a task"""
-    require_permission("WH Task", "write")
-
+def get_dependency_popover_data(task_id):
+    """Get detailed dependency info for popover display"""
+    require_auth()
     if not task_id:
         frappe.throw(_("Task ID is required"))
-    if not user:
-        frappe.throw(_("User is required"))
 
-    # Check if user is already assigned
-    existing = frappe.db.exists("WH Task Assignee", {
-        "parent": task_id,
-        "user": user
-    })
+    # Get tasks that are blocking this task (predecessors / blocked_by)
+    blocked_by = frappe.db.sql("""
+        SELECT
+            d.predecessor as task_id,
+            t.title,
+            t.status,
+            t.assigned_to,
+            t.due_date,
+            t.priority
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.predecessor = t.name
+        WHERE d.successor = %(task_id)s
+        AND d.is_active = 1
+        ORDER BY t.priority ASC, t.due_date ASC
+    """, {"task_id": task_id}, as_dict=True)
 
-    if existing:
-        frappe.throw(_("User is already assigned to this task"))
+    # Get tasks that this task is blocking (successors / blocks)
+    blocks = frappe.db.sql("""
+        SELECT
+            d.successor as task_id,
+            t.title,
+            t.status,
+            t.assigned_to,
+            t.start_date,
+            t.priority
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.successor = t.name
+        WHERE d.predecessor = %(task_id)s
+        AND d.is_active = 1
+        ORDER BY t.priority ASC, t.start_date ASC
+    """, {"task_id": task_id}, as_dict=True)
 
-    doc = frappe.get_doc("WH Task", task_id)
-    doc.append("assignees", {
-        "user": user,
-        "role": role,
-        "added_at": now_datetime(),
-        "added_by": frappe.session.user
-    })
-    doc.save()
+    # Enrich with user full names
+    for task in blocked_by:
+        if task.get("assigned_to"):
+            task["assigned_to_name"] = frappe.db.get_value("User", task["assigned_to"], "full_name")
 
-    return {"success": True, "task_id": doc.name}
+    for task in blocks:
+        if task.get("assigned_to"):
+            task["assigned_to_name"] = frappe.db.get_value("User", task["assigned_to"], "full_name")
+
+    return {
+        "blocked_by": blocked_by,
+        "blocks": blocks,
+        "blocked_by_count": len(blocked_by),
+        "blocks_count": len(blocks)
+    }
 
 
 @frappe.whitelist()
-def remove_assignee(task_id, user):
-    """Remove an assignee from a task"""
-    require_permission("WH Task", "write")
+def get_dependency_counts(task_ids):
+    """Get dependency counts for multiple tasks (for Kanban board highlighting)"""
+    require_auth()
 
-    if not task_id:
-        frappe.throw(_("Task ID is required"))
-    if not user:
-        frappe.throw(_("User is required"))
+    # Parse task_ids if it's a JSON string
+    if isinstance(task_ids, str):
+        task_ids = json.loads(task_ids)
 
-    doc = frappe.get_doc("WH Task", task_id)
+    if not task_ids or not isinstance(task_ids, list):
+        return []
 
-    # Find and remove the assignee
-    assignee_to_remove = None
-    for assignee in doc.assignees:
-        if assignee.user == user:
-            assignee_to_remove = assignee
-            break
+    # Get blocked_by counts (tasks blocking each task - where task is successor)
+    blocked_by_results = frappe.db.sql("""
+        SELECT successor as task_id, COUNT(*) as blocked_by_count
+        FROM `tabWH Task Dependency`
+        WHERE successor IN %(task_ids)s AND is_active = 1
+        GROUP BY successor
+    """, {"task_ids": task_ids}, as_dict=True)
 
-    if not assignee_to_remove:
-        frappe.throw(_("User is not assigned to this task"))
+    # Get blocks counts (tasks each task is blocking - where task is predecessor)
+    blocks_results = frappe.db.sql("""
+        SELECT predecessor as task_id, COUNT(*) as blocks_count
+        FROM `tabWH Task Dependency`
+        WHERE predecessor IN %(task_ids)s AND is_active = 1
+        GROUP BY predecessor
+    """, {"task_ids": task_ids}, as_dict=True)
 
-    # Check if this is the only Owner - if so, don't allow removal
-    if assignee_to_remove.role == "Owner":
-        other_owners = [a for a in doc.assignees if a.role == "Owner" and a.user != user]
-        if not other_owners and len(doc.assignees) > 1:
-            frappe.throw(_("Cannot remove the only Owner. Promote another assignee to Owner first"))
+    # Build lookup dictionaries
+    counts_map = {}
+    for row in blocked_by_results:
+        counts_map[row["task_id"]] = {"task_id": row["task_id"], "blocked_by_count": row["blocked_by_count"], "blocks_count": 0}
 
-    doc.remove(assignee_to_remove)
-    doc.save()
+    for row in blocks_results:
+        if row["task_id"] in counts_map:
+            counts_map[row["task_id"]]["blocks_count"] = row["blocks_count"]
+        else:
+            counts_map[row["task_id"]] = {"task_id": row["task_id"], "blocked_by_count": 0, "blocks_count": row["blocks_count"]}
 
-    return {"success": True, "task_id": doc.name}
+    # Return array of task dependency counts (only for tasks with dependencies)
+    return list(counts_map.values())
