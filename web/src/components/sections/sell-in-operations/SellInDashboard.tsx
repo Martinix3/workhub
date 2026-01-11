@@ -2,6 +2,8 @@ import type { SellInDashboardProps, KPIs } from './types'
 import { KPICard } from './KPICard'
 import { MiniBarChart } from './MiniBarChart'
 import { ActivityFeed } from './ActivityFeed'
+import { CustomKPIGrid } from '../../kpi-builder'
+import { useCustomKPIs } from '../../../api'
 import { Plus } from 'lucide-react'
 
 export function SellInDashboard({
@@ -12,6 +14,9 @@ export function SellInDashboard({
   onCreateOrder
 }: SellInDashboardProps) {
   const kpiKeys: (keyof KPIs)[] = ['salesThisMonth', 'activeOrders', 'newCustomers', 'avgOrderValue']
+
+  // Fetch custom KPIs for SALES department
+  const { data: customKPIs } = useCustomKPIs('SALES', true)
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
@@ -55,6 +60,27 @@ export function SellInDashboard({
           />
         ))}
       </div>
+
+      {/* Custom KPIs Section - Only show if there are custom KPIs */}
+      {customKPIs && customKPIs.length > 0 && (
+        <div className="mb-8">
+          {/* Section Header */}
+          <div className="mb-4">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              KPIs Personalizados
+            </h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Tus indicadores personalizados de ventas
+            </p>
+          </div>
+
+          {/* Custom KPI Grid */}
+          <CustomKPIGrid
+            department="SALES"
+            includeShared={true}
+          />
+        </div>
+      )}
 
       {/* Charts & Activity Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
