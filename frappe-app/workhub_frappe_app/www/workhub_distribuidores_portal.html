@@ -16,6 +16,11 @@
 		<li class="nav-item">
 			<a class="nav-link active" data-toggle="tab" href="#mis-pedidos">📦 Mis Pedidos</a>
 		</li>
+		{% if can_create_orders %}
+		<li class="nav-item">
+			<a class="nav-link" data-toggle="tab" href="#nuevo-pedido">🛒 Nuevo Pedido</a>
+		</li>
+		{% endif %}
 		<li class="nav-item">
 			<a class="nav-link" data-toggle="tab" href="#subir-sellout">📤 Subir SELL OUT</a>
 		</li>
@@ -24,6 +29,12 @@
 		</li>
 		<li class="nav-item">
 			<a class="nav-link" data-toggle="tab" href="#analytics">📈 Analytics</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" data-toggle="tab" href="#mensajes" onclick="loadMessages()">
+				💬 Mensajes
+				<span id="unread-badge" class="badge badge-danger ml-1" style="display: none;">0</span>
+			</a>
 		</li>
 	</ul>
 
@@ -35,60 +46,162 @@
 					<h5>Mis Pedidos (SELL IN)</h5>
 				</div>
 				<div class="card-body">
-					<p class="text-muted">Entregas realizadas por Santa Brisa para tu distribución</p>
+					<p class="text-muted">Pedidos realizados a Santa Brisa</p>
 
-					{% if delivery_notes %}
-					<div class="table-responsive">
-						<table class="table table-hover">
-							<thead>
-								<tr>
-									<th>Nota de Entrega</th>
-									<th>Fecha</th>
-									<th>Estado</th>
-									<th class="text-right">Total</th>
-									<th class="text-center">Facturado</th>
-									<th></th>
-								</tr>
-							</thead>
-							<tbody>
-								{% for dn in delivery_notes %}
-								<tr>
-									<td><strong>{{ dn.name }}</strong></td>
-									<td>{{ dn.posting_date }}</td>
-									<td>
-										<span class="badge badge-{% if dn.status == 'Completed' %}success{% elif dn.status == 'To Bill' %}warning{% else %}info{% endif %}">
-											{{ dn.status }}
-										</span>
-									</td>
-									<td class="text-right">
-										<strong>{{ "%.2f"|format(dn.grand_total) }} {{ dn.currency }}</strong>
-									</td>
-									<td class="text-center">
-										<div class="progress" style="height: 20px; min-width: 60px;">
-											<div class="progress-bar bg-success" role="progressbar"
-												style="width: {{ dn.per_billed }}%">
-												{{ "%.0f"|format(dn.per_billed) }}%
-											</div>
-										</div>
-									</td>
-									<td>
-										<button class="btn btn-sm btn-outline-primary" onclick="viewDeliveryNote('{{ dn.name }}')">
-											Ver Detalle
-										</button>
-									</td>
-								</tr>
-								{% endfor %}
-							</tbody>
-						</table>
+					<!-- Loading State -->
+					<div id="orders-loading" class="text-center py-4">
+						<div class="spinner-border text-primary" role="status">
+							<span class="sr-only">Cargando...</span>
+						</div>
+						<p class="text-muted mt-2">Cargando pedidos...</p>
 					</div>
-					{% else %}
-					<div class="alert alert-info">
-						<strong>No hay entregas registradas.</strong> Cuando Santa Brisa te envíe productos, aparecerán aquí.
+
+					<!-- Orders Table -->
+					<div id="orders-container" style="display: none;">
+						<div class="table-responsive">
+							<table class="table table-hover">
+								<thead>
+									<tr>
+										<th width="5%"></th>
+										<th>Pedido</th>
+										<th>Fecha Pedido</th>
+										<th>Fecha Entrega</th>
+										<th>Estado</th>
+										<th class="text-center">Progreso Entrega</th>
+										<th class="text-right">Total</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="orders-tbody">
+									<!-- Orders will be dynamically inserted here -->
+								</tbody>
+							</table>
+						</div>
 					</div>
-					{% endif %}
+
+					<!-- Empty State -->
+					<div id="orders-empty" style="display: none;">
+						<div class="alert alert-info">
+							<strong>No hay pedidos registrados.</strong> Tus pedidos aparecerán aquí.
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
+
+		<!-- Tab: Nuevo Pedido (Self-Service Order Creation) -->
+		{% if can_create_orders %}
+		<div id="nuevo-pedido" class="tab-pane fade">
+			<div class="card">
+				<div class="card-header">
+					<h5>🛒 Nuevo Pedido</h5>
+				</div>
+				<div class="card-body">
+					<p class="text-muted">Crea un nuevo pedido seleccionando productos y cantidades</p>
+
+					<div class="row">
+						<!-- Left Column: Product Selection -->
+						<div class="col-md-7">
+							<div class="card bg-light">
+								<div class="card-body">
+									<h6 class="mb-3">Seleccionar Productos</h6>
+
+									<div class="form-row">
+										<div class="col-md-6">
+											<label>Producto *</label>
+											<select class="form-control" id="new-order-product">
+												<option value="">-- Seleccionar Producto --</option>
+												{% for item in items %}
+												<option value="{{ item.name }}"
+													data-name="{{ item.item_name }}"
+													data-rate="{{ item.standard_rate }}">
+													{{ item.item_name }}
+												</option>
+												{% endfor %}
+											</select>
+										</div>
+										<div class="col-md-3">
+											<label>Cantidad *</label>
+											<input type="number" class="form-control" id="new-order-qty"
+												min="1" step="1" value="1" placeholder="Cantidad">
+										</div>
+										<div class="col-md-3">
+											<label>&nbsp;</label>
+											<button type="button" class="btn btn-primary btn-block" onclick="addProductToCart()">
+												<i class="fa fa-plus"></i> Agregar
+											</button>
+										</div>
+									</div>
+
+									<div class="mt-3">
+										<label>Fecha de Entrega (opcional)</label>
+										<input type="date" class="form-control" id="new-order-delivery-date"
+											value="{{ frappe.utils.add_days(frappe.utils.today(), 7) }}">
+										<small class="form-text text-muted">
+											Fecha estimada de entrega. Por defecto: 7 días
+										</small>
+									</div>
+
+									<div class="mt-3">
+										<label>Notas (opcional)</label>
+										<textarea class="form-control" id="new-order-notes" rows="3"
+											placeholder="Notas adicionales sobre el pedido..."></textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Right Column: Order Summary / Cart -->
+						<div class="col-md-5">
+							<div class="card">
+								<div class="card-header bg-primary text-white">
+									<h6 class="mb-0"><i class="fa fa-shopping-cart"></i> Resumen del Pedido</h6>
+								</div>
+								<div class="card-body">
+									<!-- Cart Items -->
+									<div id="order-cart-items" style="max-height: 300px; overflow-y: auto;">
+										<div class="text-center text-muted py-4">
+											<i class="fa fa-shopping-cart" style="font-size: 48px; opacity: 0.3;"></i>
+											<p class="mt-2">Carrito vacío</p>
+											<small>Agrega productos para crear tu pedido</small>
+										</div>
+									</div>
+
+									<!-- Cart Summary -->
+									<div id="order-cart-summary" style="display: none;">
+										<hr>
+										<div class="d-flex justify-content-between mb-2">
+											<strong>Total Items:</strong>
+											<span id="cart-total-items">0</span>
+										</div>
+										<div class="d-flex justify-content-between mb-2">
+											<strong>Total Unidades:</strong>
+											<span id="cart-total-qty">0</span>
+										</div>
+										<div class="d-flex justify-content-between">
+											<strong>Total Estimado:</strong>
+											<strong class="text-primary" id="cart-total-amount">MXN $0.00</strong>
+										</div>
+									</div>
+
+									<!-- Submit Button -->
+									<div id="order-submit-section" style="display: none;">
+										<hr>
+										<button type="button" class="btn btn-success btn-block btn-lg" onclick="submitNewOrder()">
+											<i class="fa fa-check"></i> Crear Pedido
+										</button>
+										<button type="button" class="btn btn-outline-secondary btn-block btn-sm mt-2" onclick="clearCart()">
+											<i class="fa fa-trash"></i> Vaciar Carrito
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		{% endif %}
 
 		<!-- Tab: Subir SELL OUT -->
 		<div id="subir-sellout" class="tab-pane fade">
@@ -358,6 +471,214 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Tab: Mensajes -->
+		<div id="mensajes" class="tab-pane fade">
+			<div class="card">
+				<div class="card-header d-flex justify-content-between align-items-center">
+					<h5 class="mb-0">💬 Mensajes</h5>
+					<button class="btn btn-primary btn-sm" onclick="showComposeMessageModal()">
+						<i class="fa fa-pencil"></i> Nuevo Mensaje
+					</button>
+				</div>
+				<div class="card-body">
+					<!-- Loading State -->
+					<div id="messages-loading" class="text-center py-4" style="display: none;">
+						<div class="spinner-border text-primary" role="status">
+							<span class="sr-only">Cargando...</span>
+						</div>
+						<p class="text-muted mt-2">Cargando mensajes...</p>
+					</div>
+
+					<!-- Inbox View -->
+					<div id="inbox-view">
+						<!-- Filter/Search Bar -->
+						<div class="mb-3">
+							<div class="row">
+								<div class="col-md-8">
+									<input type="text" class="form-control" id="message-search"
+										placeholder="🔍 Buscar mensajes..."
+										onkeyup="filterMessages()">
+								</div>
+								<div class="col-md-4">
+									<select class="form-control" id="message-filter" onchange="filterMessages()">
+										<option value="all">Todos los mensajes</option>
+										<option value="unread">No leídos</option>
+										<option value="read">Leídos</option>
+									</select>
+								</div>
+							</div>
+						</div>
+
+						<!-- Messages List -->
+						<div id="messages-container">
+							<!-- Messages will be dynamically inserted here -->
+						</div>
+
+						<!-- Empty State -->
+						<div id="messages-empty" style="display: none;">
+							<div class="alert alert-info text-center">
+								<i class="fa fa-inbox" style="font-size: 48px; opacity: 0.3;"></i>
+								<p class="mt-3 mb-0"><strong>No hay mensajes.</strong></p>
+								<p class="text-muted">Comienza una conversación con tu equipo de ventas.</p>
+							</div>
+						</div>
+					</div>
+
+					<!-- Conversation View (hidden by default) -->
+					<div id="conversation-view" style="display: none;">
+						<div class="mb-3">
+							<button class="btn btn-sm btn-outline-secondary" onclick="backToInbox()">
+								<i class="fa fa-arrow-left"></i> Volver a Bandeja
+							</button>
+						</div>
+
+						<!-- Conversation Header -->
+						<div id="conversation-header" class="mb-3">
+							<!-- Will be populated with subject and participants -->
+						</div>
+
+						<!-- Conversation Thread -->
+						<div id="conversation-thread" class="conversation-thread">
+							<!-- Messages will be dynamically inserted here -->
+						</div>
+
+						<!-- Reply Form -->
+						<div class="card mt-3">
+							<div class="card-body">
+								<h6>Responder</h6>
+								<form id="reply-form" onsubmit="sendReply(event)">
+									<div class="form-group">
+										<textarea class="form-control" id="reply-message"
+											rows="3" placeholder="Escribe tu respuesta..." required></textarea>
+									</div>
+									<button type="submit" class="btn btn-primary">
+										<i class="fa fa-paper-plane"></i> Enviar
+									</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Compose Message Modal -->
+<div class="modal fade" id="composeMessageModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">✍️ Nuevo Mensaje</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<form id="compose-form" onsubmit="sendNewMessage(event)">
+				<div class="modal-body">
+					<div class="form-group">
+						<label>Para (Usuario) *</label>
+						<input type="email" class="form-control" id="compose-receiver"
+							placeholder="usuario@ejemplo.com" required>
+						<small class="form-text text-muted">
+							Email del usuario del equipo de ventas
+						</small>
+					</div>
+
+					<div class="form-group">
+						<label>Pedido Relacionado (opcional)</label>
+						<select class="form-control" id="compose-related-order">
+							<option value="">-- Ninguno --</option>
+							<!-- Will be populated with user's orders -->
+						</select>
+					</div>
+
+					<div class="form-group">
+						<label>Asunto *</label>
+						<input type="text" class="form-control" id="compose-subject"
+							placeholder="Ej: Consulta sobre pedido SO-12345" required>
+					</div>
+
+					<div class="form-group">
+						<label>Mensaje *</label>
+						<textarea class="form-control" id="compose-message"
+							rows="5" placeholder="Escribe tu mensaje aquí..." required></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+					<button type="submit" class="btn btn-primary">
+						<i class="fa fa-paper-plane"></i> Enviar Mensaje
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Change Request Modal -->
+<div class="modal fade" id="changeRequestModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">🔄 Solicitar Cambio de Pedido</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<form id="change-request-form" onsubmit="submitChangeRequest(event)">
+				<div class="modal-body">
+					<div class="alert alert-info">
+						<i class="fa fa-info-circle"></i>
+						<strong>Importante:</strong> Tu solicitud será revisada por el equipo de ventas.
+						Recibirás una notificación cuando sea procesada.
+					</div>
+
+					<div class="form-group">
+						<label>Pedido *</label>
+						<input type="text" class="form-control" id="change-request-order-id" readonly>
+					</div>
+
+					<div class="form-group">
+						<label>Tipo de Cambio *</label>
+						<select class="form-control" id="change-request-type" required onchange="updateNewValuesField()">
+							<option value="">-- Seleccionar --</option>
+							<option value="Quantity Change">Cambio de Cantidad</option>
+							<option value="Date Change">Cambio de Fecha</option>
+							<option value="Cancel">Cancelación</option>
+						</select>
+						<small class="form-text text-muted">
+							Selecciona el tipo de modificación que necesitas
+						</small>
+					</div>
+
+					<div class="form-group" id="new-values-group" style="display: none;">
+						<label id="new-values-label">Nuevos Valores *</label>
+						<textarea class="form-control" id="change-request-new-values"
+							rows="3" placeholder='{"campo": "valor"}'></textarea>
+						<small class="form-text text-muted" id="new-values-help">
+							JSON con los nuevos valores
+						</small>
+					</div>
+
+					<div class="form-group">
+						<label>Razón del Cambio *</label>
+						<textarea class="form-control" id="change-request-reason"
+							rows="4" placeholder="Explica el motivo de tu solicitud..." required></textarea>
+						<small class="form-text text-muted">
+							Proporciona detalles que ayuden a procesar tu solicitud más rápido
+						</small>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+					<button type="submit" class="btn btn-primary">
+						<i class="fa fa-paper-plane"></i> Enviar Solicitud
+					</button>
+				</div>
+			</form>
+		</div>
 	</div>
 </div>
 
@@ -409,12 +730,2083 @@
 	color: #007bff;
 	font-weight: 600;
 }
+
+/* Mis Pedidos - Orders Table Enhancements */
+.order-row {
+	transition: background-color 0.2s;
+}
+
+.order-row:hover {
+	background-color: #f8f9fa;
+}
+
+.items-row {
+	border-top: none !important;
+}
+
+.items-container {
+	background-color: white;
+	border-radius: 6px;
+	padding: 15px;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.items-container h6 {
+	color: #495057;
+	font-weight: 600;
+	border-bottom: 2px solid #e9ecef;
+	padding-bottom: 8px;
+	margin-bottom: 15px;
+}
+
+.items-container .table {
+	margin-bottom: 0;
+}
+
+.items-container .table thead {
+	background-color: #f8f9fa;
+}
+
+.items-container .table td,
+.items-container .table th {
+	padding: 8px 12px;
+	font-size: 0.9em;
+}
+
+.items-container code {
+	color: #e83e8c;
+	background-color: #f8f9fa;
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+/* Tasks section styling - matches items container */
+.tasks-row {
+	border-top: none !important;
+}
+
+.tasks-container {
+	background-color: white;
+	border-radius: 6px;
+	padding: 15px;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+	margin-top: 10px;
+}
+
+.tasks-container h6 {
+	color: #495057;
+	font-weight: 600;
+	border-bottom: 2px solid #e9ecef;
+	padding-bottom: 8px;
+	margin-bottom: 15px;
+}
+
+.tasks-container .table {
+	margin-bottom: 0;
+}
+
+.tasks-container .table thead {
+	background-color: #f8f9fa;
+}
+
+.tasks-container .table td,
+.tasks-container .table th {
+	padding: 8px 12px;
+	font-size: 0.9em;
+}
+
+.tasks-container .alert {
+	font-size: 0.9em;
+	padding: 10px 15px;
+}
+
+/* Change requests section styling - matches items/tasks container */
+.change-requests-row {
+	border-top: none !important;
+}
+
+.change-requests-container {
+	background-color: white;
+	border-radius: 6px;
+	padding: 15px;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+	margin-top: 10px;
+}
+
+.change-requests-container h6 {
+	color: #495057;
+	font-weight: 600;
+	border-bottom: 2px solid #e9ecef;
+	padding-bottom: 8px;
+	margin-bottom: 15px;
+}
+
+.change-requests-container .table {
+	margin-bottom: 0;
+}
+
+.change-requests-container .table thead {
+	background-color: #f8f9fa;
+}
+
+.change-requests-container .table td,
+.change-requests-container .table th {
+	padding: 8px 12px;
+	font-size: 0.9em;
+}
+
+.change-requests-container .alert {
+	font-size: 0.9em;
+	padding: 10px 15px;
+}
+
+.change-requests-container code {
+	color: #e83e8c;
+	background-color: #f8f9fa;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 0.85em;
+}
+
+/* Progress bar styling */
+.progress {
+	background-color: #e9ecef;
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.progress-bar {
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 20px;
+	text-align: center;
+	transition: width 0.6s ease;
+}
+
+/* Status badges */
+.badge {
+	font-size: 0.75rem;
+	padding: 4px 8px;
+	font-weight: 600;
+}
+
+/* Spinner */
+.spinner-border {
+	width: 3rem;
+	height: 3rem;
+}
+
+/* Expand/collapse icon animation */
+.order-row i {
+	transition: transform 0.2s ease;
+}
+
+/* Messages Tab Styling */
+.message-item {
+	border: 1px solid #e9ecef;
+	border-radius: 6px;
+	padding: 15px;
+	margin-bottom: 10px;
+	cursor: pointer;
+	transition: all 0.2s;
+	background-color: #fff;
+}
+
+.message-item:hover {
+	background-color: #f8f9fa;
+	border-color: #007bff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.message-item.unread {
+	background-color: #e7f3ff;
+	border-left: 4px solid #007bff;
+	font-weight: 600;
+}
+
+.message-item-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.message-sender {
+	font-weight: 600;
+	color: #212529;
+}
+
+.message-timestamp {
+	font-size: 0.85em;
+	color: #6c757d;
+}
+
+.message-subject {
+	font-weight: 600;
+	color: #495057;
+	margin-bottom: 5px;
+}
+
+.message-preview {
+	color: #6c757d;
+	font-size: 0.9em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.message-badges {
+	display: flex;
+	gap: 5px;
+	margin-top: 8px;
+}
+
+/* Conversation Thread Styling */
+.conversation-thread {
+	max-height: 500px;
+	overflow-y: auto;
+	padding: 15px;
+	background-color: #f8f9fa;
+	border-radius: 6px;
+	margin-bottom: 15px;
+}
+
+.conversation-message {
+	margin-bottom: 20px;
+	display: flex;
+	flex-direction: column;
+}
+
+.conversation-message.sent {
+	align-items: flex-end;
+}
+
+.conversation-message.received {
+	align-items: flex-start;
+}
+
+.conversation-bubble {
+	max-width: 70%;
+	padding: 12px 16px;
+	border-radius: 12px;
+	position: relative;
+}
+
+.conversation-message.sent .conversation-bubble {
+	background-color: #007bff;
+	color: white;
+	border-bottom-right-radius: 4px;
+}
+
+.conversation-message.received .conversation-bubble {
+	background-color: white;
+	color: #212529;
+	border: 1px solid #dee2e6;
+	border-bottom-left-radius: 4px;
+}
+
+.conversation-bubble .message-sender-name {
+	font-size: 0.75em;
+	font-weight: 600;
+	margin-bottom: 5px;
+	opacity: 0.9;
+}
+
+.conversation-bubble .message-text {
+	margin-bottom: 5px;
+	line-height: 1.4;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.conversation-bubble .message-time {
+	font-size: 0.7em;
+	opacity: 0.7;
+	text-align: right;
+}
+
+/* Conversation Header */
+#conversation-header {
+	background-color: #f8f9fa;
+	padding: 15px;
+	border-radius: 6px;
+	border-left: 4px solid #007bff;
+}
+
+#conversation-header h5 {
+	margin: 0 0 5px 0;
+	color: #212529;
+}
+
+#conversation-header .text-muted {
+	font-size: 0.9em;
+}
+
+/* Nuevo Pedido - Cart Styling */
+.cart-item {
+	background-color: #fff;
+	transition: all 0.2s;
+}
+
+.cart-item:hover {
+	background-color: #f8f9fa;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cart-item .btn-outline-danger {
+	padding: 0.25rem 0.5rem;
+	font-size: 0.875rem;
+}
+
+.cart-item .form-control-sm {
+	height: calc(1.5em + 0.5rem + 2px);
+	padding: 0.25rem 0.5rem;
+	font-size: 0.875rem;
+}
+
+.cart-item .small {
+	font-size: 0.75rem;
+	color: #6c757d;
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE STYLES
+   ============================================================ */
+
+/* Tablets and smaller (max-width: 768px) */
+@media (max-width: 768px) {
+	/* Page container - reduce padding on mobile */
+	.wh-page-container {
+		padding: 10px;
+	}
+
+	/* Page header - reduce font size */
+	.wh-page-header h1 {
+		font-size: 24px;
+	}
+
+	.wh-page-header p {
+		font-size: 0.9em;
+	}
+
+	/* Navigation tabs - make scrollable horizontally */
+	.nav-tabs {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		border-bottom: 1px solid #dee2e6;
+	}
+
+	.nav-tabs .nav-item {
+		flex: 0 0 auto;
+	}
+
+	.nav-tabs .nav-link {
+		white-space: nowrap;
+		font-size: 0.9em;
+		padding: 10px 12px;
+	}
+
+	/* Tab content - reduce margins */
+	.tab-content {
+		margin-top: 15px !important;
+	}
+
+	/* Cards - reduce margins and padding */
+	.card {
+		margin-bottom: 15px;
+	}
+
+	.card-body {
+		padding: 15px;
+	}
+
+	.card-header h5,
+	.card-header h6 {
+		font-size: 1.1em;
+		margin-bottom: 0;
+	}
+
+	/* Tables - optimize for mobile */
+	.table {
+		font-size: 0.85em;
+	}
+
+	.table thead th {
+		font-size: 0.8em;
+		padding: 8px 5px;
+	}
+
+	.table tbody td {
+		padding: 8px 5px;
+	}
+
+	/* Hide some table columns on very small screens */
+	.table th:nth-child(3),
+	.table td:nth-child(3) {
+		display: none; /* Hide "Fecha Pedido" column */
+	}
+
+	/* Progress bars - reduce height */
+	.progress {
+		height: 16px;
+	}
+
+	.progress-bar {
+		font-size: 0.7rem;
+		line-height: 16px;
+	}
+
+	/* Status badges - smaller */
+	.badge {
+		font-size: 0.7rem;
+		padding: 3px 6px;
+	}
+
+	/* Buttons - make more touch-friendly */
+	.btn {
+		padding: 10px 16px;
+		min-height: 44px; /* iOS recommended touch target size */
+	}
+
+	.btn-sm {
+		padding: 8px 12px;
+		min-height: 38px;
+	}
+
+	/* Items and tasks containers - reduce padding */
+	.items-container,
+	.tasks-container,
+	.change-requests-container {
+		padding: 10px;
+	}
+
+	.items-container h6,
+	.tasks-container h6,
+	.change-requests-container h6 {
+		font-size: 1em;
+		margin-bottom: 10px;
+	}
+
+	/* Messages - optimize for mobile */
+	.message-item {
+		padding: 12px;
+		margin-bottom: 8px;
+	}
+
+	.message-item-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 5px;
+	}
+
+	.message-timestamp {
+		font-size: 0.8em;
+	}
+
+	.message-subject {
+		font-size: 0.95em;
+	}
+
+	.message-preview {
+		font-size: 0.85em;
+	}
+
+	/* Conversation bubbles - increase max-width on mobile */
+	.conversation-bubble {
+		max-width: 85%;
+		padding: 10px 12px;
+	}
+
+	.conversation-thread {
+		max-height: 400px;
+		padding: 10px;
+	}
+
+	/* Forms - optimize spacing */
+	.form-group {
+		margin-bottom: 15px;
+	}
+
+	.form-control {
+		font-size: 16px; /* Prevent iOS zoom on focus */
+		min-height: 44px;
+	}
+
+	select.form-control {
+		font-size: 16px;
+	}
+
+	textarea.form-control {
+		font-size: 16px;
+	}
+
+	/* Modals - full screen on mobile */
+	.modal-dialog {
+		margin: 0;
+		max-width: 100%;
+	}
+
+	.modal-content {
+		border-radius: 0;
+		min-height: 100vh;
+	}
+
+	.modal-body {
+		padding: 15px;
+	}
+
+	/* Nuevo Pedido - cart summary */
+	.cart-item {
+		padding: 10px;
+		font-size: 0.9em;
+	}
+
+	/* Upload area - reduce padding */
+	.upload-area {
+		padding: 30px 15px;
+	}
+}
+
+/* Mobile phones (max-width: 576px) */
+@media (max-width: 576px) {
+	/* Further reduce padding */
+	.wh-page-container {
+		padding: 8px;
+	}
+
+	/* Page header */
+	.wh-page-header {
+		margin-bottom: 20px;
+	}
+
+	.wh-page-header h1 {
+		font-size: 20px;
+	}
+
+	/* Navigation tabs - smaller font */
+	.nav-tabs .nav-link {
+		font-size: 0.85em;
+		padding: 8px 10px;
+	}
+
+	/* Unread badge on messages tab */
+	#unread-badge {
+		font-size: 0.65rem;
+		padding: 2px 5px;
+	}
+
+	/* Cards */
+	.card-body {
+		padding: 12px;
+	}
+
+	/* Tables - hide more columns */
+	.table th:nth-child(4),
+	.table td:nth-child(4) {
+		display: none; /* Hide "Fecha Entrega" column */
+	}
+
+	/* Stack table data vertically for very small screens */
+	.table thead {
+		display: none;
+	}
+
+	.order-row td {
+		display: block;
+		text-align: left !important;
+		padding: 5px 10px;
+		border: none;
+	}
+
+	.order-row td:first-child {
+		padding-top: 10px;
+		font-weight: 600;
+	}
+
+	.order-row td:last-child {
+		padding-bottom: 10px;
+	}
+
+	.order-row td:before {
+		content: attr(data-label);
+		font-weight: 600;
+		display: inline-block;
+		margin-right: 10px;
+	}
+
+	/* Buttons - full width on mobile */
+	.btn-block {
+		width: 100%;
+		display: block;
+	}
+
+	/* Row buttons in orders table */
+	.order-row .btn {
+		padding: 6px 10px;
+		font-size: 0.8em;
+		min-height: 36px;
+	}
+
+	/* Message filters and search */
+	.form-row .col-md-6,
+	.form-row .col-md-3,
+	.form-row .col-md-4,
+	.form-row .col-md-8 {
+		flex: 0 0 100%;
+		max-width: 100%;
+		margin-bottom: 10px;
+	}
+
+	/* Conversation bubbles - full width almost */
+	.conversation-bubble {
+		max-width: 90%;
+		font-size: 0.9em;
+	}
+
+	/* Conversation header */
+	#conversation-header {
+		padding: 12px;
+	}
+
+	#conversation-header h5 {
+		font-size: 1em;
+	}
+
+	/* Cart items in Nuevo Pedido */
+	#order-cart-items {
+		max-height: 250px;
+	}
+
+	/* Change request modal content */
+	.change-requests-container .table td,
+	.change-requests-container .table th {
+		font-size: 0.8em;
+		padding: 6px 8px;
+	}
+
+	/* Items container tables - more compact */
+	.items-container .table td,
+	.items-container .table th,
+	.tasks-container .table td,
+	.tasks-container .table th {
+		font-size: 0.8em;
+		padding: 6px 8px;
+	}
+}
+
+/* Landscape mode optimization for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+	.conversation-thread {
+		max-height: 250px;
+	}
+
+	.modal-content {
+		min-height: auto;
+		max-height: 100vh;
+		overflow-y: auto;
+	}
+}
+
+/* Fix for iOS Safari bottom navigation overlap */
+@supports (-webkit-touch-callout: none) {
+	.wh-page-container {
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+
+	.modal-body {
+		padding-bottom: calc(15px + env(safe-area-inset-bottom));
+	}
+}
 </style>
 
 <script>
 // Portal de Distribuidores - JavaScript
 
 let itemRowIndex = 1;
+let currentOrders = [];
+let currentTasks = [];
+let currentChangeRequests = [];
+
+// ============================================================
+// MIS PEDIDOS - Load and Display Orders
+// ============================================================
+
+// Load orders on page load
+document.addEventListener('DOMContentLoaded', function() {
+	loadOrders();
+});
+
+function loadOrders() {
+	// Show loading state
+	document.getElementById('orders-loading').style.display = 'block';
+	document.getElementById('orders-container').style.display = 'none';
+	document.getElementById('orders-empty').style.display = 'none';
+
+	// Call API to get orders, tasks, and change requests in parallel
+	Promise.all([
+		// Get orders
+		new Promise(function(resolve, reject) {
+			frappe.call({
+				method: 'workhub_frappe_app.api.distributors.get_my_orders',
+				args: {
+					limit: 50,
+					offset: 0
+				},
+				callback: function(r) {
+					resolve(r.message || []);
+				},
+				error: function(err) {
+					reject(err);
+				}
+			});
+		}),
+		// Get tasks
+		new Promise(function(resolve, reject) {
+			frappe.call({
+				method: 'workhub_frappe_app.api.distributors.get_order_tasks',
+				callback: function(r) {
+					resolve(r.message || []);
+				},
+				error: function(err) {
+					// Tasks are optional, don't fail if they error
+					resolve([]);
+				}
+			});
+		}),
+		// Get change requests
+		new Promise(function(resolve, reject) {
+			frappe.call({
+				method: 'workhub_frappe_app.api.distributors.get_my_change_requests',
+				args: {
+					limit: 100,
+					offset: 0
+				},
+				callback: function(r) {
+					resolve(r.message || []);
+				},
+				error: function(err) {
+					// Change requests are optional, don't fail if they error
+					resolve([]);
+				}
+			});
+		})
+	]).then(function(results) {
+		document.getElementById('orders-loading').style.display = 'none';
+
+		currentOrders = results[0];
+		currentTasks = results[1];
+		currentChangeRequests = results[2];
+
+		if (currentOrders.length > 0) {
+			renderOrders(currentOrders);
+			document.getElementById('orders-container').style.display = 'block';
+		} else {
+			document.getElementById('orders-empty').style.display = 'block';
+		}
+	}).catch(function(error) {
+		document.getElementById('orders-loading').style.display = 'none';
+		document.getElementById('orders-empty').style.display = 'block';
+		frappe.msgprint({
+			title: 'Error',
+			message: 'Error al cargar pedidos. Por favor intenta de nuevo.',
+			indicator: 'red'
+		});
+	});
+}
+
+function renderOrders(orders) {
+	const tbody = document.getElementById('orders-tbody');
+	tbody.innerHTML = '';
+
+	orders.forEach(function(order, index) {
+		// Main order row
+		const mainRow = createOrderRow(order, index);
+		tbody.appendChild(mainRow);
+
+		// Expandable items row (hidden by default)
+		const itemsRow = createItemsRow(order, index);
+		tbody.appendChild(itemsRow);
+
+		// Expandable tasks row (hidden by default)
+		const tasksRow = createTasksRow(order, index);
+		tbody.appendChild(tasksRow);
+
+		// Expandable change requests row (hidden by default)
+		const changeRequestsRow = createChangeRequestsRow(order, index);
+		tbody.appendChild(changeRequestsRow);
+	});
+}
+
+function createOrderRow(order, index) {
+	const row = document.createElement('tr');
+	row.className = 'order-row';
+	row.style.cursor = 'pointer';
+	row.onclick = function() { toggleOrderItems(index); };
+
+	// Expand/collapse icon
+	const iconCell = document.createElement('td');
+	iconCell.setAttribute('data-label', '');
+	iconCell.innerHTML = '<i id="expand-icon-' + index + '" class="fa fa-chevron-right text-muted"></i>';
+	row.appendChild(iconCell);
+
+	// Order ID
+	const idCell = document.createElement('td');
+	idCell.setAttribute('data-label', 'Pedido: ');
+	idCell.innerHTML = '<strong>' + order.id + '</strong>';
+	row.appendChild(idCell);
+
+	// Order Date
+	const orderDateCell = document.createElement('td');
+	orderDateCell.setAttribute('data-label', 'Fecha Pedido: ');
+	orderDateCell.textContent = formatDate(order.orderDate);
+	row.appendChild(orderDateCell);
+
+	// Delivery Date
+	const deliveryDateCell = document.createElement('td');
+	deliveryDateCell.setAttribute('data-label', 'Entrega: ');
+	deliveryDateCell.innerHTML = order.deliveryDate ?
+		'<span class="text-primary"><i class="fa fa-calendar"></i> ' + formatDate(order.deliveryDate) + '</span>' :
+		'<span class="text-muted">-</span>';
+	row.appendChild(deliveryDateCell);
+
+	// Status Badge
+	const statusCell = document.createElement('td');
+	statusCell.setAttribute('data-label', 'Estado: ');
+	statusCell.innerHTML = getStatusBadge(order.status, order.detailedStatus);
+	row.appendChild(statusCell);
+
+	// Delivery Progress Bar
+	const progressCell = document.createElement('td');
+	progressCell.className = 'text-center';
+	progressCell.setAttribute('data-label', 'Progreso: ');
+	progressCell.innerHTML = createProgressBar(order.deliveryProgress);
+	row.appendChild(progressCell);
+
+	// Total
+	const totalCell = document.createElement('td');
+	totalCell.className = 'text-right';
+	totalCell.setAttribute('data-label', 'Total: ');
+	totalCell.innerHTML = '<strong>MXN $' + order.total.toFixed(2) + '</strong>';
+	row.appendChild(totalCell);
+
+	// Actions
+	const actionsCell = document.createElement('td');
+	actionsCell.setAttribute('data-label', '');
+	actionsCell.innerHTML = '<button class="btn btn-sm btn-outline-primary mr-1" onclick="event.stopPropagation(); viewOrder(\'' + order.id + '\')">Ver Detalle</button>' +
+		'<button class="btn btn-sm btn-outline-warning" onclick="event.stopPropagation(); showChangeRequestModal(\'' + order.id + '\')">Solicitar Cambio</button>';
+	row.appendChild(actionsCell);
+
+	return row;
+}
+
+function createItemsRow(order, index) {
+	const row = document.createElement('tr');
+	row.id = 'items-row-' + index;
+	row.className = 'items-row';
+	row.style.display = 'none';
+	row.style.backgroundColor = '#f8f9fa';
+
+	const cell = document.createElement('td');
+	cell.colSpan = 8;
+	cell.style.padding = '15px';
+
+	let itemsHtml = '<div class="items-container">';
+	itemsHtml += '<h6 class="mb-3"><i class="fa fa-box"></i> Items del Pedido (' + order.itemCount + ')</h6>';
+	itemsHtml += '<div class="table-responsive">';
+	itemsHtml += '<table class="table table-sm table-bordered">';
+	itemsHtml += '<thead class="thead-light">';
+	itemsHtml += '<tr>';
+	itemsHtml += '<th>Código</th>';
+	itemsHtml += '<th>Producto</th>';
+	itemsHtml += '<th class="text-right">Cantidad</th>';
+	itemsHtml += '<th class="text-right">Entregado</th>';
+	itemsHtml += '<th class="text-right">Precio Unit.</th>';
+	itemsHtml += '<th class="text-right">Total</th>';
+	itemsHtml += '</tr>';
+	itemsHtml += '</thead>';
+	itemsHtml += '<tbody>';
+
+	order.items.forEach(function(item) {
+		itemsHtml += '<tr>';
+		itemsHtml += '<td><code>' + item.itemCode + '</code></td>';
+		itemsHtml += '<td>' + item.itemName + '</td>';
+		itemsHtml += '<td class="text-right">' + item.qty + '</td>';
+		itemsHtml += '<td class="text-right"><span class="badge badge-' + (item.deliveredQty >= item.qty ? 'success' : 'warning') + '">' + item.deliveredQty + '</span></td>';
+		itemsHtml += '<td class="text-right">$' + item.rate.toFixed(2) + '</td>';
+		itemsHtml += '<td class="text-right"><strong>$' + item.amount.toFixed(2) + '</strong></td>';
+		itemsHtml += '</tr>';
+	});
+
+	itemsHtml += '</tbody>';
+	itemsHtml += '</table>';
+	itemsHtml += '</div>';
+	itemsHtml += '</div>';
+
+	cell.innerHTML = itemsHtml;
+	row.appendChild(cell);
+
+	return row;
+}
+
+function createTasksRow(order, index) {
+	const row = document.createElement('tr');
+	row.id = 'tasks-row-' + index;
+	row.className = 'tasks-row';
+	row.style.display = 'none';
+	row.style.backgroundColor = '#f8f9fa';
+
+	const cell = document.createElement('td');
+	cell.colSpan = 8;
+	cell.style.padding = '0 15px 15px 15px';
+
+	// Filter tasks for this specific order
+	const orderTasks = currentTasks.filter(function(task) {
+		return task.order_id === order.id;
+	});
+
+	let tasksHtml = '<div class="tasks-container">';
+	tasksHtml += '<h6 class="mb-3"><i class="fa fa-tasks"></i> Tareas Relacionadas (' + orderTasks.length + ')</h6>';
+
+	if (orderTasks.length > 0) {
+		tasksHtml += '<div class="table-responsive">';
+		tasksHtml += '<table class="table table-sm table-bordered">';
+		tasksHtml += '<thead class="thead-light">';
+		tasksHtml += '<tr>';
+		tasksHtml += '<th>Tarea</th>';
+		tasksHtml += '<th class="text-center">Departamento</th>';
+		tasksHtml += '<th class="text-center">Estado</th>';
+		tasksHtml += '<th class="text-center">Fecha Vencimiento</th>';
+		tasksHtml += '</tr>';
+		tasksHtml += '</thead>';
+		tasksHtml += '<tbody>';
+
+		orderTasks.forEach(function(task) {
+			tasksHtml += '<tr>';
+			tasksHtml += '<td><strong>' + task.task_title + '</strong><br><small class="text-muted">' + task.task_id + '</small></td>';
+			tasksHtml += '<td class="text-center">' + getDepartmentBadge(task.department) + '</td>';
+			tasksHtml += '<td class="text-center">' + getTaskStatusBadge(task.status) + '</td>';
+			tasksHtml += '<td class="text-center">' + (task.due_date ? formatDate(task.due_date) : '<span class="text-muted">-</span>') + '</td>';
+			tasksHtml += '</tr>';
+		});
+
+		tasksHtml += '</tbody>';
+		tasksHtml += '</table>';
+		tasksHtml += '</div>';
+	} else {
+		tasksHtml += '<div class="alert alert-info mb-0">';
+		tasksHtml += '<i class="fa fa-info-circle"></i> No hay tareas relacionadas con este pedido.';
+		tasksHtml += '</div>';
+	}
+
+	tasksHtml += '</div>';
+
+	cell.innerHTML = tasksHtml;
+	row.appendChild(cell);
+
+	return row;
+}
+
+function createChangeRequestsRow(order, index) {
+	const row = document.createElement('tr');
+	row.id = 'change-requests-row-' + index;
+	row.className = 'change-requests-row';
+	row.style.display = 'none';
+	row.style.backgroundColor = '#f8f9fa';
+
+	const cell = document.createElement('td');
+	cell.colSpan = 8;
+	cell.style.padding = '0 15px 15px 15px';
+
+	// Filter change requests for this specific order
+	const orderChangeRequests = currentChangeRequests.filter(function(req) {
+		return req.orderId === order.id;
+	});
+
+	let requestsHtml = '<div class="change-requests-container">';
+	requestsHtml += '<h6 class="mb-3"><i class="fa fa-exchange"></i> Solicitudes de Cambio (' + orderChangeRequests.length + ')</h6>';
+
+	if (orderChangeRequests.length > 0) {
+		requestsHtml += '<div class="table-responsive">';
+		requestsHtml += '<table class="table table-sm table-bordered">';
+		requestsHtml += '<thead class="thead-light">';
+		requestsHtml += '<tr>';
+		requestsHtml += '<th>ID</th>';
+		requestsHtml += '<th>Tipo de Cambio</th>';
+		requestsHtml += '<th>Razón</th>';
+		requestsHtml += '<th>Nuevos Valores</th>';
+		requestsHtml += '<th class="text-center">Estado</th>';
+		requestsHtml += '<th class="text-center">Fecha Solicitud</th>';
+		requestsHtml += '<th class="text-center">Acciones</th>';
+		requestsHtml += '</tr>';
+		requestsHtml += '</thead>';
+		requestsHtml += '<tbody>';
+
+		orderChangeRequests.forEach(function(req) {
+			requestsHtml += '<tr>';
+			requestsHtml += '<td><small class="text-muted">' + req.id + '</small></td>';
+			requestsHtml += '<td>' + getRequestTypeBadge(req.requestType) + '</td>';
+			requestsHtml += '<td>' + escapeHtml(req.reason || '-') + '</td>';
+			requestsHtml += '<td>' + (req.newValues ? '<code>' + escapeHtml(req.newValues) + '</code>' : '<span class="text-muted">-</span>') + '</td>';
+			requestsHtml += '<td class="text-center">' + getRequestStatusBadge(req.status) + '</td>';
+			requestsHtml += '<td class="text-center"><small>' + formatDate(req.createdAt) + '</small></td>';
+			requestsHtml += '<td class="text-center">';
+
+			// Show cancel button for pending requests
+			if (req.status === 'Pending') {
+				requestsHtml += '<button class="btn btn-xs btn-outline-danger" onclick="cancelChangeRequest(\'' + req.id + '\', \'' + order.id + '\')"><i class="fa fa-times"></i> Cancelar</button>';
+			} else {
+				requestsHtml += '<span class="text-muted">-</span>';
+			}
+
+			requestsHtml += '</td>';
+			requestsHtml += '</tr>';
+
+			// Show response notes if available
+			if (req.responseNotes) {
+				requestsHtml += '<tr>';
+				requestsHtml += '<td colspan="7" class="bg-light">';
+				requestsHtml += '<strong>Respuesta:</strong> ' + escapeHtml(req.responseNotes);
+				if (req.processedBy) {
+					requestsHtml += '<br><small class="text-muted">Por: ' + req.processedBy + ' - ' + formatDate(req.processedDate) + '</small>';
+				}
+				requestsHtml += '</td>';
+				requestsHtml += '</tr>';
+			}
+		});
+
+		requestsHtml += '</tbody>';
+		requestsHtml += '</table>';
+		requestsHtml += '</div>';
+	} else {
+		requestsHtml += '<div class="alert alert-info mb-0">';
+		requestsHtml += '<i class="fa fa-info-circle"></i> No hay solicitudes de cambio para este pedido. <a href="#" onclick="event.preventDefault(); showChangeRequestModal(\'' + order.id + '\')">Crear una solicitud</a>';
+		requestsHtml += '</div>';
+	}
+
+	requestsHtml += '</div>';
+
+	cell.innerHTML = requestsHtml;
+	row.appendChild(cell);
+
+	return row;
+}
+
+function toggleOrderItems(index) {
+	const itemsRow = document.getElementById('items-row-' + index);
+	const tasksRow = document.getElementById('tasks-row-' + index);
+	const changeRequestsRow = document.getElementById('change-requests-row-' + index);
+	const icon = document.getElementById('expand-icon-' + index);
+
+	if (itemsRow.style.display === 'none') {
+		itemsRow.style.display = 'table-row';
+		tasksRow.style.display = 'table-row';
+		changeRequestsRow.style.display = 'table-row';
+		icon.className = 'fa fa-chevron-down text-primary';
+	} else {
+		itemsRow.style.display = 'none';
+		tasksRow.style.display = 'none';
+		changeRequestsRow.style.display = 'none';
+		icon.className = 'fa fa-chevron-right text-muted';
+	}
+}
+
+function getStatusBadge(status, detailedStatus) {
+	const statusColors = {
+		'pending': 'warning',
+		'confirmed': 'info',
+		'in_transit': 'primary',
+		'delivered': 'success',
+		'cancelled': 'danger',
+		'on_hold': 'secondary'
+	};
+
+	const statusLabels = {
+		'pending': 'Pendiente',
+		'confirmed': 'Confirmado',
+		'in_transit': 'En Tránsito',
+		'delivered': 'Entregado',
+		'cancelled': 'Cancelado',
+		'on_hold': 'En Espera'
+	};
+
+	const color = statusColors[status] || 'secondary';
+	const label = statusLabels[status] || status;
+
+	let badge = '<span class="badge badge-' + color + '">' + label + '</span>';
+
+	// Add submission indicator if not submitted
+	if (detailedStatus && !detailedStatus.isSubmitted) {
+		badge += ' <span class="badge badge-light">Borrador</span>';
+	}
+
+	return badge;
+}
+
+function createProgressBar(progress) {
+	const percentage = Math.round(progress);
+	let barColor = 'bg-warning';
+
+	if (percentage >= 100) {
+		barColor = 'bg-success';
+	} else if (percentage >= 50) {
+		barColor = 'bg-info';
+	}
+
+	return '<div class="progress" style="height: 20px; min-width: 100px;">' +
+		'<div class="progress-bar ' + barColor + '" role="progressbar" style="width: ' + percentage + '%">' +
+		percentage + '%' +
+		'</div>' +
+		'</div>';
+}
+
+function formatDate(dateStr) {
+	if (!dateStr) return '-';
+	const date = new Date(dateStr);
+	const day = String(date.getDate()).padStart(2, '0');
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const year = date.getFullYear();
+	return day + '/' + month + '/' + year;
+}
+
+function viewOrder(orderId) {
+	window.open('/app/sales-order/' + orderId, '_blank');
+}
+
+function getTaskStatusBadge(status) {
+	const statusColors = {
+		'BACKLOG': 'secondary',
+		'NEXT': 'info',
+		'DOING': 'primary',
+		'BLOCKED': 'danger',
+		'DONE': 'success'
+	};
+
+	const statusLabels = {
+		'BACKLOG': 'Backlog',
+		'NEXT': 'Siguiente',
+		'DOING': 'En Proceso',
+		'BLOCKED': 'Bloqueado',
+		'DONE': 'Completado'
+	};
+
+	const color = statusColors[status] || 'secondary';
+	const label = statusLabels[status] || status;
+
+	return '<span class="badge badge-' + color + '">' + label + '</span>';
+}
+
+function getDepartmentBadge(department) {
+	const deptColors = {
+		'SALES': 'success',
+		'OPS': 'warning',
+		'MKT': 'info'
+	};
+
+	const deptLabels = {
+		'SALES': 'Ventas',
+		'OPS': 'Operaciones',
+		'MKT': 'Marketing'
+	};
+
+	const color = deptColors[department] || 'secondary';
+	const label = deptLabels[department] || department;
+
+	return '<span class="badge badge-' + color + '">' + label + '</span>';
+}
+
+function getRequestTypeBadge(requestType) {
+	const typeColors = {
+		'Quantity Change': 'info',
+		'Cancel': 'danger',
+		'Date Change': 'warning'
+	};
+
+	const typeLabels = {
+		'Quantity Change': 'Cambio de Cantidad',
+		'Cancel': 'Cancelación',
+		'Date Change': 'Cambio de Fecha'
+	};
+
+	const color = typeColors[requestType] || 'secondary';
+	const label = typeLabels[requestType] || requestType;
+
+	return '<span class="badge badge-' + color + '">' + label + '</span>';
+}
+
+function getRequestStatusBadge(status) {
+	const statusColors = {
+		'Pending': 'warning',
+		'Approved': 'success',
+		'Rejected': 'danger'
+	};
+
+	const statusLabels = {
+		'Pending': 'Pendiente',
+		'Approved': 'Aprobado',
+		'Rejected': 'Rechazado'
+	};
+
+	const color = statusColors[status] || 'secondary';
+	const label = statusLabels[status] || status;
+
+	return '<span class="badge badge-' + color + '">' + label + '</span>';
+}
+
+// ============================================================
+// ORDER CHANGE REQUESTS
+// ============================================================
+
+let currentRequestOrderId = null;
+
+function showChangeRequestModal(orderId) {
+	currentRequestOrderId = orderId;
+	document.getElementById('change-request-order-id').value = orderId;
+	document.getElementById('change-request-form').reset();
+	document.getElementById('change-request-order-id').value = orderId;
+
+	// Show/hide new values field based on request type
+	updateNewValuesField();
+
+	$('#changeRequestModal').modal('show');
+}
+
+function updateNewValuesField() {
+	const requestType = document.getElementById('change-request-type').value;
+	const newValuesGroup = document.getElementById('new-values-group');
+	const newValuesLabel = document.getElementById('new-values-label');
+	const newValuesInput = document.getElementById('change-request-new-values');
+	const newValuesHelp = document.getElementById('new-values-help');
+
+	if (requestType === 'Cancel') {
+		// Hide new values for cancellation
+		newValuesGroup.style.display = 'none';
+		newValuesInput.required = false;
+	} else {
+		newValuesGroup.style.display = 'block';
+		newValuesInput.required = true;
+
+		if (requestType === 'Quantity Change') {
+			newValuesLabel.textContent = 'Nuevas Cantidades';
+			newValuesHelp.textContent = 'Ejemplo: {"item": "ITEM-001", "qty": 50}';
+			newValuesInput.placeholder = '{"item": "ITEM-001", "qty": 50}';
+		} else if (requestType === 'Date Change') {
+			newValuesLabel.textContent = 'Nueva Fecha';
+			newValuesHelp.textContent = 'Ejemplo: {"delivery_date": "2026-02-15"}';
+			newValuesInput.placeholder = '{"delivery_date": "2026-02-15"}';
+		} else {
+			newValuesLabel.textContent = 'Nuevos Valores';
+			newValuesHelp.textContent = 'JSON con los nuevos valores';
+			newValuesInput.placeholder = '{"campo": "valor"}';
+		}
+	}
+}
+
+function submitChangeRequest(event) {
+	event.preventDefault();
+
+	const orderId = document.getElementById('change-request-order-id').value;
+	const requestType = document.getElementById('change-request-type').value;
+	const reason = document.getElementById('change-request-reason').value.trim();
+	const newValues = document.getElementById('change-request-new-values').value.trim();
+
+	if (!orderId || !requestType || !reason) {
+		frappe.msgprint('Por favor completa todos los campos requeridos.');
+		return;
+	}
+
+	// Validate JSON for new values if provided
+	if (newValues && requestType !== 'Cancel') {
+		try {
+			JSON.parse(newValues);
+		} catch (e) {
+			frappe.msgprint({
+				title: 'Error',
+				message: 'Los nuevos valores deben ser JSON válido.',
+				indicator: 'red'
+			});
+			return;
+		}
+	}
+
+	// Show loading
+	const btn = event.target.querySelector('button[type="submit"]');
+	btn.disabled = true;
+	btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Enviando...';
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.submit_change_request',
+		args: {
+			order_id: orderId,
+			request_type: requestType,
+			reason: reason,
+			new_values: newValues || null
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				$('#changeRequestModal').modal('hide');
+				document.getElementById('change-request-form').reset();
+
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Solicitud de cambio enviada correctamente. ID: ' + r.message.request_id,
+					indicator: 'green'
+				});
+
+				// Reload orders to refresh change requests
+				loadOrders();
+			}
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar Solicitud';
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: err.message || 'Error al enviar solicitud. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar Solicitud';
+		}
+	});
+}
+
+function cancelChangeRequest(requestId, orderId) {
+	if (!confirm('¿Estás seguro de que deseas cancelar esta solicitud?')) {
+		return;
+	}
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.cancel_change_request',
+		args: {
+			request_id: requestId
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Solicitud cancelada correctamente.',
+					indicator: 'green'
+				});
+
+				// Reload orders to refresh change requests
+				loadOrders();
+			}
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: err.message || 'Error al cancelar solicitud.',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+// ============================================================
+// MENSAJES - Messages Tab Functions
+// ============================================================
+
+let currentMessages = [];
+let allMessages = [];
+let currentThreadId = null;
+let currentThreadSubject = null;
+let currentThreadReceiver = null;
+
+// Load messages when tab is opened
+function loadMessages() {
+	// Show loading state
+	document.getElementById('messages-loading').style.display = 'block';
+	document.getElementById('messages-container').innerHTML = '';
+	document.getElementById('messages-empty').style.display = 'none';
+
+	// Also populate the compose modal with user's orders
+	populateComposeOrdersDropdown();
+
+	// Call API to get messages
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.get_messages',
+		args: {
+			limit: 100,
+			offset: 0
+		},
+		callback: function(r) {
+			document.getElementById('messages-loading').style.display = 'none';
+
+			if (r.message && r.message.length > 0) {
+				allMessages = r.message;
+				currentMessages = allMessages;
+				renderInboxMessages(currentMessages);
+			} else {
+				document.getElementById('messages-empty').style.display = 'block';
+			}
+
+			// Update unread count after loading messages
+			updateUnreadCount();
+		},
+		error: function(err) {
+			document.getElementById('messages-loading').style.display = 'none';
+			document.getElementById('messages-empty').style.display = 'block';
+			frappe.msgprint({
+				title: 'Error',
+				message: 'Error al cargar mensajes. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+// Render messages in inbox view (grouped by thread)
+function renderInboxMessages(messages) {
+	const container = document.getElementById('messages-container');
+	container.innerHTML = '';
+
+	if (messages.length === 0) {
+		document.getElementById('messages-empty').style.display = 'block';
+		return;
+	}
+
+	// Group messages by thread_id
+	const threads = {};
+	messages.forEach(function(msg) {
+		if (!threads[msg.thread_id]) {
+			threads[msg.thread_id] = [];
+		}
+		threads[msg.thread_id].push(msg);
+	});
+
+	// Sort threads by latest message timestamp
+	const sortedThreads = Object.keys(threads).sort(function(a, b) {
+		const latestA = new Date(threads[a][0].timestamp);
+		const latestB = new Date(threads[b][0].timestamp);
+		return latestB - latestA;
+	});
+
+	// Render each thread
+	sortedThreads.forEach(function(threadId) {
+		const threadMessages = threads[threadId];
+		const latestMessage = threadMessages[0]; // Already sorted desc by API
+		const hasUnread = threadMessages.some(function(msg) {
+			return msg.receiver === frappe.session.user && msg.read_status === 0;
+		});
+
+		const messageItem = createMessageItem(latestMessage, threadMessages.length, hasUnread);
+		container.appendChild(messageItem);
+	});
+}
+
+// Create message item for inbox
+function createMessageItem(message, messageCount, isUnread) {
+	const div = document.createElement('div');
+	div.className = 'message-item' + (isUnread ? ' unread' : '');
+	div.onclick = function() { openConversation(message.thread_id); };
+
+	// Determine who is the "other" person in conversation
+	const isReceived = message.receiver === frappe.session.user;
+	const otherPerson = isReceived ? message.sender : message.receiver;
+
+	let html = '<div class="message-item-header">';
+	html += '<div class="message-sender">';
+	html += '<i class="fa fa-' + (isReceived ? 'inbox' : 'paper-plane') + '"></i> ';
+	html += otherPerson;
+	html += '</div>';
+	html += '<div class="message-timestamp">' + formatTimestamp(message.timestamp) + '</div>';
+	html += '</div>';
+
+	html += '<div class="message-subject">' + message.subject + '</div>';
+	html += '<div class="message-preview">' + truncateText(message.message, 80) + '</div>';
+
+	html += '<div class="message-badges">';
+	if (messageCount > 1) {
+		html += '<span class="badge badge-secondary"><i class="fa fa-comments"></i> ' + messageCount + ' mensajes</span>';
+	}
+	if (message.related_order) {
+		html += '<span class="badge badge-info"><i class="fa fa-file-text"></i> ' + message.related_order + '</span>';
+	}
+	if (isUnread) {
+		html += '<span class="badge badge-primary">No leído</span>';
+	}
+	html += '</div>';
+
+	div.innerHTML = html;
+	return div;
+}
+
+// Open conversation view
+function openConversation(threadId) {
+	currentThreadId = threadId;
+
+	// Hide inbox, show conversation
+	document.getElementById('inbox-view').style.display = 'none';
+	document.getElementById('conversation-view').style.display = 'block';
+
+	// Show loading
+	document.getElementById('conversation-thread').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+
+	// Fetch messages for this thread
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.get_messages',
+		args: {
+			thread_id: threadId,
+			limit: 100,
+			offset: 0
+		},
+		callback: function(r) {
+			if (r.message && r.message.length > 0) {
+				const threadMessages = r.message.reverse(); // Show oldest first in thread
+				currentThreadSubject = threadMessages[0].subject;
+				currentThreadReceiver = threadMessages[0].sender === frappe.session.user ?
+					threadMessages[0].receiver : threadMessages[0].sender;
+
+				renderConversation(threadMessages);
+
+				// Mark messages as read
+				const unreadIds = threadMessages
+					.filter(function(msg) {
+						return msg.receiver === frappe.session.user && msg.read_status === 0;
+					})
+					.map(function(msg) { return msg.name; });
+
+				if (unreadIds.length > 0) {
+					markMessagesAsRead(unreadIds);
+				}
+			}
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: 'Error al cargar conversación.',
+				indicator: 'red'
+			});
+			backToInbox();
+		}
+	});
+}
+
+// Render conversation thread
+function renderConversation(messages) {
+	const header = document.getElementById('conversation-header');
+	header.innerHTML = '<h5>' + currentThreadSubject + '</h5>' +
+		'<p class="text-muted mb-0"><i class="fa fa-user"></i> Conversación con: ' + currentThreadReceiver + '</p>';
+
+	const thread = document.getElementById('conversation-thread');
+	thread.innerHTML = '';
+
+	messages.forEach(function(msg) {
+		const messageDiv = createConversationMessage(msg);
+		thread.appendChild(messageDiv);
+	});
+
+	// Scroll to bottom
+	thread.scrollTop = thread.scrollHeight;
+}
+
+// Create conversation message bubble
+function createConversationMessage(message) {
+	const div = document.createElement('div');
+	const isSent = message.sender === frappe.session.user;
+	div.className = 'conversation-message ' + (isSent ? 'sent' : 'received');
+
+	let html = '<div class="conversation-bubble">';
+	html += '<div class="message-sender-name">' + message.sender + '</div>';
+	html += '<div class="message-text">' + escapeHtml(message.message) + '</div>';
+	html += '<div class="message-time">' + formatTimestamp(message.timestamp) + '</div>';
+	html += '</div>';
+
+	div.innerHTML = html;
+	return div;
+}
+
+// Back to inbox
+function backToInbox() {
+	document.getElementById('conversation-view').style.display = 'none';
+	document.getElementById('inbox-view').style.display = 'block';
+	document.getElementById('reply-message').value = '';
+	currentThreadId = null;
+	currentThreadSubject = null;
+	currentThreadReceiver = null;
+
+	// Reload messages to refresh unread status
+	loadMessages();
+}
+
+// Send reply in conversation
+function sendReply(event) {
+	event.preventDefault();
+
+	const message = document.getElementById('reply-message').value.trim();
+
+	if (!message || !currentThreadId || !currentThreadReceiver) {
+		frappe.msgprint('No se puede enviar el mensaje.');
+		return;
+	}
+
+	// Show loading
+	const btn = event.target.querySelector('button[type="submit"]');
+	btn.disabled = true;
+	btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Enviando...';
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.send_message',
+		args: {
+			receiver: currentThreadReceiver,
+			subject: currentThreadSubject,
+			message: message,
+			related_order: null // Thread already has related order in first message
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				// Clear form
+				document.getElementById('reply-message').value = '';
+
+				// Reload conversation
+				openConversation(currentThreadId);
+
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Mensaje enviado correctamente',
+					indicator: 'green'
+				});
+			}
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar';
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: 'Error al enviar mensaje. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar';
+		}
+	});
+}
+
+// Show compose message modal
+function showComposeMessageModal() {
+	$('#composeMessageModal').modal('show');
+	document.getElementById('compose-form').reset();
+	populateComposeOrdersDropdown();
+}
+
+// Populate orders dropdown in compose modal
+function populateComposeOrdersDropdown() {
+	const select = document.getElementById('compose-related-order');
+	select.innerHTML = '<option value="">-- Ninguno --</option>';
+
+	if (currentOrders && currentOrders.length > 0) {
+		currentOrders.forEach(function(order) {
+			const option = document.createElement('option');
+			option.value = order.id;
+			option.textContent = order.id + ' - ' + formatDate(order.orderDate);
+			select.appendChild(option);
+		});
+	}
+}
+
+// Send new message from compose modal
+function sendNewMessage(event) {
+	event.preventDefault();
+
+	const receiver = document.getElementById('compose-receiver').value.trim();
+	const subject = document.getElementById('compose-subject').value.trim();
+	const message = document.getElementById('compose-message').value.trim();
+	const relatedOrder = document.getElementById('compose-related-order').value;
+
+	if (!receiver || !subject || !message) {
+		frappe.msgprint('Por favor completa todos los campos requeridos.');
+		return;
+	}
+
+	// Show loading
+	const btn = event.target.querySelector('button[type="submit"]');
+	btn.disabled = true;
+	btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Enviando...';
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.send_message',
+		args: {
+			receiver: receiver,
+			subject: subject,
+			message: message,
+			related_order: relatedOrder || null
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				$('#composeMessageModal').modal('hide');
+				document.getElementById('compose-form').reset();
+
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Mensaje enviado correctamente',
+					indicator: 'green'
+				});
+
+				// Reload messages
+				loadMessages();
+			}
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar Mensaje';
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: err.message || 'Error al enviar mensaje. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fa fa-paper-plane"></i> Enviar Mensaje';
+		}
+	});
+}
+
+// Mark messages as read
+function markMessagesAsRead(messageIds) {
+	if (!messageIds || messageIds.length === 0) return;
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.mark_as_read',
+		args: {
+			message_ids: JSON.stringify(messageIds)
+		},
+		callback: function(r) {
+			// Update read status in local cache
+			allMessages.forEach(function(msg) {
+				if (messageIds.indexOf(msg.name) !== -1) {
+					msg.read_status = 1;
+				}
+			});
+
+			// Update unread count badge
+			updateUnreadCount();
+		}
+	});
+}
+
+// Filter messages
+function filterMessages() {
+	const searchTerm = document.getElementById('message-search').value.toLowerCase();
+	const filterType = document.getElementById('message-filter').value;
+
+	let filtered = allMessages;
+
+	// Filter by read/unread
+	if (filterType === 'unread') {
+		filtered = filtered.filter(function(msg) {
+			return msg.receiver === frappe.session.user && msg.read_status === 0;
+		});
+	} else if (filterType === 'read') {
+		filtered = filtered.filter(function(msg) {
+			return msg.sender === frappe.session.user || msg.read_status === 1;
+		});
+	}
+
+	// Filter by search term
+	if (searchTerm) {
+		filtered = filtered.filter(function(msg) {
+			return msg.subject.toLowerCase().indexOf(searchTerm) !== -1 ||
+				msg.message.toLowerCase().indexOf(searchTerm) !== -1 ||
+				msg.sender.toLowerCase().indexOf(searchTerm) !== -1 ||
+				msg.receiver.toLowerCase().indexOf(searchTerm) !== -1;
+		});
+	}
+
+	currentMessages = filtered;
+	renderInboxMessages(currentMessages);
+}
+
+// Helper: Format timestamp
+function formatTimestamp(timestamp) {
+	if (!timestamp) return '';
+	const date = new Date(timestamp);
+	const now = new Date();
+	const diffMs = now - date;
+	const diffMins = Math.floor(diffMs / 60000);
+	const diffHours = Math.floor(diffMs / 3600000);
+	const diffDays = Math.floor(diffMs / 86400000);
+
+	if (diffMins < 1) return 'Ahora';
+	if (diffMins < 60) return diffMins + ' min';
+	if (diffHours < 24) return diffHours + 'h';
+	if (diffDays < 7) return diffDays + 'd';
+
+	return formatDate(timestamp);
+}
+
+// Helper: Truncate text
+function truncateText(text, maxLength) {
+	if (!text) return '';
+	if (text.length <= maxLength) return text;
+	return text.substring(0, maxLength) + '...';
+}
+
+// Helper: Escape HTML
+function escapeHtml(text) {
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+// ============================================================
+// NUEVO PEDIDO - Self-Service Order Creation
+// ============================================================
+
+let orderCart = [];
+
+// Add product to cart
+function addProductToCart() {
+	const productSelect = document.getElementById('new-order-product');
+	const qtyInput = document.getElementById('new-order-qty');
+
+	const itemCode = productSelect.value;
+	const itemName = productSelect.options[productSelect.selectedIndex].getAttribute('data-name');
+	const rate = parseFloat(productSelect.options[productSelect.selectedIndex].getAttribute('data-rate')) || 0;
+	const qty = parseInt(qtyInput.value);
+
+	if (!itemCode) {
+		frappe.msgprint('Por favor selecciona un producto');
+		return;
+	}
+
+	if (!qty || qty < 1) {
+		frappe.msgprint('Por favor ingresa una cantidad válida');
+		return;
+	}
+
+	// Check if item already in cart
+	const existingItem = orderCart.find(function(item) {
+		return item.item_code === itemCode;
+	});
+
+	if (existingItem) {
+		// Update quantity
+		existingItem.qty += qty;
+		existingItem.amount = existingItem.qty * existingItem.rate;
+	} else {
+		// Add new item
+		orderCart.push({
+			item_code: itemCode,
+			item_name: itemName,
+			qty: qty,
+			rate: rate,
+			amount: qty * rate
+		});
+	}
+
+	// Reset form
+	productSelect.value = '';
+	qtyInput.value = 1;
+
+	// Update cart display
+	updateCart();
+
+	frappe.msgprint({
+		title: 'Producto Agregado',
+		message: itemName + ' agregado al carrito',
+		indicator: 'green'
+	});
+}
+
+// Remove item from cart
+function removeFromCart(itemCode) {
+	orderCart = orderCart.filter(function(item) {
+		return item.item_code !== itemCode;
+	});
+
+	updateCart();
+}
+
+// Update cart quantity
+function updateCartQty(itemCode, newQty) {
+	const item = orderCart.find(function(i) {
+		return i.item_code === itemCode;
+	});
+
+	if (item) {
+		item.qty = parseInt(newQty);
+		item.amount = item.qty * item.rate;
+		updateCart();
+	}
+}
+
+// Update cart display
+function updateCart() {
+	const cartItemsDiv = document.getElementById('order-cart-items');
+	const cartSummaryDiv = document.getElementById('order-cart-summary');
+	const submitSectionDiv = document.getElementById('order-submit-section');
+
+	if (orderCart.length === 0) {
+		// Show empty state
+		cartItemsDiv.innerHTML = '<div class="text-center text-muted py-4">' +
+			'<i class="fa fa-shopping-cart" style="font-size: 48px; opacity: 0.3;"></i>' +
+			'<p class="mt-2">Carrito vacío</p>' +
+			'<small>Agrega productos para crear tu pedido</small>' +
+			'</div>';
+		cartSummaryDiv.style.display = 'none';
+		submitSectionDiv.style.display = 'none';
+		return;
+	}
+
+	// Show cart items
+	let html = '';
+	orderCart.forEach(function(item) {
+		html += '<div class="cart-item mb-2 p-2 border rounded">';
+		html += '<div class="d-flex justify-content-between align-items-start">';
+		html += '<div class="flex-grow-1">';
+		html += '<strong>' + item.item_name + '</strong><br>';
+		html += '<small class="text-muted">' + item.item_code + '</small>';
+		html += '</div>';
+		html += '<button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(\'' + item.item_code + '\')">';
+		html += '<i class="fa fa-times"></i>';
+		html += '</button>';
+		html += '</div>';
+		html += '<div class="mt-2">';
+		html += '<div class="row">';
+		html += '<div class="col-6">';
+		html += '<label class="small mb-1">Cantidad</label>';
+		html += '<input type="number" class="form-control form-control-sm" value="' + item.qty + '" ';
+		html += 'min="1" onchange="updateCartQty(\'' + item.item_code + '\', this.value)">';
+		html += '</div>';
+		html += '<div class="col-6 text-right">';
+		html += '<label class="small mb-1">Total</label>';
+		html += '<div class="font-weight-bold text-primary">$' + item.amount.toFixed(2) + '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+	});
+
+	cartItemsDiv.innerHTML = html;
+
+	// Calculate totals
+	let totalItems = orderCart.length;
+	let totalQty = 0;
+	let totalAmount = 0;
+
+	orderCart.forEach(function(item) {
+		totalQty += item.qty;
+		totalAmount += item.amount;
+	});
+
+	// Update summary
+	document.getElementById('cart-total-items').textContent = totalItems;
+	document.getElementById('cart-total-qty').textContent = totalQty;
+	document.getElementById('cart-total-amount').textContent = 'MXN $' + totalAmount.toFixed(2);
+
+	cartSummaryDiv.style.display = 'block';
+	submitSectionDiv.style.display = 'block';
+}
+
+// Clear cart
+function clearCart() {
+	if (orderCart.length === 0) {
+		return;
+	}
+
+	if (!confirm('¿Estás seguro de que deseas vaciar el carrito?')) {
+		return;
+	}
+
+	orderCart = [];
+	updateCart();
+}
+
+// Submit new order
+function submitNewOrder() {
+	if (orderCart.length === 0) {
+		frappe.msgprint('El carrito está vacío. Agrega productos para crear un pedido.');
+		return;
+	}
+
+	const deliveryDate = document.getElementById('new-order-delivery-date').value;
+	const notes = document.getElementById('new-order-notes').value.trim();
+
+	// Prepare items data
+	const items = orderCart.map(function(item) {
+		return {
+			item_code: item.item_code,
+			qty: item.qty,
+			rate: item.rate
+		};
+	});
+
+	// Prepare order data
+	const orderData = {
+		items: items,
+		delivery_date: deliveryDate || null,
+		notes: notes || null
+	};
+
+	// Show confirmation
+	const totalAmount = orderCart.reduce(function(sum, item) { return sum + item.amount; }, 0);
+	const confirmMsg = '¿Confirmas la creación de este pedido?\n\n' +
+		'Items: ' + orderCart.length + '\n' +
+		'Total: MXN $' + totalAmount.toFixed(2) + '\n' +
+		(deliveryDate ? 'Fecha de entrega: ' + formatDate(deliveryDate) : '');
+
+	if (!confirm(confirmMsg)) {
+		return;
+	}
+
+	// Disable submit button
+	const submitBtn = document.querySelector('#order-submit-section .btn-success');
+	submitBtn.disabled = true;
+	submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Creando pedido...';
+
+	// Call API
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.create_distributor_order',
+		args: {
+			data: JSON.stringify(orderData)
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.msgprint({
+					title: 'Pedido Creado',
+					message: 'Tu pedido ha sido creado exitosamente.<br><br>' +
+						'<strong>ID Pedido:</strong> ' + r.message.orderId + '<br>' +
+						'<strong>Total:</strong> MXN $' + r.message.total.toFixed(2) + '<br>' +
+						'<strong>Items:</strong> ' + r.message.itemCount + '<br><br>' +
+						'Puedes ver el pedido en la pestaña "Mis Pedidos".',
+					indicator: 'green'
+				});
+
+				// Clear cart
+				orderCart = [];
+				updateCart();
+
+				// Clear form
+				document.getElementById('new-order-delivery-date').value = '';
+				document.getElementById('new-order-notes').value = '';
+
+				// Switch to Mis Pedidos tab
+				setTimeout(function() {
+					document.querySelector('a[href="#mis-pedidos"]').click();
+					loadOrders();
+				}, 2000);
+			}
+
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = '<i class="fa fa-check"></i> Crear Pedido';
+		},
+		error: function(err) {
+			frappe.msgprint({
+				title: 'Error',
+				message: err.message || 'Error al crear pedido. Por favor intenta de nuevo.',
+				indicator: 'red'
+			});
+
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = '<i class="fa fa-check"></i> Crear Pedido';
+		}
+	});
+}
+
+// ============================================================
+// SELL OUT FORM
+// ============================================================
 
 // Agregar nueva fila de item al formulario
 function addItemRow() {
@@ -616,6 +3008,80 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 		}
 	});
+
+	// Update unread message count
+	function updateUnreadCount() {
+		frappe.call({
+			method: 'workhub_frappe_app.api.distributors.get_unread_count',
+			callback: function(r) {
+				if (r.message !== undefined) {
+					const count = r.message.count || 0;
+					const badge = document.getElementById('unread-badge');
+
+					if (badge) {
+						if (count > 0) {
+							badge.textContent = count;
+							badge.style.display = 'inline-block';
+						} else {
+							badge.style.display = 'none';
+						}
+					}
+				}
+			},
+			error: function(err) {
+				// Silently fail - don't show error to user
+			}
+		});
+	}
+
+	// Store previous unread count to detect changes
+	let previousUnreadCount = 0;
+
+	// Auto-refresh messages when new unread messages arrive
+	function checkForNewMessages() {
+		frappe.call({
+			method: 'workhub_frappe_app.api.distributors.get_unread_count',
+			callback: function(r) {
+				if (r.message !== undefined) {
+					const count = r.message.count || 0;
+					const badge = document.getElementById('unread-badge');
+
+					// Update badge
+					if (badge) {
+						if (count > 0) {
+							badge.textContent = count;
+							badge.style.display = 'inline-block';
+						} else {
+							badge.style.display = 'none';
+						}
+					}
+
+					// If count increased and we're on the messages tab, refresh messages
+					const messagesTab = document.getElementById('mensajes');
+					if (count > previousUnreadCount && messagesTab && messagesTab.classList.contains('active')) {
+						loadMessages();
+					}
+
+					previousUnreadCount = count;
+				}
+			},
+			error: function(err) {
+				// Silently fail - don't show error to user
+			}
+		});
+	}
+
+	// Start polling for new messages every 30 seconds
+	function startMessagePolling() {
+		// Update immediately on page load
+		updateUnreadCount();
+
+		// Then poll every 30 seconds
+		setInterval(checkForNewMessages, 30000);
+	}
+
+	// Initialize message polling when page loads
+	startMessagePolling();
 });
 </script>
 {% endblock %}

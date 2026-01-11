@@ -3,7 +3,7 @@ from frappe import _
 from frappe.utils import flt, today, get_first_day, get_last_day, add_months, add_days, now_datetime
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission, sanitize_search_term
+from workhub_frappe_app.api.utils import require_auth, require_permission
 
 
 @frappe.whitelist()
@@ -85,8 +85,7 @@ def get_customers(filters=None, limit=50, offset=0):
 
     if filters:
         if filters.get("search"):
-            sanitized_search = sanitize_search_term(filters['search'])
-            filter_conditions["customer_name"] = ["like", f"%{sanitized_search}%"]
+            filter_conditions["customer_name"] = ["like", f"%{filters['search']}%"]
         if filters.get("customer_group"):
             filter_conditions["customer_group"] = filters["customer_group"]
         if filters.get("territory"):
@@ -445,8 +444,7 @@ def get_products(search=None, limit=20):
     filters = {"is_sales_item": 1, "disabled": 0}
 
     if search:
-        sanitized_search = sanitize_search_term(search)
-        filters["item_name"] = ["like", f"%{sanitized_search}%"]
+        filters["item_name"] = ["like", f"%{search}%"]
 
     items = frappe.get_list("Item",
         filters=filters,
@@ -583,75 +581,157 @@ def _create_sell_out_order(data):
 
 
 @frappe.whitelist()
-def cancel_order(order_id):
-    """Cancel a Sales Order with proper validation and status updates"""
-    require_permission("Sales Order", "cancel")
+def get_pending_change_requests():
+    """
+    Get all pending order change requests for the logged-in sales rep.
+    Returns requests for orders where the sales rep is the owner or assigned sales person.
+    """
+    require_auth()
 
-    if not order_id:
-        frappe.throw(_("Order ID is required"))
+    current_user = frappe.session.user
 
-    # Check if order exists
-    if not frappe.db.exists("Sales Order", order_id):
-        frappe.throw(_("Sales Order {0} does not exist").format(order_id))
+    # Get all Sales Orders where current user is owner or sales person
+    orders = frappe.db.sql("""
+        SELECT name
+        FROM `tabSales Order`
+        WHERE (owner = %(user)s OR sales_person = %(user)s)
+        AND docstatus != 2
+    """, {"user": current_user}, pluck="name")
 
-    # Get the order document
-    doc = frappe.get_doc("Sales Order", order_id)
+    if not orders:
+        return []
 
-    # Validate order can be cancelled
-    if doc.docstatus == 2:
-        frappe.throw(_("Sales Order {0} is already cancelled").format(order_id))
+    # Get pending change requests for those orders
+    requests = frappe.get_list(
+        "Order Change Request",
+        filters={
+            "order_id": ["in", orders],
+            "status": "Pending"
+        },
+        fields=[
+            "name",
+            "order_id",
+            "distributor",
+            "request_type",
+            "reason",
+            "new_values",
+            "creation",
+            "modified"
+        ],
+        order_by="creation desc",
+        ignore_permissions=True
+    )
 
-    # Check if order is in a cancellable state
-    # Only allow cancellation if not fully processed (delivered/billed)
-    non_cancellable_statuses = ["Completed", "Closed"]
-    if doc.status in non_cancellable_statuses:
-        frappe.throw(_("Sales Order {0} cannot be cancelled. Orders with status '{1}' cannot be cancelled.").format(order_id, doc.status))
+    # Transform to camelCase for frontend
+    result = []
+    for req in requests:
+        # Get distributor name
+        distributor_name = frappe.db.get_value("Customer", req.distributor, "customer_name")
 
-    # For draft orders (docstatus=0), we need to handle differently
-    if doc.docstatus == 0:
-        # Draft orders can be deleted but cannot be "cancelled" in Frappe terms
-        # We'll set docstatus to 2 (cancelled) directly for drafts
-        frappe.db.set_value("Sales Order", order_id, "docstatus", 2)
-        frappe.db.set_value("Sales Order", order_id, "status", "Cancelled")
-    else:
-        # Submitted orders (docstatus=1) use the cancel() method
-        doc.cancel()
+        # Parse new_values if it's a JSON string
+        new_values = req.new_values
+        if new_values and isinstance(new_values, str):
+            try:
+                new_values = json.loads(new_values)
+            except json.JSONDecodeError:
+                new_values = {}
 
-    # Commit the transaction
-    frappe.db.commit()
+        result.append({
+            "requestId": req.name,
+            "orderId": req.order_id,
+            "distributor": req.distributor,
+            "distributorName": distributor_name or req.distributor,
+            "requestType": req.request_type,
+            "reason": req.reason,
+            "newValues": new_values or {},
+            "createdAt": str(req.creation) if req.creation else "",
+            "modifiedAt": str(req.modified) if req.modified else ""
+        })
 
-    # Update related WorkLinks
-    _update_worklinks_for_cancelled_order(order_id)
+    return result
 
-    # Get updated status
-    updated_status = frappe.db.get_value("Sales Order", order_id, "status")
+
+@frappe.whitelist()
+def approve_change_request(request_id, response_notes=None):
+    """
+    Approve an order change request.
+    Validates that the request is pending and belongs to the sales rep's orders.
+    """
+    require_auth()
+
+    if not request_id:
+        frappe.throw(_("Request ID is required"))
+
+    current_user = frappe.session.user
+
+    # Get the request
+    request = frappe.get_doc("Order Change Request", request_id, ignore_permissions=True)
+
+    # Validate request status
+    if request.status != "Pending":
+        frappe.throw(_("This request has already been processed with status: {0}").format(request.status))
+
+    # Validate that the order belongs to the sales rep
+    order = frappe.get_doc("Sales Order", request.order_id, ignore_permissions=True)
+    if order.owner != current_user and order.sales_person != current_user:
+        frappe.throw(_("You don't have permission to approve this request"))
+
+    # Update request
+    request.status = "Approved"
+    request.response_notes = response_notes or ""
+    request.processed_by = current_user
+    request.processed_date = now_datetime()
+    request.flags.ignore_permissions = True
+    request.save()
 
     return {
         "success": True,
-        "order_id": order_id,
-        "status": updated_status,
-        "message": _("Sales Order {0} has been cancelled successfully").format(order_id)
+        "requestId": request.name,
+        "status": "Approved",
+        "message": _("Request approved successfully")
     }
 
 
-def _update_worklinks_for_cancelled_order(order_id):
-    """Update WorkLinks related to a cancelled Sales Order"""
-    # Find WorkLinks with source_doctype='Sales Order' and source_id matching the order
-    worklinks = frappe.get_list("WorkLink",
-        filters={
-            "source_doctype": "Sales Order",
-            "source_id": order_id
-        },
-        fields=["name"]
-    )
+@frappe.whitelist()
+def reject_change_request(request_id, response_notes=None):
+    """
+    Reject an order change request.
+    Validates that the request is pending and belongs to the sales rep's orders.
+    Requires response_notes to explain the rejection.
+    """
+    require_auth()
 
-    # Update each WorkLink to mark as DONE with CANCELLED state
-    for worklink in worklinks:
-        frappe.db.set_value("WorkLink", worklink.name, {
-            "status": "DONE",
-            "erp_state": "CANCELLED"
-        })
+    if not request_id:
+        frappe.throw(_("Request ID is required"))
 
-    # Commit WorkLink updates
-    if worklinks:
-        frappe.db.commit()
+    if not response_notes:
+        frappe.throw(_("Response notes are required for rejection"))
+
+    current_user = frappe.session.user
+
+    # Get the request
+    request = frappe.get_doc("Order Change Request", request_id, ignore_permissions=True)
+
+    # Validate request status
+    if request.status != "Pending":
+        frappe.throw(_("This request has already been processed with status: {0}").format(request.status))
+
+    # Validate that the order belongs to the sales rep
+    order = frappe.get_doc("Sales Order", request.order_id, ignore_permissions=True)
+    if order.owner != current_user and order.sales_person != current_user:
+        frappe.throw(_("You don't have permission to reject this request"))
+
+    # Update request
+    request.status = "Rejected"
+    request.response_notes = response_notes
+    request.processed_by = current_user
+    request.processed_date = now_datetime()
+    request.flags.ignore_permissions = True
+    request.save()
+
+    return {
+        "success": True,
+        "requestId": request.name,
+        "status": "Rejected",
+        "message": _("Request rejected successfully")
+    }

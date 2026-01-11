@@ -140,6 +140,71 @@
 		</div>
 	</div>
 
+	<!-- Two Column Layout for Distributor Communication -->
+	<div class="wh-grid wh-grid-2 mb-6">
+		<!-- Mensajes de Distribuidores -->
+		<div class="wh-section">
+			<div class="wh-section-header">
+				<h2 class="wh-section-title">💬 Mensajes de Distribuidores</h2>
+				<div id="unread-badge" class="badge badge-danger" style="display: none; font-size: 0.875rem;">0</div>
+			</div>
+
+			<!-- Loading State -->
+			<div id="messages-loading" class="wh-card" style="display: none;">
+				<div class="text-center py-4">
+					<div class="spinner-border text-primary" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+					<p class="text-muted mt-2">Cargando mensajes...</p>
+				</div>
+			</div>
+
+			<!-- Messages Container -->
+			<div id="messages-container" style="display: none;">
+				<!-- Messages will be dynamically inserted here -->
+			</div>
+
+			<!-- Empty State -->
+			<div id="messages-empty" class="wh-card wh-card--flat" style="display: none;">
+				<div class="data-table-empty">
+					<div class="data-table-empty__title">Sin mensajes</div>
+					<div class="data-table-empty__text">No hay mensajes no leídos de distribuidores</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Solicitudes de Cambio Pendientes -->
+		<div class="wh-section">
+			<div class="wh-section-header">
+				<h2 class="wh-section-title">📝 Solicitudes de Cambio</h2>
+				<div id="change-requests-badge" class="badge badge-warning" style="display: none; font-size: 0.875rem;">0</div>
+			</div>
+
+			<!-- Loading State -->
+			<div id="change-requests-loading" class="wh-card" style="display: none;">
+				<div class="text-center py-4">
+					<div class="spinner-border text-primary" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+					<p class="text-muted mt-2">Cargando solicitudes...</p>
+				</div>
+			</div>
+
+			<!-- Change Requests Container -->
+			<div id="change-requests-container" style="display: none;">
+				<!-- Change requests will be dynamically inserted here -->
+			</div>
+
+			<!-- Empty State -->
+			<div id="change-requests-empty" class="wh-card wh-card--flat" style="display: none;">
+				<div class="data-table-empty">
+					<div class="data-table-empty__title">Sin solicitudes</div>
+					<div class="data-table-empty__text">No hay solicitudes de cambio pendientes</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Tendencia de Ventas -->
 	<div class="wh-section">
 		<div class="wh-section-header">
@@ -192,6 +257,663 @@
 		</div>
 	</div>
 </div>
+
+<!-- Quick Reply Modal -->
+<div class="modal fade" id="quickReplyModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">💬 Responder Mensaje</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<form id="reply-form" onsubmit="sendQuickReply(event)">
+				<div class="modal-body">
+					<div class="form-group">
+						<label><strong>Asunto:</strong></label>
+						<p id="reply-subject" class="text-muted"></p>
+					</div>
+					<div class="form-group">
+						<label><strong>De:</strong></label>
+						<p id="reply-sender" class="text-muted"></p>
+					</div>
+					<div class="form-group">
+						<label><strong>Mensaje Original:</strong></label>
+						<div id="reply-original-message" class="p-3" style="background: #f8f9fa; border-left: 4px solid var(--primary); border-radius: 4px;"></div>
+					</div>
+					<hr>
+					<div class="form-group">
+						<label for="reply-message-text">Tu Respuesta *</label>
+						<textarea class="form-control" id="reply-message-text"
+							rows="5" placeholder="Escribe tu respuesta..." required></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+					<button type="submit" class="btn btn-primary">
+						<i class="fa fa-paper-plane"></i> Enviar Respuesta
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Approve Change Request Modal -->
+<div class="modal fade" id="approveRequestModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">✅ Aprobar Solicitud de Cambio</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<form id="approve-form" onsubmit="confirmApproveRequest(event)">
+				<div class="modal-body">
+					<div class="alert alert-info">
+						<strong>¿Estás seguro de aprobar esta solicitud?</strong>
+					</div>
+					<div class="form-group">
+						<label><strong>Pedido:</strong></label>
+						<p id="approve-order-id" class="text-muted"></p>
+					</div>
+					<div class="form-group">
+						<label><strong>Distribuidor:</strong></label>
+						<p id="approve-distributor" class="text-muted"></p>
+					</div>
+					<div class="form-group">
+						<label><strong>Tipo de Cambio:</strong></label>
+						<p id="approve-request-type" class="text-muted"></p>
+					</div>
+					<div class="form-group">
+						<label><strong>Razón:</strong></label>
+						<p id="approve-reason" class="text-muted"></p>
+					</div>
+					<hr>
+					<div class="form-group">
+						<label for="approve-response-notes">Notas de Aprobación (opcional)</label>
+						<textarea class="form-control" id="approve-response-notes"
+							rows="3" placeholder="Agrega notas sobre esta aprobación..."></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+					<button type="submit" class="btn btn-success">
+						<i class="fa fa-check"></i> Aprobar
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Reject Change Request Modal -->
+<div class="modal fade" id="rejectRequestModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">❌ Rechazar Solicitud de Cambio</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<form id="reject-form" onsubmit="confirmRejectRequest(event)">
+				<div class="modal-body">
+					<div class="alert alert-warning">
+						<strong>¿Estás seguro de rechazar esta solicitud?</strong>
+					</div>
+					<div class="form-group">
+						<label><strong>Pedido:</strong></label>
+						<p id="reject-order-id" class="text-muted"></p>
+					</div>
+					<div class="form-group">
+						<label><strong>Distribuidor:</strong></label>
+						<p id="reject-distributor" class="text-muted"></p>
+					</div>
+					<div class="form-group">
+						<label><strong>Tipo de Cambio:</strong></label>
+						<p id="reject-request-type" class="text-muted"></p>
+					</div>
+					<div class="form-group">
+						<label><strong>Razón:</strong></label>
+						<p id="reject-reason" class="text-muted"></p>
+					</div>
+					<hr>
+					<div class="form-group">
+						<label for="reject-response-notes">Razón del Rechazo *</label>
+						<textarea class="form-control" id="reject-response-notes"
+							rows="3" placeholder="Explica por qué se rechaza esta solicitud..." required></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+					<button type="submit" class="btn btn-danger">
+						<i class="fa fa-times"></i> Rechazar
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+// Global variables for message and change request management
+let currentMessages = [];
+let currentReplyTo = null;
+let currentChangeRequests = [];
+let currentRequestToProcess = null;
+
+// Load unread messages and change requests on page load
+document.addEventListener('DOMContentLoaded', function() {
+	loadUnreadMessages();
+	loadPendingChangeRequests();
+});
+
+function loadUnreadMessages() {
+	const loadingEl = document.getElementById('messages-loading');
+	const containerEl = document.getElementById('messages-container');
+	const emptyEl = document.getElementById('messages-empty');
+	const badgeEl = document.getElementById('unread-badge');
+
+	// Show loading state
+	loadingEl.style.display = 'block';
+	containerEl.style.display = 'none';
+	emptyEl.style.display = 'none';
+
+	// Fetch unread messages
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.get_messages',
+		args: {
+			limit: 50
+		},
+		callback: function(r) {
+			loadingEl.style.display = 'none';
+
+			if (r.message && r.message.length > 0) {
+				// Filter only unread messages where current user is receiver
+				const unreadMessages = r.message.filter(msg =>
+					msg.readStatus === 0 && msg.receiver === frappe.session.user
+				);
+
+				if (unreadMessages.length > 0) {
+					currentMessages = unreadMessages;
+					renderMessages(unreadMessages);
+					containerEl.style.display = 'block';
+
+					// Update badge
+					badgeEl.textContent = unreadMessages.length;
+					badgeEl.style.display = 'inline-block';
+				} else {
+					emptyEl.style.display = 'block';
+				}
+			} else {
+				emptyEl.style.display = 'block';
+			}
+		},
+		error: function(err) {
+			loadingEl.style.display = 'none';
+			emptyEl.style.display = 'block';
+			frappe.msgprint({
+				title: 'Error',
+				message: 'No se pudieron cargar los mensajes',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+function renderMessages(messages) {
+	const container = document.getElementById('messages-container');
+
+	let html = '<div class="wh-card"><div class="list-group" style="border: none;">';
+
+	messages.forEach((msg, index) => {
+		// Only show first 5 unread messages
+		if (index >= 5) return;
+
+		const timestamp = formatTimestamp(msg.timestamp);
+		const preview = truncateText(msg.message, 80);
+
+		html += `
+			<div class="list-group-item list-group-item-action message-item"
+				onclick="openQuickReply('${msg.id}')"
+				style="cursor: pointer; border-left: 4px solid var(--primary); background: #fffbf0;">
+				<div class="d-flex w-100 justify-content-between align-items-start">
+					<div style="flex: 1;">
+						<h6 class="mb-1" style="font-weight: 600; color: var(--text-1);">
+							📩 ${escapeHtml(msg.subject)}
+						</h6>
+						<p class="mb-1 text-muted" style="font-size: 0.875rem;">
+							<strong>De:</strong> ${escapeHtml(msg.sender)}
+							${msg.relatedOrder ? `<span class="badge badge-info ml-2">${escapeHtml(msg.relatedOrder)}</span>` : ''}
+						</p>
+						<p class="mb-0 text-muted" style="font-size: 0.875rem;">
+							${escapeHtml(preview)}
+						</p>
+					</div>
+					<div style="margin-left: 1rem; text-align: right;">
+						<small class="text-muted">${timestamp}</small>
+						<div class="mt-1">
+							<span class="badge badge-warning">No leído</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
+	});
+
+	html += '</div></div>';
+
+	// Add "Ver todos" link if there are more messages
+	if (messages.length > 5) {
+		html += `
+			<div class="text-center mt-3">
+				<p class="text-muted">
+					Mostrando 5 de ${messages.length} mensajes no leídos
+				</p>
+			</div>
+		`;
+	}
+
+	container.innerHTML = html;
+}
+
+function openQuickReply(messageId) {
+	const message = currentMessages.find(m => m.id === messageId);
+	if (!message) return;
+
+	currentReplyTo = message;
+
+	// Populate modal
+	document.getElementById('reply-subject').textContent = 'Re: ' + message.subject;
+	document.getElementById('reply-sender').textContent = message.sender;
+	document.getElementById('reply-original-message').textContent = message.message;
+	document.getElementById('reply-message-text').value = '';
+
+	// Show modal
+	$('#quickReplyModal').modal('show');
+
+	// Mark as read when opening
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.mark_as_read',
+		args: {
+			message_ids: [messageId]
+		}
+	});
+}
+
+function sendQuickReply(event) {
+	event.preventDefault();
+
+	if (!currentReplyTo) return;
+
+	const replyText = document.getElementById('reply-message-text').value;
+	if (!replyText.trim()) {
+		frappe.msgprint('Por favor escribe un mensaje');
+		return;
+	}
+
+	// Show loading on button
+	const submitBtn = event.target.querySelector('button[type="submit"]');
+	const originalText = submitBtn.innerHTML;
+	submitBtn.disabled = true;
+	submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enviando...';
+
+	// Send reply
+	frappe.call({
+		method: 'workhub_frappe_app.api.distributors.send_message',
+		args: {
+			receiver: currentReplyTo.sender,
+			subject: 'Re: ' + currentReplyTo.subject,
+			message: replyText,
+			related_order: currentReplyTo.relatedOrder || null
+		},
+		callback: function(r) {
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = originalText;
+
+			if (r.message && r.message.success) {
+				$('#quickReplyModal').modal('hide');
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Respuesta enviada correctamente',
+					indicator: 'green'
+				});
+
+				// Reload messages
+				loadUnreadMessages();
+			}
+		},
+		error: function(err) {
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = originalText;
+			frappe.msgprint({
+				title: 'Error',
+				message: 'No se pudo enviar la respuesta',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+function formatTimestamp(timestamp) {
+	if (!timestamp) return '';
+
+	const date = new Date(timestamp);
+	const now = new Date();
+	const diffMs = now - date;
+	const diffMins = Math.floor(diffMs / 60000);
+	const diffHours = Math.floor(diffMs / 3600000);
+	const diffDays = Math.floor(diffMs / 86400000);
+
+	if (diffMins < 1) return 'Ahora';
+	if (diffMins < 60) return `${diffMins}min`;
+	if (diffHours < 24) return `${diffHours}h`;
+	if (diffDays < 7) return `${diffDays}d`;
+
+	return date.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' });
+}
+
+function truncateText(text, maxLength) {
+	if (!text) return '';
+	if (text.length <= maxLength) return text;
+	return text.substring(0, maxLength) + '...';
+}
+
+function escapeHtml(text) {
+	if (!text) return '';
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+// ==================== CHANGE REQUEST FUNCTIONS ====================
+
+function loadPendingChangeRequests() {
+	const loadingEl = document.getElementById('change-requests-loading');
+	const containerEl = document.getElementById('change-requests-container');
+	const emptyEl = document.getElementById('change-requests-empty');
+	const badgeEl = document.getElementById('change-requests-badge');
+
+	// Show loading state
+	loadingEl.style.display = 'block';
+	containerEl.style.display = 'none';
+	emptyEl.style.display = 'none';
+
+	// Fetch pending change requests
+	frappe.call({
+		method: 'workhub_frappe_app.api.sales.get_pending_change_requests',
+		callback: function(r) {
+			loadingEl.style.display = 'none';
+
+			if (r.message && r.message.length > 0) {
+				currentChangeRequests = r.message;
+				renderChangeRequests(r.message);
+				containerEl.style.display = 'block';
+
+				// Update badge
+				badgeEl.textContent = r.message.length;
+				badgeEl.style.display = 'inline-block';
+			} else {
+				emptyEl.style.display = 'block';
+			}
+		},
+		error: function(err) {
+			loadingEl.style.display = 'none';
+			emptyEl.style.display = 'block';
+			frappe.msgprint({
+				title: 'Error',
+				message: 'No se pudieron cargar las solicitudes de cambio',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+function renderChangeRequests(requests) {
+	const container = document.getElementById('change-requests-container');
+
+	let html = '<div class="wh-card"><div class="list-group" style="border: none;">';
+
+	requests.forEach((req, index) => {
+		// Only show first 5 requests
+		if (index >= 5) return;
+
+		const timestamp = formatTimestamp(req.createdAt);
+		const typeLabel = getRequestTypeLabel(req.requestType);
+		const typeBadge = getRequestTypeBadge(req.requestType);
+		const newValuesDisplay = formatNewValues(req.newValues, req.requestType);
+
+		html += `
+			<div class="list-group-item change-request-item"
+				style="border-left: 4px solid var(--warning); background: #fff9f0; margin-bottom: 0.5rem;">
+				<div class="d-flex w-100 justify-content-between align-items-start mb-2">
+					<div style="flex: 1;">
+						<h6 class="mb-1" style="font-weight: 600; color: var(--text-1);">
+							📋 Pedido: <a href="/app/sales-order/${escapeHtml(req.orderId)}" target="_blank">${escapeHtml(req.orderId)}</a>
+						</h6>
+						<p class="mb-1" style="font-size: 0.875rem;">
+							<strong>Distribuidor:</strong> ${escapeHtml(req.distributorName)}
+							${typeBadge}
+						</p>
+					</div>
+					<div style="margin-left: 1rem; text-align: right;">
+						<small class="text-muted">${timestamp}</small>
+					</div>
+				</div>
+				<div class="mb-2">
+					<p class="mb-1" style="font-size: 0.875rem;">
+						<strong>Razón:</strong> ${escapeHtml(req.reason || 'No especificada')}
+					</p>
+					${newValuesDisplay ? `<p class="mb-0" style="font-size: 0.875rem;"><strong>Nuevos valores:</strong> ${newValuesDisplay}</p>` : ''}
+				</div>
+				<div class="mt-2" style="display: flex; gap: 0.5rem;">
+					<button class="btn btn-success btn-sm" onclick="openApproveModal('${req.requestId}')">
+						<i class="fa fa-check"></i> Aprobar
+					</button>
+					<button class="btn btn-danger btn-sm" onclick="openRejectModal('${req.requestId}')">
+						<i class="fa fa-times"></i> Rechazar
+					</button>
+				</div>
+			</div>
+		`;
+	});
+
+	html += '</div></div>';
+
+	// Add "Ver todos" message if there are more requests
+	if (requests.length > 5) {
+		html += `
+			<div class="text-center mt-3">
+				<p class="text-muted">
+					Mostrando 5 de ${requests.length} solicitudes pendientes
+				</p>
+			</div>
+		`;
+	}
+
+	container.innerHTML = html;
+}
+
+function getRequestTypeLabel(type) {
+	const labels = {
+		'Quantity Change': 'Cambio de Cantidad',
+		'Cancel': 'Cancelación',
+		'Date Change': 'Cambio de Fecha'
+	};
+	return labels[type] || type;
+}
+
+function getRequestTypeBadge(type) {
+	const badges = {
+		'Quantity Change': '<span class="badge badge-info ml-2">Cambio de Cantidad</span>',
+		'Cancel': '<span class="badge badge-danger ml-2">Cancelación</span>',
+		'Date Change': '<span class="badge badge-warning ml-2">Cambio de Fecha</span>'
+	};
+	return badges[type] || `<span class="badge badge-secondary ml-2">${escapeHtml(type)}</span>`;
+}
+
+function formatNewValues(newValues, requestType) {
+	if (!newValues || Object.keys(newValues).length === 0) {
+		return '';
+	}
+
+	const parts = [];
+	if (newValues.quantity) {
+		parts.push(`Cantidad: ${newValues.quantity}`);
+	}
+	if (newValues.delivery_date) {
+		parts.push(`Fecha: ${formatDate(newValues.delivery_date)}`);
+	}
+	if (newValues.item_code) {
+		parts.push(`Artículo: ${newValues.item_code}`);
+	}
+
+	return parts.join(', ');
+}
+
+function formatDate(dateStr) {
+	if (!dateStr) return '';
+	const date = new Date(dateStr);
+	return date.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function openApproveModal(requestId) {
+	const request = currentChangeRequests.find(r => r.requestId === requestId);
+	if (!request) return;
+
+	currentRequestToProcess = request;
+
+	// Populate modal
+	document.getElementById('approve-order-id').textContent = request.orderId;
+	document.getElementById('approve-distributor').textContent = request.distributorName;
+	document.getElementById('approve-request-type').textContent = getRequestTypeLabel(request.requestType);
+	document.getElementById('approve-reason').textContent = request.reason || 'No especificada';
+	document.getElementById('approve-response-notes').value = '';
+
+	// Show modal
+	$('#approveRequestModal').modal('show');
+}
+
+function openRejectModal(requestId) {
+	const request = currentChangeRequests.find(r => r.requestId === requestId);
+	if (!request) return;
+
+	currentRequestToProcess = request;
+
+	// Populate modal
+	document.getElementById('reject-order-id').textContent = request.orderId;
+	document.getElementById('reject-distributor').textContent = request.distributorName;
+	document.getElementById('reject-request-type').textContent = getRequestTypeLabel(request.requestType);
+	document.getElementById('reject-reason').textContent = request.reason || 'No especificada';
+	document.getElementById('reject-response-notes').value = '';
+
+	// Show modal
+	$('#rejectRequestModal').modal('show');
+}
+
+function confirmApproveRequest(event) {
+	event.preventDefault();
+
+	if (!currentRequestToProcess) return;
+
+	const responseNotes = document.getElementById('approve-response-notes').value;
+
+	// Show loading on button
+	const submitBtn = event.target.querySelector('button[type="submit"]');
+	const originalText = submitBtn.innerHTML;
+	submitBtn.disabled = true;
+	submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Aprobando...';
+
+	// Approve request
+	frappe.call({
+		method: 'workhub_frappe_app.api.sales.approve_change_request',
+		args: {
+			request_id: currentRequestToProcess.requestId,
+			response_notes: responseNotes
+		},
+		callback: function(r) {
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = originalText;
+
+			if (r.message && r.message.success) {
+				$('#approveRequestModal').modal('hide');
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Solicitud aprobada correctamente',
+					indicator: 'green'
+				});
+
+				// Reload change requests
+				loadPendingChangeRequests();
+			}
+		},
+		error: function(err) {
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = originalText;
+			frappe.msgprint({
+				title: 'Error',
+				message: 'No se pudo aprobar la solicitud',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+function confirmRejectRequest(event) {
+	event.preventDefault();
+
+	if (!currentRequestToProcess) return;
+
+	const responseNotes = document.getElementById('reject-response-notes').value;
+	if (!responseNotes.trim()) {
+		frappe.msgprint('Por favor proporciona una razón para el rechazo');
+		return;
+	}
+
+	// Show loading on button
+	const submitBtn = event.target.querySelector('button[type="submit"]');
+	const originalText = submitBtn.innerHTML;
+	submitBtn.disabled = true;
+	submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Rechazando...';
+
+	// Reject request
+	frappe.call({
+		method: 'workhub_frappe_app.api.sales.reject_change_request',
+		args: {
+			request_id: currentRequestToProcess.requestId,
+			response_notes: responseNotes
+		},
+		callback: function(r) {
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = originalText;
+
+			if (r.message && r.message.success) {
+				$('#rejectRequestModal').modal('hide');
+				frappe.msgprint({
+					title: 'Éxito',
+					message: 'Solicitud rechazada correctamente',
+					indicator: 'green'
+				});
+
+				// Reload change requests
+				loadPendingChangeRequests();
+			}
+		},
+		error: function(err) {
+			submitBtn.disabled = false;
+			submitBtn.innerHTML = originalText;
+			frappe.msgprint({
+				title: 'Error',
+				message: 'No se pudo rechazar la solicitud',
+				indicator: 'red'
+			});
+		}
+	});
+}
+</script>
 
 <style>
 /* Trend Chart - Neobrutal Style */
@@ -252,6 +974,32 @@
 	letter-spacing: var(--tracking-wide);
 	color: var(--text-3);
 	margin-top: var(--space-1);
+}
+
+/* Message Item Styling */
+.message-item {
+	transition: all 0.2s ease;
+	border-bottom: 1px solid var(--border-2) !important;
+}
+
+.message-item:hover {
+	background: #fff9e6 !important;
+	transform: translateX(4px);
+}
+
+.message-item:last-child {
+	border-bottom: none !important;
+}
+
+/* Change Request Item Styling */
+.change-request-item {
+	transition: all 0.2s ease;
+	border-radius: 4px;
+}
+
+.change-request-item:hover {
+	background: #fff5e6 !important;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
 {% endblock %}

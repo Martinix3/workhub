@@ -92,7 +92,10 @@ after_install = "workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm
 # Fixtures
 # --------
 fixtures = [
-    {"dt": "Custom Field", "filters": [["dt", "=", "Sales Order"], ["fieldname", "=", "sales_type"]]},
+    {"dt": "Custom Field", "filters": [
+        ["dt", "in", ["Sales Order", "Customer"]],
+        ["fieldname", "in", ["sales_type", "assigned_distributor", "can_create_orders"]]
+    ]},
     # Project templates con sus tareas
     {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]}
 ]
@@ -148,13 +151,13 @@ after_migrate = ["workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_cr
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Sales Order": {
+		"on_submit": "workhub_frappe_app.api.notifications.on_sales_order_change",
+		"on_cancel": "workhub_frappe_app.api.notifications.on_sales_order_change",
+		"on_update_after_submit": "workhub_frappe_app.api.notifications.on_sales_order_change"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
