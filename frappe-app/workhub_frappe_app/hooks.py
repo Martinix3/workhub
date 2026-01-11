@@ -26,7 +26,10 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/workhub_frappe_app/css/workhub.bundle.css"
-app_include_js = "/assets/workhub_frappe_app/js/workhub.bundle.js"
+app_include_js = [
+    "/assets/workhub_frappe_app/js/workhub.bundle.js",
+    "/assets/workhub_frappe_app/js/workhub_dependencies.js"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/workhub_frappe_app/css/workhub_frappe_app.css"
