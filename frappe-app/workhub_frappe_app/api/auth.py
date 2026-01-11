@@ -16,6 +16,7 @@ def get_logged_user():
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=15, window=60)
 def get_user_info():
     """Get user info for the logged in user"""
     user = frappe.session.user
