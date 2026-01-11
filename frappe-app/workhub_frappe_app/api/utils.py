@@ -118,3 +118,30 @@ def validate_json_input(data, required_fields: list):
         )
 
     return data
+
+
+def sanitize_search_term(term: str) -> str:
+    """
+    Sanitize search term to prevent SQL LIKE pattern manipulation.
+    Escapes SQL wildcards (%, _) and backslashes to prevent injection attacks.
+
+    Args:
+        term: Search string to sanitize
+
+    Returns:
+        Sanitized string safe for use in LIKE clauses
+
+    Usage:
+        search = sanitize_search_term(filters.get('search'))
+        filters = [['name', 'like', f'%{search}%']]
+    """
+    if not term:
+        return ""
+
+    # Escape in order: backslash first, then % and _
+    # This prevents double-escaping
+    sanitized = term.replace("\\", "\\\\")
+    sanitized = sanitized.replace("%", "\\%")
+    sanitized = sanitized.replace("_", "\\_")
+
+    return sanitized

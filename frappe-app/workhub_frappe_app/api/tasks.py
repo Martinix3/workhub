@@ -6,7 +6,7 @@ from frappe import _
 from frappe.utils import nowdate, getdate, add_days
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.utils import require_auth, require_permission, sanitize_search_term
 
 
 @frappe.whitelist()
@@ -35,7 +35,8 @@ def get_tasks(filters=None, limit=50, offset=0):
         if filters.get("is_inbox"):
             filter_conditions["is_inbox"] = 1
         if filters.get("search"):
-            filter_conditions["title"] = ["like", f"%{filters['search']}%"]
+            sanitized_search = sanitize_search_term(filters['search'])
+            filter_conditions["title"] = ["like", f"%{sanitized_search}%"]
 
     tasks = frappe.get_list("WH Task",
         filters=filter_conditions,

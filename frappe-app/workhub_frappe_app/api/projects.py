@@ -6,7 +6,7 @@ from frappe import _
 from frappe.utils import nowdate, getdate, add_days, date_diff
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.utils import require_auth, require_permission, sanitize_search_term
 
 
 @frappe.whitelist()
@@ -31,7 +31,8 @@ def get_projects(filters=None, limit=50, offset=0):
         if filters.get("owner_user"):
             filter_conditions["owner_user"] = filters["owner_user"]
         if filters.get("search"):
-            filter_conditions["title"] = ["like", f"%{filters['search']}%"]
+            sanitized_search = sanitize_search_term(filters['search'])
+            filter_conditions["title"] = ["like", f"%{sanitized_search}%"]
 
     projects = frappe.get_list("WH Project",
         filters=filter_conditions,

@@ -3,7 +3,7 @@ from frappe import _
 from frappe.utils import flt, today, get_first_day, get_last_day, add_months, add_days, now_datetime
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.utils import require_auth, require_permission, sanitize_search_term
 
 
 @frappe.whitelist()
@@ -85,7 +85,8 @@ def get_customers(filters=None, limit=50, offset=0):
 
     if filters:
         if filters.get("search"):
-            filter_conditions["customer_name"] = ["like", f"%{filters['search']}%"]
+            sanitized_search = sanitize_search_term(filters['search'])
+            filter_conditions["customer_name"] = ["like", f"%{sanitized_search}%"]
         if filters.get("customer_group"):
             filter_conditions["customer_group"] = filters["customer_group"]
         if filters.get("territory"):
@@ -444,7 +445,8 @@ def get_products(search=None, limit=20):
     filters = {"is_sales_item": 1, "disabled": 0}
 
     if search:
-        filters["item_name"] = ["like", f"%{search}%"]
+        sanitized_search = sanitize_search_term(search)
+        filters["item_name"] = ["like", f"%{sanitized_search}%"]
 
     items = frappe.get_list("Item",
         filters=filters,
