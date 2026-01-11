@@ -44,8 +44,7 @@ def get_projects(filters=None, limit=50, offset=0):
         ],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="health desc, target_date asc",
-        ignore_permissions=True
+        order_by="health desc, target_date asc"
     )
 
     # Enrich with user info
