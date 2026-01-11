@@ -3,23 +3,23 @@
   "spec": "042-suite-completo-de-pruebas-visuales-y-regression-te",
   "state": "building",
   "subtasks": {
-    "completed": 3,
+    "completed": 7,
     "total": 36,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Setup & Configuration",
+    "current": "Component Visual Tests",
     "id": null,
-    "total": 6
+    "total": 10
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 4,
-    "started_at": "2026-01-11T22:30:54.214910"
+    "number": 1,
+    "started_at": "2026-01-11T23:00:18.121795"
   },
-  "last_update": "2026-01-11T22:35:24.796001"
+  "last_update": "2026-01-11T23:00:18.178398"
 }
