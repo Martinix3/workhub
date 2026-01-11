@@ -3,23 +3,23 @@
   "spec": "037-audit-and-reduce-ignore-permissions-usage-in-api-e",
   "state": "building",
   "subtasks": {
-    "completed": 21,
+    "completed": 31,
     "total": 33,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Fix Other API Endpoints",
+    "current": "Testing & Verification",
     "id": null,
-    "total": 4
+    "total": 2
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 23,
+    "number": 33,
     "started_at": "2026-01-11T10:22:19.339403"
   },
-  "last_update": "2026-01-11T11:11:56.864941"
+  "last_update": "2026-01-11T11:35:36.674364"
 }
