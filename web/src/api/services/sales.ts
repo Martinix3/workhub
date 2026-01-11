@@ -8,7 +8,7 @@ import type {
   Activity,
   SalesTrends
 } from '../../components/sections/sell-in-operations/types'
-import type { OrderDetail } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
+import type { OrderDetail, WorkLink } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
 
 export const salesApi = {
   async getKPIs(): Promise<KPIs> {
@@ -198,14 +198,6 @@ export interface CancelOrderResponse {
   success: boolean
   order_id: string
   message: string
-}
-
-// WorkLink type
-export interface WorkLink {
-  id: string
-  taskId: string
-  taskTitle: string
-  taskStatus: string
 }
 
 export default salesApi
