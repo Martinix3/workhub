@@ -1,0 +1,993 @@
+<!-- Page: Visor de Reportes -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ report.title }}{% endblock %}
+{% block breadcrumb %}
+	<a href="/workhub_reportes">Reportes</a> / {{ report.title }}
+{% endblock %}
+
+{% block page_content %}
+<div class="wh-viewer-container">
+	<!-- Viewer Header -->
+	<div class="viewer-header no-print">
+		<div class="d-flex justify-content-between align-items-start">
+			<div class="viewer-header-info">
+				<h1>{{ report.title }}</h1>
+				{% if report.description %}
+				<p class="text-muted">{{ report.description }}</p>
+				{% endif %}
+				<div class="report-meta mt-2">
+					{% if report.report_type == 'Standard' %}
+					<span class="badge badge-primary">{{ report.report_type }}</span>
+					{% else %}
+					<span class="badge badge-info">{{ report.report_type }}</span>
+					{% endif %}
+
+					{% if report.category == 'Team' %}
+					<span class="badge badge-success">{{ report.category }}</span>
+					{% elif report.category == 'Project' %}
+					<span class="badge badge-warning">{{ report.category }}</span>
+					{% elif report.category == 'HACCP' %}
+					<span class="badge badge-danger">{{ report.category }}</span>
+					{% else %}
+					<span class="badge badge-secondary">{{ report.category }}</span>
+					{% endif %}
+
+					<span class="text-muted ml-2">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px; display: inline-block;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+						</svg>
+						{{ report.section_count }} secciones
+					</span>
+				</div>
+			</div>
+			<div class="viewer-header-actions">
+				<button class="btn btn-outline-secondary" onclick="refreshReport()">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+					</svg>
+					Refrescar
+				</button>
+				<button class="btn btn-outline-primary ml-2" onclick="window.print()">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+					</svg>
+					Imprimir
+				</button>
+				<div class="btn-group ml-2">
+					<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+						</svg>
+						Exportar
+					</button>
+					<div class="dropdown-menu dropdown-menu-right">
+						<button class="dropdown-item" onclick="exportReport('PDF')">
+							<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+							</svg>
+							PDF
+						</button>
+						<button class="dropdown-item" onclick="exportReport('Excel')">
+							<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+							</svg>
+							Excel
+						</button>
+						<button class="dropdown-item" onclick="exportReport('CSV')">
+							<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+							</svg>
+							CSV
+						</button>
+					</div>
+				</div>
+				<button class="btn btn-outline-success ml-2" onclick="showShareModal()">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+					</svg>
+					Compartir
+				</button>
+				<a href="/workhub_reportes_builder?report={{ report.id }}" class="btn btn-outline-secondary ml-2">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+					</svg>
+					Editar
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Loading State -->
+	<div id="loading-state" class="text-center py-5">
+		<div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+			<span class="sr-only">Cargando...</span>
+		</div>
+		<p class="text-muted mt-3">Generando reporte...</p>
+	</div>
+
+	<!-- Report Content (rendered dynamically) -->
+	<div id="report-content" style="display: none;">
+		<!-- Report metadata header (print-friendly) -->
+		<div class="report-print-header print-only">
+			<h1>{{ report.title }}</h1>
+			{% if report.description %}
+			<p>{{ report.description }}</p>
+			{% endif %}
+			<div class="report-meta-print">
+				<div><strong>Tipo:</strong> {{ report.report_type }}</div>
+				<div><strong>Categoría:</strong> {{ report.category }}</div>
+				<div><strong>Generado:</strong> <span id="print-generated-date"></span></div>
+			</div>
+			<hr>
+		</div>
+
+		<!-- Sections container -->
+		<div id="sections-container" class="sections-container">
+			<!-- Sections will be rendered here dynamically -->
+		</div>
+	</div>
+
+	<!-- Empty State -->
+	<div id="empty-state" class="text-center py-5" style="display: none;">
+		<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 64px; height: 64px; margin: 0 auto; color: #ccc;">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+		</svg>
+		<h3 class="mt-3 text-muted">Este reporte no tiene secciones</h3>
+		<p class="text-muted">Agrega secciones al reporte en el editor</p>
+		<a href="/workhub_reportes_builder?report={{ report.id }}" class="btn btn-primary mt-3">
+			Editar Reporte
+		</a>
+	</div>
+
+	<!-- Export History -->
+	{% if recent_exports %}
+	<div class="card mt-4 no-print">
+		<div class="card-header">
+			<h5>📦 Historial de Exportaciones</h5>
+		</div>
+		<div class="card-body">
+			<div class="table-responsive">
+				<table class="table table-sm">
+					<thead>
+						<tr>
+							<th>Formato</th>
+							<th>Generado</th>
+							<th>Usuario</th>
+							<th>Acciones</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for export in recent_exports %}
+						<tr>
+							<td>
+								<span class="badge badge-secondary">{{ export.export_format }}</span>
+							</td>
+							<td>
+								<small>{{ export.generated_at.strftime('%d/%m/%Y %H:%M') if export.generated_at else '-' }}</small>
+							</td>
+							<td>
+								<small>{{ export.generated_by_name }}</small>
+							</td>
+							<td>
+								{% if export.file_url %}
+								<a href="{{ export.file_url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+									<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+									</svg>
+									Descargar
+								</a>
+								{% else %}
+								<span class="text-muted">-</span>
+								{% endif %}
+							</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	{% endif %}
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Compartir Reporte</h5>
+				<button type="button" class="close" data-dismiss="modal">
+					<span>&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<p><strong>{{ report.title }}</strong></p>
+
+				<div class="form-group">
+					<label>Enviar por correo</label>
+					<textarea id="share-recipients" class="form-control" rows="3" placeholder="Ingresa correos separados por comas&#10;ejemplo@empresa.com, otro@empresa.com"></textarea>
+					<small class="form-text text-muted">También puedes ingresar nombres de usuario</small>
+				</div>
+
+				<div class="form-group">
+					<label>Formato</label>
+					<select id="share-format" class="form-control">
+						<option value="PDF">PDF (Presentación ejecutiva)</option>
+						<option value="Excel">Excel (Hojas de cálculo)</option>
+						<option value="CSV">CSV (Datos tabulares)</option>
+					</select>
+				</div>
+
+				<div class="form-group">
+					<label>Mensaje (opcional)</label>
+					<textarea id="share-message" class="form-control" rows="2" placeholder="Agrega un mensaje personalizado..."></textarea>
+				</div>
+
+				<hr>
+
+				<div class="form-group">
+					<label>Enlace directo</label>
+					<div class="input-group">
+						<input type="text" id="share-link" class="form-control" value="{{ frappe.utils.get_url() }}/workhub_reportes_viewer?report={{ report.id }}" readonly>
+						<div class="input-group-append">
+							<button class="btn btn-outline-secondary" onclick="copyShareLink()">
+								<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+								</svg>
+								Copiar
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-primary" onclick="sendReportEmail()">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+					</svg>
+					Enviar
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+/* Container */
+.wh-viewer-container {
+	padding: 20px;
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+/* Header */
+.viewer-header {
+	background: white;
+	padding: 24px;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: 24px;
+}
+
+.viewer-header h1 {
+	font-size: 28px;
+	font-weight: 600;
+	margin: 0 0 8px 0;
+	color: #333;
+}
+
+.viewer-header-info p {
+	margin: 0;
+	color: #666;
+}
+
+.report-meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.viewer-header-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.viewer-header-actions button,
+.viewer-header-actions a {
+	white-space: nowrap;
+}
+
+/* Sections Container */
+.sections-container {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+/* Section Styles */
+.report-section {
+	background: white;
+	padding: 24px;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	page-break-inside: avoid;
+}
+
+.section-header {
+	font-size: 24px;
+	font-weight: 600;
+	color: #1a4d8f;
+	border-bottom: 3px solid #1a4d8f;
+	padding-bottom: 12px;
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+.section-text {
+	font-size: 15px;
+	line-height: 1.6;
+	color: #333;
+	white-space: pre-wrap;
+}
+
+/* KPI Cards */
+.kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+}
+
+.kpi-card {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	padding: 20px;
+	border-radius: 8px;
+	text-align: center;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-icon {
+	font-size: 32px;
+	margin-bottom: 8px;
+}
+
+.kpi-value {
+	font-size: 32px;
+	font-weight: 700;
+	margin: 8px 0;
+}
+
+.kpi-label {
+	font-size: 14px;
+	opacity: 0.9;
+	margin-bottom: 4px;
+}
+
+.kpi-subtitle {
+	font-size: 12px;
+	opacity: 0.8;
+}
+
+/* Chart Container */
+.chart-container {
+	position: relative;
+	height: 400px;
+	margin: 20px 0;
+}
+
+.chart-canvas {
+	max-height: 100%;
+}
+
+/* Table Styles */
+.section-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 16px 0;
+	font-size: 14px;
+}
+
+.section-table thead {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+}
+
+.section-table th {
+	padding: 12px;
+	text-align: left;
+	font-weight: 600;
+	border: 1px solid #dee2e6;
+}
+
+.section-table td {
+	padding: 10px 12px;
+	border: 1px solid #dee2e6;
+}
+
+.section-table tbody tr:nth-child(even) {
+	background: #f8f9fa;
+}
+
+.section-table tbody tr:hover {
+	background: #e9ecef;
+}
+
+/* Print Styles */
+.print-only {
+	display: none;
+}
+
+.report-print-header {
+	margin-bottom: 30px;
+}
+
+.report-print-header h1 {
+	font-size: 24px;
+	margin-bottom: 8px;
+}
+
+.report-meta-print {
+	display: flex;
+	gap: 20px;
+	margin: 12px 0;
+	font-size: 14px;
+}
+
+@media print {
+	.no-print {
+		display: none !important;
+	}
+
+	.print-only {
+		display: block !important;
+	}
+
+	.wh-viewer-container {
+		padding: 0;
+		max-width: 100%;
+	}
+
+	.report-section {
+		box-shadow: none;
+		border: 1px solid #ddd;
+		margin-bottom: 20px;
+		page-break-inside: avoid;
+	}
+
+	.sections-container {
+		gap: 0;
+	}
+
+	/* Ensure charts print properly */
+	.chart-container {
+		page-break-inside: avoid;
+	}
+
+	/* Print-friendly table */
+	.section-table {
+		font-size: 12px;
+	}
+
+	.section-table th,
+	.section-table td {
+		padding: 8px;
+	}
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.viewer-header .d-flex {
+		flex-direction: column;
+		align-items: flex-start !important;
+	}
+
+	.viewer-header-actions {
+		width: 100%;
+		margin-top: 16px;
+	}
+
+	.viewer-header-actions button,
+	.viewer-header-actions a,
+	.viewer-header-actions .btn-group {
+		flex: 1;
+	}
+
+	.kpi-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.chart-container {
+		height: 300px;
+	}
+}
+</style>
+
+{% endblock %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Global state
+let reportData = null;
+const reportId = "{{ report.id }}";
+const filters = {{ filters | safe }};
+
+// Load report on page load
+document.addEventListener('DOMContentLoaded', function() {
+	loadReport();
+});
+
+// Load and render report
+function loadReport() {
+	showLoading();
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.reports.generate_report',
+		args: {
+			report_id: reportId,
+			filters: filters
+		},
+		callback: function(r) {
+			hideLoading();
+			if (r.message && r.message.success) {
+				reportData = r.message;
+				renderReport(reportData);
+			} else {
+				showEmptyState();
+			}
+		},
+		error: function(err) {
+			hideLoading();
+			frappe.show_alert({
+				message: 'Error al cargar el reporte',
+				indicator: 'red'
+			});
+			console.error('Error loading report:', err);
+		}
+	});
+}
+
+// Render complete report
+function renderReport(data) {
+	const container = document.getElementById('sections-container');
+	container.innerHTML = '';
+
+	// Update print header date
+	const printDate = document.getElementById('print-generated-date');
+	if (printDate && data.metadata) {
+		printDate.textContent = new Date().toLocaleDateString('es-ES', {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+	}
+
+	// Check if we have sections
+	if (!data.sections || data.sections.length === 0) {
+		showEmptyState();
+		return;
+	}
+
+	// Render each section
+	data.sections.forEach((section, index) => {
+		const sectionElement = renderSection(section, index);
+		container.appendChild(sectionElement);
+	});
+
+	showContent();
+}
+
+// Render individual section
+function renderSection(section, index) {
+	const div = document.createElement('div');
+	div.className = 'report-section';
+	div.id = `section-${index}`;
+
+	switch (section.section_type) {
+		case 'Header':
+			div.innerHTML = renderHeaderSection(section);
+			break;
+		case 'Text':
+			div.innerHTML = renderTextSection(section);
+			break;
+		case 'KPI':
+			div.innerHTML = renderKPISection(section);
+			break;
+		case 'Chart':
+			div.innerHTML = renderChartSection(section, index);
+			// Render chart after DOM update
+			setTimeout(() => renderChart(section, index), 100);
+			break;
+		case 'Table':
+			div.innerHTML = renderTableSection(section);
+			break;
+		default:
+			div.innerHTML = `<p class="text-muted">Unknown section type: ${section.section_type}</p>`;
+	}
+
+	return div;
+}
+
+// Render Header Section
+function renderHeaderSection(section) {
+	return `<div class="section-header">${escapeHtml(section.title)}</div>`;
+}
+
+// Render Text Section
+function renderTextSection(section) {
+	const config = section.config || {};
+	const content = config.content || '';
+	const align = config.text_align || 'left';
+	const fontStyle = config.font_style || 'normal';
+
+	return `
+		<h3>${escapeHtml(section.title)}</h3>
+		<div class="section-text" style="text-align: ${align}; font-style: ${fontStyle};">
+			${escapeHtml(content).replace(/\n/g, '<br>')}
+		</div>
+	`;
+}
+
+// Render KPI Section
+function renderKPISection(section) {
+	const config = section.config || {};
+	const kpis = config.kpis || [];
+
+	if (kpis.length === 0) {
+		return `
+			<h3>${escapeHtml(section.title)}</h3>
+			<p class="text-muted">No hay KPIs configurados</p>
+		`;
+	}
+
+	let html = `<h3>${escapeHtml(section.title)}</h3><div class="kpi-grid">`;
+
+	kpis.forEach(kpi => {
+		const color = kpi.color || '#667eea';
+		const icon = kpi.icon || '📊';
+		const value = formatKPIValue(kpi, section.data);
+		const gradientColor = adjustColor(color, -20);
+
+		html += `
+			<div class="kpi-card" style="background: linear-gradient(135deg, ${color} 0%, ${gradientColor} 100%);">
+				<div class="kpi-icon">${icon}</div>
+				<div class="kpi-label">${escapeHtml(kpi.label || '')}</div>
+				<div class="kpi-value">${value}</div>
+				${kpi.subtitle ? `<div class="kpi-subtitle">${escapeHtml(kpi.subtitle)}</div>` : ''}
+			</div>
+		`;
+	});
+
+	html += '</div>';
+	return html;
+}
+
+// Format KPI value based on data and configuration
+function formatKPIValue(kpi, data) {
+	if (!data || data.length === 0) {
+		return '---';
+	}
+
+	const field = kpi.metric_field || '';
+	const aggregation = kpi.aggregation || 'sum';
+	const format = kpi.format || 'number';
+
+	// Calculate aggregated value
+	let value = 0;
+	if (aggregation === 'count') {
+		value = data.length;
+	} else {
+		const values = data.map(row => parseFloat(row[field]) || 0);
+		switch (aggregation) {
+			case 'sum':
+				value = values.reduce((a, b) => a + b, 0);
+				break;
+			case 'avg':
+				value = values.reduce((a, b) => a + b, 0) / (values.length || 1);
+				break;
+			case 'min':
+				value = Math.min(...values);
+				break;
+			case 'max':
+				value = Math.max(...values);
+				break;
+		}
+	}
+
+	// Format value
+	switch (format) {
+		case 'currency':
+			return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
+		case 'percentage':
+			return `${value.toFixed(1)}%`;
+		case 'number':
+			return new Intl.NumberFormat('es-ES').format(value);
+		default:
+			return value.toString();
+	}
+}
+
+// Render Chart Section
+function renderChartSection(section, index) {
+	return `
+		<h3>${escapeHtml(section.title)}</h3>
+		<div class="chart-container">
+			<canvas id="chart-${index}" class="chart-canvas"></canvas>
+		</div>
+	`;
+}
+
+// Render actual chart using Chart.js
+function renderChart(section, index) {
+	const config = section.config || {};
+	const chartType = config.chart_type || 'bar';
+	const xField = config.x_field || '';
+	const yField = config.y_field || '';
+	const data = section.data || [];
+
+	if (!data.length || !xField || !yField) {
+		return;
+	}
+
+	const ctx = document.getElementById(`chart-${index}`);
+	if (!ctx) return;
+
+	// Extract labels and values
+	const labels = data.map(row => row[xField] || '');
+	const values = data.map(row => parseFloat(row[yField]) || 0);
+	const colors = config.colors || ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'];
+
+	// Chart configuration
+	const chartConfig = {
+		type: chartType === 'stacked_bar' ? 'bar' : chartType,
+		data: {
+			labels: labels,
+			datasets: [{
+				label: section.title,
+				data: values,
+				backgroundColor: colors,
+				borderColor: colors,
+				borderWidth: 1
+			}]
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: true,
+			plugins: {
+				legend: {
+					display: chartType === 'pie' || chartType === 'doughnut'
+				}
+			},
+			scales: {
+				y: {
+					beginAtZero: true,
+					display: chartType !== 'pie' && chartType !== 'doughnut'
+				}
+			}
+		}
+	};
+
+	new Chart(ctx, chartConfig);
+}
+
+// Render Table Section
+function renderTableSection(section) {
+	const config = section.config || {};
+	const columns = config.columns || [];
+	const data = section.data || [];
+
+	if (columns.length === 0) {
+		return `
+			<h3>${escapeHtml(section.title)}</h3>
+			<p class="text-muted">No hay columnas configuradas</p>
+		`;
+	}
+
+	let html = `<h3>${escapeHtml(section.title)}</h3>`;
+	html += '<table class="section-table"><thead><tr>';
+
+	// Table headers
+	columns.forEach(col => {
+		html += `<th>${escapeHtml(col.label || col.field)}</th>`;
+	});
+	html += '</tr></thead><tbody>';
+
+	// Table rows
+	if (data.length === 0) {
+		html += `<tr><td colspan="${columns.length}" class="text-center text-muted">No hay datos disponibles</td></tr>`;
+	} else {
+		data.forEach(row => {
+			html += '<tr>';
+			columns.forEach(col => {
+				const value = row[col.field];
+				html += `<td>${formatTableValue(value, col.type)}</td>`;
+			});
+			html += '</tr>';
+		});
+	}
+
+	html += '</tbody></table>';
+	return html;
+}
+
+// Format table cell value
+function formatTableValue(value, type) {
+	if (value === null || value === undefined) {
+		return '<span class="text-muted">-</span>';
+	}
+
+	switch (type) {
+		case 'currency':
+			return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
+		case 'number':
+			return new Intl.NumberFormat('es-ES').format(value);
+		case 'percentage':
+			return `${value}%`;
+		case 'date':
+			return new Date(value).toLocaleDateString('es-ES');
+		default:
+			return escapeHtml(String(value));
+	}
+}
+
+// UI State Management
+function showLoading() {
+	document.getElementById('loading-state').style.display = 'block';
+	document.getElementById('report-content').style.display = 'none';
+	document.getElementById('empty-state').style.display = 'none';
+}
+
+function hideLoading() {
+	document.getElementById('loading-state').style.display = 'none';
+}
+
+function showContent() {
+	document.getElementById('report-content').style.display = 'block';
+	document.getElementById('empty-state').style.display = 'none';
+}
+
+function showEmptyState() {
+	document.getElementById('empty-state').style.display = 'block';
+	document.getElementById('report-content').style.display = 'none';
+}
+
+// Actions
+function refreshReport() {
+	loadReport();
+}
+
+function exportReport(format) {
+	frappe.show_progress('Exportando...', 0, 100, `Generando ${format}...`);
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.report_export.export_report',
+		args: {
+			report_id: reportId,
+			format: format,
+			filters: filters
+		},
+		callback: function(r) {
+			frappe.hide_progress();
+			if (r.message && r.message.success) {
+				frappe.show_alert({
+					message: 'Reporte exportado exitosamente',
+					indicator: 'green'
+				});
+
+				// Download file
+				if (r.message.file_url) {
+					window.open(r.message.file_url, '_blank');
+				}
+
+				// Reload page to refresh export history
+				setTimeout(() => window.location.reload(), 1500);
+			} else {
+				frappe.show_alert({
+					message: 'Error al exportar el reporte',
+					indicator: 'red'
+				});
+			}
+		},
+		error: function() {
+			frappe.hide_progress();
+			frappe.show_alert({
+				message: 'Error al exportar el reporte',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+function showShareModal() {
+	$('#shareModal').modal('show');
+}
+
+function sendReportEmail() {
+	const recipients = document.getElementById('share-recipients').value;
+	const format = document.getElementById('share-format').value;
+	const message = document.getElementById('share-message').value;
+
+	if (!recipients.trim()) {
+		frappe.show_alert({
+			message: 'Ingresa al menos un destinatario',
+			indicator: 'orange'
+		});
+		return;
+	}
+
+	// Parse recipients
+	const recipientList = recipients.split(',').map(r => r.trim()).filter(r => r);
+
+	frappe.show_progress('Enviando...', 0, 100, 'Generando y enviando reporte...');
+
+	frappe.call({
+		method: 'workhub_frappe_app.api.report_export.send_report_email',
+		args: {
+			report_id: reportId,
+			recipients: recipientList,
+			format: format,
+			filters: filters,
+			email_body: message || null
+		},
+		callback: function(r) {
+			frappe.hide_progress();
+			if (r.message && r.message.success) {
+				$('#shareModal').modal('hide');
+				frappe.show_alert({
+					message: 'Reporte enviado exitosamente',
+					indicator: 'green'
+				});
+
+				// Clear form
+				document.getElementById('share-recipients').value = '';
+				document.getElementById('share-message').value = '';
+			} else {
+				frappe.show_alert({
+					message: 'Error al enviar el reporte',
+					indicator: 'red'
+				});
+			}
+		},
+		error: function() {
+			frappe.hide_progress();
+			frappe.show_alert({
+				message: 'Error al enviar el reporte',
+				indicator: 'red'
+			});
+		}
+	});
+}
+
+function copyShareLink() {
+	const linkInput = document.getElementById('share-link');
+	linkInput.select();
+	document.execCommand('copy');
+
+	frappe.show_alert({
+		message: 'Enlace copiado al portapapeles',
+		indicator: 'green'
+	});
+}
+
+// Utilities
+function escapeHtml(text) {
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+function adjustColor(color, amount) {
+	const num = parseInt(color.replace('#', ''), 16);
+	const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+	const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+	const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+	return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+</script>
+{% endblock %}
