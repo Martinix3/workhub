@@ -10,7 +10,7 @@ import type {
   Activity,
   SalesTrends
 } from '../../components/sections/sell-in-operations/types'
-import type { OrderDetail } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
+import type { OrderDetail, WorkLink } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
 import {
   isInBypassMode,
   sampleSalesKPIs,
@@ -19,7 +19,8 @@ import {
   sampleCustomers,
   sampleOrders,
   sampleOpportunities,
-  sampleOrderDetail
+  sampleOrderDetail,
+  sampleOrderWorkLinks
 } from '../sample-data'
 
 interface UseDataState<T> {
@@ -357,4 +358,36 @@ export function useCancelOrder() {
   }, [])
 
   return { cancelOrder, loading, error }
+}
+
+export function useOrderWorkLinks(orderId: string | null): UseDataState<WorkLink[]> {
+  const [data, setData] = useState<WorkLink[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    if (!orderId) {
+      setData([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const workLinks = await salesApi.getOrderWorkLinks(orderId)
+      setData(workLinks)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleOrderWorkLinks)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch order WorkLinks'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [orderId])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
 }

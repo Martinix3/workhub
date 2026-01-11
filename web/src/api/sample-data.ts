@@ -2,7 +2,7 @@
 
 import type { AreaSummary, PriorityAlert } from '../components/sections/command-center/types'
 import type { KPIs, SalesTrends, Activity, Customer, SalesOrder, Opportunity } from '../components/sections/sell-in-operations/types'
-import type { OrderDetail } from '../components/sections/sell-in-operations/OrderDetailPanel/types'
+import type { OrderDetail, WorkLink } from '../components/sections/sell-in-operations/OrderDetailPanel/types'
 import type { NetworkKPIs, Distributor } from '../components/sections/distributor-network/types'
 import type { ProductionKPIs, ProductionOrder, ProductionLine, Lot, HACCPPlan, CCPReading, QualityDocument, DocumentFolder, QualityKPIs, Inspection, NonConformance, WeeklyTrendPoint } from '../components/sections/production-and-quality/types'
 import type { MarketingKPIs, Campaign, SocialPost, PlatformStats } from '../components/sections/marketing-and-growth/types'
@@ -129,6 +129,25 @@ export const sampleOrderDetail: OrderDetail = {
     name: 'Distribuciones Norte SA'
   }
 }
+
+export const sampleOrderWorkLinks: WorkLink[] = [
+  {
+    id: 'WL-001',
+    taskId: 'LT-2025-042',
+    taskTitle: 'Preparar envio para Distribuciones Norte',
+    taskStatus: 'DOING',
+    documentType: 'Sales Order',
+    documentId: '1'
+  },
+  {
+    id: 'WL-002',
+    taskId: 'LT-2025-043',
+    taskTitle: 'Verificar disponibilidad de producto',
+    taskStatus: 'DONE',
+    documentType: 'Sales Order',
+    documentId: '1'
+  }
+]
 
 // Distributors
 export const sampleNetworkKPIs: NetworkKPIs = {
