@@ -395,15 +395,14 @@ def get_customer_details(customer_id):
     if not customer_id:
         frappe.throw(_("Customer ID is required"))
 
-    customer = frappe.get_doc("Customer", customer_id, ignore_permissions=True)
+    customer = frappe.get_doc("Customer", customer_id)
 
     # Get recent orders
     recent_orders = frappe.get_list("Sales Order",
         filters={"customer": customer_id, "docstatus": 1},
         fields=["name", "transaction_date", "grand_total", "status"],
         limit_page_length=10,
-        order_by="transaction_date desc",
-        ignore_permissions=True
+        order_by="transaction_date desc"
     )
 
     # Get total stats
