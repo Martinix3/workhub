@@ -1,6 +1,7 @@
 # WorkHub Auth API
 # Whitelisted methods for authentication
 
+import os
 import frappe
 from frappe import _
 from frappe.utils.oauth import get_oauth2_authorize_url
@@ -186,11 +187,15 @@ def logout():
     Returns:
         dict: Success message
     """
+    is_production = os.environ.get("FRAPPE_ENV", "development") == "production"
+
     # Clear the auth cookie by setting it with max_age=0 (immediate expiry)
+    # Match all cookie attributes from when it was set (including secure flag)
     frappe.local.cookie_manager.set_cookie(
         key="workhub_auth",
         value="",
         httponly=True,
+        secure=is_production,  # Match the original cookie settings
         samesite="Lax",
         max_age=0,  # Immediate expiry
         path="/"
