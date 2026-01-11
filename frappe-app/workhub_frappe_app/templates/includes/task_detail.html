@@ -1,0 +1,598 @@
+{#
+	Task Detail Template
+
+	Include this template to display task details with dependency management.
+
+	Usage:
+	{% include "workhub_frappe_app/templates/includes/task_detail.html" %}
+
+	Required context variables:
+	- task: Task object with all details
+#}
+
+<div class="task-detail" data-task-id="{{ task.name }}">
+	<!-- Task Header -->
+	<div class="task-detail__header">
+		<div class="task-detail__title-section">
+			<h2 class="task-detail__title">{{ task.title }}</h2>
+			<div class="task-detail__meta">
+				<span class="task-detail__id">{{ task.name }}</span>
+				<span class="task-detail__separator">•</span>
+				<span class="task-detail__status task-detail__status--{{ task.status|lower }}">
+					{{ task.status }}
+				</span>
+				<span class="task-detail__separator">•</span>
+				<span class="task-detail__priority task-detail__priority--{{ task.priority|lower }}">
+					{{ task.priority }}
+				</span>
+			</div>
+		</div>
+		<div class="task-detail__actions">
+			<button class="btn btn-secondary btn-sm" onclick="window.history.back()">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M19 12H5M12 19l-7-7 7-7"/>
+				</svg>
+				Back
+			</button>
+		</div>
+	</div>
+
+	<!-- Task Info Grid -->
+	<div class="task-detail__info-grid">
+		<div class="task-detail__info-item">
+			<label class="task-detail__info-label">Assigned To</label>
+			<div class="task-detail__info-value">
+				{% if task.assigned_to %}
+					<div class="user-avatar">
+						<span>{{ task.assigned_to_name[:2]|upper if task.assigned_to_name else task.assigned_to[:2]|upper }}</span>
+					</div>
+					<span>{{ task.assigned_to_name or task.assigned_to }}</span>
+				{% else %}
+					<span class="text-muted">Unassigned</span>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="task-detail__info-item">
+			<label class="task-detail__info-label">Due Date</label>
+			<div class="task-detail__info-value">
+				{% if task.due_date %}
+					{{ frappe.utils.formatdate(task.due_date, "MMM d, yyyy") }}
+				{% else %}
+					<span class="text-muted">No due date</span>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="task-detail__info-item">
+			<label class="task-detail__info-label">Project</label>
+			<div class="task-detail__info-value">
+				{% if task.project_id %}
+					<a href="/app/wh-project/{{ task.project_id }}">{{ task.project_name or task.project_id }}</a>
+				{% else %}
+					<span class="text-muted">No project</span>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="task-detail__info-item">
+			<label class="task-detail__info-label">Department</label>
+			<div class="task-detail__info-value">
+				{{ task.department or '-' }}
+			</div>
+		</div>
+	</div>
+
+	<!-- Task Description -->
+	{% if task.description %}
+	<div class="task-detail__section">
+		<h3 class="task-detail__section-title">Description</h3>
+		<div class="task-detail__description">
+			{{ task.description }}
+		</div>
+	</div>
+	{% endif %}
+
+	<!-- Dependencies Section -->
+	<div class="task-detail__section task-detail__dependencies">
+		<div class="task-detail__section-header">
+			<h3 class="task-detail__section-title">Dependencies</h3>
+			<button
+				class="btn btn-primary btn-sm"
+				onclick="frappe.workhub.dependencyModal.open('{{ task.name }}', '{{ task.title|replace("'", "\\'") }}')"
+			>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M12 5v14M5 12h14"/>
+				</svg>
+				Manage Dependencies
+			</button>
+		</div>
+
+		<div class="task-detail__dependencies-content" id="task-dependencies-{{ task.name }}">
+			<!-- Blocked By Section -->
+			<div class="task-detail__dependency-group">
+				<h4 class="task-detail__dependency-group-title">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="10"/>
+						<line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+					</svg>
+					Blocked By
+					<span class="task-detail__dependency-count" data-count-type="blocked_by">0</span>
+				</h4>
+				<div class="task-detail__dependency-list" data-dependency-type="blocked_by">
+					<div class="task-detail__dependency-loading">Loading...</div>
+				</div>
+			</div>
+
+			<!-- Blocking Section -->
+			<div class="task-detail__dependency-group">
+				<h4 class="task-detail__dependency-group-title">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M12 2L2 7l10 5 10-5-10-5z"/>
+						<path d="M2 17l10 5 10-5"/>
+						<path d="M2 12l10 5 10-5"/>
+					</svg>
+					Blocking
+					<span class="task-detail__dependency-count" data-count-type="blocks">0</span>
+				</h4>
+				<div class="task-detail__dependency-list" data-dependency-type="blocks">
+					<div class="task-detail__dependency-loading">Loading...</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ERP Links Section -->
+	{% if task.worklink %}
+	<div class="task-detail__section">
+		<h3 class="task-detail__section-title">ERP Links</h3>
+		<div class="task-detail__erp-links">
+			<a href="/app/{{ task.worklink.doctype }}/{{ task.worklink.doc_id }}" class="task-detail__erp-link">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+					<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+				</svg>
+				{{ task.worklink.doctype }}: {{ task.worklink.doc_id }}
+			</a>
+		</div>
+	</div>
+	{% endif %}
+</div>
+
+<!-- Initialize dependency loading -->
+<script>
+	(function() {
+		// Wait for DOM to be ready
+		frappe.ready(function() {
+			const taskId = '{{ task.name }}';
+			loadTaskDependencies(taskId);
+
+			// Listen for dependency updates from modal
+			document.addEventListener('dependencies-updated', function(e) {
+				if (e.detail && e.detail.taskId === taskId) {
+					loadTaskDependencies(taskId);
+				}
+			});
+		});
+
+		/**
+		 * Load and render task dependencies
+		 */
+		function loadTaskDependencies(taskId) {
+			const container = document.getElementById('task-dependencies-' + taskId);
+			if (!container) return;
+
+			// Show loading state
+			const blockedByList = container.querySelector('[data-dependency-type="blocked_by"]');
+			const blocksList = container.querySelector('[data-dependency-type="blocks"]');
+
+			// Fetch dependencies
+			frappe.call({
+				method: 'workhub_frappe_app.api.tasks.get_task_dependencies',
+				args: { task_id: taskId },
+				callback: function(r) {
+					if (r.message) {
+						renderDependencies(container, r.message.blocked_by, r.message.blocks);
+					}
+				},
+				error: function(r) {
+					blockedByList.innerHTML = '<div class="task-detail__dependency-error">Failed to load dependencies</div>';
+					blocksList.innerHTML = '<div class="task-detail__dependency-error">Failed to load dependencies</div>';
+				}
+			});
+		}
+
+		/**
+		 * Render dependency lists
+		 */
+		function renderDependencies(container, blockedBy, blocks) {
+			// Update counts
+			const blockedByCount = container.querySelector('[data-count-type="blocked_by"]');
+			const blocksCount = container.querySelector('[data-count-type="blocks"]');
+
+			if (blockedByCount) blockedByCount.textContent = blockedBy.length;
+			if (blocksCount) blocksCount.textContent = blocks.length;
+
+			// Render blocked by list
+			const blockedByList = container.querySelector('[data-dependency-type="blocked_by"]');
+			if (blockedByList) {
+				if (blockedBy.length === 0) {
+					blockedByList.innerHTML = '<div class="task-detail__dependency-empty">No blocking dependencies</div>';
+				} else {
+					blockedByList.innerHTML = blockedBy.map(dep => renderDependencyItem(dep)).join('');
+				}
+			}
+
+			// Render blocks list
+			const blocksList = container.querySelector('[data-dependency-type="blocks"]');
+			if (blocksList) {
+				if (blocks.length === 0) {
+					blocksList.innerHTML = '<div class="task-detail__dependency-empty">Not blocking any tasks</div>';
+				} else {
+					blocksList.innerHTML = blocks.map(dep => renderDependencyItem(dep)).join('');
+				}
+			}
+		}
+
+		/**
+		 * Render a single dependency item
+		 */
+		function renderDependencyItem(dep) {
+			const statusClass = 'task-detail__dep-status--' + (dep.status || '').toLowerCase();
+			const priorityClass = 'task-detail__dep-priority--' + (dep.priority || '').toLowerCase();
+
+			return `
+				<div class="task-detail__dependency-item" data-task-id="${dep.task_id}">
+					<div class="task-detail__dep-main">
+						<a href="/app/wh-task/${dep.task_id}" class="task-detail__dep-title">
+							${escapeHtml(dep.title)}
+						</a>
+						<div class="task-detail__dep-meta">
+							<span class="task-detail__dep-status ${statusClass}">${dep.status || 'Unknown'}</span>
+							<span class="task-detail__dep-separator">•</span>
+							<span class="task-detail__dep-priority ${priorityClass}">${dep.priority || '-'}</span>
+							${dep.assigned_to_name ? `
+								<span class="task-detail__dep-separator">•</span>
+								<span class="task-detail__dep-assignee">${escapeHtml(dep.assigned_to_name)}</span>
+							` : ''}
+							${dep.due_date ? `
+								<span class="task-detail__dep-separator">•</span>
+								<span class="task-detail__dep-due-date">${formatDate(dep.due_date)}</span>
+							` : ''}
+						</div>
+					</div>
+				</div>
+			`;
+		}
+
+		/**
+		 * Escape HTML to prevent XSS
+		 */
+		function escapeHtml(text) {
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
+		}
+
+		/**
+		 * Format date for display
+		 */
+		function formatDate(dateStr) {
+			if (!dateStr) return '';
+			const date = new Date(dateStr);
+			const options = { month: 'short', day: 'numeric', year: 'numeric' };
+			return date.toLocaleDateString('en-US', options);
+		}
+	})();
+</script>
+
+<!-- Dependency Detail Styles -->
+<style>
+	.task-detail {
+		max-width: 900px;
+		margin: 0 auto;
+		padding: 24px;
+	}
+
+	.task-detail__header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 24px;
+		padding-bottom: 16px;
+		border-bottom: 3px solid var(--border-color, #000);
+	}
+
+	.task-detail__title {
+		font-size: 28px;
+		font-weight: 700;
+		margin: 0 0 8px 0;
+		line-height: 1.2;
+	}
+
+	.task-detail__meta {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 14px;
+		color: var(--text-muted, #666);
+	}
+
+	.task-detail__separator {
+		color: var(--text-muted, #999);
+	}
+
+	.task-detail__status,
+	.task-detail__priority {
+		padding: 2px 8px;
+		border-radius: 4px;
+		font-weight: 600;
+		font-size: 12px;
+		text-transform: uppercase;
+	}
+
+	.task-detail__status--done {
+		background: #d4edda;
+		color: #155724;
+	}
+
+	.task-detail__status--doing {
+		background: #d1ecf1;
+		color: #0c5460;
+	}
+
+	.task-detail__status--blocked {
+		background: #f8d7da;
+		color: #721c24;
+	}
+
+	.task-detail__priority--p0 {
+		background: #f8d7da;
+		color: #721c24;
+	}
+
+	.task-detail__priority--p1 {
+		background: #fff3cd;
+		color: #856404;
+	}
+
+	.task-detail__info-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 16px;
+		margin-bottom: 24px;
+	}
+
+	.task-detail__info-item {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.task-detail__info-label {
+		font-size: 12px;
+		font-weight: 600;
+		text-transform: uppercase;
+		color: var(--text-muted, #666);
+		letter-spacing: 0.5px;
+	}
+
+	.task-detail__info-value {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 14px;
+	}
+
+	.user-avatar {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: var(--primary-color, #007bff);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 10px;
+		font-weight: 600;
+	}
+
+	.task-detail__section {
+		margin-bottom: 32px;
+		padding: 20px;
+		background: var(--card-bg, #f8f9fa);
+		border: 2px solid var(--border-color, #000);
+		border-radius: 0;
+		box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+	}
+
+	.task-detail__section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 16px;
+	}
+
+	.task-detail__section-title {
+		font-size: 18px;
+		font-weight: 700;
+		margin: 0 0 16px 0;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.task-detail__description {
+		font-size: 14px;
+		line-height: 1.6;
+		color: var(--text-color, #333);
+		white-space: pre-wrap;
+	}
+
+	.task-detail__dependencies-content {
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+	}
+
+	.task-detail__dependency-group {
+		border: 2px solid var(--border-color, #e0e0e0);
+		padding: 16px;
+		background: white;
+	}
+
+	.task-detail__dependency-group-title {
+		font-size: 14px;
+		font-weight: 700;
+		margin: 0 0 12px 0;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.task-detail__dependency-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 20px;
+		height: 20px;
+		padding: 0 6px;
+		background: var(--primary-color, #007bff);
+		color: white;
+		border-radius: 10px;
+		font-size: 11px;
+		font-weight: 600;
+	}
+
+	.task-detail__dependency-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.task-detail__dependency-loading,
+	.task-detail__dependency-empty,
+	.task-detail__dependency-error {
+		padding: 12px;
+		text-align: center;
+		color: var(--text-muted, #666);
+		font-size: 13px;
+		font-style: italic;
+	}
+
+	.task-detail__dependency-error {
+		color: #d32f2f;
+	}
+
+	.task-detail__dependency-item {
+		padding: 12px;
+		border: 1px solid var(--border-color, #e0e0e0);
+		background: var(--card-bg, #fafafa);
+		transition: all 0.2s;
+	}
+
+	.task-detail__dependency-item:hover {
+		border-color: var(--primary-color, #007bff);
+		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.05);
+	}
+
+	.task-detail__dep-title {
+		font-weight: 600;
+		color: var(--link-color, #007bff);
+		text-decoration: none;
+		font-size: 14px;
+		display: block;
+		margin-bottom: 4px;
+	}
+
+	.task-detail__dep-title:hover {
+		text-decoration: underline;
+	}
+
+	.task-detail__dep-meta {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 12px;
+		color: var(--text-muted, #666);
+		flex-wrap: wrap;
+	}
+
+	.task-detail__dep-status,
+	.task-detail__dep-priority {
+		padding: 2px 6px;
+		border-radius: 3px;
+		font-weight: 600;
+		font-size: 10px;
+		text-transform: uppercase;
+	}
+
+	.task-detail__dep-status--done {
+		background: #d4edda;
+		color: #155724;
+	}
+
+	.task-detail__dep-status--doing {
+		background: #d1ecf1;
+		color: #0c5460;
+	}
+
+	.task-detail__dep-status--blocked {
+		background: #f8d7da;
+		color: #721c24;
+	}
+
+	.task-detail__dep-priority--p0 {
+		background: #f8d7da;
+		color: #721c24;
+	}
+
+	.task-detail__dep-priority--p1 {
+		background: #fff3cd;
+		color: #856404;
+	}
+
+	.task-detail__erp-links {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.task-detail__erp-link {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 12px;
+		border: 2px solid var(--border-color, #000);
+		background: white;
+		text-decoration: none;
+		color: var(--link-color, #007bff);
+		font-weight: 600;
+		transition: all 0.2s;
+	}
+
+	.task-detail__erp-link:hover {
+		box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+		transform: translate(-2px, -2px);
+	}
+
+	@media (max-width: 768px) {
+		.task-detail {
+			padding: 16px;
+		}
+
+		.task-detail__header {
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.task-detail__title {
+			font-size: 22px;
+		}
+
+		.task-detail__info-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
