@@ -314,14 +314,42 @@ frappe.workhub.MobileTaskDrawer = class MobileTaskDrawer {
 		const statusOptions = this.drawer.querySelectorAll('.wh-form-segmented-option');
 		statusOptions.forEach(option => {
 			option.addEventListener('click', () => {
+				// Remove active state from all options
 				statusOptions.forEach(opt => {
 					opt.classList.remove('active');
 					opt.setAttribute('aria-checked', 'false');
 					opt.setAttribute('tabindex', '-1');
 				});
+
+				// Set active state on clicked option
 				option.classList.add('active');
 				option.setAttribute('aria-checked', 'true');
 				option.setAttribute('tabindex', '0');
+
+				// Haptic feedback on status change (if available)
+				this.triggerHapticFeedback('light');
+			});
+
+			// Add keyboard navigation support (arrow keys)
+			option.addEventListener('keydown', (e) => {
+				if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+					e.preventDefault();
+					const nextOption = option.nextElementSibling;
+					if (nextOption) {
+						nextOption.click();
+						nextOption.focus();
+					}
+				} else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+					e.preventDefault();
+					const prevOption = option.previousElementSibling;
+					if (prevOption) {
+						prevOption.click();
+						prevOption.focus();
+					}
+				} else if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					option.click();
+				}
 			});
 		});
 
@@ -329,14 +357,42 @@ frappe.workhub.MobileTaskDrawer = class MobileTaskDrawer {
 		const priorityOptions = this.drawer.querySelectorAll('.wh-form-priority-option');
 		priorityOptions.forEach(option => {
 			option.addEventListener('click', () => {
+				// Remove active state from all options
 				priorityOptions.forEach(opt => {
 					opt.classList.remove('active');
 					opt.setAttribute('aria-checked', 'false');
 					opt.setAttribute('tabindex', '-1');
 				});
+
+				// Set active state on clicked option
 				option.classList.add('active');
 				option.setAttribute('aria-checked', 'true');
 				option.setAttribute('tabindex', '0');
+
+				// Haptic feedback on priority change (if available)
+				this.triggerHapticFeedback('light');
+			});
+
+			// Add keyboard navigation support (arrow keys)
+			option.addEventListener('keydown', (e) => {
+				if (e.key === 'ArrowRight') {
+					e.preventDefault();
+					const nextOption = option.nextElementSibling;
+					if (nextOption) {
+						nextOption.click();
+						nextOption.focus();
+					}
+				} else if (e.key === 'ArrowLeft') {
+					e.preventDefault();
+					const prevOption = option.previousElementSibling;
+					if (prevOption) {
+						prevOption.click();
+						prevOption.focus();
+					}
+				} else if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					option.click();
+				}
 			});
 		});
 
@@ -397,6 +453,43 @@ frappe.workhub.MobileTaskDrawer = class MobileTaskDrawer {
 		this.isDragging = false;
 		this.dragStartY = 0;
 		this.currentY = 0;
+	}
+
+	/**
+	 * Trigger haptic feedback (if available)
+	 */
+	triggerHapticFeedback(intensity = 'light') {
+		// Check if haptic feedback is supported and enabled
+		if (!navigator.vibrate) {
+			return;
+		}
+
+		// Check user preference for reduced motion
+		if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			return;
+		}
+
+		// Check localStorage preference (from SwipeableTask component)
+		const hapticEnabled = localStorage.getItem('workhub_haptic_feedback');
+		if (hapticEnabled === 'false') {
+			return;
+		}
+
+		// Vibration patterns for different intensities
+		const patterns = {
+			light: [10],         // Quick tap
+			medium: [15, 10, 15], // Double tap
+			heavy: [20, 15, 30]  // Strong feedback
+		};
+
+		const pattern = patterns[intensity] || patterns.light;
+
+		try {
+			navigator.vibrate(pattern);
+		} catch (error) {
+			// Silently fail if vibration API throws error
+			console.debug('Haptic feedback not available:', error);
+		}
 	}
 
 	/**
