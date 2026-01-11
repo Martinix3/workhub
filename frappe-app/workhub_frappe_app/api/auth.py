@@ -5,9 +5,11 @@ import frappe
 from frappe import _
 from frappe.utils.oauth import get_oauth2_authorize_url
 from frappe.utils.password import get_decrypted_password
+from workhub_frappe_app.api.rate_limiter import rate_limit
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=20, window=60)
 def get_logged_user():
     """Get the currently logged in user (Guest if not logged in)"""
     return frappe.session.user
