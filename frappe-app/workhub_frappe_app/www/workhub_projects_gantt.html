@@ -389,6 +389,11 @@
 
 			// Render chart
 			ganttChart.render();
+
+			// Listen for task date changes and save to backend
+			ganttChart.container.addEventListener('taskDateChanged', function(event) {
+				ganttChart.saveTaskDates(event.detail);
+			});
 		} else {
 			console.error('GanttChart component not loaded');
 		}

@@ -1957,6 +1957,120 @@
 	}
 
 	/**
+	 * Save task date changes to backend via API
+	 * @param {Object} eventData - Event data from taskDateChanged event
+	 */
+	saveTaskDates(eventData) {
+		const { taskId, startDate, dueDate, originalStartDate, originalDueDate } = eventData;
+
+		// Find the task in our data
+		const task = this.tasks.find(t => t.name === taskId);
+		if (!task) return;
+
+		// Show loading indicator
+		frappe.freeze('Guardando cambios...');
+
+		// Call API to update task schedule
+		frappe.call({
+			method: 'workhub_frappe_app.api.gantt.update_task_schedule',
+			args: {
+				task_id: taskId,
+				start_date: startDate,
+				due_date: dueDate
+			},
+			callback: (response) => {
+				// Hide loading indicator
+				frappe.unfreeze();
+
+				if (response.message && response.message.success) {
+					// Show success notification
+					frappe.show_alert({
+						message: 'Fechas actualizadas correctamente',
+						indicator: 'green'
+					}, 3);
+
+					// Refresh chart to show propagated dates
+					this._refreshChartData();
+				} else {
+					// Rollback to original dates
+					this._rollbackTaskDates(task, originalStartDate, originalDueDate);
+				}
+			},
+			error: (error) => {
+				// Hide loading indicator
+				frappe.unfreeze();
+
+				// Rollback to original dates
+				this._rollbackTaskDates(task, originalStartDate, originalDueDate);
+
+				// Show error message
+				frappe.msgprint({
+					title: 'Error',
+					message: 'No se pudieron guardar los cambios. Por favor intenta de nuevo.',
+					indicator: 'red'
+				});
+
+				console.error('Error saving task dates:', error);
+			}
+		});
+	}
+
+	/**
+	 * Rollback task dates to original values
+	 * @private
+	 */
+	_rollbackTaskDates(task, originalStartDate, originalDueDate) {
+		task.start_date = originalStartDate;
+		task.due_date = originalDueDate;
+
+		// Re-render chart to show original dates
+		this.render();
+	}
+
+	/**
+	 * Refresh chart data from server to show propagated dates
+	 * @private
+	 */
+	_refreshChartData() {
+		if (!this.project || !this.project.name) {
+			console.error('No project ID available for refresh');
+			return;
+		}
+
+		// Show loading
+		frappe.freeze('Actualizando dependencias...');
+
+		// Fetch fresh data from server
+		frappe.call({
+			method: 'workhub_frappe_app.api.gantt.get_gantt_view',
+			args: {
+				project_id: this.project.name
+			},
+			callback: (response) => {
+				frappe.unfreeze();
+
+				if (response.message) {
+					// Update data
+					this.setData({
+						project: response.message.project,
+						tasks: response.message.tasks,
+						dependencies: response.message.dependencies,
+						milestones: response.message.tasks.filter(t => t.is_milestone),
+						criticalPath: response.message.critical_path || []
+					});
+
+					// Re-render chart
+					this.render();
+				}
+			},
+			error: (error) => {
+				frappe.unfreeze();
+				console.error('Error refreshing chart data:', error);
+			}
+		});
+	}
+
+	/**
 	 * Destroy the component
 		 */
 		destroy() {
