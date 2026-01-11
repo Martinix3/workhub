@@ -30,17 +30,16 @@ export class ShellPage extends BasePage {
 
   // User Menu
   async openUserMenu() {
-    // Wait for any overlays to disappear before clicking
-    const overlay = this.page.locator('.fixed.inset-0.z-40')
-    if (await overlay.isVisible().catch(() => false)) {
-      await overlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {
-        // If overlay doesn't disappear, click on it first to close
-        overlay.click().catch(() => {})
-      })
-    }
-    // Wait a moment for any animations
-    await this.page.waitForTimeout(200)
-    await this.userMenuButton.click({ force: true })
+    // Wait for page to be fully loaded and stable
+    await this.page.waitForLoadState('networkidle').catch(() => {})
+
+    // Wait for user menu button to be visible and enabled (no force click)
+    await this.userMenuButton.waitFor({ state: 'visible', timeout: 5000 })
+
+    // Click normally - Playwright will wait for actionability
+    await this.userMenuButton.click()
+
+    // Verify dropdown appeared
     await expect(this.userMenuDropdown).toBeVisible({ timeout: 5000 })
   }
 
@@ -52,18 +51,27 @@ export class ShellPage extends BasePage {
 
   async logout() {
     await this.openUserMenu()
-    await this.page.click('button:has-text("Cerrar Sesion")')
+    // Use multiple selectors for logout button (prefer data-testid if available)
+    const logoutButton = this.page.locator('[data-testid="logout-button"], button:has-text("Cerrar Sesión"), button:has-text("Cerrar Sesion")')
+    await logoutButton.click()
   }
 
   async openSettings() {
     await this.openUserMenu()
-    await this.page.click('button:has-text("Configuracion"), button:has-text("Mi Perfil")')
+    // Use multiple selectors for settings button
+    const settingsButton = this.page.locator('[data-testid="settings-button"], button:has-text("Configuración"), button:has-text("Configuracion"), button:has-text("Mi Perfil")')
+    await settingsButton.click()
   }
 
   async openAdmin() {
     await this.openUserMenu()
-    const adminButton = this.page.locator('button:has-text("Administracion")')
-    if (await adminButton.isVisible()) {
+    // Use multiple selectors for admin button
+    const adminButton = this.page.locator('[data-testid="admin-button"], button:has-text("Administración"), button:has-text("Administracion")')
+
+    // Wait for button with timeout to determine if available
+    const isVisible = await adminButton.isVisible().catch(() => false)
+
+    if (isVisible) {
       await adminButton.click()
     } else {
       throw new Error('Admin button not visible - user may not have admin role')
@@ -71,7 +79,7 @@ export class ShellPage extends BasePage {
   }
 
   get adminButton() {
-    return this.page.locator('button:has-text("Administracion")')
+    return this.page.locator('[data-testid="admin-button"], button:has-text("Administración"), button:has-text("Administracion")')
   }
 
   // Navigation
