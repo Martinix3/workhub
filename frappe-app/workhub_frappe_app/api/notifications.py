@@ -63,6 +63,16 @@ def mark_all_read():
 def delete_notification(notification_id):
     """Eliminar una notificacion"""
     require_auth()
+    user = frappe.session.user
+
+    # Verify notification belongs to current user
+    notification = frappe.db.get_value("WH Notification", notification_id, "user")
+    if not notification:
+        frappe.throw(_("Notification not found"), frappe.DoesNotExistError)
+
+    if notification != user:
+        frappe.throw(_("You can only delete your own notifications"), frappe.PermissionError)
+
     frappe.delete_doc("WH Notification", notification_id, ignore_permissions=True)
     return {"success": True}
 
