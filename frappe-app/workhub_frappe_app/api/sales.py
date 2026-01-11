@@ -268,8 +268,7 @@ def get_recent_activity(limit=20):
         filters={"docstatus": 1},
         fields=["name", "customer_name", "grand_total", "creation", "owner"],
         limit_page_length=10,
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     for order in recent_orders:
@@ -286,8 +285,7 @@ def get_recent_activity(limit=20):
     recent_opps = frappe.get_list("Opportunity",
         fields=["name", "party_name", "sales_stage", "creation", "owner"],
         limit_page_length=10,
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     for opp in recent_opps:
