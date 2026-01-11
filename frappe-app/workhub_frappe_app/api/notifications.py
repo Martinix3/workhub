@@ -10,43 +10,22 @@ from workhub_frappe_app.api.utils import require_auth
 
 
 @frappe.whitelist()
-def get_notifications(unread_only=False, priority=None, limit=50):
-    """Obtener notificaciones del usuario actual con filtrado opcional por prioridad"""
+def get_notifications(unread_only=False, limit=50):
+    """Obtener notificaciones del usuario actual"""
     require_auth()
     user = frappe.session.user
 
     filters = {"user": user}
     if unread_only:
         filters["read"] = 0
-    if priority:
-        filters["priority"] = priority
 
-    # Ordenar por prioridad (HIGH > MEDIUM > LOW) y luego por fecha
-    notifications = frappe.db.sql("""
-        SELECT name, type, priority, title, message,
-               reference_doctype, reference_name, action_url,
-               `read`, created_at
-        FROM `tabWH Notification`
-        WHERE user = %(user)s
-        {unread_filter}
-        {priority_filter}
-        ORDER BY
-            CASE priority
-                WHEN 'HIGH' THEN 1
-                WHEN 'MEDIUM' THEN 2
-                WHEN 'LOW' THEN 3
-                ELSE 4
-            END,
-            created_at DESC
-        LIMIT %(limit)s
-    """.format(
-        unread_filter="AND `read` = 0" if unread_only else "",
-        priority_filter="AND priority = %(priority)s" if priority else ""
-    ), {
-        "user": user,
-        "priority": priority,
-        "limit": int(limit)
-    }, as_dict=True)
+    notifications = frappe.get_all("WH Notification",
+        filters=filters,
+        fields=["name", "type", "priority", "title", "message",
+                "reference_doctype", "reference_name", "action_url",
+                "read", "created_at"],
+        order_by="created_at desc",
+        limit_page_length=int(limit))
 
     unread_count = frappe.db.count("WH Notification",
         {"user": user, "read": 0})
@@ -54,56 +33,6 @@ def get_notifications(unread_only=False, priority=None, limit=50):
     return {
         "notifications": notifications,
         "unread_count": unread_count
-    }
-
-
-@frappe.whitelist()
-def get_unread_count():
-    """Obtener contadores de notificaciones no leidas (optimizado para polling)"""
-    require_auth()
-    user = frappe.session.user
-
-    # Total de notificaciones no leidas
-    unread_count = frappe.db.count("WH Notification",
-        {"user": user, "read": 0})
-
-    # Notificaciones no leidas de alta prioridad (HIGH)
-    high_priority_count = frappe.db.count("WH Notification",
-        {"user": user, "read": 0, "priority": "HIGH"})
-
-    return {
-        "unread_count": unread_count,
-        "high_priority_count": high_priority_count
-    }
-
-
-@frappe.whitelist()
-def get_high_priority_notifications(limit=20):
-    """Obtener solo notificaciones de alta prioridad (HIGH) para alertas urgentes"""
-    require_auth()
-    user = frappe.session.user
-
-    # Obtener notificaciones HIGH ordenadas por fecha
-    notifications = frappe.db.sql("""
-        SELECT name, type, priority, title, message,
-               reference_doctype, reference_name, action_url,
-               `read`, created_at
-        FROM `tabWH Notification`
-        WHERE user = %(user)s AND priority = 'HIGH'
-        ORDER BY created_at DESC
-        LIMIT %(limit)s
-    """, {
-        "user": user,
-        "limit": int(limit)
-    }, as_dict=True)
-
-    # Contar no leidas de alta prioridad
-    unread_high_priority = frappe.db.count("WH Notification",
-        {"user": user, "read": 0, "priority": "HIGH"})
-
-    return {
-        "notifications": notifications,
-        "unread_count": unread_high_priority
     }
 
 
@@ -157,6 +86,8 @@ def clear_old_notifications(days=30):
 
 def send_daily_emails():
     """Scheduler: Enviar email diario a las 8am"""
+    import datetime
+
     # Obtener usuarios con email diario activado
     # Por ahora, todos los usuarios con tareas asignadas
     users = frappe.db.sql("""
@@ -164,6 +95,10 @@ def send_daily_emails():
         FROM `tabWH Task`
         WHERE status NOT IN ('DONE')
     """, as_dict=True)
+
+    # Check if today is Monday (for weekly digest)
+    today_weekday = datetime.datetime.now().weekday()  # Monday = 0, Sunday = 6
+    is_monday = today_weekday == 0
 
     for user_row in users:
         user = user_row.get("user")
@@ -175,6 +110,19 @@ def send_daily_emails():
             continue
 
         try:
+            # Check user's digest preference
+            preferences = _get_user_notification_preferences(user)
+            digest_frequency = preferences.get("digest_frequency", "daily")
+
+            # Skip if digest is disabled
+            if digest_frequency == "none":
+                continue
+
+            # Skip if weekly digest and today is not Monday
+            if digest_frequency == "weekly" and not is_monday:
+                continue
+
+            # Send digest (daily users get it every day, weekly users only on Monday)
             _send_daily_digest(user, user_email)
         except Exception as e:
             frappe.log_error(f"Error sending daily email to {user}: {e}")
@@ -210,8 +158,33 @@ def _send_daily_digest(user, email):
         fields=["title", "blocked_reason"],
         limit=5)
 
+    # Check if user has Sales role for distributor orders section
+    has_sales_role = frappe.db.exists("Has Role", {
+        "parent": user,
+        "role": "Sales User",
+        "parenttype": "User"
+    })
+
+    pending_orders = []
+    issue_orders = []
+
+    if has_sales_role:
+        # Get pending orders
+        pending_orders = frappe.get_all("Distributor Sell Out Order",
+            filters={"status": "Pending"},
+            fields=["name", "customer_name", "distributor_name", "total_amount", "order_date"],
+            order_by="order_date desc",
+            limit=10)
+
+        # Get orders with issues
+        issue_orders = frappe.get_all("Distributor Sell Out Order",
+            filters={"status": "Issue"},
+            fields=["name", "customer_name", "distributor_name", "total_amount", "issue_notes"],
+            order_by="modified desc",
+            limit=5)
+
     # Si no hay nada relevante, no enviar
-    if not today_tasks and not overdue and not blocked:
+    if not today_tasks and not overdue and not blocked and not pending_orders and not issue_orders:
         return
 
     # Construir mensaje
@@ -243,6 +216,33 @@ def _send_daily_digest(user, email):
         <ul>
         {"".join([f"<li>{t['title']} - {t.get('blocked_reason', 'Sin razon')}</li>" for t in blocked])}
         </ul>
+        """
+
+    # Add distributor orders section for sales users
+    if has_sales_role and (pending_orders or issue_orders):
+        message += """
+        <hr style="margin: 20px 0;">
+        <h2>Ordenes de Distribuidores</h2>
+        """
+
+        if pending_orders:
+            message += f"""
+            <h3>Pendientes ({len(pending_orders)})</h3>
+            <ul>
+            {"".join([f"<li><strong>{o['name']}</strong> - {o['customer_name']} (via {o['distributor_name']}) - {frappe.utils.fmt_money(o['total_amount'])} - {o['order_date']}</li>" for o in pending_orders])}
+            </ul>
+            """
+
+        if issue_orders:
+            message += f"""
+            <h3 style="color: red;">Con Incidencias ({len(issue_orders)}) - ¡Requieren Atencion!</h3>
+            <ul>
+            {"".join([f"<li><strong>{o['name']}</strong> - {o['customer_name']} (via {o['distributor_name']}) - {frappe.utils.fmt_money(o['total_amount'])}<br><em>Incidencia: {o.get('issue_notes', 'Sin detalles')}</em></li>" for o in issue_orders])}
+            </ul>
+            """
+
+        message += """
+        <p><a href="/app/distributor-sell-out-order">Ver todas las ordenes</a></p>
         """
 
     message += """
@@ -351,8 +351,121 @@ def notify_blocked_dependencies():
 
 # ========== HELPER FUNCTIONS ==========
 
+# Notification type to user preference mapping
+NOTIFICATION_TYPE_PREFERENCE_MAP = {
+    "TASK_ASSIGNED": "task_assigned",
+    "BLOCKED": "task_status",
+    "OVERDUE": "overdue_alerts",
+    "DEPENDENCY": "task_status",
+    "PROJECT_RISK": "project_health",
+    "COMPLETED": "task_status",
+    "ORDER_STATUS": "order_status",
+    "ORDER_CREATED": "order_status",
+    "ORDER_DELIVERED": "order_status",
+    # EMAIL_TASK and MENTION always allowed (critical for collaboration)
+    "EMAIL_TASK": None,
+    "MENTION": None
+}
+
+
+def _get_user_notification_preferences(user):
+    """
+    Get user's notification preferences.
+
+    Args:
+        user: User email/name
+
+    Returns:
+        dict: Notification preferences with granular fields
+    """
+    try:
+        # Import here to avoid circular import
+        from workhub_frappe_app.api.settings import _get_default_notification_preferences, _migrate_notification_preferences
+
+        user_doc = frappe.get_doc("User", user)
+        notifications_json = getattr(user_doc, 'workhub_notifications', None)
+
+        if notifications_json:
+            try:
+                preferences = json.loads(notifications_json)
+                # Migrate old format to new format (backwards compatibility)
+                return _migrate_notification_preferences(preferences)
+            except (json.JSONDecodeError, TypeError):
+                return _get_default_notification_preferences()
+        else:
+            return _get_default_notification_preferences()
+    except Exception as e:
+        frappe.log_error(f"Error getting notification preferences for {user}: {e}")
+        # Return defaults on error
+        return {
+            "email": True,
+            "push": False,
+            "task_assigned": True,
+            "task_status": True,
+            "overdue_alerts": True,
+            "order_status": True,
+            "project_health": True,
+            "digest_frequency": "daily"
+        }
+
+
+def _should_create_notification(user, notification_type, priority):
+    """
+    Check if notification should be created based on user preferences.
+
+    Args:
+        user: User email/name
+        notification_type: Notification type (TASK_ASSIGNED, OVERDUE, etc.)
+        priority: Notification priority (LOW, MEDIUM, HIGH)
+
+    Returns:
+        bool: True if notification should be created, False otherwise
+    """
+    # HIGH priority notifications always go through regardless of preferences
+    if priority == "HIGH":
+        return True
+
+    # Check if this notification type is mapped to a preference
+    preference_key = NOTIFICATION_TYPE_PREFERENCE_MAP.get(notification_type)
+
+    # If no preference mapping (EMAIL_TASK, MENTION), always allow
+    if preference_key is None:
+        return True
+
+    # Get user preferences
+    preferences = _get_user_notification_preferences(user)
+
+    # Check if the specific notification type is enabled
+    return preferences.get(preference_key, True)
+
+
 def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None):
-    """Crear una notificacion"""
+    """
+    Crear una notificacion (respecting user preferences).
+
+    Args:
+        user: User email/name to notify
+        notification_type: Type of notification (TASK_ASSIGNED, OVERDUE, etc.)
+        title: Notification title
+        message: Notification message
+        reference_doctype: Optional reference to DocType
+        reference_name: Optional reference to document name
+        priority: Priority level (LOW, MEDIUM, HIGH) - HIGH bypasses preferences
+        action_url: Optional action URL
+
+    Returns:
+        str: Notification name if created, None if skipped due to preferences
+    """
+    # Check if notification should be created based on preferences
+    if not _should_create_notification(user, notification_type, priority):
+        # Log that notification was skipped
+        frappe.log_error(
+            f"Notification skipped for {user}: type={notification_type}, preference disabled",
+            "Notification Preference"
+        )
+        return None
+
+    # Create the notification
     doc = frappe.new_doc("WH Notification")
     doc.user = user
     doc.type = notification_type
@@ -364,25 +477,6 @@ def create_notification(user, notification_type, title, message, reference_docty
     doc.action_url = action_url
     doc.created_at = now_datetime()
     doc.insert(ignore_permissions=True)
-
-    # Publicar evento en tiempo real para el usuario
-    frappe.publish_realtime(
-        event="wh_notification",
-        message={
-            "name": doc.name,
-            "type": notification_type,
-            "title": title,
-            "message": message,
-            "priority": priority,
-            "reference_doctype": reference_doctype,
-            "reference_name": reference_name,
-            "action_url": action_url,
-            "created_at": doc.created_at,
-            "read": 0
-        },
-        user=user
-    )
-
     return doc.name
 
 
@@ -423,170 +517,259 @@ def notify_task_completed(task_id):
         )
 
 
-def notify_new_message(message_id):
-    """Notificar cuando se recibe un nuevo mensaje"""
-    message = frappe.get_doc("Distributor Message", message_id)
+def notify_task_status_changed(task_id, old_status, new_status):
+    """
+    Notificar cuando cambia el estado de una tarea.
 
-    # Obtener nombre del remitente
-    sender_name = frappe.db.get_value("User", message.sender, "full_name") or message.sender
+    Args:
+        task_id: ID de la tarea
+        old_status: Estado anterior
+        new_status: Estado nuevo
+    """
+    task = frappe.get_doc("WH Task", task_id)
 
-    # Crear notificación para el receptor
-    create_notification(
-        user=message.receiver,
-        notification_type="NEW_MESSAGE",
-        title=f"Nuevo mensaje de {sender_name}",
-        message=f"{sender_name}: {message.subject}",
-        reference_doctype="Distributor Message",
-        reference_name=message_id,
-        action_url="/workhub_distribuidores_portal" if is_distributor(message.receiver) else "/workhub_ventas",
-        priority="MEDIUM"
-    )
+    # Si cambia a DONE, notificar tareas bloqueadas (ya existe notify_task_completed)
+    if new_status == "DONE":
+        notify_task_completed(task_id)
+
+        # Notificar al dueño de la tarea que se completó (si no es el que la completó)
+        if task.assigned_to and task.assigned_to != frappe.session.user:
+            create_notification(
+                user=task.assigned_to,
+                notification_type="COMPLETED",
+                title=f"Tarea completada: {task.title}",
+                message=f"Tu tarea '{task.title}' fue marcada como completada por {frappe.session.user}",
+                reference_doctype="WH Task",
+                reference_name=task_id,
+                priority="LOW"
+            )
+
+    # Si cambia a BLOCKED, notificar al dueño con la razón
+    elif new_status == "BLOCKED":
+        if task.assigned_to:
+            blocked_reason = task.blocked_reason or "Sin razón especificada"
+            create_notification(
+                user=task.assigned_to,
+                notification_type="BLOCKED",
+                title=f"Tarea bloqueada: {task.title}",
+                message=f"Tu tarea '{task.title}' fue bloqueada. Razón: {blocked_reason}",
+                reference_doctype="WH Task",
+                reference_name=task_id,
+                priority="HIGH" if task.priority == "P0" else "MEDIUM"
+            )
+
+    # Para otros cambios de estado significativos (DOING, NEXT, etc.)
+    elif old_status and old_status != new_status:
+        # Solo notificar si el cambio lo hizo alguien más (no el dueño)
+        if task.assigned_to and task.assigned_to != frappe.session.user:
+            # Mapeo de estados en español para mensajes
+            status_labels = {
+                "BACKLOG": "Backlog",
+                "NEXT": "Siguiente",
+                "DOING": "En Progreso",
+                "BLOCKED": "Bloqueada",
+                "DONE": "Completada"
+            }
+
+            old_label = status_labels.get(old_status, old_status)
+            new_label = status_labels.get(new_status, new_status)
+
+            create_notification(
+                user=task.assigned_to,
+                notification_type="DEPENDENCY",  # Usar DEPENDENCY para cambios de estado generales
+                title=f"Estado actualizado: {task.title}",
+                message=f"Tu tarea '{task.title}' cambió de estado: {old_label} → {new_label}",
+                reference_doctype="WH Task",
+                reference_name=task_id,
+                priority="LOW"
+            )
 
 
-def notify_change_request_status(request_id):
-    """Notificar cuando cambia el estado de una solicitud de cambio"""
-    request = frappe.get_doc("Order Change Request", request_id)
+def notify_order_status_changed(order_id, old_status, new_status):
+    """
+    Notificar cuando cambia el estado de una orden de distribuidor.
 
-    # Obtener el usuario del distribuidor
-    distributor_user = frappe.db.get_value("Customer", request.distributor, "email_id")
+    Args:
+        order_id: ID de la orden (Distributor Sell Out Order)
+        old_status: Estado anterior
+        new_status: Estado nuevo
+    """
+    order = frappe.get_doc("Distributor Sell Out Order", order_id)
 
-    if not distributor_user:
-        # Intentar obtener via Portal User
-        portal_users = frappe.get_all("Portal User",
-            filters={"parent": request.distributor, "parenttype": "Customer"},
-            fields=["user"],
-            limit=1)
-        if portal_users:
-            distributor_user = portal_users[0].user
-
-    if not distributor_user:
-        return  # No podemos notificar si no hay usuario
-
-    # Mapear estados a mensajes en español
+    # Mapeo de estados en español para mensajes
     status_labels = {
         "Pending": "Pendiente",
-        "Approved": "Aprobada",
-        "Rejected": "Rechazada"
+        "In Progress": "En Progreso",
+        "Delivered": "Entregado",
+        "Issue": "Con Incidencia",
+        "Cancelled": "Cancelado"
     }
 
-    status_label = status_labels.get(request.status, request.status)
+    old_label = status_labels.get(old_status, old_status)
+    new_label = status_labels.get(new_status, new_status)
 
-    # Determinar prioridad y mensaje según el estado
-    if request.status == "Approved":
-        priority = "HIGH"
-        title = f"Solicitud aprobada: {request.order_id}"
-        message = f"Tu solicitud de cambio para el pedido {request.order_id} ha sido aprobada."
-    elif request.status == "Rejected":
-        priority = "MEDIUM"
-        title = f"Solicitud rechazada: {request.order_id}"
-        message = f"Tu solicitud de cambio para el pedido {request.order_id} ha sido rechazada."
-    else:
-        priority = "LOW"
-        title = f"Solicitud actualizada: {request.order_id}"
-        message = f"El estado de tu solicitud para {request.order_id} es ahora: {status_label}"
+    # Detalles de la orden para el mensaje
+    order_details = f"Cliente: {order.customer_name}, Distribuidor: {order.distributor_name}, Monto: {frappe.utils.fmt_money(order.total_amount)}"
 
-    # Agregar notas de respuesta si existen
-    if request.response_notes:
-        message += f" Comentario: {request.response_notes}"
-
-    create_notification(
-        user=distributor_user,
-        notification_type="CHANGE_REQUEST_STATUS",
-        title=title,
-        message=message,
-        reference_doctype="Order Change Request",
-        reference_name=request_id,
-        action_url="/workhub_distribuidores_portal",
-        priority=priority
-    )
-
-
-def on_sales_order_change(doc, method=None):
-    """
-    Hook para doc_events de Sales Order
-    Se ejecuta en on_submit, on_cancel, on_update_after_submit
-    """
-    try:
-        notify_order_status_change(doc.name)
-    except Exception as e:
-        frappe.log_error(f"Error notificando cambio de estado de pedido {doc.name}: {str(e)}")
-
-
-def notify_order_status_change(order_id, old_status=None, new_status=None):
-    """Notificar cuando cambia el estado de un pedido"""
-    order = frappe.get_doc("Sales Order", order_id)
-
-    # Obtener el usuario del distribuidor/cliente
-    customer_user = frappe.db.get_value("Customer", order.customer, "email_id")
-
-    if not customer_user:
-        # Intentar obtener via Portal User
-        portal_users = frappe.get_all("Portal User",
-            filters={"parent": order.customer, "parenttype": "Customer"},
-            fields=["user"],
-            limit=1)
-        if portal_users:
-            customer_user = portal_users[0].user
-
-    if not customer_user:
-        return  # No podemos notificar si no hay usuario
-
-    # Mapear estados a mensajes en español
-    status_messages = {
-        0: "Borrador",  # Draft
-        1: "Confirmado",  # Submitted
-        2: "Cancelado"  # Cancelled
-    }
-
-    # Determinar el mensaje según el estado del documento
-    if order.docstatus == 1:  # Submitted
-        if order.status == "Completed":
-            title = f"Pedido completado: {order_id}"
-            message = f"Tu pedido {order_id} ha sido completado y entregado."
-            priority = "LOW"
-        elif order.status == "On Hold":
-            title = f"Pedido en espera: {order_id}"
-            message = f"Tu pedido {order_id} está temporalmente en espera."
-            priority = "MEDIUM"
-        else:
-            title = f"Pedido confirmado: {order_id}"
-            message = f"Tu pedido {order_id} ha sido confirmado y está en proceso."
-            priority = "MEDIUM"
-    elif order.docstatus == 2:  # Cancelled
-        title = f"Pedido cancelado: {order_id}"
-        message = f"Tu pedido {order_id} ha sido cancelado."
-        priority = "HIGH"
-    else:  # Draft
-        # No notificar borradores
-        return
-
-    create_notification(
-        user=customer_user,
-        notification_type="ORDER_STATUS",
-        title=title,
-        message=message,
-        reference_doctype="Sales Order",
-        reference_name=order_id,
-        action_url="/workhub_distribuidores_portal",
-        priority=priority
-    )
-
-
-def is_distributor(user):
-    """Verificar si un usuario es distribuidor"""
-    # Buscar si el usuario está vinculado a un Customer del tipo Distribuidor
-    customer = frappe.db.exists("Customer", {"email_id": user, "customer_group": "Distribuidor"})
-    if customer:
-        return True
-
-    # También verificar via Portal User
-    portal_user = frappe.get_all("Portal User",
-        filters={"user": user, "parenttype": "Customer"},
+    # Obtener usuarios del equipo de ventas (Sales User role)
+    sales_users = frappe.get_all("Has Role",
+        filters={"role": "Sales User", "parenttype": "User"},
         fields=["parent"],
-        limit=1)
+        distinct=True)
 
-    if portal_user:
-        customer_group = frappe.db.get_value("Customer", portal_user[0].parent, "customer_group")
-        return customer_group == "Distribuidor"
+    # Manejar diferentes cambios de estado
+    if new_status == "Delivered":
+        # Orden entregada - notificar a ventas y distribuidor (baja prioridad, buenas noticias)
+        for user_row in sales_users:
+            create_notification(
+                user=user_row.parent,
+                notification_type="ORDER_DELIVERED",
+                title=f"Orden entregada: {order.name}",
+                message=f"La orden {order.name} fue entregada exitosamente. {order_details}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="LOW",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
 
-    return False
+        # Notificar al distribuidor si tiene usuario asociado
+        distributor_user = _get_distributor_user(order.distributor)
+        if distributor_user:
+            create_notification(
+                user=distributor_user,
+                notification_type="ORDER_DELIVERED",
+                title=f"Orden entregada: {order.name}",
+                message=f"Tu orden {order.name} fue entregada exitosamente al cliente {order.customer_name}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="MEDIUM",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+    elif new_status == "Issue":
+        # Orden con incidencia - alta prioridad para ventas
+        issue_notes = order.issue_notes or "Sin detalles especificados"
+        for user_row in sales_users:
+            create_notification(
+                user=user_row.parent,
+                notification_type="ORDER_STATUS",
+                title=f"Incidencia en orden: {order.name}",
+                message=f"La orden {order.name} tiene una incidencia. Notas: {issue_notes}. {order_details}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="HIGH",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+        # Notificar al distribuidor
+        distributor_user = _get_distributor_user(order.distributor)
+        if distributor_user:
+            create_notification(
+                user=distributor_user,
+                notification_type="ORDER_STATUS",
+                title=f"Incidencia en orden: {order.name}",
+                message=f"Tu orden {order.name} tiene una incidencia. Notas: {issue_notes}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="HIGH",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+    elif new_status == "Cancelled":
+        # Orden cancelada - notificar a ventas y distribuidor
+        for user_row in sales_users:
+            create_notification(
+                user=user_row.parent,
+                notification_type="ORDER_STATUS",
+                title=f"Orden cancelada: {order.name}",
+                message=f"La orden {order.name} fue cancelada. {order_details}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="MEDIUM",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+        # Notificar al distribuidor
+        distributor_user = _get_distributor_user(order.distributor)
+        if distributor_user:
+            create_notification(
+                user=distributor_user,
+                notification_type="ORDER_STATUS",
+                title=f"Orden cancelada: {order.name}",
+                message=f"Tu orden {order.name} fue cancelada",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="MEDIUM",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+    elif new_status == "In Progress":
+        # Orden en progreso - notificar solo al distribuidor (info)
+        distributor_user = _get_distributor_user(order.distributor)
+        if distributor_user:
+            create_notification(
+                user=distributor_user,
+                notification_type="ORDER_STATUS",
+                title=f"Orden en progreso: {order.name}",
+                message=f"Tu orden {order.name} está en progreso. Entrega esperada: {order.expected_delivery_date or 'No especificada'}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="LOW",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+    elif new_status == "Pending" and old_status:
+        # Cambio a Pending desde otro estado (regresión) - notificar a ventas
+        for user_row in sales_users:
+            create_notification(
+                user=user_row.parent,
+                notification_type="ORDER_STATUS",
+                title=f"Orden regresó a pendiente: {order.name}",
+                message=f"La orden {order.name} cambió de {old_label} a {new_label}. {order_details}",
+                reference_doctype="Distributor Sell Out Order",
+                reference_name=order_id,
+                priority="MEDIUM",
+                action_url=f"/app/distributor-sell-out-order/{order_id}"
+            )
+
+
+def _get_distributor_user(distributor_name):
+    """
+    Helper para encontrar el usuario de Frappe asociado con un distribuidor (Customer).
+
+    Args:
+        distributor_name: Nombre del distribuidor (Customer)
+
+    Returns:
+        str: Email del usuario si existe, None si no hay usuario asociado
+    """
+    if not distributor_name:
+        return None
+
+    try:
+        # Buscar Portal Users asociados al Customer
+        # En Frappe, los Customers pueden tener usuarios asociados via Dynamic Links
+        links = frappe.get_all("Dynamic Link",
+            filters={
+                "link_doctype": "Customer",
+                "link_name": distributor_name,
+                "parenttype": "Contact"
+            },
+            fields=["parent"])
+
+        if not links:
+            return None
+
+        # Obtener el email del primer contacto encontrado
+        for link in links:
+            contact = frappe.get_doc("Contact", link.parent)
+            if contact.email_ids and len(contact.email_ids) > 0:
+                email = contact.email_ids[0].email_id
+                # Verificar que el email corresponde a un usuario activo
+                if frappe.db.exists("User", {"email": email, "enabled": 1}):
+                    return email
+
+        return None
+    except Exception as e:
+        frappe.log_error(f"Error finding user for distributor {distributor_name}: {e}")
+        return None

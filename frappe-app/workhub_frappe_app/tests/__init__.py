@@ -1,1 +1,2 @@
-# Tests package
+# Copyright (c) 2026, Santa Brisa and contributors
+# For license information, please see license.txt

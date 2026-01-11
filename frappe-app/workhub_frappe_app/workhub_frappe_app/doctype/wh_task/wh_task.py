@@ -9,13 +9,15 @@ from frappe.utils import nowdate, now_datetime, getdate, add_days, date_diff
 class WHTask(Document):
     def before_save(self):
         self.handle_status_change()
+        self.handle_assignment_change()
         self.handle_worked_today()
         self.set_defaults()
 
     def on_update(self):
         self.update_project_kpis()
         self.propagate_to_successors()
-        self.record_completion_for_ai()
+        self.send_assignment_notifications()
+        self.send_status_change_notifications()
 
     def set_defaults(self):
         """Establece valores por defecto"""
@@ -33,9 +35,17 @@ class WHTask(Document):
             self.is_inbox = 1
 
     def handle_status_change(self):
-        """Maneja cambios de estado - registra fechas reales"""
+        """Maneja cambios de estado - registra fechas reales y prepara notificaciones"""
         if not self.is_new():
             old_status = frappe.db.get_value("WH Task", self.name, "status")
+
+            # Guardar valores para notificaciones en on_update
+            if old_status != self.status:
+                self._status_changed = True
+                self._old_status = old_status
+                self._new_status = self.status
+            else:
+                self._status_changed = False
 
             # Cambio a DOING -> registrar inicio real
             if old_status != "DOING" and self.status == "DOING":
@@ -46,6 +56,70 @@ class WHTask(Document):
             if old_status != "DONE" and self.status == "DONE":
                 if not self.actual_end:
                     self.actual_end = now_datetime()
+        else:
+            self._status_changed = False
+
+    def handle_assignment_change(self):
+        """Detecta cambios en assigned_to para notificaciones posteriores"""
+        if not self.is_new():
+            old_assigned_to = frappe.db.get_value("WH Task", self.name, "assigned_to")
+
+            # Guardar valores para notificaciones en on_update
+            if old_assigned_to != self.assigned_to:
+                self._assignment_changed = True
+                self._old_assigned_to = old_assigned_to
+                self._new_assigned_to = self.assigned_to
+            else:
+                self._assignment_changed = False
+        else:
+            # Nueva tarea - marcar para notificar al asignado inicial
+            if self.assigned_to:
+                self._assignment_changed = True
+                self._old_assigned_to = None
+                self._new_assigned_to = self.assigned_to
+            else:
+                self._assignment_changed = False
+
+    def send_assignment_notifications(self):
+        """Envía notificaciones cuando cambia assigned_to"""
+        if not getattr(self, '_assignment_changed', False):
+            return
+
+        from workhub_frappe_app.api.notifications import notify_task_assigned, create_notification
+
+        old_assignee = getattr(self, '_old_assigned_to', None)
+        new_assignee = getattr(self, '_new_assigned_to', None)
+
+        # Notificar al nuevo asignado
+        if new_assignee:
+            assigned_by = frappe.session.user if frappe.session.user != new_assignee else None
+            notify_task_assigned(self.name, new_assignee, assigned_by)
+
+        # Notificar al asignado anterior que la tarea fue reasignada
+        if old_assignee and old_assignee != new_assignee:
+            create_notification(
+                user=old_assignee,
+                notification_type="TASK_ASSIGNED",
+                title=f"Tarea reasignada: {self.title}",
+                message=f"La tarea '{self.title}' fue reasignada a {new_assignee or 'otro usuario'}",
+                reference_doctype="WH Task",
+                reference_name=self.name,
+                priority="LOW"
+            )
+
+    def send_status_change_notifications(self):
+        """Envía notificaciones cuando cambia el status"""
+        if not getattr(self, '_status_changed', False):
+            return
+
+        from workhub_frappe_app.api.notifications import notify_task_status_changed
+
+        old_status = getattr(self, '_old_status', None)
+        new_status = getattr(self, '_new_status', None)
+
+        # Llamar a la función de notificación de cambio de estado
+        if old_status and new_status:
+            notify_task_status_changed(self.name, old_status, new_status)
 
     def handle_worked_today(self):
         """Si se marca 'trabaje hoy', agregar entrada al log"""
@@ -128,24 +202,6 @@ class WHTask(Document):
             except Exception:
                 # Si falla una propagacion, continuar con las demas
                 pass
-
-    def record_completion_for_ai(self):
-        """Registra duracion real cuando tarea se completa para estimaciones AI"""
-        if not self.is_new() and self.status == "DONE":
-            old_status = frappe.db.get_value("WH Task", self.name, "status")
-
-            # Solo procesar si acabamos de cambiar a DONE
-            if old_status != "DONE" and self.actual_start and self.actual_end:
-                try:
-                    # Importar aqui para evitar dependencias circulares
-                    from workhub_frappe_app.services.ai_recommendations import record_task_completion
-                    record_task_completion(self)
-                except Exception as e:
-                    # No bloquear la operacion si falla el registro AI
-                    frappe.log_error(
-                        title="Error recording task completion for AI",
-                        message=f"Task: {self.name}\nError: {str(e)}"
-                    )
 
 
 @frappe.whitelist()
