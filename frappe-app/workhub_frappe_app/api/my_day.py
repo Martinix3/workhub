@@ -9,6 +9,15 @@ import json
 from workhub_frappe_app.api.utils import require_auth
 
 
+def _get_user_task_ids(user):
+    """Get task IDs where user is assigned (any role)"""
+    task_ids = frappe.get_all("WH Task Assignee",
+        filters={"user": user},
+        pluck="parent"
+    )
+    return task_ids if task_ids else []
+
+
 @frappe.whitelist()
 def get_my_day():
     """Get personalized daily view - TDAH optimized"""
@@ -16,10 +25,25 @@ def get_my_day():
     user = frappe.session.user
     today = nowdate()
 
+    # Get all task IDs where user is assigned (any role)
+    my_task_ids = _get_user_task_ids(user)
+
+    if not my_task_ids:
+        # User has no assigned tasks
+        return {
+            "summary": {"today_count": 0, "overdue_count": 0, "blocked_count": 0, "inbox_count": 0},
+            "today": [],
+            "overdue": [],
+            "upcoming": [],
+            "blocked": [],
+            "blocking_others": [],
+            "inbox": []
+        }
+
     # Tareas para HOY (DOING o NEXT con due_date hoy)
     today_tasks = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "status": ["in", ["DOING", "NEXT"]],
             "due_date": today
         },
@@ -29,7 +53,7 @@ def get_my_day():
     # Vencidas (due_date pasada, no completadas)
     overdue = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "status": ["not in", ["DONE"]],
             "due_date": ["<", today]
         },
@@ -40,7 +64,7 @@ def get_my_day():
     # Proximos 3 dias
     upcoming = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "status": ["not in", ["DONE"]],
             "due_date": ["between", [add_days(today, 1), add_days(today, 3)]]
         },
@@ -51,7 +75,7 @@ def get_my_day():
     # Mis bloqueadas
     blocked = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "status": "BLOCKED"
         },
         fields=["name", "title", "priority", "project", "blocked_reason"],
@@ -59,14 +83,14 @@ def get_my_day():
         limit=5)
 
     # Tareas que bloqueo a otros (soy predecessor de algo que espera)
-    my_task_ids = frappe.get_all("WH Task",
-        filters={"assigned_to": user, "status": ["not in", ["DONE"]]},
+    my_non_done_task_ids = frappe.get_all("WH Task",
+        filters={"name": ["in", my_task_ids], "status": ["not in", ["DONE"]]},
         pluck="name")
 
     blocking_others = []
-    if my_task_ids:
+    if my_non_done_task_ids:
         blocking_deps = frappe.get_all("WH Task Dependency",
-            filters={"predecessor": ["in", my_task_ids], "is_active": 1},
+            filters={"predecessor": ["in", my_non_done_task_ids], "is_active": 1},
             fields=["predecessor", "successor"])
 
         for dep in blocking_deps:
@@ -85,7 +109,7 @@ def get_my_day():
     # Inbox (tareas sueltas)
     inbox = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "is_inbox": 1,
             "status": ["not in", ["DONE"]]
         },
@@ -118,9 +142,15 @@ def get_inbox():
     require_auth()
     user = frappe.session.user
 
+    # Get all task IDs where user is assigned (any role)
+    my_task_ids = _get_user_task_ids(user)
+
+    if not my_task_ids:
+        return []
+
     return frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "is_inbox": 1,
             "status": ["not in", ["DONE"]]
         },
@@ -139,9 +169,19 @@ def get_week_view():
     start_of_week = today - __import__('datetime').timedelta(days=today.weekday())
     end_of_week = start_of_week + __import__('datetime').timedelta(days=6)
 
+    # Get all task IDs where user is assigned (any role)
+    my_task_ids = _get_user_task_ids(user)
+
+    if not my_task_ids:
+        return {
+            "start_of_week": str(start_of_week),
+            "end_of_week": str(end_of_week),
+            "days": {}
+        }
+
     tasks = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "status": ["not in", ["DONE"]],
             "due_date": ["between", [str(start_of_week), str(end_of_week)]]
         },
@@ -198,6 +238,12 @@ def get_focus_mode():
     require_auth()
     user = frappe.session.user
 
+    # Get all task IDs where user is assigned (any role)
+    my_task_ids = _get_user_task_ids(user)
+
+    if not my_task_ids:
+        return {"focus_task": None, "reason": "No hay tareas pendientes"}
+
     # Priority order:
     # 1. DOING tasks (already started)
     # 2. P0 NEXT tasks
@@ -206,7 +252,7 @@ def get_focus_mode():
 
     # Check for DOING first
     doing = frappe.get_all("WH Task",
-        filters={"assigned_to": user, "status": "DOING"},
+        filters={"name": ["in", my_task_ids], "status": "DOING"},
         fields=["name", "title", "priority", "project", "due_date"],
         order_by="priority asc",
         limit=1)
@@ -216,7 +262,7 @@ def get_focus_mode():
 
     # P0 NEXT
     p0_next = frappe.get_all("WH Task",
-        filters={"assigned_to": user, "status": "NEXT", "priority": "P0"},
+        filters={"name": ["in", my_task_ids], "status": "NEXT", "priority": "P0"},
         fields=["name", "title", "priority", "project", "due_date"],
         limit=1)
 
@@ -227,7 +273,7 @@ def get_focus_mode():
     today = nowdate()
     overdue = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "status": ["not in", ["DONE"]],
             "due_date": ["<", today]
         },
@@ -241,7 +287,7 @@ def get_focus_mode():
     # Today's task
     today_task = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", my_task_ids],
             "status": "NEXT",
             "due_date": today
         },
@@ -254,7 +300,7 @@ def get_focus_mode():
 
     # Any NEXT task
     any_next = frappe.get_all("WH Task",
-        filters={"assigned_to": user, "status": "NEXT"},
+        filters={"name": ["in", my_task_ids], "status": "NEXT"},
         fields=["name", "title", "priority", "project", "due_date"],
         order_by="priority asc, due_date asc",
         limit=1)
