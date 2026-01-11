@@ -77,6 +77,20 @@ export function AppShell({
           </button>
         </div>
 
+        {/* Desktop Search Button */}
+        <div className="hidden lg:block px-4 py-3 border-b border-slate-700">
+          <button
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-300 bg-slate-700/50 hover:bg-slate-700 rounded transition-colors"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search size={16} />
+            <span className="flex-1 text-left">Buscar...</span>
+            <kbd className="px-2 py-1 text-xs font-mono bg-slate-800 border border-slate-600 rounded">
+              {isMac ? '⌘K' : 'Ctrl+K'}
+            </kbd>
+          </button>
+        </div>
+
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-4">
           <MainNav
