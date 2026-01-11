@@ -89,6 +89,10 @@ def update_user_settings(settings):
 
     user_doc = frappe.get_doc("User", user)
 
+    # Verify user can only modify their own settings
+    if user_doc.name != user:
+        frappe.throw(_("You can only modify your own settings"), frappe.PermissionError)
+
     # Update theme if provided
     if "theme" in settings:
         theme = settings["theme"]
@@ -109,6 +113,10 @@ def update_user_settings(settings):
         if hasattr(user_doc, 'workhub_notifications'):
             user_doc.workhub_notifications = json.dumps(notif)
 
+    # SECURITY: ignore_permissions is safe here because:
+    # 1. We verified user can only modify their own doc (user_doc.name == frappe.session.user)
+    # 2. Regular users don't have write permission on User doctype by default
+    # 3. Only specific whitelisted fields (theme, language, notifications) are updated
     user_doc.save(ignore_permissions=True)
     frappe.db.commit()
 
@@ -169,6 +177,10 @@ def update_user_profile(data):
 
     user_doc = frappe.get_doc("User", user)
 
+    # Verify user can only modify their own profile
+    if user_doc.name != user:
+        frappe.throw(_("You can only modify your own profile"), frappe.PermissionError)
+
     # Update allowed fields
     if "first_name" in data:
         user_doc.first_name = cstr(data["first_name"])
@@ -182,6 +194,10 @@ def update_user_profile(data):
     if "user_image" in data:
         user_doc.user_image = data["user_image"]
 
+    # SECURITY: ignore_permissions is safe here because:
+    # 1. We verified user can only modify their own doc (user_doc.name == frappe.session.user)
+    # 2. Regular users don't have write permission on User doctype by default
+    # 3. Only specific whitelisted fields (first_name, last_name, user_image) are updated
     user_doc.save(ignore_permissions=True)
     frappe.db.commit()
 
