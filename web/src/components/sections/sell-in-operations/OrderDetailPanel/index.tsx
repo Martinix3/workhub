@@ -6,7 +6,7 @@ import {
 import { SidePanel } from '../../../ui/SidePanel'
 import type { OrderDetailPanelProps, OrderDetail, SalesType } from './types'
 import type { OrderItem } from '../types'
-import { useOrderDetail, useUpdateOrder } from '../../../../api/hooks/useSalesData'
+import { useOrderDetail, useUpdateOrder, useCancelOrder } from '../../../../api/hooks/useSalesData'
 
 // Status configuration
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -87,6 +87,9 @@ export function OrderDetailPanel({
   // Update order mutation hook
   const { updateOrder, loading: isSaving, error: saveError } = useUpdateOrder()
 
+  // Cancel order mutation hook
+  const { cancelOrder, loading: isCancelling, error: cancelError } = useCancelOrder()
+
   // Update local state when hook data changes
   useEffect(() => {
     if (orderData) {
@@ -161,11 +164,18 @@ export function OrderDetailPanel({
     // Error handling is managed by the hook and displayed in UI
   }
 
-  const handleCancelOrder = () => {
+  const handleCancelOrder = async () => {
     if (!order) return
     if (confirm('¿Estás seguro de cancelar este pedido?')) {
-      onCancelOrder?.(order.id)
-      onClose()
+      // Call API to cancel order
+      const result = await cancelOrder(order.id)
+
+      if (result && result.success) {
+        // Cancellation succeeded - refresh parent list and close panel
+        onCancelOrder?.(order.id)
+        onClose()
+      }
+      // Error handling is managed by the hook and displayed in UI
     }
   }
 
@@ -233,6 +243,12 @@ export function OrderDetailPanel({
               <div className="flex items-center gap-2 text-red-600 mt-2">
                 <X size={14} />
                 <span className="text-xs font-medium">Error al guardar: {saveError.message}</span>
+              </div>
+            )}
+            {cancelError && (
+              <div className="flex items-center gap-2 text-red-600 mt-2">
+                <X size={14} />
+                <span className="text-xs font-medium">Error al cancelar: {cancelError.message}</span>
               </div>
             )}
           </div>
@@ -474,16 +490,22 @@ export function OrderDetailPanel({
                   <button
                     type="button"
                     onClick={handleCancelOrder}
+                    disabled={isCancelling}
                     className="
                       inline-flex items-center gap-2 px-4 py-2
                       text-red-600 hover:text-red-700 dark:text-red-400
                       text-sm font-medium
                       hover:bg-red-50 dark:hover:bg-red-900/20
                       transition-colors
+                      disabled:opacity-50 disabled:cursor-not-allowed
                     "
                   >
-                    <X size={16} />
-                    Cancelar Pedido
+                    {isCancelling ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <X size={16} />
+                    )}
+                    {isCancelling ? 'Cancelando...' : 'Cancelar Pedido'}
                   </button>
                 )}
               </div>
