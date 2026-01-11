@@ -320,9 +320,13 @@ frappe.workhub.sidebar = {
     },
 
     getModuleBadgeCount(moduleId) {
-        // TODO: Conectar con sistema de alertas real
+        // Conectar con sistema de alertas real
         if (moduleId === 'alertas') {
-            return 5; // Mock data
+            // Obtener contador del modulo de notificaciones
+            if (frappe.workhub.notifications && frappe.workhub.notifications.unreadCount > 0) {
+                return frappe.workhub.notifications.unreadCount;
+            }
+            return null; // Ocultar badge si count es 0
         }
         return null;
     },
@@ -469,6 +473,43 @@ frappe.workhub.sidebar = {
         }
     },
 
+    /**
+     * Actualizar badge de un modulo especifico sin re-renderizar todo
+     * @param {string} moduleId - ID del modulo (ej: 'alertas')
+     * @param {number} count - Numero a mostrar en el badge (null para ocultar)
+     */
+    updateBadgeCount(moduleId, count) {
+        const navItem = document.querySelector(`[data-module-id="${moduleId}"]`);
+        if (!navItem) return;
+
+        // Buscar badge existente o el lugar donde deberia ir
+        let badge = navItem.querySelector('.wh-nav-item-badge');
+
+        if (count && count > 0) {
+            // Crear badge si no existe
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'wh-nav-item-badge';
+
+                // Insertar antes del chevron (si existe) o al final del label
+                const chevron = navItem.querySelector('.wh-nav-item-chevron');
+                if (chevron) {
+                    navItem.insertBefore(badge, chevron);
+                } else {
+                    navItem.appendChild(badge);
+                }
+            }
+            // Actualizar contenido del badge
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = '';
+        } else {
+            // Ocultar o eliminar badge si count es 0 o null
+            if (badge) {
+                badge.remove();
+            }
+        }
+    },
+
     updateActivePath() {
         // Actualizar item activo según ruta actual
         document.querySelectorAll('.wh-nav-item').forEach(item => {
@@ -497,6 +538,317 @@ frappe.router.on('change', () => {
 });
 
 // ==========================================
+// NOTIFICATIONS MODULE
+// ==========================================
+frappe.workhub.notifications = {
+    /**
+     * Estado interno del modulo
+     */
+    notifications: [],
+    unreadCount: 0,
+    highPriorityCount: 0,
+    isInitialized: false,
+
+    /**
+     * Inicializar el modulo de notificaciones
+     * Carga notificaciones iniciales y configura listeners
+     */
+    init() {
+        if (this.isInitialized) return;
+
+        this.loadNotifications();
+        this.setupRealtimeListener();
+        this.isInitialized = true;
+    },
+
+    /**
+     * Cargar notificaciones del usuario actual
+     * @param {Object} options - Opciones de filtrado { unread_only, priority, limit }
+     */
+    loadNotifications(options = {}) {
+        const defaultOptions = {
+            unread_only: false,
+            priority: null,
+            limit: 50
+        };
+        const params = Object.assign({}, defaultOptions, options);
+
+        frappe.call({
+            method: 'workhub_frappe_app.api.notifications.get_notifications',
+            args: params,
+            callback: (r) => {
+                if (r.message) {
+                    this.notifications = r.message.notifications || [];
+                    this.unreadCount = r.message.unread_count || 0;
+                    this.updateBadge();
+                    this.renderNotificationsList();
+                }
+            }
+        });
+    },
+
+    /**
+     * Actualizar solo los contadores (optimizado para polling)
+     */
+    updateCounts() {
+        frappe.call({
+            method: 'workhub_frappe_app.api.notifications.get_unread_count',
+            callback: (r) => {
+                if (r.message) {
+                    this.unreadCount = r.message.unread_count || 0;
+                    this.highPriorityCount = r.message.high_priority_count || 0;
+                    this.updateBadge();
+                }
+            }
+        });
+    },
+
+    /**
+     * Actualizar el badge visual del header y del sidebar
+     */
+    updateBadge() {
+        // Actualizar badge del header
+        const badge = document.querySelector('.wh-notification-badge');
+        if (badge) {
+            if (this.unreadCount > 0) {
+                badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+                badge.style.display = 'flex';
+
+                // Agregar clase especial si hay notificaciones de alta prioridad
+                if (this.highPriorityCount > 0) {
+                    badge.classList.add('has-high-priority');
+                } else {
+                    badge.classList.remove('has-high-priority');
+                }
+            } else {
+                badge.style.display = 'none';
+                badge.classList.remove('has-high-priority');
+            }
+        }
+
+        // Actualizar badge del sidebar (Alertas)
+        if (frappe.workhub.sidebar && frappe.workhub.sidebar.updateBadgeCount) {
+            frappe.workhub.sidebar.updateBadgeCount('alertas', this.unreadCount);
+        }
+    },
+
+    /**
+     * Renderizar lista de notificaciones en el panel
+     */
+    renderNotificationsList() {
+        const list = document.querySelector('.wh-notifications-list');
+        if (!list) return;
+
+        // Limpiar
+        list.innerHTML = '';
+
+        if (!this.notifications || this.notifications.length === 0) {
+            list.innerHTML = '<div class="wh-notifications-empty">No tienes notificaciones</div>';
+            return;
+        }
+
+        // Renderizar cada notificacion
+        this.notifications.forEach(notif => {
+            this.addNotificationToList(notif, false);
+        });
+    },
+
+    /**
+     * Agregar una notificacion al panel
+     * @param {Object} notification - Datos de la notificacion
+     * @param {Boolean} prepend - Si debe agregarse al inicio (true) o al final (false)
+     */
+    addNotificationToList(notification, prepend = true) {
+        const list = document.querySelector('.wh-notifications-list');
+        if (!list) return;
+
+        // Remover mensaje vacio si existe
+        const empty = list.querySelector('.wh-notifications-empty');
+        if (empty) empty.remove();
+
+        // Crear elemento de notificacion
+        const item = document.createElement('div');
+        item.className = 'wh-notification-item';
+        item.dataset.notificationId = notification.name;
+
+        // Clases adicionales segun estado y prioridad
+        if (!notification.read) {
+            item.classList.add('unread');
+        }
+        if (notification.priority === 'HIGH') {
+            item.classList.add('high-priority');
+        }
+
+        // Icono segun prioridad
+        const priorityIcon = this.getPriorityIcon(notification.priority);
+
+        // Construir HTML
+        item.innerHTML = `
+            ${priorityIcon}
+            <div class="wh-notification-content">
+                <div class="wh-notification-title">${notification.title || 'Notificación'}</div>
+                <div class="wh-notification-message">${notification.message || ''}</div>
+                <div class="wh-notification-time">${frappe.datetime.comment_when(notification.created_at)}</div>
+            </div>
+        `;
+
+        // Click handler para marcar como leida y navegar
+        item.addEventListener('click', () => {
+            this.markAsRead(notification.name);
+
+            // Navegar si tiene action_url
+            if (notification.action_url) {
+                window.location.href = notification.action_url;
+            } else if (notification.reference_doctype && notification.reference_name) {
+                frappe.set_route('Form', notification.reference_doctype, notification.reference_name);
+            }
+        });
+
+        // Agregar al DOM
+        if (prepend) {
+            list.insertBefore(item, list.firstChild);
+        } else {
+            list.appendChild(item);
+        }
+    },
+
+    /**
+     * Obtener icono segun prioridad
+     * @param {String} priority - HIGH, MEDIUM, LOW
+     */
+    getPriorityIcon(priority) {
+        const icons = {
+            'HIGH': '<div class="wh-notification-priority high"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>',
+            'MEDIUM': '<div class="wh-notification-priority medium"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>',
+            'LOW': '<div class="wh-notification-priority low"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>'
+        };
+        return icons[priority] || icons['LOW'];
+    },
+
+    /**
+     * Marcar una notificacion como leida
+     * @param {String} notificationId - ID de la notificacion
+     */
+    markAsRead(notificationId) {
+        frappe.call({
+            method: 'workhub_frappe_app.api.notifications.mark_read',
+            args: { notification_id: notificationId },
+            callback: (r) => {
+                if (r.message && r.message.success) {
+                    // Actualizar UI
+                    const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (item) {
+                        item.classList.remove('unread');
+                        item.classList.remove('high-priority');
+                    }
+
+                    // Actualizar en array local para obtener prioridad
+                    const notif = this.notifications.find(n => n.name === notificationId);
+                    const wasHighPriority = notif && notif.priority === 'HIGH' && !notif.read;
+
+                    // Actualizar contador de no leidas
+                    if (this.unreadCount > 0) {
+                        this.unreadCount--;
+                    }
+
+                    // Actualizar contador de alta prioridad si era HIGH
+                    if (wasHighPriority && this.highPriorityCount > 0) {
+                        this.highPriorityCount--;
+                    }
+
+                    // Marcar como leida en array local
+                    if (notif) {
+                        notif.read = 1;
+                    }
+
+                    this.updateBadge();
+                }
+            }
+        });
+    },
+
+    /**
+     * Marcar todas las notificaciones como leidas
+     */
+    markAllAsRead() {
+        frappe.call({
+            method: 'workhub_frappe_app.api.notifications.mark_all_read',
+            callback: (r) => {
+                if (r.message && r.message.success) {
+                    // Actualizar UI
+                    document.querySelectorAll('.wh-notification-item.unread').forEach(item => {
+                        item.classList.remove('unread');
+                    });
+
+                    // Actualizar array local
+                    this.notifications.forEach(n => {
+                        n.read = 1;
+                    });
+
+                    this.unreadCount = 0;
+                    this.highPriorityCount = 0;
+                    this.updateBadge();
+                }
+            }
+        });
+    },
+
+    /**
+     * Configurar listener de eventos en tiempo real
+     * Escucha el evento 'wh_notification' publicado por el backend
+     */
+    setupRealtimeListener() {
+        // Escuchar nuevas notificaciones via Frappe realtime (socket.io)
+        frappe.realtime.on('wh_notification', (data) => {
+            // Validar que tenemos datos validos
+            if (!data || !data.name) {
+                console.warn('Received invalid notification data:', data);
+                return;
+            }
+
+            try {
+                // Agregar a array local (al inicio)
+                this.notifications.unshift(data);
+
+                // Incrementar contador si no esta leida
+                if (!data.read) {
+                    this.unreadCount++;
+                    if (data.priority === 'HIGH') {
+                        this.highPriorityCount++;
+                    }
+                }
+
+                // Actualizar UI inmediatamente
+                this.updateBadge();
+                this.addNotificationToList(data, true);
+
+                // Mostrar toast para notificaciones de alta prioridad
+                if (data.priority === 'HIGH') {
+                    this.showHighPriorityToast(data);
+                }
+            } catch (error) {
+                console.error('Error handling realtime notification:', error);
+                frappe.show_alert({
+                    message: __('Error al procesar notificación en tiempo real'),
+                    indicator: 'red'
+                }, 3);
+            }
+        });
+    },
+
+    /**
+     * Mostrar toast para notificaciones urgentes
+     * @param {Object} notification - Datos de la notificacion
+     */
+    showHighPriorityToast(notification) {
+        frappe.show_alert({
+            message: `<strong>${notification.title}</strong><br>${notification.message}`,
+            indicator: 'red'
+        }, 7);
+    }
+};
+
+// ==========================================
 // HEADER COMPONENT
 // ==========================================
 frappe.workhub.header = {
@@ -504,7 +856,11 @@ frappe.workhub.header = {
         this.render();
         this.attachEventListeners();
         this.updateBreadcrumbs();
-        this.setupRealtimeNotifications();
+
+        // Inicializar modulo de notificaciones
+        if (frappe.workhub.notifications) {
+            frappe.workhub.notifications.init();
+        }
     },
 
     render() {
@@ -727,7 +1083,9 @@ frappe.workhub.header = {
                     frappe.app.logout();
                     break;
                 case 'mark-all-read':
-                    this.markAllNotificationsRead();
+                    if (frappe.workhub.notifications) {
+                        frappe.workhub.notifications.markAllAsRead();
+                    }
                     break;
             }
         });
@@ -759,105 +1117,6 @@ frappe.workhub.header = {
 
         // Usar búsqueda nativa de Frappe
         frappe.searchdialog.search.init_search(query, 'Global Search');
-    },
-
-    setupRealtimeNotifications() {
-        // Obtener notificaciones iniciales
-        frappe.call({
-            method: 'frappe.desk.doctype.notification_log.notification_log.get_notification_logs',
-            args: {
-                limit: 20
-            },
-            callback: (r) => {
-                if (r.message) {
-                    // API returns {notification_logs: [...]} or direct array
-                    const notifications = r.message.notification_logs || r.message || [];
-                    this.loadNotifications(Array.isArray(notifications) ? notifications : []);
-                }
-            }
-        });
-
-        // Escuchar nuevas notificaciones
-        frappe.realtime.on('notification', (data) => {
-            this.addNotification(data);
-            this.updateNotificationCount(this.getUnreadCount() + 1);
-        });
-    },
-
-    loadNotifications(notifications) {
-        const list = document.querySelector('.wh-notifications-list');
-        if (!list) return;
-
-        // Limpiar
-        list.innerHTML = '';
-
-        if (!notifications || notifications.length === 0) {
-            list.innerHTML = '<div class="wh-notifications-empty">No tienes notificaciones</div>';
-            this.updateNotificationCount(0);
-            return;
-        }
-
-        // Renderizar notificaciones
-        notifications.forEach(notif => {
-            this.addNotification(notif, false);
-        });
-
-        // Actualizar count
-        const unreadCount = notifications.filter(n => !n.read).length;
-        this.updateNotificationCount(unreadCount);
-    },
-
-    addNotification(notification, prepend = true) {
-        const list = document.querySelector('.wh-notifications-list');
-        if (!list) return;
-
-        // Remove empty message
-        const empty = list.querySelector('.wh-notifications-empty');
-        if (empty) empty.remove();
-
-        // Add notification
-        const item = document.createElement('div');
-        item.className = 'wh-notification-item' + (notification.read ? '' : ' unread');
-        item.innerHTML = `
-            <div class="wh-notification-title">${notification.subject || 'Notificación'}</div>
-            <div class="wh-notification-message">${notification.email_content || notification.document_name || ''}</div>
-            <div class="wh-notification-time">${frappe.datetime.comment_when(notification.creation || new Date())}</div>
-        `;
-
-        if (prepend) {
-            list.insertBefore(item, list.firstChild);
-        } else {
-            list.appendChild(item);
-        }
-    },
-
-    getUnreadCount() {
-        const items = document.querySelectorAll('.wh-notification-item.unread');
-        return items.length;
-    },
-
-    updateNotificationCount(count) {
-        const badge = document.querySelector('.wh-notification-badge');
-        if (!badge) return;
-
-        if (count > 0) {
-            badge.textContent = count > 99 ? '99+' : count;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    },
-
-    markAllNotificationsRead() {
-        frappe.call({
-            method: 'frappe.desk.doctype.notification_log.notification_log.mark_all_as_read',
-            callback: () => {
-                document.querySelectorAll('.wh-notification-item.unread').forEach(item => {
-                    item.classList.remove('unread');
-                });
-                this.updateNotificationCount(0);
-            }
-        });
     }
 };
 

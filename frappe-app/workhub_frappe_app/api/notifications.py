@@ -10,22 +10,43 @@ from workhub_frappe_app.api.utils import require_auth
 
 
 @frappe.whitelist()
-def get_notifications(unread_only=False, limit=50):
-    """Obtener notificaciones del usuario actual"""
+def get_notifications(unread_only=False, priority=None, limit=50):
+    """Obtener notificaciones del usuario actual con filtrado opcional por prioridad"""
     require_auth()
     user = frappe.session.user
 
     filters = {"user": user}
     if unread_only:
         filters["read"] = 0
+    if priority:
+        filters["priority"] = priority
 
-    notifications = frappe.get_all("WH Notification",
-        filters=filters,
-        fields=["name", "type", "priority", "title", "message",
-                "reference_doctype", "reference_name", "action_url",
-                "read", "created_at"],
-        order_by="created_at desc",
-        limit_page_length=int(limit))
+    # Ordenar por prioridad (HIGH > MEDIUM > LOW) y luego por fecha
+    notifications = frappe.db.sql("""
+        SELECT name, type, priority, title, message,
+               reference_doctype, reference_name, action_url,
+               `read`, created_at
+        FROM `tabWH Notification`
+        WHERE user = %(user)s
+        {unread_filter}
+        {priority_filter}
+        ORDER BY
+            CASE priority
+                WHEN 'HIGH' THEN 1
+                WHEN 'MEDIUM' THEN 2
+                WHEN 'LOW' THEN 3
+                ELSE 4
+            END,
+            created_at DESC
+        LIMIT %(limit)s
+    """.format(
+        unread_filter="AND `read` = 0" if unread_only else "",
+        priority_filter="AND priority = %(priority)s" if priority else ""
+    ), {
+        "user": user,
+        "priority": priority,
+        "limit": int(limit)
+    }, as_dict=True)
 
     unread_count = frappe.db.count("WH Notification",
         {"user": user, "read": 0})
@@ -33,6 +54,56 @@ def get_notifications(unread_only=False, limit=50):
     return {
         "notifications": notifications,
         "unread_count": unread_count
+    }
+
+
+@frappe.whitelist()
+def get_unread_count():
+    """Obtener contadores de notificaciones no leidas (optimizado para polling)"""
+    require_auth()
+    user = frappe.session.user
+
+    # Total de notificaciones no leidas
+    unread_count = frappe.db.count("WH Notification",
+        {"user": user, "read": 0})
+
+    # Notificaciones no leidas de alta prioridad (HIGH)
+    high_priority_count = frappe.db.count("WH Notification",
+        {"user": user, "read": 0, "priority": "HIGH"})
+
+    return {
+        "unread_count": unread_count,
+        "high_priority_count": high_priority_count
+    }
+
+
+@frappe.whitelist()
+def get_high_priority_notifications(limit=20):
+    """Obtener solo notificaciones de alta prioridad (HIGH) para alertas urgentes"""
+    require_auth()
+    user = frappe.session.user
+
+    # Obtener notificaciones HIGH ordenadas por fecha
+    notifications = frappe.db.sql("""
+        SELECT name, type, priority, title, message,
+               reference_doctype, reference_name, action_url,
+               `read`, created_at
+        FROM `tabWH Notification`
+        WHERE user = %(user)s AND priority = 'HIGH'
+        ORDER BY created_at DESC
+        LIMIT %(limit)s
+    """, {
+        "user": user,
+        "limit": int(limit)
+    }, as_dict=True)
+
+    # Contar no leidas de alta prioridad
+    unread_high_priority = frappe.db.count("WH Notification",
+        {"user": user, "read": 0, "priority": "HIGH"})
+
+    return {
+        "notifications": notifications,
+        "unread_count": unread_high_priority
     }
 
 
@@ -293,6 +364,25 @@ def create_notification(user, notification_type, title, message, reference_docty
     doc.action_url = action_url
     doc.created_at = now_datetime()
     doc.insert(ignore_permissions=True)
+
+    # Publicar evento en tiempo real para el usuario
+    frappe.publish_realtime(
+        event="wh_notification",
+        message={
+            "name": doc.name,
+            "type": notification_type,
+            "title": title,
+            "message": message,
+            "priority": priority,
+            "reference_doctype": reference_doctype,
+            "reference_name": reference_name,
+            "action_url": action_url,
+            "created_at": doc.created_at,
+            "read": 0
+        },
+        user=user
+    )
+
     return doc.name
 
 
