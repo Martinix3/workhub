@@ -6,6 +6,7 @@ import { AuthProvider, useAuth, LoginPage, ProtectedRoute, RoleGuard } from './a
 import { LoadingState } from './components/ui/LoadingState'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SmartNotepadFAB } from './components/smart-notepad'
+import { useActiveNavigation } from './hooks/useActiveNavigation'
 
 // Lazy-loaded Page Components (code splitting)
 const CommandCenterPage = lazy(() => import('./pages/CommandCenterPage').then(m => ({ default: m.CommandCenterPage })))
@@ -53,8 +54,7 @@ const navigationSections: NavigationSection[] = [
   {
     label: 'Command Center',
     icon: <LayoutDashboard size={18} />,
-    href: '/',
-    isActive: true
+    href: '/'
   },
   {
     label: 'Tareas',
@@ -114,6 +114,9 @@ function AppContent() {
   const navigate = useNavigate()
   const { user, logout, loading } = useAuth()
 
+  // Compute active navigation states based on current route
+  const sectionsWithActiveStates = useActiveNavigation(navigationSections)
+
   const handleNavigate = (href: string) => {
     navigate(href)
   }
@@ -135,7 +138,7 @@ function AppContent() {
 
   return (
     <AppShell
-      navigationSections={navigationSections}
+      navigationSections={sectionsWithActiveStates}
       user={user}
       onNavigate={handleNavigate}
       onLogout={handleLogout}
