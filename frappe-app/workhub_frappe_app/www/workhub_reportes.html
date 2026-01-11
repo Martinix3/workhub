@@ -454,10 +454,14 @@
 }
 </style>
 
+<!-- Schedule Modal Styles -->
+<link rel="stylesheet" href="/assets/workhub_frappe_app/css/schedule_modal.css">
+
 {% endblock %}
 
 {% block script %}
 <script src="/assets/workhub_frappe_app/js/report_export_ui.js"></script>
+<script src="/assets/workhub_frappe_app/js/schedule_modal.js"></script>
 <script>
 let currentReportId = null;
 let currentReportTitle = null;
@@ -470,10 +474,16 @@ function showExportModal(reportId, reportTitle) {
 }
 
 function showScheduleModal(reportId, reportTitle) {
-	currentReportId = reportId;
-	currentReportTitle = reportTitle;
-	document.getElementById('schedule-report-title').textContent = reportTitle;
-	$('#scheduleModal').modal('show');
+	// Use the new schedule modal
+	if (frappe.workhub && frappe.workhub.scheduleModal) {
+		frappe.workhub.scheduleModal.create(reportId, reportTitle);
+	} else {
+		// Fallback to old behavior
+		currentReportId = reportId;
+		currentReportTitle = reportTitle;
+		document.getElementById('schedule-report-title').textContent = reportTitle;
+		$('#scheduleModal').modal('show');
+	}
 }
 
 function exportReport() {

@@ -385,9 +385,15 @@
 }
 </style>
 
+<!-- Schedule Modal Styles -->
+<link rel="stylesheet" href="/assets/workhub_frappe_app/css/schedule_modal.css">
+
 {% endblock %}
 
 {% block script %}
+<!-- Load Schedule Modal JS -->
+<script src="/assets/workhub_frappe_app/js/schedule_modal.js"></script>
+
 <script>
 // Frappe call wrapper for www pages
 if (!frappe.call) {
@@ -443,20 +449,95 @@ if (!frappe.show_alert) {
 
 // Crear nueva programación
 function createSchedule() {
-	frappe.show_alert({
-		message: 'Funcionalidad de creación de programación será implementada en subtask 8.2',
-		indicator: 'orange'
+	// Show modal to select report first
+	showReportSelectionDialog();
+}
+
+// Show report selection dialog
+function showReportSelectionDialog() {
+	// Create modal if it doesn't exist
+	if ($('#selectReportModal').length === 0) {
+		const modalHtml = `
+			<div class="modal fade" id="selectReportModal" tabindex="-1" role="dialog">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title">Seleccionar Reporte</h5>
+							<button type="button" class="close" data-dismiss="modal">
+								<span>&times;</span>
+							</button>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<label>Reporte a Programar *</label>
+								<select class="form-control" id="selectedReportId">
+									<option value="">Cargando reportes...</option>
+								</select>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+							<button type="button" class="btn btn-primary" id="confirmReportSelection">Continuar</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
+		$('body').append(modalHtml);
+
+		// Bind confirm button
+		$('#confirmReportSelection').on('click', function() {
+			const reportId = $('#selectedReportId').val();
+			const reportTitle = $('#selectedReportId option:selected').text();
+
+			if (!reportId) {
+				frappe.show_alert({message: 'Por favor selecciona un reporte', indicator: 'red'});
+				return;
+			}
+
+			$('#selectReportModal').modal('hide');
+
+			// Open schedule configuration modal
+			if (frappe.workhub && frappe.workhub.scheduleModal) {
+				frappe.workhub.scheduleModal.create(reportId, reportTitle);
+			}
+		});
+	}
+
+	// Load reports
+	frappe.call({
+		method: 'workhub_frappe_app.api.reports.get_reports',
+		args: {
+			filters: JSON.stringify({is_active: 1})
+		},
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				const reports = r.message.reports || [];
+				let options = '<option value="">-- Seleccionar Reporte --</option>';
+				reports.forEach(report => {
+					options += `<option value="${report.name}">${report.title}</option>`;
+				});
+				$('#selectedReportId').html(options);
+			}
+		},
+		error: function(err) {
+			frappe.show_alert({message: 'Error al cargar reportes', indicator: 'red'});
+		}
 	});
-	// TODO: Implementar en subtask 8.2 - modal de configuración de programación
+
+	$('#selectReportModal').modal('show');
 }
 
 // Editar programación
 function editSchedule(scheduleId) {
-	frappe.show_alert({
-		message: 'Funcionalidad de edición de programación será implementada en subtask 8.2',
-		indicator: 'orange'
-	});
-	// TODO: Implementar en subtask 8.2 - modal de configuración de programación
+	if (frappe.workhub && frappe.workhub.scheduleModal) {
+		frappe.workhub.scheduleModal.edit(scheduleId);
+	} else {
+		frappe.show_alert({
+			message: 'Error: Módulo de programación no disponible',
+			indicator: 'red'
+		});
+	}
 }
 
 // Ver historial de ejecuciones
@@ -478,7 +559,7 @@ function viewHistory(scheduleId, scheduleName) {
 		},
 		callback: function(r) {
 			if (r.message && r.message.success) {
-				renderHistory(r.message.history, r.message.stats, scheduleName);
+				renderHistory(r.message.history, r.message.statistics, scheduleName);
 			} else {
 				$('#history-content').html(`
 					<div class="alert alert-danger">Error al cargar el historial</div>
