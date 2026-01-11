@@ -23,11 +23,16 @@ export function AppShell({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
-  // Handle Cmd/Ctrl+K keyboard shortcut to toggle command palette
+  // Handle keyboard shortcuts for command palette
   const handleKeyboardShortcut = useCallback((e: KeyboardEvent) => {
+    // Cmd/Ctrl+K to toggle command palette
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault()
       setSearchOpen(prev => !prev)
+    }
+    // ESC to close command palette
+    if (e.key === 'Escape') {
+      setSearchOpen(false)
     }
   }, [])
 
