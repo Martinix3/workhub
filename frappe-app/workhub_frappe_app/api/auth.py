@@ -60,6 +60,12 @@ def generate_api_token():
     Generate or retrieve API token for the authenticated user.
     Called after OAuth to get a token for frontend API calls.
     Returns: { api_key, api_secret, token } where token = "api_key:api_secret"
+
+    SECURITY: Uses ignore_permissions=True when saving API keys (line 88)
+    - Part of OAuth authentication flow - user is already authenticated
+    - User modifying their OWN User document (api_key/api_secret fields only)
+    - Regular users lack write permission on User doctype by default
+    - Safe because it's self-modification of authentication credentials only
     """
     user = frappe.session.user
     if user == "Guest":
@@ -85,6 +91,7 @@ def generate_api_token():
 
         user_doc.api_key = api_key
         user_doc.api_secret = api_secret
+        # SECURITY: Safe - OAuth flow, user modifying own api_key/api_secret only
         user_doc.save(ignore_permissions=True)
         frappe.db.commit()
 

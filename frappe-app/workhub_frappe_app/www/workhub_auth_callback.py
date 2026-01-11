@@ -7,7 +7,16 @@ from frappe.utils.password import get_decrypted_password
 no_cache = 1
 
 def get_context(context):
-    """Generate API token for authenticated user and prepare redirect"""
+    """
+    Generate API token for authenticated user and prepare redirect.
+
+    SECURITY: Uses ignore_permissions=True when saving API keys (line 40)
+    - Part of OAuth callback flow - user is already authenticated via OAuth
+    - User modifying their OWN User document (api_key/api_secret fields only)
+    - Regular users lack write permission on User doctype by default
+    - Safe because it's self-modification of authentication credentials only
+    - Called automatically by Frappe after successful OAuth authentication
+    """
     user = frappe.session.user
     frontend_url = frappe.conf.get("workhub_frontend_url", "http://localhost:5177")
 
@@ -37,6 +46,7 @@ def get_context(context):
 
             user_doc.api_key = api_key
             user_doc.api_secret = api_secret
+            # SECURITY: Safe - OAuth callback, user modifying own api_key/api_secret only
             user_doc.save(ignore_permissions=True)
             frappe.db.commit()
 
