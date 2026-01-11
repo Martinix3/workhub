@@ -60,6 +60,17 @@
 			this.showCriticalPath = false;
 			this.savedScrollPosition = 0;
 
+			// Drag state
+			this.dragState = {
+				isDragging: false,
+				taskId: null,
+				startX: 0,
+				startLeft: 0,
+				columnOffset: 0,
+				originalTask: null,
+				previewElement: null
+			};
+
 			// Elements
 			this.elements = {
 				timeline: null,
@@ -466,6 +477,9 @@
 		const handleRight = document.createElement('div');
 		handleRight.className = 'gantt-task-bar__handle gantt-task-bar__handle--right';
 		bar.appendChild(handleRight);
+
+		// Add drag event listener to task bar (but not resize handles)
+		this._setupTaskBarDrag(bar, task);
 
 		return bar;
 	}
@@ -1351,9 +1365,261 @@
 	}
 
 	/**
+	 * Setup task bar dragging
+	 * @private
+	 */
+	_setupTaskBarDrag(barElement, task) {
+		// Store task reference on element
+		barElement._taskData = task;
+
+		// Add mousedown listener to the bar content (not the handles)
+		const content = barElement.querySelector('.gantt-task-bar__content');
+		if (content) {
+			content.addEventListener('mousedown', (e) => {
+				// Only left mouse button
+				if (e.button !== 0) return;
+
+				// Don't start drag if clicking on handles
+				if (e.target.closest('.gantt-task-bar__handle')) return;
+
+				e.preventDefault();
+				e.stopPropagation();
+
+				this._startDrag(barElement, task, e);
+			});
+		}
+	}
+
+	/**
+	 * Start drag operation
+	 * @private
+	 */
+	_startDrag(barElement, task, event) {
+		// Set drag state
+		this.dragState.isDragging = true;
+		this.dragState.taskId = task.name;
+		this.dragState.startX = event.clientX;
+		this.dragState.startLeft = parseFloat(barElement.style.left) || 0;
+		this.dragState.columnOffset = 0;
+		this.dragState.originalTask = { ...task };
+
+		// Add dragging class to bar
+		barElement.classList.add('gantt-task-bar--dragging');
+
+		// Create preview tooltip
+		this._createDragPreview(task);
+
+		// Add document-level event listeners
+		this._onDragMoveHandler = (e) => this._onDragMove(e, barElement, task);
+		this._onDragEndHandler = (e) => this._onDragEnd(e, barElement, task);
+
+		document.addEventListener('mousemove', this._onDragMoveHandler);
+		document.addEventListener('mouseup', this._onDragEndHandler);
+
+		// Prevent text selection during drag
+		document.body.style.userSelect = 'none';
+	}
+
+	/**
+	 * Handle drag move
+	 * @private
+	 */
+	_onDragMove(event, barElement, task) {
+		if (!this.dragState.isDragging) return;
+
+		event.preventDefault();
+
+		// Calculate movement distance
+		const deltaX = event.clientX - this.dragState.startX;
+
+		// Calculate new position
+		const columnWidth = this._getColumnWidth();
+		const newLeft = this.dragState.startLeft + deltaX;
+
+		// Snap to column boundaries
+		const columnOffset = Math.round(newLeft / columnWidth);
+		const snappedLeft = columnOffset * columnWidth;
+
+		// Update column offset if changed
+		if (this.dragState.columnOffset !== columnOffset) {
+			this.dragState.columnOffset = columnOffset;
+
+			// Calculate new dates
+			const { newStartDate, newDueDate } = this._calculateNewDatesFromDrag(task, columnOffset);
+
+			// Update preview tooltip
+			this._updateDragPreview(event, newStartDate, newDueDate);
+		}
+
+		// Update visual position (smooth, not snapped)
+		barElement.style.left = `${newLeft}px`;
+	}
+
+	/**
+	 * Handle drag end
+	 * @private
+	 */
+	_onDragEnd(event, barElement, task) {
+		if (!this.dragState.isDragging) return;
+
+		event.preventDefault();
+
+		// Remove event listeners
+		document.removeEventListener('mousemove', this._onDragMoveHandler);
+		document.removeEventListener('mouseup', this._onDragEndHandler);
+
+		// Restore user selection
+		document.body.style.userSelect = '';
+
+		// Remove dragging class
+		barElement.classList.remove('gantt-task-bar--dragging');
+
+		// Remove preview tooltip
+		this._removeDragPreview();
+
+		// Calculate final snapped position
+		const columnWidth = this._getColumnWidth();
+		const finalColumnOffset = this.dragState.columnOffset;
+
+		// If position changed, update task dates
+		if (finalColumnOffset !== 0) {
+			const { newStartDate, newDueDate } = this._calculateNewDatesFromDrag(task, finalColumnOffset);
+
+			// Update task data
+			task.start_date = this._formatDateForAPI(newStartDate);
+			task.due_date = this._formatDateForAPI(newDueDate);
+
+			// Re-render the chart to reflect changes
+			this.render();
+
+			// Emit event for external listeners (will be used in Phase 4.3 for API save)
+			this._emitEvent('taskDateChanged', {
+				taskId: task.name,
+				startDate: task.start_date,
+				dueDate: task.due_date,
+				originalStartDate: this.dragState.originalTask.start_date,
+				originalDueDate: this.dragState.originalTask.due_date
+			});
+		} else {
+			// No change, just snap back to original position
+			const position = this._calculateTaskBarPosition(task);
+			barElement.style.left = `${position.left}px`;
+		}
+
+		// Reset drag state
+		this.dragState.isDragging = false;
+		this.dragState.taskId = null;
+		this.dragState.startX = 0;
+		this.dragState.startLeft = 0;
+		this.dragState.columnOffset = 0;
+		this.dragState.originalTask = null;
+	}
+
+	/**
+	 * Calculate new dates from drag offset
+	 * @private
+	 */
+	_calculateNewDatesFromDrag(task, columnOffset) {
+		const startDate = this._parseDate(task.start_date);
+		const dueDate = this._parseDate(task.due_date);
+
+		if (!startDate || !dueDate) {
+			return { newStartDate: null, newDueDate: null };
+		}
+
+		// Calculate offset in days based on zoom level
+		let offsetDays = 0;
+		switch (this.currentZoom) {
+			case 'day':
+				offsetDays = columnOffset;
+				break;
+			case 'week':
+				offsetDays = columnOffset * 7;
+				break;
+			case 'month':
+				// Month offset is trickier, approximate with 30 days
+				offsetDays = columnOffset * 30;
+				break;
+			case 'quarter':
+				offsetDays = columnOffset * 90;
+				break;
+		}
+
+		// Create new dates maintaining duration
+		const newStartDate = new Date(startDate);
+		newStartDate.setDate(newStartDate.getDate() + offsetDays);
+
+		const newDueDate = new Date(dueDate);
+		newDueDate.setDate(newDueDate.getDate() + offsetDays);
+
+		return { newStartDate, newDueDate };
+	}
+
+	/**
+	 * Create drag preview tooltip
+	 * @private
+	 */
+	_createDragPreview(task) {
+		const preview = document.createElement('div');
+		preview.className = 'gantt-drag-preview';
+		preview.style.display = 'none'; // Initially hidden
+		this.dragState.previewElement = preview;
+		document.body.appendChild(preview);
+	}
+
+	/**
+	 * Update drag preview tooltip
+	 * @private
+	 */
+	_updateDragPreview(event, newStartDate, newDueDate) {
+		if (!this.dragState.previewElement) return;
+
+		// Format dates for display
+		const startStr = this._formatDate(this._formatDateForAPI(newStartDate));
+		const dueStr = this._formatDate(this._formatDateForAPI(newDueDate));
+
+		// Update content
+		this.dragState.previewElement.textContent = `${startStr} - ${dueStr}`;
+
+		// Position near cursor
+		this.dragState.previewElement.style.left = `${event.clientX + 15}px`;
+		this.dragState.previewElement.style.top = `${event.clientY - 10}px`;
+		this.dragState.previewElement.style.display = 'block';
+	}
+
+	/**
+	 * Remove drag preview tooltip
+	 * @private
+	 */
+	_removeDragPreview() {
+		if (this.dragState.previewElement && this.dragState.previewElement.parentNode) {
+			this.dragState.previewElement.parentNode.removeChild(this.dragState.previewElement);
+			this.dragState.previewElement = null;
+		}
+	}
+
+	/**
+	 * Format date for API (YYYY-MM-DD)
+	 * @private
+	 */
+	_formatDateForAPI(date) {
+		if (!date) return '';
+
+		const year = date.getFullYear();
+		const month = (date.getMonth() + 1).toString().padStart(2, '0');
+		const day = date.getDate().toString().padStart(2, '0');
+
+		return `${year}-${month}-${day}`;
+	}
+
+	/**
 	 * Destroy the component
 		 */
 		destroy() {
+			// Remove drag preview if exists
+			this._removeDragPreview();
+
+			// Clear container
 			this.container.innerHTML = '';
 			this.elements = {};
 		}
