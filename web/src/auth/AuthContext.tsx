@@ -30,6 +30,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 // Frappe backend URL - used in production OAuth flows
 export const FRAPPE_URL = import.meta.env.VITE_FRAPPE_URL || 'http://localhost:8000'
+// Authentication bypass - disabled by default for security
+const IS_BYPASS_ENABLED = import.meta.env.VITE_ENABLE_AUTH_BYPASS === 'true'
 
 // Provider props
 interface AuthProviderProps {
