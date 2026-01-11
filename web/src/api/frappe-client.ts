@@ -25,39 +25,12 @@ class FrappeClient {
     this.onAuthError = config.onAuthError
   }
 
-  // Get auth token from localStorage
-  private getAuthToken(): string | null {
-    return localStorage.getItem('frappe_auth_token')
-  }
-
-  // Set auth token in localStorage
-  setAuthToken(token: string): void {
-    localStorage.setItem('frappe_auth_token', token)
-  }
-
-  // Clear auth token
-  clearAuthToken(): void {
-    localStorage.removeItem('frappe_auth_token')
-  }
-
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!this.getAuthToken()
-  }
-
   // Build headers for API calls
   private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
+    return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     }
-
-    const token = this.getAuthToken()
-    if (token) {
-      headers['Authorization'] = `token ${token}`
-    }
-
-    return headers
   }
 
   // Generic API call method
@@ -76,7 +49,6 @@ class FrappeClient {
       })
 
       if (response.status === 401 || response.status === 403) {
-        this.clearAuthToken()
         this.onAuthError?.()
         throw new Error('Authentication required')
       }
@@ -137,7 +109,6 @@ class FrappeClient {
     })
 
     if (response.status === 401 || response.status === 403) {
-      this.clearAuthToken()
       this.onAuthError?.()
       throw new Error('Authentication required')
     }
@@ -165,7 +136,6 @@ class FrappeClient {
     })
 
     if (response.status === 401 || response.status === 403) {
-      this.clearAuthToken()
       this.onAuthError?.()
       throw new Error('Authentication required')
     }
@@ -198,7 +168,6 @@ class FrappeClient {
     })
 
     if (response.status === 401 || response.status === 403) {
-      this.clearAuthToken()
       this.onAuthError?.()
       throw new Error('Authentication required')
     }
@@ -222,7 +191,6 @@ class FrappeClient {
     })
 
     if (response.status === 401 || response.status === 403) {
-      this.clearAuthToken()
       this.onAuthError?.()
       throw new Error('Authentication required')
     }
@@ -275,11 +243,7 @@ class FrappeClient {
 
   // Logout
   async logout(): Promise<void> {
-    try {
-      await this.call('logout')
-    } finally {
-      this.clearAuthToken()
-    }
+    await this.call('logout')
   }
 }
 
