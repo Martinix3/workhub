@@ -101,11 +101,11 @@ export function useTaskMutations() {
     }
   }, [])
 
-  const changeStatus = useCallback(async (taskId: string, status: TaskStatus): Promise<Task | null> => {
+  const changeStatus = useCallback(async (taskId: string, status: TaskStatus, blockedReason?: string): Promise<Task | null> => {
     setLoading(true)
     setError(null)
     try {
-      return await tasksApi.changeStatus(taskId, status)
+      return await tasksApi.changeStatus(taskId, status, blockedReason)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to change status'))
       return null
@@ -198,7 +198,7 @@ export function useGantt(projectId: string): UseDataState<GanttData> & {
 // ============== Kanban Hook ==============
 
 export function useKanban(filters?: TaskFilters): UseDataState<KanbanColumn[]> & {
-  moveTask: (taskId: string, newStatus: TaskStatus) => Promise<void>
+  moveTask: (taskId: string, newStatus: TaskStatus, blockedReason?: string) => Promise<void>
 } {
   const [data, setData] = useState<KanbanColumn[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -235,9 +235,9 @@ export function useKanban(filters?: TaskFilters): UseDataState<KanbanColumn[]> &
     }
   }, [filtersKey])
 
-  const moveTask = useCallback(async (taskId: string, newStatus: TaskStatus) => {
+  const moveTask = useCallback(async (taskId: string, newStatus: TaskStatus, blockedReason?: string) => {
     try {
-      await tasksApi.changeStatus(taskId, newStatus)
+      await tasksApi.changeStatus(taskId, newStatus, blockedReason)
       // Optimistic update
       setData(prev => {
         if (!prev) return prev
@@ -275,6 +275,42 @@ export const useTaskKPIs = createDataHook<DashboardKPIs>({
   sampleData: sampleTaskKPIs,
   errorMessage: 'Failed to fetch KPIs'
 })
+
+// ============== Blocked Tasks Hook (Manager View) ==============
+
+export function useBlockedTasks(limit: number = 50, offset: number = 0): UseDataState<{
+  tasks: Task[]
+  total: number
+  limit: number
+  offset: number
+  has_more: boolean
+}> {
+  const [data, setData] = useState<{
+    tasks: Task[]
+    total: number
+    limit: number
+    offset: number
+    has_more: boolean
+  } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await tasksApi.getBlockedTasks(limit, offset)
+      setData(result)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch blocked tasks'))
+    } finally {
+      setLoading(false)
+    }
+  }, [limit, offset])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
 
 // ============== Combined Dashboard Hook ==============
 

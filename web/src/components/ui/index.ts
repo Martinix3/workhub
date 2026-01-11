@@ -2,4 +2,4 @@
 export { LoadingState, SkeletonCard, SkeletonKPIGrid, SkeletonTable } from './LoadingState'
 export { ErrorState, EmptyState } from './ErrorState'
 export { Modal } from './Modal'
-export { SidePanel } from './SidePanel'
+export { BlockedReasonModal } from './BlockedReasonModal'

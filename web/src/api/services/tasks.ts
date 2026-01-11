@@ -56,18 +56,11 @@ export const tasksApi = {
     })
   },
 
-  async changeStatus(taskId: string, status: TaskStatus): Promise<Task> {
+  async changeStatus(taskId: string, status: TaskStatus, blockedReason?: string): Promise<Task> {
     return frappe.call<Task>('workhub_frappe_app.api.tasks.change_status', {
       task_id: taskId,
-      status
-    })
-  },
-
-  async completeTask(taskId: string, notes?: string): Promise<Task> {
-    return frappe.call<Task>('workhub_frappe_app.api.tasks.change_status', {
-      task_id: taskId,
-      new_status: 'DONE',
-      completion_notes: notes
+      status,
+      blocked_reason: blockedReason
     })
   },
 
@@ -216,10 +209,18 @@ export const tasksApi = {
     })
   },
 
-  async exportKPIs(format: 'json' | 'csv', scope?: string): Promise<string | DashboardKPIs> {
-    return frappe.call('workhub_frappe_app.api.kpis.export_kpis', {
-      format,
-      scope
+  // ============== Manager ==============
+
+  async getBlockedTasks(limit: number = 50, offset: number = 0): Promise<{
+    tasks: Task[]
+    total: number
+    limit: number
+    offset: number
+    has_more: boolean
+  }> {
+    return frappe.call('workhub_frappe_app.api.manager.get_blocked_tasks', {
+      limit,
+      offset
     })
   }
 }

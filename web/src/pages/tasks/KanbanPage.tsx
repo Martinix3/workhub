@@ -1,11 +1,11 @@
 // Kanban Board Page - Enhanced with priority bars, avatars, drag effects, FAB
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, CheckCircle, Check, FileText } from 'lucide-react'
+import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useKanban, useTaskMutations } from '../../api'
-import { TaskCompletionModal } from '../../components/tasks/TaskCompletionModal'
+import { BlockedReasonModal } from '../../components/ui/BlockedReasonModal'
+import { useKanban, useTaskMutations, tasksApi } from '../../api'
 import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
 
 const columnConfig: Record<TaskStatus, { label: string; headerBg: string; bg: string; dropBg: string }> = {
@@ -43,14 +43,14 @@ export function KanbanPage() {
     searchParams.delete('project')
     setSearchParams(searchParams)
   }
-  const { quickAdd, completeTask } = useTaskMutations()
+  const { quickAdd } = useTaskMutations()
 
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
-  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null)
-  const [showCompletionModal, setShowCompletionModal] = useState(false)
+  const [blockModalOpen, setBlockModalOpen] = useState(false)
+  const [taskToBlock, setTaskToBlock] = useState<{ task: Task; targetStatus: TaskStatus } | null>(null)
 
   if (loading) {
     return <LoadingState message="Cargando tablero..." />
@@ -95,6 +95,14 @@ export function KanbanPage() {
 
   const handleDrop = async (status: TaskStatus) => {
     if (draggedTask && draggedTask.status !== status) {
+      // Intercept drops to BLOCKED column and show modal
+      if (status === 'BLOCKED') {
+        setTaskToBlock({ task: draggedTask, targetStatus: status })
+        setBlockModalOpen(true)
+        setDraggedTask(null)
+        setDragOverColumn(null)
+        return
+      }
       await moveTask(draggedTask.name, status)
     }
     setDraggedTask(null)
@@ -111,17 +119,17 @@ export function KanbanPage() {
     }
   }
 
-  const handleTaskComplete = (task: Task) => {
-    setTaskToComplete(task)
-    setShowCompletionModal(true)
+  const handleBlockConfirm = async (reason: string) => {
+    if (taskToBlock) {
+      await tasksApi.changeStatus(taskToBlock.task.name, taskToBlock.targetStatus, reason)
+      await refetch()
+      setTaskToBlock(null)
+    }
   }
 
-  const handleModalComplete = async (taskId: string, notes?: string) => {
-    await completeTask(taskId, notes)
-    // Refetch kanban data to update the UI
-    await refetch()
-    setShowCompletionModal(false)
-    setTaskToComplete(null)
+  const handleBlockCancel = () => {
+    setBlockModalOpen(false)
+    setTaskToBlock(null)
   }
 
   return (
@@ -229,7 +237,6 @@ export function KanbanPage() {
                       onDragStart={() => handleDragStart(task)}
                       onDragEnd={handleDragEnd}
                       onClick={() => navigate(`/tareas/tarea/${task.name}`)}
-                      onComplete={() => handleTaskComplete(task)}
                       isDragging={draggedTask?.name === task.name}
                     />
                   ))}
@@ -331,15 +338,12 @@ export function KanbanPage() {
         </div>
       )}
 
-      {/* Task Completion Modal */}
-      <TaskCompletionModal
-        isOpen={showCompletionModal}
-        onClose={() => {
-          setShowCompletionModal(false)
-          setTaskToComplete(null)
-        }}
-        task={taskToComplete}
-        onComplete={handleModalComplete}
+      {/* Blocked Reason Modal */}
+      <BlockedReasonModal
+        isOpen={blockModalOpen}
+        onClose={handleBlockCancel}
+        onConfirm={handleBlockConfirm}
+        taskName={taskToBlock?.task.title}
       />
     </div>
   )
@@ -350,11 +354,10 @@ interface TaskCardProps {
   onDragStart: () => void
   onDragEnd: () => void
   onClick: () => void
-  onComplete: () => void
   isDragging: boolean
 }
 
-function TaskCard({ task, onDragStart, onDragEnd, onClick, onComplete, isDragging }: TaskCardProps) {
+function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCardProps) {
   const priority = priorityConfig[task.priority]
   const isDone = task.status === 'DONE'
 
@@ -380,7 +383,6 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, onComplete, isDraggin
         border-2 border-stone-900
         cursor-grab active:cursor-grabbing
         transition-all duration-75
-        ${isDone ? 'opacity-60' : ''}
         ${isDragging
           ? 'opacity-50 rotate-2 shadow-[8px_8px_0_#1c1917]'
           : 'hover:shadow-[4px_4px_0_#1c1917]'
@@ -402,37 +404,9 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, onComplete, isDraggin
               <span className="text-[10px] text-stone-400 uppercase">{task.department}</span>
             )}
           </div>
-          <div className="flex items-center gap-1">
-            {task.status === 'BLOCKED' && (
-              <AlertTriangle size={14} className="text-red-500" />
-            )}
-            {isDone ? (
-              <div
-                className="
-                  w-5 h-5 flex items-center justify-center
-                  bg-green-500 border-2 border-stone-900
-                "
-                title="Tarea completada"
-              >
-                <Check size={12} className="text-white" />
-              </div>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onComplete()
-                }}
-                className="
-                  p-1 hover:bg-green-100
-                  text-stone-400 hover:text-green-600
-                  transition-colors rounded
-                "
-                title="Completar tarea"
-              >
-                <CheckCircle size={14} />
-              </button>
-            )}
-          </div>
+          {task.status === 'BLOCKED' && (
+            <AlertTriangle size={14} className="text-red-500" />
+          )}
         </div>
 
         {/* Title */}
@@ -489,14 +463,6 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, onComplete, isDraggin
           <div className="mt-2 flex items-center gap-1 text-xs text-amber-600">
             <Flag size={10} />
             <span>{task.total_work_days} días trabajados</span>
-          </div>
-        )}
-
-        {/* Completion notes indicator */}
-        {isDone && task.completion_notes && (
-          <div className="mt-2 flex items-center gap-1 text-xs text-green-600" title={task.completion_notes}>
-            <FileText size={10} />
-            <span className="truncate">Notas de cierre</span>
           </div>
         )}
       </div>

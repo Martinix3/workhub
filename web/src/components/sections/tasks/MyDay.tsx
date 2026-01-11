@@ -114,8 +114,8 @@ export function MyDay({
                 </button>
                 <button
                   onClick={() => {
-                    const reason = prompt('Por que esta bloqueada?')
-                    if (reason) onTaskBlock?.(focusedTask.name, reason)
+                    handleExitFocus()
+                    onChangeStatus?.(focusedTask.name, 'BLOCKED')
                   }}
                   className="
                     py-3 px-6

@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, Minus, CheckCircle } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { ExportKPIsButton } from '../../components/ui'
-import { useTaskDashboard } from '../../api'
-import { tasksApi } from '../../api/services/tasks'
-import { downloadJSON, downloadCSV } from '../../utils/download'
-import type { ProjectHealth } from '../../components/sections/tasks/types'
+import { useTaskDashboard, useBlockedTasks, useTaskMutations } from '../../api'
+import { BlockedTasksPanel } from '../../components/sections/tasks'
+import type { ProjectHealth, TaskStatus } from '../../components/sections/tasks/types'
 
 const healthConfig: Record<ProjectHealth, { bg: string; text: string }> = {
   GREEN: { bg: 'bg-emerald-400', text: 'text-emerald-600' },
@@ -18,23 +16,8 @@ const healthConfig: Record<ProjectHealth, { bg: string; text: string }> = {
 export function DashboardPage() {
   const navigate = useNavigate()
   const { kpis, projects, loading, error, refetch } = useTaskDashboard()
-
-  const handleExport = async (format: 'json' | 'csv') => {
-    try {
-      const data = await tasksApi.exportKPIs(format)
-      const timestamp = new Date().toISOString().split('T')[0]
-      const filename = `kpis-${timestamp}`
-
-      if (format === 'json') {
-        downloadJSON(data, filename)
-      } else {
-        downloadCSV(data as string, filename)
-      }
-    } catch (error) {
-      console.error('Failed to export KPIs:', error)
-      // TODO: Add toast notification for error
-    }
-  }
+  const { data: blockedTasksData, loading: blockedLoading, refetch: refetchBlocked } = useBlockedTasks()
+  const { changeStatus } = useTaskMutations()
 
   if (loading) {
     return <LoadingState message="Cargando dashboard..." />
@@ -52,25 +35,31 @@ export function DashboardPage() {
   }
 
   const projectsList = projects || []
+  const blockedTasks = blockedTasksData?.tasks || []
   const TrendIcon = kpis.team.trend === 'up' ? TrendingUp : kpis.team.trend === 'down' ? TrendingDown : Minus
   const trendColor = kpis.team.trend === 'up' ? 'text-emerald-500' : kpis.team.trend === 'down' ? 'text-red-500' : 'text-stone-500'
+
+  const handleUnblock = async (taskId: string, newStatus: 'NEXT' | 'DOING') => {
+    await changeStatus(taskId, newStatus as TaskStatus)
+    refetchBlocked()
+    refetch() // Refresh KPIs as well
+  }
+
+  const handleTaskClick = (taskId: string) => {
+    navigate(`/tareas/mis-tareas?task=${taskId}`)
+  }
 
   return (
     <div className="min-h-screen bg-stone-100">
       {/* Header */}
       <div className="border-b-2 border-stone-900 bg-white px-8 py-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="font-serif text-3xl font-bold text-stone-900">
-                KPIs Dashboard
-              </h1>
-              <p className="text-stone-500 mt-1 font-mono text-sm uppercase tracking-wider">
-                {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-            </div>
-            <ExportKPIsButton onExport={handleExport} />
-          </div>
+          <h1 className="font-serif text-3xl font-bold text-stone-900">
+            KPIs Dashboard
+          </h1>
+          <p className="text-stone-500 mt-1 font-mono text-sm uppercase tracking-wider">
+            {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
         </div>
       </div>
 
@@ -185,6 +174,14 @@ export function DashboardPage() {
 
           {/* Right Column - Lists */}
           <div className="space-y-6">
+            {/* Blocked Tasks Panel */}
+            <BlockedTasksPanel
+              tasks={blockedTasks}
+              onUnblock={handleUnblock}
+              onTaskClick={handleTaskClick}
+              loading={blockedLoading}
+            />
+
             {/* Projects at Risk */}
             <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] p-6">
               <h2 className="font-serif text-lg font-bold text-stone-900 mb-4 flex items-center gap-2 uppercase tracking-wider">
