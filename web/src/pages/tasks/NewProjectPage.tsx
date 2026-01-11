@@ -4,8 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Save, X, Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../auth'
 import { tasksApi } from '../../api/services/tasks'
-import { UserSelect } from '../../components/ui/UserSelect'
-import type { Department } from '../../components/sections/tasks/types'
+import { AssigneeSelector } from '../../components/ui/AssigneeSelector'
+import type { Department, TaskAssignee } from '../../components/sections/tasks/types'
 
 const departmentConfig: Record<Department, { bg: string; text: string; label: string }> = {
   SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Ventas' },
@@ -16,13 +16,13 @@ const departmentConfig: Record<Department, { bg: string; text: string; label: st
 interface SubtaskData {
   id: string
   title: string
-  assigned_to: string | null
+  assignees: TaskAssignee[]
 }
 
 interface TaskData {
   id: string
   title: string
-  assigned_to: string | null
+  assignees: TaskAssignee[]
   subtasks: SubtaskData[]
   expanded: boolean
 }
@@ -96,12 +96,19 @@ export function NewProjectPage() {
 
   // Task management functions
   const addTask = () => {
+    const defaultAssignees: TaskAssignee[] = user?.email ? [{
+      user: user.email,
+      role: 'Owner',
+      user_name: user.full_name || user.email,
+      user_email: user.email
+    }] : []
+
     setTasks(prev => [
       ...prev,
       {
         id: generateId(),
         title: '',
-        assigned_to: user?.email || null,
+        assignees: defaultAssignees,
         subtasks: [],
         expanded: true
       }
@@ -128,7 +135,7 @@ export function NewProjectPage() {
               {
                 id: generateId(),
                 title: '',
-                assigned_to: t.assigned_to // Inherit from parent
+                assignees: [...t.assignees] // Inherit from parent
               }
             ]
           }
@@ -215,7 +222,12 @@ export function NewProjectPage() {
           title: task.title.trim(),
           project: projectId,
           department: formData.department,
-          assigned_to: task.assigned_to || user?.email || '',
+          assignees: task.assignees.length > 0 ? task.assignees : (user?.email ? [{
+            user: user.email,
+            role: 'Owner',
+            user_name: user.full_name || user.email,
+            user_email: user.email
+          }] : []),
           status: 'BACKLOG',
           priority: 'P1'
         }) as unknown as { success: boolean; task_id: string }
@@ -228,7 +240,7 @@ export function NewProjectPage() {
             title: subtask.title.trim(),
             project: projectId,
             department: formData.department,
-            assigned_to: subtask.assigned_to || task.assigned_to || user?.email || '',
+            assignees: subtask.assignees.length > 0 ? subtask.assignees : task.assignees,
             parent_task: taskResult.task_id,
             status: 'BACKLOG',
             priority: 'P1'
@@ -385,41 +397,42 @@ export function NewProjectPage() {
                       className="border-2 border-stone-300 bg-stone-50"
                     >
                       {/* Task Row */}
-                      <div className="p-3 flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => toggleTaskExpanded(task.id)}
-                          className="text-stone-400 hover:text-stone-600"
-                        >
-                          {task.expanded ? (
-                            <ChevronDown size={18} />
-                          ) : (
-                            <ChevronRight size={18} />
-                          )}
-                        </button>
+                      <div className="p-3 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleTaskExpanded(task.id)}
+                            className="text-stone-400 hover:text-stone-600"
+                          >
+                            {task.expanded ? (
+                              <ChevronDown size={18} />
+                            ) : (
+                              <ChevronRight size={18} />
+                            )}
+                          </button>
 
-                        <input
-                          type="text"
-                          value={task.title}
-                          onChange={(e) => updateTask(task.id, { title: e.target.value })}
-                          placeholder="Nombre de la tarea"
-                          className="flex-1 px-3 py-2 border-2 border-stone-300 bg-white focus:border-stone-900 focus:outline-none text-sm"
+                          <input
+                            type="text"
+                            value={task.title}
+                            onChange={(e) => updateTask(task.id, { title: e.target.value })}
+                            placeholder="Nombre de la tarea"
+                            className="flex-1 px-3 py-2 border-2 border-stone-300 bg-white focus:border-stone-900 focus:outline-none text-sm"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => removeTask(task.id)}
+                            className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+
+                        {/* Assignees */}
+                        <AssigneeSelector
+                          value={task.assignees}
+                          onChange={(assignees) => updateTask(task.id, { assignees })}
                         />
-
-                        <UserSelect
-                          value={task.assigned_to}
-                          onChange={(email) => updateTask(task.id, { assigned_to: email })}
-                          placeholder="Asignar"
-                          className="w-44"
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() => removeTask(task.id)}
-                          className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
                       </div>
 
                       {/* Subtasks */}
@@ -428,34 +441,37 @@ export function NewProjectPage() {
                           {task.subtasks.map((subtask) => (
                             <div
                               key={subtask.id}
-                              className="px-3 py-2 flex items-center gap-3 border-b border-stone-200 last:border-b-0"
+                              className="px-3 py-3 space-y-3 border-b border-stone-200 last:border-b-0"
                             >
-                              <div className="w-6 flex justify-center">
-                                <span className="text-stone-300">└</span>
+                              <div className="flex items-center gap-3">
+                                <div className="w-6 flex justify-center">
+                                  <span className="text-stone-300">└</span>
+                                </div>
+
+                                <input
+                                  type="text"
+                                  value={subtask.title}
+                                  onChange={(e) => updateSubtask(task.id, subtask.id, { title: e.target.value })}
+                                  placeholder="Nombre de la subtarea"
+                                  className="flex-1 px-3 py-1.5 border border-stone-300 focus:border-stone-900 focus:outline-none text-sm"
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={() => removeSubtask(task.id, subtask.id)}
+                                  className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               </div>
 
-                              <input
-                                type="text"
-                                value={subtask.title}
-                                onChange={(e) => updateSubtask(task.id, subtask.id, { title: e.target.value })}
-                                placeholder="Nombre de la subtarea"
-                                className="flex-1 px-3 py-1.5 border border-stone-300 focus:border-stone-900 focus:outline-none text-sm"
-                              />
-
-                              <UserSelect
-                                value={subtask.assigned_to}
-                                onChange={(email) => updateSubtask(task.id, subtask.id, { assigned_to: email })}
-                                placeholder="Asignar"
-                                className="w-44"
-                              />
-
-                              <button
-                                type="button"
-                                onClick={() => removeSubtask(task.id, subtask.id)}
-                                className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              {/* Subtask Assignees */}
+                              <div className="ml-8">
+                                <AssigneeSelector
+                                  value={subtask.assignees}
+                                  onChange={(assignees) => updateSubtask(task.id, subtask.id, { assignees })}
+                                />
+                              </div>
                             </div>
                           ))}
 
