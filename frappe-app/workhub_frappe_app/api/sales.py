@@ -578,3 +578,78 @@ def _create_sell_out_order(data):
         "distributor_name": distributor_name,
         "message": f"Pedido asignado a {distributor_name}. El distribuidor entregará desde su stock."
     }
+
+
+@frappe.whitelist()
+def cancel_order(order_id):
+    """Cancel a Sales Order with proper validation and status updates"""
+    require_permission("Sales Order", "cancel")
+
+    if not order_id:
+        frappe.throw(_("Order ID is required"))
+
+    # Check if order exists
+    if not frappe.db.exists("Sales Order", order_id):
+        frappe.throw(_("Sales Order {0} does not exist").format(order_id))
+
+    # Get the order document
+    doc = frappe.get_doc("Sales Order", order_id)
+
+    # Validate order can be cancelled
+    if doc.docstatus == 2:
+        frappe.throw(_("Sales Order {0} is already cancelled").format(order_id))
+
+    # Check if order is in a cancellable state
+    # Only allow cancellation if not fully processed (delivered/billed)
+    non_cancellable_statuses = ["Completed", "Closed"]
+    if doc.status in non_cancellable_statuses:
+        frappe.throw(_("Sales Order {0} cannot be cancelled. Orders with status '{1}' cannot be cancelled.").format(order_id, doc.status))
+
+    # For draft orders (docstatus=0), we need to handle differently
+    if doc.docstatus == 0:
+        # Draft orders can be deleted but cannot be "cancelled" in Frappe terms
+        # We'll set docstatus to 2 (cancelled) directly for drafts
+        frappe.db.set_value("Sales Order", order_id, "docstatus", 2)
+        frappe.db.set_value("Sales Order", order_id, "status", "Cancelled")
+    else:
+        # Submitted orders (docstatus=1) use the cancel() method
+        doc.cancel()
+
+    # Commit the transaction
+    frappe.db.commit()
+
+    # Update related WorkLinks
+    _update_worklinks_for_cancelled_order(order_id)
+
+    # Get updated status
+    updated_status = frappe.db.get_value("Sales Order", order_id, "status")
+
+    return {
+        "success": True,
+        "order_id": order_id,
+        "status": updated_status,
+        "message": _("Sales Order {0} has been cancelled successfully").format(order_id)
+    }
+
+
+def _update_worklinks_for_cancelled_order(order_id):
+    """Update WorkLinks related to a cancelled Sales Order"""
+    # Find WorkLinks with source_doctype='Sales Order' and source_id matching the order
+    worklinks = frappe.get_list("WorkLink",
+        filters={
+            "source_doctype": "Sales Order",
+            "source_id": order_id
+        },
+        fields=["name"]
+    )
+
+    # Update each WorkLink to mark as DONE with CANCELLED state
+    for worklink in worklinks:
+        frappe.db.set_value("WorkLink", worklink.name, {
+            "status": "DONE",
+            "erp_state": "CANCELLED"
+        })
+
+    # Commit WorkLink updates
+    if worklinks:
+        frappe.db.commit()

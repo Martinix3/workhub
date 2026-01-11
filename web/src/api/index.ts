@@ -20,11 +20,12 @@ export {
   useSalesTrends,
   useSalesDashboard,
   useProducts,
-  useCreateOrder
+  useCreateOrder,
+  useCancelOrder
 } from './hooks/useSalesData'
 
 // Sales types
-export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem } from './services/sales'
+export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem, CancelOrderResponse } from './services/sales'
 
 // Command Center Hooks
 export {
