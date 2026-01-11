@@ -129,8 +129,7 @@ def get_orders(filters=None, limit=50, offset=0):
                 "actual_start_date", "actual_end_date", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="planned_start_date desc",
-        ignore_permissions=True
+        order_by="planned_start_date desc"
     )
 
     # React expects array directly, not {data: [...]}
