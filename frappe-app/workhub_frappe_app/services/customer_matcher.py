@@ -5,6 +5,8 @@ import frappe
 from frappe import _
 from difflib import SequenceMatcher
 
+from workhub_frappe_app.api.utils import sanitize_search_term
+
 
 def match_customer(name: str, threshold: float = 0.6) -> dict:
     """
@@ -150,7 +152,8 @@ def get_customer_options(search: str = "", limit: int = 20) -> list:
     filters = {"disabled": 0}
 
     if search:
-        filters["customer_name"] = ["like", f"%{search}%"]
+        sanitized_search = sanitize_search_term(search)
+        filters["customer_name"] = ["like", f"%{sanitized_search}%"]
 
     customers = frappe.get_all(
         "Customer",
