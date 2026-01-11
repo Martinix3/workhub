@@ -17,6 +17,7 @@ interface AuthContextType {
   error: string | null
   isAuthenticated: boolean
   isBypassMode: boolean
+  isBypassEnabled: boolean
   login: () => void
   logout: () => Promise<void>
   clearError: () => void
@@ -303,6 +304,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     error,
     isAuthenticated: !!user,
     isBypassMode,
+    isBypassEnabled: IS_BYPASS_ENABLED,
     login,
     logout,
     clearError,
