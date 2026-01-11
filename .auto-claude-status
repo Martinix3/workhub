@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "001-create-generic-data-hook-factory",
+  "spec": "042-suite-completo-de-pruebas-visuales-y-regression-te",
   "state": "building",
   "subtasks": {
-    "completed": 17,
-    "total": 18,
+    "completed": 3,
+    "total": 36,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Verification & Cleanup",
+    "current": "Setup & Configuration",
     "id": null,
-    "total": 3
+    "total": 6
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 19,
-    "started_at": "2026-01-10T20:25:53.759439"
+    "number": 4,
+    "started_at": "2026-01-11T22:30:54.214910"
   },
-  "last_update": "2026-01-10T21:02:44.156300"
+  "last_update": "2026-01-11T22:35:24.796001"
 }
