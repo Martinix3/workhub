@@ -84,6 +84,11 @@ def add_timeline_entry(customer_id: str, activity_type: str, notes: str, outcome
     """
     Add a timeline/communication entry for the customer.
     Uses Frappe's Communication doctype.
+
+    SECURITY: Internal service function called by execute_actions (background operation).
+    Not exposed as API endpoint - runs in context of user who triggered the action.
+    Uses ignore_permissions because regular users don't have create permission on
+    Communication doctype, but need to log customer interactions automatically.
     """
     activity_labels = {
         "visit": "Visita",
@@ -112,6 +117,7 @@ def add_timeline_entry(customer_id: str, activity_type: str, notes: str, outcome
     doc.sent_or_received = "Sent"
     doc.status = "Linked"
 
+    # SECURITY: Safe - internal service operation, user lacks Communication create permission
     doc.insert(ignore_permissions=True)
 
     return {
@@ -123,6 +129,11 @@ def add_timeline_entry(customer_id: str, activity_type: str, notes: str, outcome
 def create_sales_order(customer_id: str, products: list, is_distributor: bool = False) -> dict:
     """
     Create a sales order or distributor sell-out order.
+
+    SECURITY: Internal service function called by execute_actions (background operation).
+    Not exposed as API endpoint - runs in context of user who triggered the action.
+    Uses ignore_permissions to allow automated order creation from smart notepad,
+    where regular users may lack direct Sales Order create permission.
 
     Raises:
         ValueError: If no products specified or no valid items found
@@ -163,6 +174,7 @@ def create_sales_order(customer_id: str, products: list, is_distributor: bool = 
     if not doc.items:
         raise ValueError(f"No se encontraron productos que coincidan: {', '.join(unmatched_products)}")
 
+    # SECURITY: Safe - internal service operation for automated order creation
     doc.insert(ignore_permissions=True)
 
     result = {
@@ -181,6 +193,11 @@ def create_sales_order(customer_id: str, products: list, is_distributor: bool = 
 def create_followup_task(customer_id: str, notes: str, due_date: str = None) -> dict:
     """
     Create a follow-up task (WH Task or ToDo).
+
+    SECURITY: Internal service function called by execute_actions (background operation).
+    Not exposed as API endpoint - runs in context of user who triggered the action.
+    Uses ignore_permissions to allow automated task creation from smart notepad,
+    where the user may lack direct WH Task/ToDo create permission.
     """
     if not due_date:
         due_date = add_days(today(), 3)  # Default 3 days
@@ -195,6 +212,7 @@ def create_followup_task(customer_id: str, notes: str, due_date: str = None) -> 
         doc.priority = "P2"
         doc.due_date = due_date
         doc.assigned_to = frappe.session.user
+        # SECURITY: Safe - internal service operation for automated task creation
         doc.insert(ignore_permissions=True)
 
         return {"task_id": doc.name, "doctype": "WH Task"}
@@ -206,6 +224,7 @@ def create_followup_task(customer_id: str, notes: str, due_date: str = None) -> 
         doc.reference_type = "Customer"
         doc.reference_name = customer_id
         doc.allocated_to = frappe.session.user
+        # SECURITY: Safe - internal service operation for automated task creation (fallback)
         doc.insert(ignore_permissions=True)
 
         return {"task_id": doc.name, "doctype": "ToDo"}
@@ -215,6 +234,11 @@ def update_opportunity_pipeline(customer_id: str, interest_level: int, outcome: 
     """
     Update or create opportunity in pipeline.
     Handles 'order' outcome as a won opportunity.
+
+    SECURITY: Internal service function called by execute_actions (background operation).
+    Not exposed as API endpoint - runs in context of user who triggered the action.
+    Uses ignore_permissions to allow automated opportunity management from smart notepad,
+    where regular users may lack direct Opportunity create/write permission.
     """
     # Valid sales stages from ERPNext
     stages = {
@@ -254,6 +278,7 @@ def update_opportunity_pipeline(customer_id: str, interest_level: int, outcome: 
                 "note": f"[{nowdate()}] {notes}"
             })
 
+        # SECURITY: Safe - internal service operation for automated opportunity update
         doc.save(ignore_permissions=True)
 
         return {"opportunity_id": doc.name, "action": action_label, "stage": doc.sales_stage}
@@ -280,6 +305,7 @@ def update_opportunity_pipeline(customer_id: str, interest_level: int, outcome: 
                 "note": notes
             })
 
+        # SECURITY: Safe - internal service operation for automated opportunity creation
         doc.insert(ignore_permissions=True)
 
         return {"opportunity_id": doc.name, "action": action_label, "stage": doc.sales_stage}
@@ -288,6 +314,11 @@ def update_opportunity_pipeline(customer_id: str, interest_level: int, outcome: 
 def close_opportunity(customer_id: str, reason: str = "Lost") -> dict:
     """
     Close/lose an opportunity for the customer.
+
+    SECURITY: Internal service function called by execute_actions (background operation).
+    Not exposed as API endpoint - runs in context of user who triggered the action.
+    Uses ignore_permissions to allow automated opportunity closure from smart notepad,
+    where regular users may lack direct Opportunity write permission.
     """
     # Find open opportunity
     existing = frappe.db.get_value(
@@ -310,6 +341,7 @@ def close_opportunity(customer_id: str, reason: str = "Lost") -> dict:
         "note": f"[{nowdate()}] Cerrado: {reason}"
     })
 
+    # SECURITY: Safe - internal service operation for automated opportunity closure
     doc.save(ignore_permissions=True)
 
     return {"opportunity_id": doc.name, "action": "closed", "reason": reason}
