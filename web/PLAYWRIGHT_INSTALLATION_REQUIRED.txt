@@ -1,0 +1,97 @@
+================================================================================
+  PLAYWRIGHT BROWSER INSTALLATION REQUIRED - ACTION NEEDED
+================================================================================
+
+Subtask: subtask-1-1 (Install Playwright browsers with system dependencies)
+Status: WORKAROUND COMPLETED - USER ACTION REQUIRED
+Date: 2026-01-11
+
+BACKGROUND:
+-----------
+The Playwright E2E test infrastructure repair task requires installing Playwright
+browsers with system dependencies. Due to sandbox restrictions on package manager
+commands (npm, npx, pnpm), automated installation cannot be performed within the
+Claude environment.
+
+SOLUTION CREATED:
+-----------------
+✓ Created installation script: ./web/install-playwright.sh
+✓ Created comprehensive guide: ./web/MANUAL_PLAYWRIGHT_SETUP.md
+✓ Both files committed to repository
+
+REQUIRED ACTION:
+----------------
+You must manually run the installation script to proceed with the E2E test audit.
+
+** OPTION A: Run the Installation Script (Recommended) **
+
+   cd /Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/040-auditor-a-reparaci-n-y-estabilizaci-n-de-tests-e2e/web
+   ./install-playwright.sh
+
+** OPTION B: Run Manual Commands **
+
+   cd /Users/martinjaimesamperiz/vibe-monorepo/apps/workhub/.worktrees/040-auditor-a-reparaci-n-y-estabilizaci-n-de-tests-e2e/web
+   npm install
+   npx playwright install --with-deps chromium
+
+WHAT THE SCRIPT DOES:
+---------------------
+1. Checks if you're in the correct directory (./web)
+2. Installs npm dependencies (if node_modules doesn't exist)
+3. Installs Playwright Chromium browser with system dependencies
+4. Provides verification commands
+
+VERIFICATION AFTER INSTALLATION:
+--------------------------------
+After running the installation, verify success with:
+
+   cd ./web
+   npx playwright --version
+   # Expected: Version 1.55.0 (or similar)
+
+   npx playwright install --dry-run
+   # Expected: Shows chromium already installed
+
+   npm run test:e2e
+   # Expected: Test suite starts (even if some tests fail)
+
+TROUBLESHOOTING:
+----------------
+If you encounter any issues, refer to the comprehensive troubleshooting guide:
+   ./web/MANUAL_PLAYWRIGHT_SETUP.md
+
+Common issues covered:
+- "npx: command not found" → Install Node.js
+- "Permission denied" → Check file permissions or use sudo
+- "Browser download failed" → Check internet connection
+- "Port 5177 already in use" → Kill the process using that port
+
+NEXT STEPS:
+-----------
+Once browsers are installed successfully:
+
+1. Continue with subtask-1-2: Verify environment variables are configured
+2. Continue with subtask-1-3: Verify dev server starts on port 5177
+3. Continue with subtask-1-4: Run initial test suite audit to establish baseline
+
+BLOCKING IMPACT:
+----------------
+This installation is a CRITICAL BLOCKER for:
+- All remaining Phase 1 subtasks (environment setup)
+- Phase 2: Root Cause Analysis (depends on Phase 1)
+- Phase 3: Fix Issues (depends on Phase 2)
+- Phase 4: Stabilization and Documentation (depends on Phase 3)
+
+ESTIMATED TIME:
+---------------
+- Running the script: 2-5 minutes (depending on download speed)
+- Manual commands: 3-7 minutes (depending on download speed)
+
+DOCUMENTATION LOCATION:
+-----------------------
+Full documentation: ./web/MANUAL_PLAYWRIGHT_SETUP.md
+Installation script: ./web/install-playwright.sh
+
+================================================================================
+Please run the installation and then resume the auto-claude workflow.
+================================================================================
