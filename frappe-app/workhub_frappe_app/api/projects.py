@@ -6,7 +6,7 @@ from frappe import _
 from frappe.utils import nowdate, getdate, add_days, date_diff
 import json
 
-from workhub_frappe_app.api.utils import require_auth, require_permission, sanitize_search_term
+from workhub_frappe_app.api.utils import require_auth, require_permission
 
 
 @frappe.whitelist()
@@ -31,8 +31,7 @@ def get_projects(filters=None, limit=50, offset=0):
         if filters.get("owner_user"):
             filter_conditions["owner_user"] = filters["owner_user"]
         if filters.get("search"):
-            sanitized_search = sanitize_search_term(filters['search'])
-            filter_conditions["title"] = ["like", f"%{sanitized_search}%"]
+            filter_conditions["title"] = ["like", f"%{filters['search']}%"]
 
     projects = frappe.get_list("WH Project",
         filters=filter_conditions,
@@ -45,7 +44,8 @@ def get_projects(filters=None, limit=50, offset=0):
         ],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="health desc, target_date asc"
+        order_by="health desc, target_date asc",
+        ignore_permissions=True
     )
 
     # Enrich with user info
@@ -102,19 +102,11 @@ def get_project(project_id):
         if user_data:
             member.update(user_data)
 
-    # Check if project has tasks with dates (suitable for Gantt view)
-    has_gantt_view = frappe.db.exists("WH Task", {
-        "project": project_id,
-        "start_date": ["is", "set"],
-        "due_date": ["is", "set"]
-    })
-
     return {
         "project": project.as_dict(),
         "tasks_by_status": tasks_by_status,
         "milestones": milestones,
-        "team": team,
-        "has_gantt_view": bool(has_gantt_view)
+        "team": team
     }
 
 
@@ -170,32 +162,27 @@ def update_project(project_id, data):
 
 
 @frappe.whitelist()
-def get_templates(department=None):
-    """Get available project templates with optional department filter"""
+def get_project_options():
+    """Get lightweight list of active projects for dropdown selection"""
     require_auth()
 
-    # Build filters
-    filters = {"is_active": 1}
-    if department:
-        filters["department"] = department
+    projects = frappe.get_all("WH Project",
+        fields=["name", "title"],
+        order_by="title asc",
+        limit_page_length=100,
+        ignore_permissions=True
+    )
 
-    # Get templates
-    templates = frappe.get_all("WH Project Template",
-        filters=filters,
-        fields=["name", "description", "department", "default_duration_days"],
-        order_by="department asc, name asc")
+    return projects
 
-    # Enrich with task count
-    for template in templates:
-        # Count tasks in this template
-        task_count = frappe.db.count("WH Project Template Task",
-            filters={"parent": template["name"]})
-        template["task_count"] = task_count
 
-        # Rename for clarity
-        template["estimated_duration_days"] = template.pop("default_duration_days")
-
-    return templates
+@frappe.whitelist()
+def get_templates():
+    """Get available project templates"""
+    require_auth()
+    return frappe.get_all("WH Project Template",
+        filters={"is_active": 1},
+        fields=["name", "description", "department", "default_duration_days"])
 
 
 @frappe.whitelist()
@@ -268,57 +255,30 @@ def create_from_template(template_id, data):
 
 @frappe.whitelist()
 def preview_template(template_id):
-    """Preview what a template would create - full task breakdown with milestones and dependencies"""
+    """Preview what a template would create"""
     require_auth()
     template = frappe.get_doc("WH Project Template", template_id)
 
     tasks = []
-    milestones = []
-    dependencies = []
-
     for task_template in template.tasks:
-        task_data = {
+        tasks.append({
             "sequence": task_template.sequence,
             "title": task_template.title,
             "description": task_template.description,
             "offset_days": task_template.offset_days,
             "duration_days": task_template.duration_days,
-            "default_assignee_role": task_template.default_assignee_role,
             "is_milestone": task_template.is_milestone,
-            "depends_on_sequence": task_template.depends_on_sequence
-        }
-        tasks.append(task_data)
-
-        # Collect milestones separately
-        if task_template.is_milestone:
-            milestones.append({
-                "sequence": task_template.sequence,
-                "title": task_template.title,
-                "offset_days": task_template.offset_days,
-                "duration_days": task_template.duration_days
-            })
-
-        # Build dependency relationships
-        if task_template.depends_on_sequence:
-            dependencies.append({
-                "from_sequence": task_template.depends_on_sequence,
-                "to_sequence": task_template.sequence,
-                "from_title": next((t.title for t in template.tasks if t.sequence == task_template.depends_on_sequence), None),
-                "to_title": task_template.title
-            })
+            "depends_on": task_template.depends_on_sequence
+        })
 
     return {
         "template": {
             "name": template.name,
             "description": template.description,
             "department": template.department,
-            "estimated_duration_days": template.default_duration_days,
-            "task_count": len(tasks),
-            "milestone_count": len(milestones)
+            "default_duration_days": template.default_duration_days
         },
-        "tasks": tasks,
-        "milestones": milestones,
-        "dependencies": dependencies
+        "tasks": tasks
     }
 
 
@@ -631,53 +591,3 @@ def recalculate_health(project_id):
         "health": project.health,
         "health_reason": project.health_reason
     }
-
-
-@frappe.whitelist()
-def bulk_change_status(project_ids, new_status):
-    """Change status for multiple projects"""
-    require_permission("WH Project", "write")
-    if isinstance(project_ids, str):
-        project_ids = json.loads(project_ids)
-
-    valid_statuses = ["ACTIVE", "PAUSED", "COMPLETED", "CANCELLED"]
-    if new_status not in valid_statuses:
-        frappe.throw(_("Invalid status: {0}").format(new_status))
-
-    for project_id in project_ids:
-        frappe.db.set_value("WH Project", project_id, "status", new_status)
-
-    return {"success": True, "count": len(project_ids)}
-
-
-@frappe.whitelist()
-def bulk_change_owner(project_ids, new_owner):
-    """Change owner for multiple projects"""
-    require_permission("WH Project", "write")
-    if isinstance(project_ids, str):
-        project_ids = json.loads(project_ids)
-
-    # Validate that new_owner is a valid User
-    if not frappe.db.exists("User", new_owner):
-        frappe.throw(_("Invalid user: {0}").format(new_owner))
-
-    for project_id in project_ids:
-        frappe.db.set_value("WH Project", project_id, "owner_user", new_owner)
-
-    return {"success": True, "count": len(project_ids)}
-
-
-@frappe.whitelist()
-def bulk_archive(project_ids):
-    """Archive multiple projects by setting status to CANCELLED and actual_end_date to today"""
-    require_permission("WH Project", "write")
-    if isinstance(project_ids, str):
-        project_ids = json.loads(project_ids)
-
-    for project_id in project_ids:
-        frappe.db.set_value("WH Project", project_id, {
-            "status": "CANCELLED",
-            "actual_end_date": nowdate()
-        })
-
-    return {"success": True, "count": len(project_ids)}

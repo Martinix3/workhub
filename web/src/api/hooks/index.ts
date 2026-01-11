@@ -82,9 +82,9 @@ export {
   useItemSearch
 } from './useNotepad'
 
-// NL Task Creation
+// Quick Task Creation
 export {
-  useNLTask,
-  useUserSearch,
-  useProjectSearch
-} from './useNLTask'
+  useQuickTask,
+  useQuickTaskOptions,
+  useWorkLinkSuggestions
+} from './useQuickTask'

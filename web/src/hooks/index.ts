@@ -1,2 +1,2 @@
-// Hooks index
-export { useFocusTrap } from './useFocusTrap'
+// Global hooks exports
+export { useGlobalKeyboard } from './useGlobalKeyboard'
