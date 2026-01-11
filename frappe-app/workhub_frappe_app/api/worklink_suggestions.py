@@ -280,13 +280,10 @@ def _get_document_display_info(doctype, doc_id):
         return {}
 
 
-def _record_suggestion_action(task_id, doctype, doc_id, action, notes=""):
+def _record_suggestion_action(task_id, doctype, doc_id, action, notes="", confidence_score=None):
     """
     Record suggestion acceptance or dismissal for pattern learning.
-    This is a placeholder for Phase 3 (WorkLink Suggestion Log).
-
-    For now, we log to a simple table. In Phase 3, this will be
-    replaced with proper DocType logging.
+    Logs to WorkLink Suggestion Log DocType for analysis.
 
     Args:
         task_id: WH Task ID
@@ -294,32 +291,36 @@ def _record_suggestion_action(task_id, doctype, doc_id, action, notes=""):
         doc_id: Suggested document ID
         action: "accepted" or "dismissed"
         notes: Additional notes
+        confidence_score: Optional confidence score of the suggestion
     """
     try:
         # Get task details for logging
         task = frappe.get_doc("WH Task", task_id)
 
-        # Create a simple log entry
-        # Note: This will be replaced in Phase 3 with WorkLink Suggestion Log DocType
-        log_data = {
-            "timestamp": frappe.utils.now(),
-            "user": frappe.session.user,
-            "task_id": task_id,
-            "task_title": task.title,
-            "suggested_doctype": doctype,
-            "suggested_id": doc_id,
-            "action": action,
-            "notes": notes,
-            "department": task.department
-        }
+        # Extract keywords from task title and description for pattern learning
+        task_text = f"{task.title} {task.description or ''}"
+        # Simple keyword extraction - get words longer than 3 chars, uppercase, or contain numbers
+        keywords = []
+        for word in task_text.split():
+            word_clean = word.strip('.,;:!?()[]{}')
+            if len(word_clean) > 3 or word_clean.isupper() or any(c.isdigit() for c in word_clean):
+                keywords.append(word_clean)
+        task_keywords = " ".join(set(keywords))
 
-        # For now, just log to error log for tracking
-        # In Phase 3, this will be replaced with proper DocType insert
-        frappe.log_error(
-            json.dumps(log_data, indent=2),
-            f"WorkLink Suggestion {action.title()}"
-        )
+        # Create WorkLink Suggestion Log entry
+        log = frappe.new_doc("WorkLink Suggestion Log")
+        log.user = frappe.session.user
+        log.department = task.department
+        log.task_id = task_id
+        log.task_title = task.title
+        log.task_keywords = task_keywords
+        log.suggested_doctype = doctype
+        log.suggested_id = doc_id
+        log.action = action
+        log.confidence_score = confidence_score
+        log.notes = notes
+        log.insert(ignore_permissions=True)
 
     except Exception as e:
         # Don't fail the main operation if logging fails
-        frappe.log_error(f"Error recording suggestion action: {str(e)}")
+        frappe.log_error(f"Error recording suggestion action: {str(e)}", "WorkLink Suggestion Log Error")
