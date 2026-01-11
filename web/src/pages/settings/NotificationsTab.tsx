@@ -1,34 +1,31 @@
 // Notifications Tab - Email, push, and digest settings
 import { useState, useEffect } from 'react'
-import { Save, Loader2, Bell, CheckCircle, AlertCircle, Package, Activity } from 'lucide-react'
+import { Save, Loader2, Bell, BellOff, Clock, Zap } from 'lucide-react'
 import { useUserSettings } from '../../api'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { TimePicker } from '../../components/ui/TimePicker'
 
-type DigestFrequency = 'daily' | 'weekly' | 'none'
+type NotificationFrequency = 'realtime' | 'daily' | 'weekly' | 'off'
 
 interface NotificationSettings {
-  email: boolean
-  push: boolean
-  task_assigned: boolean
-  task_status: boolean
-  overdue_alerts: boolean
-  order_status: boolean
-  project_health: boolean
-  digest_frequency: DigestFrequency
+  frequency: NotificationFrequency
+  quiet_hours_enabled: boolean
+  quiet_hours_start: string
+  quiet_hours_end: string
+  priority_bypass_enabled: boolean
+  email_enabled: boolean
 }
 
 export function NotificationsTab() {
   const { data: settings, loading, error, refetch, updateSettings, updating } = useUserSettings()
   const [notifications, setNotifications] = useState<NotificationSettings>({
-    email: true,
-    push: false,
-    task_assigned: true,
-    task_status: true,
-    overdue_alerts: true,
-    order_status: true,
-    project_health: true,
-    digest_frequency: 'daily'
+    frequency: 'daily',
+    quiet_hours_enabled: false,
+    quiet_hours_start: '22:00:00',
+    quiet_hours_end: '08:00:00',
+    priority_bypass_enabled: true,
+    email_enabled: true
   })
   const [hasChanges, setHasChanges] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -55,18 +52,16 @@ export function NotificationsTab() {
     )
   }
 
-  const handleChange = (field: keyof NotificationSettings, value: boolean | DigestFrequency) => {
+  const handleChange = (field: keyof NotificationSettings, value: boolean | NotificationFrequency | string) => {
     const updated = { ...notifications, [field]: value }
     setNotifications(updated)
     setHasChanges(
-      updated.email !== settings.notifications.email ||
-      updated.push !== settings.notifications.push ||
-      updated.task_assigned !== settings.notifications.task_assigned ||
-      updated.task_status !== settings.notifications.task_status ||
-      updated.overdue_alerts !== settings.notifications.overdue_alerts ||
-      updated.order_status !== settings.notifications.order_status ||
-      updated.project_health !== settings.notifications.project_health ||
-      updated.digest_frequency !== settings.notifications.digest_frequency
+      updated.frequency !== settings.notifications.frequency ||
+      updated.quiet_hours_enabled !== settings.notifications.quiet_hours_enabled ||
+      updated.quiet_hours_start !== settings.notifications.quiet_hours_start ||
+      updated.quiet_hours_end !== settings.notifications.quiet_hours_end ||
+      updated.priority_bypass_enabled !== settings.notifications.priority_bypass_enabled ||
+      updated.email_enabled !== settings.notifications.email_enabled
     )
     setSaveSuccess(false)
   }
@@ -84,46 +79,26 @@ export function NotificationsTab() {
 
   return (
     <div className="space-y-8">
-      {/* General Channels */}
       <div>
-        <h3 className="text-lg font-medium text-stone-900 mb-1">Canales de notificación</h3>
+        <h3 className="text-lg font-medium text-stone-900 mb-1">Notificaciones</h3>
         <p className="text-sm text-stone-500 mb-6">
           Configura como quieres recibir notificaciones del sistema
         </p>
 
-        <div className="space-y-4">
-          {/* Email Notifications */}
+        {/* Email Enable Toggle */}
+        <div className="mb-6">
           <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
             <div>
               <span className="font-medium text-stone-900">Notificaciones por email</span>
               <p className="text-sm text-stone-500">
-                Recibe alertas importantes por correo electronico
+                Recibe alertas importantes por correo electrónico
               </p>
             </div>
             <div className="relative">
               <input
                 type="checkbox"
-                checked={notifications.email}
-                onChange={(e) => handleChange('email', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-            </div>
-          </label>
-
-          {/* Push Notifications */}
-          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
-            <div>
-              <span className="font-medium text-stone-900">Notificaciones push</span>
-              <p className="text-sm text-stone-500">
-                Recibe notificaciones en tiempo real en el navegador
-              </p>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={notifications.push}
-                onChange={(e) => handleChange('push', e.target.checked)}
+                checked={notifications.email_enabled}
+                onChange={(e) => handleChange('email_enabled', e.target.checked)}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
@@ -132,163 +107,99 @@ export function NotificationsTab() {
         </div>
       </div>
 
-      {/* Task Notifications */}
+      {/* Notification Frequency */}
       <div>
-        <h3 className="text-lg font-medium text-stone-900 mb-1">Notificaciones de tareas</h3>
-        <p className="text-sm text-stone-500 mb-6">
-          Recibe notificaciones sobre tus tareas y proyectos
-        </p>
-
-        <div className="space-y-4">
-          {/* Task Assignment */}
-          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
-            <div className="flex items-start gap-3">
-              <Bell className="w-5 h-5 text-stone-600 mt-0.5" />
-              <div>
-                <span className="font-medium text-stone-900">Asignación de tareas</span>
-                <p className="text-sm text-stone-500">
-                  Notificar cuando te asignen una nueva tarea
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={notifications.task_assigned}
-                onChange={(e) => handleChange('task_assigned', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-            </div>
-          </label>
-
-          {/* Task Status Changes */}
-          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-stone-600 mt-0.5" />
-              <div>
-                <span className="font-medium text-stone-900">Cambios de estado</span>
-                <p className="text-sm text-stone-500">
-                  Notificar cuando cambie el estado de tus tareas
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={notifications.task_status}
-                onChange={(e) => handleChange('task_status', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-            </div>
-          </label>
-
-          {/* Overdue Alerts */}
-          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-stone-600 mt-0.5" />
-              <div>
-                <span className="font-medium text-stone-900">Tareas vencidas</span>
-                <p className="text-sm text-stone-500">
-                  Alertas sobre tareas que pasaron su fecha límite
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={notifications.overdue_alerts}
-                onChange={(e) => handleChange('overdue_alerts', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      {/* Business Notifications */}
-      <div>
-        <h3 className="text-lg font-medium text-stone-900 mb-1">Notificaciones de negocio</h3>
-        <p className="text-sm text-stone-500 mb-6">
-          Recibe notificaciones sobre pedidos y salud de proyectos
-        </p>
-
-        <div className="space-y-4">
-          {/* Order Updates */}
-          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
-            <div className="flex items-start gap-3">
-              <Package className="w-5 h-5 text-stone-600 mt-0.5" />
-              <div>
-                <span className="font-medium text-stone-900">Actualizaciones de pedidos</span>
-                <p className="text-sm text-stone-500">
-                  Notificar sobre cambios en pedidos de distribuidores
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={notifications.order_status}
-                onChange={(e) => handleChange('order_status', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-            </div>
-          </label>
-
-          {/* Project Health */}
-          <label className="flex items-center justify-between p-4 bg-stone-50 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
-            <div className="flex items-start gap-3">
-              <Activity className="w-5 h-5 text-stone-600 mt-0.5" />
-              <div>
-                <span className="font-medium text-stone-900">Salud de proyectos</span>
-                <p className="text-sm text-stone-500">
-                  Alertas sobre proyectos en riesgo o con problemas
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={notifications.project_health}
-                onChange={(e) => handleChange('project_health', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      {/* Digest Frequency */}
-      <div>
-        <h3 className="text-lg font-medium text-stone-900 mb-1">Resumen de actividad</h3>
+        <h4 className="font-medium text-stone-900 mb-3">Frecuencia de notificaciones</h4>
         <p className="text-sm text-stone-500 mb-4">
-          Frecuencia del resumen de actividad por email
+          Elige cómo y cuándo quieres recibir notificaciones
         </p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { value: 'daily' as const, label: 'Diario' },
-            { value: 'weekly' as const, label: 'Semanal' },
-            { value: 'none' as const, label: 'Nunca' },
+            { value: 'realtime' as const, label: 'Tiempo real', icon: <Bell size={18} />, description: 'Al instante' },
+            { value: 'daily' as const, label: 'Diario', icon: <Clock size={18} />, description: 'Resumen diario' },
+            { value: 'weekly' as const, label: 'Semanal', icon: <Clock size={18} />, description: 'Resumen semanal' },
+            { value: 'off' as const, label: 'Desactivado', icon: <BellOff size={18} />, description: 'Sin emails' },
           ].map((option) => (
             <button
               key={option.value}
-              onClick={() => handleChange('digest_frequency', option.value)}
+              onClick={() => handleChange('frequency', option.value)}
               className={`
-                p-3 rounded-xl border-2 font-medium transition-all
-                ${notifications.digest_frequency === option.value
+                flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
+                ${notifications.frequency === option.value
                   ? 'border-amber-500 bg-amber-50 text-amber-700'
                   : 'border-stone-200 hover:border-stone-300 text-stone-600'
                 }
               `}
             >
-              {option.label}
+              {option.icon}
+              <div className="text-center">
+                <div className="text-sm font-medium">{option.label}</div>
+                <div className="text-xs opacity-75">{option.description}</div>
+              </div>
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Priority Bypass */}
+      <div>
+        <label className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer hover:bg-amber-100 transition-colors">
+          <div className="flex items-start gap-3">
+            <Zap size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <span className="font-medium text-stone-900">Notificaciones prioritarias inmediatas</span>
+              <p className="text-sm text-stone-600 mt-1">
+                Siempre recibe notificaciones al instante para tareas de prioridad crítica (P0) y alta (P1),
+                incluso cuando tengas configurado un resumen o notificaciones desactivadas
+              </p>
+            </div>
+          </div>
+          <div className="relative flex-shrink-0 ml-4">
+            <input
+              type="checkbox"
+              checked={notifications.priority_bypass_enabled}
+              onChange={(e) => handleChange('priority_bypass_enabled', e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+          </div>
+        </label>
+      </div>
+
+      {/* Quiet Hours */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h4 className="font-medium text-stone-900">Horario de silencio</h4>
+            <p className="text-sm text-stone-500 mt-1">
+              No recibir notificaciones durante ciertas horas (solo para notificaciones en tiempo real)
+            </p>
+          </div>
+          <div className="relative">
+            <input
+              type="checkbox"
+              checked={notifications.quiet_hours_enabled}
+              onChange={(e) => handleChange('quiet_hours_enabled', e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-stone-300 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+          </div>
+        </div>
+
+        {notifications.quiet_hours_enabled && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-stone-50 rounded-xl">
+            <TimePicker
+              value={notifications.quiet_hours_start}
+              onChange={(value) => handleChange('quiet_hours_start', value)}
+              label="Hora de inicio"
+            />
+            <TimePicker
+              value={notifications.quiet_hours_end}
+              onChange={(value) => handleChange('quiet_hours_end', value)}
+              label="Hora de fin"
+            />
+          </div>
+        )}
       </div>
 
       {/* Save Button */}

@@ -6,14 +6,12 @@ export interface UserSettings {
   theme: 'light' | 'dark' | 'system'
   language: 'es' | 'en'
   notifications: {
-    email: boolean
-    push: boolean
-    task_assigned: boolean
-    task_status: boolean
-    overdue_alerts: boolean
-    order_status: boolean
-    project_health: boolean
-    digest_frequency: 'daily' | 'weekly' | 'none'
+    frequency: 'realtime' | 'daily' | 'weekly' | 'off'
+    quiet_hours_enabled: boolean
+    quiet_hours_start: string // HH:MM:SS format
+    quiet_hours_end: string // HH:MM:SS format
+    priority_bypass_enabled: boolean
+    email_enabled: boolean
   }
   department_access: string[]
 }
@@ -44,31 +42,13 @@ export interface UpdateSettingsData {
   theme?: 'light' | 'dark' | 'system'
   language?: 'es' | 'en'
   notifications?: {
-    email?: boolean
-    push?: boolean
-    task_assigned?: boolean
-    task_status?: boolean
-    overdue_alerts?: boolean
-    order_status?: boolean
-    project_health?: boolean
-    digest_frequency?: 'daily' | 'weekly' | 'none'
+    frequency?: 'realtime' | 'daily' | 'weekly' | 'off'
+    quiet_hours_enabled?: boolean
+    quiet_hours_start?: string // HH:MM:SS format
+    quiet_hours_end?: string // HH:MM:SS format
+    priority_bypass_enabled?: boolean
+    email_enabled?: boolean
   }
-}
-
-export interface UserKPIs {
-  user: string
-  period: 'week' | 'month'
-  completed: number
-  velocity: number
-  work_days: number
-  active_projects: number
-  current: {
-    [status: string]: number
-  }
-  daily_trend: Array<{
-    date: string
-    count: number
-  }>
 }
 
 // API Methods
@@ -100,14 +80,6 @@ const settingsApi = {
   // Get available departments
   async getDepartments(): Promise<Department[]> {
     return frappe.call<Department[]>('workhub_frappe_app.api.settings.get_available_departments')
-  },
-
-  // Get user KPIs
-  async getUserKPIs(params?: { userId?: string; period?: 'week' | 'month' }): Promise<UserKPIs> {
-    return frappe.call<UserKPIs>('workhub_frappe_app.api.kpis.get_user_kpis', {
-      user_id: params?.userId,
-      period: params?.period
-    })
   }
 }
 

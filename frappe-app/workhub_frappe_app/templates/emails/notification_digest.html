@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .greeting {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        .summary {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .summary-text {
+            font-size: 15px;
+            color: #495057;
+            margin: 0;
+        }
+        .summary-count {
+            font-weight: 700;
+            color: #0066cc;
+        }
+        .project-section {
+            margin-bottom: 32px;
+            border-left: 3px solid #0066cc;
+            padding-left: 16px;
+        }
+        .project-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .project-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+        .project-count {
+            font-size: 13px;
+            color: #666;
+            background: #e9ecef;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .type-group {
+            margin-bottom: 20px;
+        }
+        .type-header {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .type-label {
+            color: #495057;
+        }
+        .type-count {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        /* Type-specific colors */
+        .type-header.task-assigned .type-label { color: #0066cc; }
+        .type-header.overdue .type-label { color: #dc3545; }
+        .type-header.blocked .type-label { color: #fd7e14; }
+        .type-header.completed .type-label { color: #28a745; }
+        .type-header.dependency .type-label { color: #6f42c1; }
+        .type-header.project-risk .type-label { color: #dc3545; }
+        .type-header.mention .type-label { color: #17a2b8; }
+        .type-header.email-task .type-label { color: #0066cc; }
+
+        .notification-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .notification-item {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: background-color 0.2s;
+        }
+        .notification-item:hover {
+            background: #e9ecef;
+        }
+        .notification-bullet {
+            color: #6c757d;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .notification-content {
+            flex: 1;
+        }
+        .notification-title {
+            color: #1a1a1a;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        .notification-message {
+            color: #6c757d;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .notification-link {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .notification-link:hover {
+            text-decoration: underline;
+        }
+        .notification-meta {
+            font-size: 11px;
+            color: #adb5bd;
+            margin-top: 2px;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-right: 6px;
+        }
+        .priority-badge.high {
+            background: #dc3545;
+            color: white;
+        }
+        .priority-badge.medium {
+            background: #fd7e14;
+            color: white;
+        }
+        .priority-badge.low {
+            background: #28a745;
+            color: white;
+        }
+        .cta-section {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #dee2e6;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 12px 32px;
+            background: #0066cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 15px;
+        }
+        .cta-button:hover {
+            background: #0052a3;
+        }
+        .footer {
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .footer-links {
+            margin-bottom: 12px;
+        }
+        .footer-link {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+        .footer-text {
+            color: #a0aec0;
+            font-size: 12px;
+            margin: 8px 0;
+        }
+        .branding {
+            margin-top: 16px;
+            color: #cbd5e0;
+            font-size: 11px;
+        }
+        .empty-message {
+            color: #666;
+            font-style: italic;
+            padding: 24px;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{% if digest_type == 'daily' %}Resumen Diario{% else %}Resumen Semanal{% endif %}</h1>
+        <p class="greeting">
+            Hola {{ user_name }},
+            {% if digest_type == 'daily' %}
+            aquí está tu resumen de notificaciones de hoy.
+            {% else %}
+            aquí está tu resumen de notificaciones de esta semana ({{ period_start }} - {{ period_end }}).
+            {% endif %}
+        </p>
+
+        {% if total_count > 0 %}
+        <div class="summary">
+            <p class="summary-text">
+                Tienes <span class="summary-count">{{ total_count }}</span>
+                {% if total_count == 1 %}notificación{% else %}notificaciones{% endif %}
+                pendiente{% if total_count > 1 %}s{% endif %}
+            </p>
+        </div>
+
+        {# Grouped notifications by project #}
+        {% if grouped_notifications %}
+            {% for project_key, project_data in grouped_notifications.items() %}
+            <div class="project-section">
+                <div class="project-header">
+                    <h2 class="project-title">
+                        {% if project_data.project_title %}
+                        {{ project_data.project_title }}
+                        {% else %}
+                        General
+                        {% endif %}
+                    </h2>
+                    <span class="project-count">{{ project_data.total_count }}</span>
+                </div>
+
+                {# Group by notification type within project #}
+                {% for type_key, notifications in project_data.types.items() %}
+                {% if notifications %}
+                <div class="type-group">
+                    <div class="type-header {{ type_key|lower|replace('_', '-') }}">
+                        <span class="type-label">
+                            {% if type_key == 'TASK_ASSIGNED' %}📋 Tareas Asignadas
+                            {% elif type_key == 'OVERDUE' %}⚠️ Tareas Vencidas
+                            {% elif type_key == 'BLOCKED' %}🚧 Tareas Bloqueadas
+                            {% elif type_key == 'COMPLETED' %}✅ Tareas Completadas
+                            {% elif type_key == 'DEPENDENCY' %}🔗 Dependencias
+                            {% elif type_key == 'PROJECT_RISK' %}⚡ Riesgos de Proyecto
+                            {% elif type_key == 'MENTION' %}💬 Menciones
+                            {% elif type_key == 'EMAIL_TASK' %}📧 Tareas por Email
+                            {% else %}📌 Notificaciones
+                            {% endif %}
+                        </span>
+                        <span class="type-count">{{ notifications|length }}</span>
+                    </div>
+
+                    <ul class="notification-list">
+                        {% for notif in notifications %}
+                        <li class="notification-item">
+                            <span class="notification-bullet">•</span>
+                            <div class="notification-content">
+                                <div class="notification-title">
+                                    {% if notif.priority %}
+                                    <span class="priority-badge {{ notif.priority|lower }}">{{ notif.priority }}</span>
+                                    {% endif %}
+                                    {{ notif.title }}
+                                </div>
+                                {% if notif.message %}
+                                <div class="notification-message">{{ notif.message }}</div>
+                                {% endif %}
+                                <div class="notification-meta">
+                                    {{ notif.created_at }}
+                                    {% if notif.action_url %}
+                                    • <a href="{{ site_url }}{{ notif.action_url }}" class="notification-link">Ver →</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {# Notifications without project #}
+        {% if no_project and no_project.types %}
+            <div class="project-section" style="border-left-color: #6c757d;">
+                <div class="project-header">
+                    <h2 class="project-title">Sin Proyecto</h2>
+                    <span class="project-count">{{ no_project.total_count }}</span>
+                </div>
+
+                {% for type_key, notifications in no_project.types.items() %}
+                {% if notifications %}
+                <div class="type-group">
+                    <div class="type-header {{ type_key|lower|replace('_', '-') }}">
+                        <span class="type-label">
+                            {% if type_key == 'TASK_ASSIGNED' %}📋 Tareas Asignadas
+                            {% elif type_key == 'OVERDUE' %}⚠️ Tareas Vencidas
+                            {% elif type_key == 'BLOCKED' %}🚧 Tareas Bloqueadas
+                            {% elif type_key == 'COMPLETED' %}✅ Tareas Completadas
+                            {% elif type_key == 'DEPENDENCY' %}🔗 Dependencias
+                            {% elif type_key == 'PROJECT_RISK' %}⚡ Riesgos de Proyecto
+                            {% elif type_key == 'MENTION' %}💬 Menciones
+                            {% elif type_key == 'EMAIL_TASK' %}📧 Tareas por Email
+                            {% else %}📌 Notificaciones
+                            {% endif %}
+                        </span>
+                        <span class="type-count">{{ notifications|length }}</span>
+                    </div>
+
+                    <ul class="notification-list">
+                        {% for notif in notifications %}
+                        <li class="notification-item">
+                            <span class="notification-bullet">•</span>
+                            <div class="notification-content">
+                                <div class="notification-title">
+                                    {% if notif.priority %}
+                                    <span class="priority-badge {{ notif.priority|lower }}">{{ notif.priority }}</span>
+                                    {% endif %}
+                                    {{ notif.title }}
+                                </div>
+                                {% if notif.message %}
+                                <div class="notification-message">{{ notif.message }}</div>
+                                {% endif %}
+                                <div class="notification-meta">
+                                    {{ notif.created_at }}
+                                    {% if notif.action_url %}
+                                    • <a href="{{ site_url }}{{ notif.action_url }}" class="notification-link">Ver →</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="cta-section">
+            <a href="{{ site_url }}/app/wh-notification" class="cta-button">Ver todas las notificaciones</a>
+        </div>
+
+        {% else %}
+        <p class="empty-message">
+            No tienes notificaciones pendientes. ¡Todo al día! 🎉
+        </p>
+        {% endif %}
+
+        <div class="footer">
+            <div class="footer-links">
+                <a href="{{ site_url }}/app/user-settings/notifications" class="footer-link">⚙️ Configurar preferencias de notificaciones</a>
+            </div>
+            <p class="footer-text">
+                ¿No quieres recibir estos resúmenes?
+                <a href="{{ site_url }}/app/user-settings/notifications" class="footer-link">Cambiar frecuencia</a>
+            </p>
+            <div class="branding">
+                <p>Enviado por <strong>WorkHub</strong></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

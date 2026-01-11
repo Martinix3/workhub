@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "autoname": "field:user",
+ "creation": "2026-01-10 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "column_break_1",
+  "email_enabled",
+  "section_break_frequency",
+  "frequency",
+  "priority_bypass_enabled",
+  "section_break_quiet_hours",
+  "quiet_hours_enabled",
+  "quiet_hours_start",
+  "quiet_hours_end",
+  "section_break_timestamps",
+  "created_at",
+  "modified_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Usuario",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "email_enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Email Habilitado"
+  },
+  {
+   "fieldname": "section_break_frequency",
+   "fieldtype": "Section Break",
+   "label": "Frecuencia de Notificaciones"
+  },
+  {
+   "default": "daily",
+   "fieldname": "frequency",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Frecuencia",
+   "options": "realtime\ndaily\nweekly\noff",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "priority_bypass_enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Bypass para P0/P1"
+  },
+  {
+   "fieldname": "section_break_quiet_hours",
+   "fieldtype": "Section Break",
+   "label": "Horas Silenciosas"
+  },
+  {
+   "default": "0",
+   "fieldname": "quiet_hours_enabled",
+   "fieldtype": "Check",
+   "label": "Habilitar Horas Silenciosas"
+  },
+  {
+   "depends_on": "eval:doc.quiet_hours_enabled",
+   "fieldname": "quiet_hours_start",
+   "fieldtype": "Time",
+   "label": "Inicio Horas Silenciosas"
+  },
+  {
+   "depends_on": "eval:doc.quiet_hours_enabled",
+   "fieldname": "quiet_hours_end",
+   "fieldtype": "Time",
+   "label": "Fin Horas Silenciosas"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_timestamps",
+   "fieldtype": "Section Break",
+   "label": "Timestamps"
+  },
+  {
+   "fieldname": "created_at",
+   "fieldtype": "Datetime",
+   "label": "Fecha Creacion",
+   "read_only": 1
+  },
+  {
+   "fieldname": "modified_at",
+   "fieldtype": "Datetime",
+   "label": "Fecha Modificacion",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Workhub Frappe App",
+ "name": "WH Notification Preferences",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "All",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

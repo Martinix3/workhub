@@ -9,6 +9,7 @@ from frappe.utils import cstr
 import json
 
 from workhub_frappe_app.api.utils import require_auth, validate_json_input
+from workhub_frappe_app.api.notifications import get_user_notification_preferences
 
 
 # Department to Role mapping
@@ -22,100 +23,6 @@ DEPARTMENT_ROLES = {
 ALL_DEPARTMENTS = ["SALES", "OPS", "MKT"]
 
 
-# ========== HELPER FUNCTIONS ==========
-
-def _get_default_notification_preferences():
-    """
-    Get default notification preferences with granular control.
-
-    Returns:
-        dict: Default notification preferences
-    """
-    return {
-        "email": True,
-        "push": False,
-        "task_assigned": True,
-        "task_status": True,
-        "overdue_alerts": True,
-        "order_status": True,
-        "project_health": True,
-        "digest_frequency": "daily"
-    }
-
-
-def _migrate_notification_preferences(old_prefs):
-    """
-    Migrate old notification format to new granular format.
-    Ensures backwards compatibility with existing settings.
-
-    Args:
-        old_prefs (dict): Old format preferences
-
-    Returns:
-        dict: Migrated preferences with granular fields
-    """
-    # Start with defaults
-    new_prefs = _get_default_notification_preferences()
-
-    # Keep existing email/push settings if present
-    if "email" in old_prefs:
-        new_prefs["email"] = old_prefs["email"]
-    if "push" in old_prefs:
-        new_prefs["push"] = old_prefs["push"]
-
-    # Handle old 'digest' field -> 'digest_frequency'
-    if "digest" in old_prefs:
-        new_prefs["digest_frequency"] = old_prefs["digest"]
-
-    # If already has granular fields, preserve them
-    for field in ["task_assigned", "task_status", "overdue_alerts",
-                  "order_status", "project_health", "digest_frequency"]:
-        if field in old_prefs:
-            new_prefs[field] = old_prefs[field]
-
-    return new_prefs
-
-
-def _validate_notification_preferences(prefs):
-    """
-    Validate and sanitize notification preferences.
-    Ensures all required fields exist with valid values.
-
-    Args:
-        prefs (dict): Raw notification preferences from user
-
-    Returns:
-        dict: Validated preferences with all required fields
-    """
-    # Start with defaults to ensure all fields exist
-    validated = _get_default_notification_preferences()
-
-    # Update with provided values, validating types
-    if "email" in prefs and isinstance(prefs["email"], bool):
-        validated["email"] = prefs["email"]
-
-    if "push" in prefs and isinstance(prefs["push"], bool):
-        validated["push"] = prefs["push"]
-
-    # Validate boolean notification type preferences
-    for field in ["task_assigned", "task_status", "overdue_alerts",
-                  "order_status", "project_health"]:
-        if field in prefs and isinstance(prefs[field], bool):
-            validated[field] = prefs[field]
-
-    # Validate digest_frequency
-    if "digest_frequency" in prefs:
-        if prefs["digest_frequency"] in ["daily", "weekly", "none"]:
-            validated["digest_frequency"] = prefs["digest_frequency"]
-
-    # Handle old 'digest' field for backwards compatibility
-    if "digest" in prefs and "digest_frequency" not in prefs:
-        if prefs["digest"] in ["daily", "weekly", "none"]:
-            validated["digest_frequency"] = prefs["digest"]
-
-    return validated
-
-
 @frappe.whitelist()
 def get_user_settings():
     """
@@ -126,14 +33,12 @@ def get_user_settings():
             theme: 'light' | 'dark' | 'system',
             language: 'es' | 'en',
             notifications: {
-                email: bool,
-                push: bool,
-                task_assigned: bool,
-                task_status: bool,
-                overdue_alerts: bool,
-                order_status: bool,
-                project_health: bool,
-                digest_frequency: 'daily'|'weekly'|'none'
+                frequency: 'realtime' | 'daily' | 'weekly' | 'off',
+                quiet_hours_enabled: bool,
+                quiet_hours_start: str (HH:MM:SS),
+                quiet_hours_end: str (HH:MM:SS),
+                priority_bypass_enabled: bool,
+                email_enabled: bool
             },
             department_access: ['SALES', 'OPS', 'MKT']
         }
@@ -149,17 +54,10 @@ def get_user_settings():
     theme = getattr(user_doc, 'workhub_theme', None) or 'system'
     language = user_doc.language or 'es'
 
-    # Notification settings (stored as JSON in custom field or defaults)
-    notifications_json = getattr(user_doc, 'workhub_notifications', None)
-    if notifications_json:
-        try:
-            notifications = json.loads(notifications_json)
-            # Migrate old format to new format (backwards compatibility)
-            notifications = _migrate_notification_preferences(notifications)
-        except (json.JSONDecodeError, TypeError):
-            notifications = _get_default_notification_preferences()
-    else:
-        notifications = _get_default_notification_preferences()
+    # Get notification preferences from WH Notification Preferences DocType
+    # This returns: frequency, quiet_hours_enabled, quiet_hours_start, quiet_hours_end,
+    # priority_bypass_enabled, email_enabled
+    notifications = get_user_notification_preferences(user)
 
     # Department access based on user roles
     department_access = get_user_departments(user)
@@ -172,6 +70,82 @@ def get_user_settings():
     }
 
 
+def _update_notification_preferences(user, notif_settings):
+    """
+    Update notification preferences in WH Notification Preferences DocType.
+    Creates the record if it doesn't exist.
+
+    Args:
+        user: User email/name
+        notif_settings: dict with notification preference fields
+
+    Raises:
+        frappe.ValidationError: If validation fails
+    """
+    prefs_name = user  # autoname is by user field
+
+    # Get or create notification preferences
+    try:
+        prefs = frappe.get_doc("WH Notification Preferences", prefs_name)
+    except frappe.DoesNotExistError:
+        # Create new preferences
+        prefs = frappe.new_doc("WH Notification Preferences")
+        prefs.user = user
+
+    # Update frequency if provided
+    if "frequency" in notif_settings:
+        frequency = notif_settings["frequency"]
+        if frequency not in ["realtime", "daily", "weekly", "off"]:
+            frappe.throw(_("Invalid frequency. Must be one of: realtime, daily, weekly, off"))
+        prefs.frequency = frequency
+
+    # Update email_enabled if provided
+    if "email_enabled" in notif_settings:
+        prefs.email_enabled = int(notif_settings["email_enabled"])
+
+    # Update priority_bypass_enabled if provided
+    if "priority_bypass_enabled" in notif_settings:
+        prefs.priority_bypass_enabled = int(notif_settings["priority_bypass_enabled"])
+
+    # Update quiet hours if provided
+    if "quiet_hours_enabled" in notif_settings:
+        quiet_hours_enabled = int(notif_settings["quiet_hours_enabled"])
+        prefs.quiet_hours_enabled = quiet_hours_enabled
+
+        # If quiet hours are enabled, validate start and end times
+        if quiet_hours_enabled:
+            quiet_start = notif_settings.get("quiet_hours_start", prefs.quiet_hours_start)
+            quiet_end = notif_settings.get("quiet_hours_end", prefs.quiet_hours_end)
+
+            # Ensure both times are provided when enabling
+            if not quiet_start or not quiet_end:
+                frappe.throw(_("Quiet hours start and end times are required when quiet hours are enabled"))
+
+            # Note: We allow start > end for overnight quiet hours (e.g., 22:00 - 08:00)
+            # The should_notify_immediately() function in notifications.py handles this case
+            prefs.quiet_hours_start = quiet_start
+            prefs.quiet_hours_end = quiet_end
+
+    # Update individual quiet hours fields if provided (even when disabled)
+    if "quiet_hours_start" in notif_settings and not prefs.quiet_hours_enabled:
+        prefs.quiet_hours_start = notif_settings["quiet_hours_start"]
+
+    if "quiet_hours_end" in notif_settings and not prefs.quiet_hours_enabled:
+        prefs.quiet_hours_end = notif_settings["quiet_hours_end"]
+
+    # Save preferences
+    if prefs.is_new():
+        prefs.insert(ignore_permissions=True)
+    else:
+        prefs.save(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    # Clear cache so next get_user_notification_preferences() call fetches fresh data
+    cache_key = f"notification_preferences:{user}"
+    frappe.cache().delete_value(cache_key)
+
+
 @frappe.whitelist()
 def update_user_settings(settings):
     """
@@ -182,15 +156,13 @@ def update_user_settings(settings):
             - theme: 'light' | 'dark' | 'system'
             - language: 'es' | 'en'
             - notifications: {
-                email: bool,
-                push: bool,
-                task_assigned: bool,
-                task_status: bool,
-                overdue_alerts: bool,
-                order_status: bool,
-                project_health: bool,
-                digest_frequency: 'daily'|'weekly'|'none'
-              }
+                frequency: 'realtime' | 'daily' | 'weekly' | 'off',
+                quiet_hours_enabled: bool,
+                quiet_hours_start: str (HH:MM:SS),
+                quiet_hours_end: str (HH:MM:SS),
+                priority_bypass_enabled: bool,
+                email_enabled: bool
+            }
 
     Returns:
         dict: Updated settings
@@ -202,10 +174,6 @@ def update_user_settings(settings):
         settings = json.loads(settings)
 
     user_doc = frappe.get_doc("User", user)
-
-    # Verify user can only modify their own settings
-    if user_doc.name != user:
-        frappe.throw(_("You can only modify your own settings"), frappe.PermissionError)
 
     # Update theme if provided
     if "theme" in settings:
@@ -221,20 +189,12 @@ def update_user_settings(settings):
         if lang in ["es", "en"]:
             user_doc.language = lang
 
-    # Update notifications if provided
-    if "notifications" in settings:
-        notif = settings["notifications"]
-        # Validate and sanitize notification preferences
-        validated_notif = _validate_notification_preferences(notif)
-        if hasattr(user_doc, 'workhub_notifications'):
-            user_doc.workhub_notifications = json.dumps(validated_notif)
-
-    # SECURITY: ignore_permissions is safe here because:
-    # 1. We verified user can only modify their own doc (user_doc.name == frappe.session.user)
-    # 2. Regular users don't have write permission on User doctype by default
-    # 3. Only specific whitelisted fields (theme, language, notifications) are updated
     user_doc.save(ignore_permissions=True)
     frappe.db.commit()
+
+    # Update notification preferences in WH Notification Preferences DocType
+    if "notifications" in settings:
+        _update_notification_preferences(user, settings["notifications"])
 
     return get_user_settings()
 
@@ -293,10 +253,6 @@ def update_user_profile(data):
 
     user_doc = frappe.get_doc("User", user)
 
-    # Verify user can only modify their own profile
-    if user_doc.name != user:
-        frappe.throw(_("You can only modify your own profile"), frappe.PermissionError)
-
     # Update allowed fields
     if "first_name" in data:
         user_doc.first_name = cstr(data["first_name"])
@@ -310,10 +266,6 @@ def update_user_profile(data):
     if "user_image" in data:
         user_doc.user_image = data["user_image"]
 
-    # SECURITY: ignore_permissions is safe here because:
-    # 1. We verified user can only modify their own doc (user_doc.name == frappe.session.user)
-    # 2. Regular users don't have write permission on User doctype by default
-    # 3. Only specific whitelisted fields (first_name, last_name, user_image) are updated
     user_doc.save(ignore_permissions=True)
     frappe.db.commit()
 

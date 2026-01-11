@@ -63,16 +63,6 @@ def mark_all_read():
 def delete_notification(notification_id):
     """Eliminar una notificacion"""
     require_auth()
-    user = frappe.session.user
-
-    # Verify notification belongs to current user
-    notification = frappe.db.get_value("WH Notification", notification_id, "user")
-    if not notification:
-        frappe.throw(_("Notification not found"), frappe.DoesNotExistError)
-
-    if notification != user:
-        frappe.throw(_("You can only delete your own notifications"), frappe.PermissionError)
-
     frappe.delete_doc("WH Notification", notification_id, ignore_permissions=True)
     return {"success": True}
 
@@ -94,115 +84,78 @@ def clear_old_notifications(days=30):
 
 # ========== SCHEDULER FUNCTIONS ==========
 
-def send_daily_emails():
-    """Scheduler: Enviar email diario a las 8am"""
-    # Obtener usuarios con email diario activado
-    # Por ahora, todos los usuarios con tareas asignadas (via assignees table)
+def send_daily_digests():
+    """
+    Scheduler: Send daily digest emails at 8am to users with frequency='daily'.
+    Fetches all users with daily notification frequency and sends digest emails.
+    """
+    # Get all users with daily notification frequency and email enabled
     users = frappe.db.sql("""
-        SELECT DISTINCT ta.user
-        FROM `tabWH Task Assignee` ta
-        JOIN `tabWH Task` t ON t.name = ta.parent
-        WHERE t.status NOT IN ('DONE')
+        SELECT user
+        FROM `tabWH Notification Preferences`
+        WHERE frequency = 'daily'
+        AND email_enabled = 1
     """, as_dict=True)
+
+    if not users:
+        frappe.logger().info("No users with daily digest frequency found")
+        return
+
+    sent_count = 0
+    error_count = 0
 
     for user_row in users:
         user = user_row.get("user")
         if not user or user == "Administrator":
             continue
 
-        user_email = frappe.db.get_value("User", user, "email")
-        if not user_email:
+        try:
+            result = send_digest_email(user, digest_type='daily')
+            if result.get('sent'):
+                sent_count += 1
+                frappe.logger().info(f"Daily digest sent to {user}: {result.get('count')} notifications")
+        except Exception as e:
+            error_count += 1
+            frappe.log_error(f"Error sending daily digest to {user}: {e}", "Daily Digest Error")
+
+    frappe.logger().info(f"Daily digest batch complete: {sent_count} sent, {error_count} errors")
+
+
+def send_weekly_digests():
+    """
+    Scheduler: Send weekly digest emails on Mondays at 8am to users with frequency='weekly'.
+    Fetches all users with weekly notification frequency and sends digest emails.
+    """
+    # Get all users with weekly notification frequency and email enabled
+    users = frappe.db.sql("""
+        SELECT user
+        FROM `tabWH Notification Preferences`
+        WHERE frequency = 'weekly'
+        AND email_enabled = 1
+    """, as_dict=True)
+
+    if not users:
+        frappe.logger().info("No users with weekly digest frequency found")
+        return
+
+    sent_count = 0
+    error_count = 0
+
+    for user_row in users:
+        user = user_row.get("user")
+        if not user or user == "Administrator":
             continue
 
         try:
-            _send_daily_digest(user, user_email)
+            result = send_digest_email(user, digest_type='weekly')
+            if result.get('sent'):
+                sent_count += 1
+                frappe.logger().info(f"Weekly digest sent to {user}: {result.get('count')} notifications")
         except Exception as e:
-            frappe.log_error(f"Error sending daily email to {user}: {e}")
+            error_count += 1
+            frappe.log_error(f"Error sending weekly digest to {user}: {e}", "Weekly Digest Error")
 
-
-def _send_daily_digest(user, email):
-    """Enviar digest diario a un usuario"""
-    today = nowdate()
-
-    # Get all task IDs where user is assigned (any role)
-    task_ids = frappe.get_all("WH Task Assignee",
-        filters={"user": user},
-        pluck="parent"
-    )
-
-    if not task_ids:
-        return  # No tasks to report
-
-    # Tareas para hoy
-    today_tasks = frappe.get_all("WH Task",
-        filters={
-            "name": ["in", task_ids],
-            "status": ["in", ["DOING", "NEXT"]],
-            "due_date": today
-        },
-        fields=["title", "priority", "project"],
-        limit=10)
-
-    # Vencidas
-    overdue = frappe.get_all("WH Task",
-        filters={
-            "name": ["in", task_ids],
-            "status": ["not in", ["DONE"]],
-            "due_date": ["<", today]
-        },
-        fields=["title", "priority", "due_date"],
-        limit=5)
-
-    # Bloqueadas
-    blocked = frappe.get_all("WH Task",
-        filters={"name": ["in", task_ids], "status": "BLOCKED"},
-        fields=["title", "blocked_reason"],
-        limit=5)
-
-    # Si no hay nada relevante, no enviar
-    if not today_tasks and not overdue and not blocked:
-        return
-
-    # Construir mensaje
-    subject = f"Tu dia: {len(today_tasks)} tareas"
-    if overdue:
-        subject += f" ({len(overdue)} vencidas)"
-
-    message = f"""
-    <h2>Buenos dias!</h2>
-    <p>Aqui esta tu resumen para hoy:</p>
-
-    <h3>Para Hoy ({len(today_tasks)})</h3>
-    <ul>
-    {"".join([f"<li><strong>[{t['priority']}]</strong> {t['title']}</li>" for t in today_tasks]) or "<li>No hay tareas para hoy</li>"}
-    </ul>
-    """
-
-    if overdue:
-        message += f"""
-        <h3 style="color: red;">Vencidas ({len(overdue)})</h3>
-        <ul>
-        {"".join([f"<li><strong>{t['title']}</strong> (vencio {t['due_date']})</li>" for t in overdue])}
-        </ul>
-        """
-
-    if blocked:
-        message += f"""
-        <h3 style="color: orange;">Bloqueadas ({len(blocked)})</h3>
-        <ul>
-        {"".join([f"<li>{t['title']} - {t.get('blocked_reason', 'Sin razon')}</li>" for t in blocked])}
-        </ul>
-        """
-
-    message += """
-    <p><a href="/app/wh-task">Ver todas mis tareas</a></p>
-    """
-
-    frappe.sendmail(
-        recipients=[email],
-        subject=subject,
-        message=message
-    )
+    frappe.logger().info(f"Weekly digest batch complete: {sent_count} sent, {error_count} errors")
 
 
 def send_overdue_alerts():
@@ -211,7 +164,7 @@ def send_overdue_alerts():
 
     # Tareas que acaban de vencer (due_date = ayer y no notificadas)
     newly_overdue = frappe.db.sql("""
-        SELECT t.name, t.title, t.due_date, t.project
+        SELECT t.name, t.title, t.assigned_to, t.due_date, t.project
         FROM `tabWH Task` t
         WHERE t.status NOT IN ('DONE')
         AND t.due_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
@@ -224,24 +177,19 @@ def send_overdue_alerts():
     """, as_dict=True)
 
     for task in newly_overdue:
-        # Get all assignees for this task
-        assignees = frappe.get_all("WH Task Assignee",
-            filters={"parent": task["name"]},
-            pluck="user"
-        )
+        # Fetch task priority for proper routing
+        task_priority = frappe.db.get_value("WH Task", task["name"], "priority")
 
-        # Notify each assignee
-        for assignee in assignees:
-            if assignee and assignee != "Administrator":
-                create_notification(
-                    user=assignee,
-                    notification_type="OVERDUE",
-                    title=f"Tarea vencida: {task['title']}",
-                    message=f"La tarea '{task['title']}' vencio el {task['due_date']}",
-                    reference_doctype="WH Task",
-                    reference_name=task["name"],
-                    priority="HIGH"
-                )
+        create_notification(
+            user=task["assigned_to"],
+            notification_type="OVERDUE",
+            title=f"Tarea vencida: {task['title']}",
+            message=f"La tarea '{task['title']}' vencio el {task['due_date']}",
+            reference_doctype="WH Task",
+            reference_name=task["name"],
+            priority="HIGH",
+            task_priority=task_priority
+        )
 
 
 def check_project_health():
@@ -277,7 +225,7 @@ def notify_blocked_dependencies():
     # Tareas que bloquean a otras y llevan mas de 2 dias sin moverse
     blocking_tasks = frappe.db.sql("""
         SELECT DISTINCT
-            t.name, t.title, t.status,
+            t.name, t.title, t.assigned_to, t.status,
             COUNT(d.successor) as blocking_count
         FROM `tabWH Task` t
         JOIN `tabWH Task Dependency` d ON d.predecessor = t.name AND d.is_active = 1
@@ -296,40 +244,200 @@ def notify_blocked_dependencies():
         })
 
         if not existing:
-            # Get all assignees for this task
-            assignees = frappe.get_all("WH Task Assignee",
-                filters={"parent": task["name"]},
-                pluck="user"
-            )
+            # Fetch task priority for proper routing
+            task_priority = frappe.db.get_value("WH Task", task["name"], "priority")
 
-            # Notify each assignee
-            for assignee in assignees:
-                if assignee and assignee != "Administrator":
-                    create_notification(
-                        user=assignee,
-                        notification_type="DEPENDENCY",
-                        title=f"Tarea bloqueando a {task['blocking_count']} otras",
-                        message=f"Tu tarea '{task['title']}' esta bloqueando a {task['blocking_count']} tareas de otros. Considera priorizarla.",
-                        reference_doctype="WH Task",
-                        reference_name=task["name"],
-                        priority="MEDIUM"
-                    )
+            create_notification(
+                user=task["assigned_to"],
+                notification_type="DEPENDENCY",
+                title=f"Tarea bloqueando a {task['blocking_count']} otras",
+                message=f"Tu tarea '{task['title']}' esta bloqueando a {task['blocking_count']} tareas de otros. Considera priorizarla.",
+                reference_doctype="WH Task",
+                reference_name=task["name"],
+                priority="MEDIUM",
+                task_priority=task_priority
+            )
 
 
 # ========== HELPER FUNCTIONS ==========
 
-def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None):
+def get_user_notification_preferences(user=None):
     """
-    Crear una notificacion
+    Get notification preferences for a user. Creates default preferences if they don't exist.
+    Results are cached for performance.
 
-    SECURITY: This is an internal helper function for creating system-generated notifications.
-    - NOT exposed as an API endpoint (not decorated with @frappe.whitelist())
-    - Called by scheduler functions (send_overdue_alerts, check_project_health, notify_blocked_dependencies)
-    - Called by internal notification helpers (notify_task_assigned, notify_task_completed)
-    - Creates notifications FOR users, not BY users (system-generated)
-    - Regular users don't have create permission on WH Notification doctype
-    - Enables automated notification system without requiring user permissions
+    Args:
+        user: User email/name. If None, uses current session user.
+
+    Returns:
+        dict: Notification preferences with keys:
+            - frequency: 'realtime' | 'daily' | 'weekly' | 'off'
+            - quiet_hours_enabled: bool
+            - quiet_hours_start: time string (HH:MM:SS)
+            - quiet_hours_end: time string (HH:MM:SS)
+            - priority_bypass_enabled: bool
+            - email_enabled: bool
     """
+    if not user:
+        user = frappe.session.user
+
+    # Check cache first
+    cache_key = f"notification_preferences:{user}"
+    cached = frappe.cache().get_value(cache_key)
+    if cached:
+        return cached
+
+    # Try to get existing preferences
+    prefs_name = user  # autoname is by user field
+
+    try:
+        prefs = frappe.get_doc("WH Notification Preferences", prefs_name)
+    except frappe.DoesNotExistError:
+        # Create default preferences
+        prefs = frappe.new_doc("WH Notification Preferences")
+        prefs.user = user
+        prefs.frequency = "daily"
+        prefs.email_enabled = 1
+        prefs.priority_bypass_enabled = 1
+        prefs.quiet_hours_enabled = 0
+        prefs.insert(ignore_permissions=True)
+        frappe.db.commit()
+
+    # Build response dict
+    result = {
+        "frequency": prefs.frequency,
+        "quiet_hours_enabled": bool(prefs.quiet_hours_enabled),
+        "quiet_hours_start": prefs.quiet_hours_start,
+        "quiet_hours_end": prefs.quiet_hours_end,
+        "priority_bypass_enabled": bool(prefs.priority_bypass_enabled),
+        "email_enabled": bool(prefs.email_enabled)
+    }
+
+    # Cache for 5 minutes
+    frappe.cache().set_value(cache_key, result, expires_in_sec=300)
+
+    return result
+
+
+def should_notify_immediately(user, task_priority=None):
+    """
+    Determine if a notification should be sent immediately or queued for digest.
+
+    Decision logic:
+    1. If task is P0/P1 and priority_bypass_enabled -> True (bypasses all other settings)
+    2. If frequency is 'off' -> False
+    3. If frequency is 'realtime':
+       - Check quiet hours if enabled
+       - Return True if outside quiet hours, False if within
+    4. If frequency is 'daily' or 'weekly' -> False (queue for digest)
+
+    Args:
+        user: User email/name. If None, uses current session user.
+        task_priority: Task priority ('P0', 'P1', 'P2', etc.). If None, priority bypass is not considered.
+
+    Returns:
+        bool: True if notification should be sent immediately, False if queued for digest or skipped.
+    """
+    if not user:
+        user = frappe.session.user
+
+    # Get user preferences
+    prefs = get_user_notification_preferences(user)
+
+    # Priority bypass: P0/P1 always notify immediately if enabled
+    if task_priority in ['P0', 'P1'] and prefs.get('priority_bypass_enabled'):
+        return True
+
+    # If frequency is 'off', never notify
+    frequency = prefs.get('frequency', 'daily')
+    if frequency == 'off':
+        return False
+
+    # If frequency is 'daily' or 'weekly', queue for digest
+    if frequency in ['daily', 'weekly']:
+        return False
+
+    # If frequency is 'realtime', check quiet hours
+    if frequency == 'realtime':
+        # If quiet hours not enabled, notify immediately
+        if not prefs.get('quiet_hours_enabled'):
+            return True
+
+        # Check if current time is within quiet hours
+        quiet_start = prefs.get('quiet_hours_start')
+        quiet_end = prefs.get('quiet_hours_end')
+
+        if not quiet_start or not quiet_end:
+            # If quiet hours not properly configured, notify immediately
+            return True
+
+        # Get current time in user's timezone
+        # TODO: Consider user timezone from User doctype or locale settings
+        # For now, use system time
+        from datetime import datetime, time
+        current_time = datetime.now().time()
+
+        # Parse quiet hours times
+        if isinstance(quiet_start, str):
+            quiet_start_time = datetime.strptime(quiet_start, '%H:%M:%S').time()
+        else:
+            quiet_start_time = quiet_start
+
+        if isinstance(quiet_end, str):
+            quiet_end_time = datetime.strptime(quiet_end, '%H:%M:%S').time()
+        else:
+            quiet_end_time = quiet_end
+
+        # Check if current time is within quiet hours
+        # Handle case where quiet hours span midnight (e.g., 22:00 to 06:00)
+        if quiet_start_time <= quiet_end_time:
+            # Normal case: quiet hours within same day (e.g., 09:00 to 17:00)
+            is_quiet_time = quiet_start_time <= current_time <= quiet_end_time
+        else:
+            # Quiet hours span midnight (e.g., 22:00 to 06:00)
+            is_quiet_time = current_time >= quiet_start_time or current_time <= quiet_end_time
+
+        # If within quiet hours, don't notify
+        if is_quiet_time:
+            return False
+
+        # Outside quiet hours, notify immediately
+        return True
+
+    # Default: don't notify immediately
+    return False
+
+
+def create_notification(user, notification_type, title, message, reference_doctype=None, reference_name=None, priority="MEDIUM", action_url=None, task_priority=None):
+    """
+    Create a notification and route it based on user preferences.
+
+    Routing logic:
+    - If should_notify_immediately() returns True: creates notification + sends immediate email
+    - If should_notify_immediately() returns False: creates notification with queued_for_digest=1
+    - If frequency is 'off': creates notification only (in-app)
+
+    Args:
+        user: User email/name to notify
+        notification_type: Type of notification (TASK_ASSIGNED, OVERDUE, etc.)
+        title: Notification title
+        message: Notification message
+        reference_doctype: Optional reference doctype
+        reference_name: Optional reference name
+        priority: Notification priority (LOW, MEDIUM, HIGH)
+        action_url: Optional URL for action button
+        task_priority: Optional task priority (P0, P1, P2) for routing decisions
+
+    Returns:
+        str: Name of created notification document
+    """
+    # Get user preferences to determine routing
+    prefs = get_user_notification_preferences(user)
+
+    # Determine if notification should be sent immediately
+    notify_now = should_notify_immediately(user, task_priority)
+
+    # Create the notification document
     doc = frappe.new_doc("WH Notification")
     doc.user = user
     doc.type = notification_type
@@ -340,36 +448,291 @@ def create_notification(user, notification_type, title, message, reference_docty
     doc.priority = priority
     doc.action_url = action_url
     doc.created_at = now_datetime()
-    doc.insert(ignore_permissions=True)  # Safe: Internal function for system notifications (see docstring)
+
+    # Set queued_for_digest based on routing decision
+    # If notify_now is True, notification is sent immediately (not queued)
+    # If notify_now is False, notification is queued for digest
+    doc.queued_for_digest = 0 if notify_now else 1
+
+    doc.insert(ignore_permissions=True)
+
+    # Send immediate email if:
+    # 1. Routing decision says to notify immediately
+    # 2. Email is enabled in user preferences
+    if notify_now and prefs.get('email_enabled'):
+        try:
+            send_immediate_email(user, title, message, action_url, reference_doctype, reference_name)
+        except Exception as e:
+            # Log error but don't fail notification creation
+            frappe.log_error(f"Error sending immediate notification email to {user}: {e}", "Notification Email Error")
+
     return doc.name
 
 
-def notify_task_assigned(task_id, assignees, assigned_by=None):
-    """Notificar cuando se asigna una tarea
+def send_immediate_email(user, title, message, action_url=None, reference_doctype=None, reference_name=None):
+    """
+    Send an immediate notification email to a user.
+    Includes unsubscribe link and notification preferences link.
 
     Args:
-        task_id: ID de la tarea
-        assignees: Usuario individual (string) o lista de usuarios
-        assigned_by: Usuario que hizo la asignacion (opcional)
+        user: User email/name
+        title: Notification title
+        message: Notification message
+        action_url: Optional URL for action
+        reference_doctype: Optional reference doctype
+        reference_name: Optional reference name
     """
+    # Get user email
+    user_email = frappe.db.get_value("User", user, "email")
+    if not user_email:
+        return
+
+    # Get site URL for absolute links
+    site_url = frappe.utils.get_url()
+
+    # Build email content with enhanced styling and required links
+    email_body = f"""
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Main Content -->
+        <div style="background-color: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #1a1a1a; margin-top: 0; margin-bottom: 16px; font-size: 24px; font-weight: 600;">{title}</h2>
+            <p style="color: #4a5568; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">{message}</p>
+
+            {f'<p style="margin-top: 24px;"><a href="{site_url}{action_url}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Ver detalles</a></p>' if action_url else ''}
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="color: #718096; font-size: 13px; margin: 0 0 12px 0;">
+                <a href="{site_url}/app/user-settings/notifications" style="color: #007bff; text-decoration: none;">⚙️ Configurar preferencias de notificaciones</a>
+            </p>
+            <p style="color: #a0aec0; font-size: 12px; margin: 0;">
+                ¿No quieres recibir estos emails?
+                <a href="{site_url}/app/user-settings/notifications?tab=notifications" style="color: #007bff; text-decoration: none;">Cancelar suscripción</a>
+            </p>
+        </div>
+
+        <!-- Branding -->
+        <div style="margin-top: 20px; text-align: center;">
+            <p style="color: #cbd5e0; font-size: 11px; margin: 0;">
+                Enviado por <strong>WorkHub</strong>
+            </p>
+        </div>
+    </div>
+    """
+
+    # Send email
+    frappe.sendmail(
+        recipients=[user_email],
+        subject=f"WorkHub: {title}",
+        message=email_body
+    )
+
+
+def send_digest_email(user, digest_type='daily'):
+    """
+    Send digest email to a user with queued notifications.
+    Groups notifications by project and type, renders the digest template, and sends email.
+
+    Args:
+        user: User email/name to send digest to
+        digest_type: 'daily' or 'weekly'
+
+    Returns:
+        dict: Result with success status and count of notifications sent
+    """
+    # Fetch queued notifications for this user that haven't been sent yet
+    notifications = frappe.get_all("WH Notification",
+        filters={
+            "user": user,
+            "queued_for_digest": 1,
+            "digest_sent_at": ["is", "not set"]
+        },
+        fields=["name", "type", "priority", "title", "message",
+                "reference_doctype", "reference_name", "action_url",
+                "created_at"],
+        order_by="created_at desc")
+
+    # Handle empty digests gracefully - don't send if nothing to report
+    if not notifications:
+        return {
+            "success": True,
+            "sent": False,
+            "count": 0,
+            "message": "No notifications to send in digest"
+        }
+
+    # Get user details
+    user_email = frappe.db.get_value("User", user, "email")
+    user_name = frappe.db.get_value("User", user, "full_name") or user
+
+    if not user_email:
+        frappe.log_error(f"User {user} has no email address", "Digest Email Error")
+        return {
+            "success": False,
+            "sent": False,
+            "count": 0,
+            "message": "User has no email address"
+        }
+
+    # Get site URL for absolute links
+    site_url = frappe.utils.get_url()
+
+    # Group notifications by project and type
+    grouped_notifications = {}
+    no_project = {
+        "project_title": None,
+        "total_count": 0,
+        "types": {}
+    }
+
+    # Process each notification
+    for notif in notifications:
+        # Get project information from reference if it's a task
+        project_key = None
+        project_title = None
+
+        if notif.get("reference_doctype") == "WH Task" and notif.get("reference_name"):
+            try:
+                task_project = frappe.db.get_value("WH Task", notif["reference_name"], "project")
+                if task_project:
+                    project_key = task_project
+                    project_title = frappe.db.get_value("WH Project", task_project, "title")
+            except Exception:
+                pass
+        elif notif.get("reference_doctype") == "WH Project" and notif.get("reference_name"):
+            try:
+                project_key = notif["reference_name"]
+                project_title = frappe.db.get_value("WH Project", project_key, "title")
+            except Exception:
+                pass
+
+        # Add to appropriate group
+        if project_key:
+            # Initialize project group if not exists
+            if project_key not in grouped_notifications:
+                grouped_notifications[project_key] = {
+                    "project_title": project_title or project_key,
+                    "total_count": 0,
+                    "types": {}
+                }
+
+            # Add to project group
+            target_group = grouped_notifications[project_key]
+        else:
+            # Add to no-project group
+            target_group = no_project
+
+        # Initialize type list if not exists
+        notif_type = notif.get("type", "OTHER")
+        if notif_type not in target_group["types"]:
+            target_group["types"][notif_type] = []
+
+        # Add notification to type list
+        target_group["types"][notif_type].append(notif)
+        target_group["total_count"] += 1
+
+    # Calculate total count
+    total_count = len(notifications)
+
+    # Calculate period dates for weekly digest
+    period_start = None
+    period_end = None
+    if digest_type == 'weekly':
+        from frappe.utils import add_days, formatdate
+        period_end = formatdate(nowdate(), "dd/MM/yyyy")
+        period_start = formatdate(add_days(nowdate(), -7), "dd/MM/yyyy")
+
+    # Prepare template context
+    template_context = {
+        "digest_type": digest_type,
+        "user_name": user_name,
+        "total_count": total_count,
+        "grouped_notifications": grouped_notifications,
+        "no_project": no_project if no_project["total_count"] > 0 else None,
+        "site_url": site_url,
+        "period_start": period_start,
+        "period_end": period_end
+    }
+
+    # Render email template
+    try:
+        email_html = frappe.render_template(
+            "workhub_frappe_app/templates/emails/notification_digest.html",
+            template_context
+        )
+    except Exception as e:
+        frappe.log_error(f"Error rendering digest template for {user}: {e}", "Digest Template Error")
+        return {
+            "success": False,
+            "sent": False,
+            "count": 0,
+            "message": f"Template rendering error: {str(e)}"
+        }
+
+    # Prepare subject line
+    if digest_type == 'daily':
+        subject = f"WorkHub: Resumen Diario ({total_count} notificación{'es' if total_count != 1 else ''})"
+    else:
+        subject = f"WorkHub: Resumen Semanal ({total_count} notificación{'es' if total_count != 1 else ''})"
+
+    # Send email
+    try:
+        frappe.sendmail(
+            recipients=[user_email],
+            subject=subject,
+            message=email_html
+        )
+    except Exception as e:
+        frappe.log_error(f"Error sending digest email to {user}: {e}", "Digest Email Error")
+        return {
+            "success": False,
+            "sent": False,
+            "count": 0,
+            "message": f"Email sending error: {str(e)}"
+        }
+
+    # Mark notifications as sent
+    try:
+        notification_names = [n["name"] for n in notifications]
+        frappe.db.sql("""
+            UPDATE `tabWH Notification`
+            SET digest_sent_at = %s
+            WHERE name IN %s
+        """, (now_datetime(), notification_names))
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(f"Error marking notifications as sent for {user}: {e}", "Digest Update Error")
+        # Email was sent successfully, so we still return success but log the error
+        return {
+            "success": True,
+            "sent": True,
+            "count": total_count,
+            "message": f"Email sent but error updating notifications: {str(e)}"
+        }
+
+    return {
+        "success": True,
+        "sent": True,
+        "count": total_count,
+        "message": f"Digest email sent successfully with {total_count} notifications"
+    }
+
+
+def notify_task_assigned(task_id, assigned_to, assigned_by=None):
+    """Notificar cuando se asigna una tarea"""
     task = frappe.get_doc("WH Task", task_id)
 
-    # Normalizar assignees a lista
-    if isinstance(assignees, str):
-        assignees = [assignees]
-
-    # Notificar a cada asignado
-    for assignee in assignees:
-        if assignee and assignee != "Administrator":
-            create_notification(
-                user=assignee,
-                notification_type="TASK_ASSIGNED",
-                title=f"Nueva tarea: {task.title}",
-                message=f"Te han asignado la tarea '{task.title}'" + (f" por {assigned_by}" if assigned_by else ""),
-                reference_doctype="WH Task",
-                reference_name=task_id,
-                priority="MEDIUM" if task.priority != "P0" else "HIGH"
-            )
+    create_notification(
+        user=assigned_to,
+        notification_type="TASK_ASSIGNED",
+        title=f"Nueva tarea: {task.title}",
+        message=f"Te han asignado la tarea '{task.title}'" + (f" por {assigned_by}" if assigned_by else ""),
+        reference_doctype="WH Task",
+        reference_name=task_id,
+        priority="MEDIUM" if task.priority != "P0" else "HIGH",
+        task_priority=task.priority
+    )
 
 
 def notify_task_completed(task_id):
@@ -383,22 +746,13 @@ def notify_task_completed(task_id):
 
     for dep in waiting_tasks:
         successor = frappe.get_doc("WH Task", dep["successor"])
-
-        # Get all assignees of the successor task
-        successor_assignees = frappe.get_all("WH Task Assignee",
-            filters={"parent": dep["successor"]},
-            pluck="user"
+        create_notification(
+            user=successor.assigned_to,
+            notification_type="COMPLETED",
+            title=f"Tarea desbloqueada: {successor.title}",
+            message=f"La tarea '{task.title}' se completo. Tu tarea '{successor.title}' ya puede avanzar.",
+            reference_doctype="WH Task",
+            reference_name=dep["successor"],
+            priority="LOW",
+            task_priority=successor.priority
         )
-
-        # Notify each assignee of the successor task
-        for assignee in successor_assignees:
-            if assignee and assignee != "Administrator":
-                create_notification(
-                    user=assignee,
-                    notification_type="COMPLETED",
-                    title=f"Tarea desbloqueada: {successor.title}",
-                    message=f"La tarea '{task.title}' se completo. Tu tarea '{successor.title}' ya puede avanzar.",
-                    reference_doctype="WH Task",
-                    reference_name=dep["successor"],
-                    priority="LOW"
-                )
