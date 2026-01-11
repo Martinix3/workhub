@@ -175,3 +175,28 @@ def verify_auth_cookie():
             "user": "Guest",
             "error": "Authentication verification failed"
         }
+
+
+@frappe.whitelist(allow_guest=True)
+def logout():
+    """
+    Logout by clearing the auth cookie.
+    Sets the workhub_auth cookie with an expired date to clear it from the browser.
+
+    Returns:
+        dict: Success message
+    """
+    # Clear the auth cookie by setting it with max_age=0 (immediate expiry)
+    frappe.local.cookie_manager.set_cookie(
+        key="workhub_auth",
+        value="",
+        httponly=True,
+        samesite="Lax",
+        max_age=0,  # Immediate expiry
+        path="/"
+    )
+
+    return {
+        "success": True,
+        "message": "Logged out successfully"
+    }
