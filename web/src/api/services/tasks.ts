@@ -206,6 +206,13 @@ export const tasksApi = {
       user_id: userId,
       period
     })
+  },
+
+  async exportKPIs(format: 'json' | 'csv', scope?: string): Promise<string | DashboardKPIs> {
+    return frappe.call('workhub_frappe_app.api.kpis.export_kpis', {
+      format,
+      scope
+    })
   }
 }
 

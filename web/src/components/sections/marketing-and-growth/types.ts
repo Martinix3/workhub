@@ -101,6 +101,8 @@ export interface MarketingDashboardProps {
   onViewPost?: (id: string) => void
   onNewCampaign?: () => void
   onNewPost?: () => void
+  /** Called when user exports KPIs data */
+  onExport?: (format: 'json' | 'csv') => Promise<void> | void
 }
 
 export interface CampaignsProps {

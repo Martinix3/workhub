@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, Minus, CheckCircle } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { ExportKPIsButton } from '../../components/ui'
 import { useTaskDashboard } from '../../api'
+import { tasksApi } from '../../api/services/tasks'
+import { downloadJSON, downloadCSV } from '../../utils/download'
 import type { ProjectHealth } from '../../components/sections/tasks/types'
 
 const healthConfig: Record<ProjectHealth, { bg: string; text: string }> = {
@@ -15,6 +18,23 @@ const healthConfig: Record<ProjectHealth, { bg: string; text: string }> = {
 export function DashboardPage() {
   const navigate = useNavigate()
   const { kpis, projects, loading, error, refetch } = useTaskDashboard()
+
+  const handleExport = async (format: 'json' | 'csv') => {
+    try {
+      const data = await tasksApi.exportKPIs(format)
+      const timestamp = new Date().toISOString().split('T')[0]
+      const filename = `kpis-${timestamp}`
+
+      if (format === 'json') {
+        downloadJSON(data, filename)
+      } else {
+        downloadCSV(data as string, filename)
+      }
+    } catch (error) {
+      console.error('Failed to export KPIs:', error)
+      // TODO: Add toast notification for error
+    }
+  }
 
   if (loading) {
     return <LoadingState message="Cargando dashboard..." />
@@ -40,12 +60,17 @@ export function DashboardPage() {
       {/* Header */}
       <div className="border-b-2 border-stone-900 bg-white px-8 py-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="font-serif text-3xl font-bold text-stone-900">
-            KPIs Dashboard
-          </h1>
-          <p className="text-stone-500 mt-1 font-mono text-sm uppercase tracking-wider">
-            {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="font-serif text-3xl font-bold text-stone-900">
+                KPIs Dashboard
+              </h1>
+              <p className="text-stone-500 mt-1 font-mono text-sm uppercase tracking-wider">
+                {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+            <ExportKPIsButton onExport={handleExport} />
+          </div>
         </div>
       </div>
 

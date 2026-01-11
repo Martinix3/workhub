@@ -4,6 +4,8 @@ import { MarketingDashboard } from '../components/sections/marketing-and-growth/
 import { LoadingState } from '../components/ui/LoadingState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { useMarketingDashboard } from '../api'
+import { tasksApi } from '../api/services/tasks'
+import { downloadJSON, downloadCSV } from '../utils/download'
 import { X, Save } from 'lucide-react'
 
 // Simple Modal component
@@ -81,6 +83,23 @@ export function MarketingDashboardPage() {
     }
   }
 
+  const handleExport = async (format: 'json' | 'csv') => {
+    try {
+      const data = await tasksApi.exportKPIs(format)
+      const timestamp = new Date().toISOString().split('T')[0]
+      const filename = `marketing-kpis-${timestamp}`
+
+      if (format === 'json') {
+        downloadJSON(data, filename)
+      } else {
+        downloadCSV(data as string, filename)
+      }
+    } catch (error) {
+      console.error('Failed to export KPIs:', error)
+      // TODO: Add toast notification for error
+    }
+  }
+
   if (loading) {
     return <LoadingState message="Cargando marketing..." />
   }
@@ -109,6 +128,7 @@ export function MarketingDashboardPage() {
         onViewPost={(id) => console.log('View post:', id)}
         onNewCampaign={() => setShowCampaignModal(true)}
         onNewPost={() => setShowPostModal(true)}
+        onExport={handleExport}
       />
 
       {/* New Campaign Modal */}
