@@ -145,8 +145,7 @@ def get_list(filters=None, limit=50, offset=0):
         fields=["name", "customer_name", "territory", "mobile_no", "email_id", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="customer_name asc",
-        ignore_permissions=True
+        order_by="customer_name asc"
     )
 
     # Add stats for each distributor
