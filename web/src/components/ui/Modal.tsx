@@ -1,5 +1,6 @@
-import { useEffect, useCallback, type ReactNode } from 'react'
+import { useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { useFocusTrap } from '../../hooks'
 
 interface ModalProps {
   isOpen: boolean
@@ -26,6 +27,12 @@ export function Modal({
   size = 'lg',
   progress
 }: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null)
+  const titleId = `modal-title-${useRef(Math.random().toString(36).slice(2, 11)).current}`
+
+  // Trap focus within the modal when open
+  useFocusTrap(modalRef, isOpen)
+
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }, [onClose])
@@ -52,7 +59,12 @@ export function Modal({
       />
 
       {/* Modal */}
-      <div className={`
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={`
         relative w-full ${sizeClasses[size]}
         bg-white dark:bg-stone-900
         border-2 border-stone-900 dark:border-stone-100
@@ -73,11 +85,15 @@ export function Modal({
 
           {/* Title and close */}
           <div className="flex items-center justify-between p-4">
-            <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            <h2
+              id={titleId}
+              className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100"
+            >
               {title}
             </h2>
             <button
               onClick={onClose}
+              aria-label="Close modal"
               className="p-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
             >
               <X size={20} className="text-stone-500" />
