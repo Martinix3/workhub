@@ -1,9 +1,9 @@
 // KPI Dashboard Page - Managers only
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, TrendingDown, Minus, CheckCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, CheckCircle, Filter } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useTaskDashboard } from '../../api'
+import { useTaskDashboard, useSavedFilters, useFilterCounts } from '../../api'
 import type { ProjectHealth } from '../../components/sections/tasks/types'
 
 const healthConfig: Record<ProjectHealth, { bg: string; text: string }> = {
@@ -15,6 +15,8 @@ const healthConfig: Record<ProjectHealth, { bg: string; text: string }> = {
 export function DashboardPage() {
   const navigate = useNavigate()
   const { kpis, projects, loading, error, refetch } = useTaskDashboard()
+  const { data: savedFilters } = useSavedFilters('task')
+  const { data: filterCounts } = useFilterCounts(30000) // Poll every 30s
 
   if (loading) {
     return <LoadingState message="Cargando dashboard..." />
@@ -218,6 +220,72 @@ export function DashboardPage() {
                     <span className={`font-mono font-bold text-lg ${item.color || 'text-stone-900'}`}>{item.value}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Saved Filters Summary */}
+            <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] p-6">
+              <h2 className="font-serif text-lg font-bold text-stone-900 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Filter size={18} />
+                Vistas Guardadas
+              </h2>
+
+              <div className="space-y-2">
+                {savedFilters && savedFilters.length > 0 ? (
+                  savedFilters.slice(0, 5).map((filter) => {
+                    const count = filterCounts?.[filter.name] || 0
+                    return (
+                      <button
+                        key={filter.name}
+                        onClick={() => navigate(`/tareas/kanban?filter=${filter.name}`)}
+                        className="
+                          w-full text-left p-3
+                          bg-stone-50 border-2 border-stone-300
+                          hover:border-stone-900
+                          hover:shadow-[2px_2px_0_#1c1917]
+                          transition-all duration-75
+                        "
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            {filter.icon && <span className="text-base">{filter.icon}</span>}
+                            <span className="font-medium text-stone-900 truncate">{filter.title}</span>
+                          </div>
+                          <span className="
+                            px-2 py-0.5
+                            text-xs font-bold font-mono
+                            border border-stone-900
+                            bg-stone-900 text-white
+                          ">
+                            {count}
+                          </span>
+                        </div>
+                        {filter.is_shared && (
+                          <p className="text-xs text-stone-500">Compartido con equipo</p>
+                        )}
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-4 text-stone-500">
+                    <Filter size={24} className="mx-auto mb-2 text-stone-300" />
+                    <p className="text-sm font-bold uppercase tracking-wider">Sin vistas guardadas</p>
+                  </div>
+                )}
+
+                {savedFilters && savedFilters.length > 5 && (
+                  <button
+                    onClick={() => navigate('/tareas/kanban')}
+                    className="
+                      w-full mt-2 py-2
+                      text-xs text-amber-600 hover:text-amber-700
+                      font-medium uppercase tracking-wider
+                      transition-colors
+                    "
+                  >
+                    Ver todas las vistas ({savedFilters.length})
+                  </button>
+                )}
               </div>
             </div>
           </div>
