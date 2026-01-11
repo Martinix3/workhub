@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext'
 import { useNavigate } from 'react-router-dom'
 
 export function LoginPage() {
-  const { login, loading, error, clearError, bypassAuth } = useAuth()
+  const { login, loading, error, clearError, bypassAuth, isBypassEnabled } = useAuth()
   const navigate = useNavigate()
 
   const handleBypass = () => {
@@ -88,26 +88,30 @@ export function LoginPage() {
             </span>
           </button>
 
-          {/* Divider */}
-          <div className="my-6 flex items-center">
-            <div className="flex-1 border-t border-stone-300"></div>
-            <span className="px-3 text-sm text-stone-500">o</span>
-            <div className="flex-1 border-t border-stone-300"></div>
-          </div>
+          {/* Divider - Only show in development when bypass is enabled */}
+          {isBypassEnabled && (
+            <>
+              <div className="my-6 flex items-center">
+                <div className="flex-1 border-t border-stone-300"></div>
+                <span className="px-3 text-sm text-stone-500">o</span>
+                <div className="flex-1 border-t border-stone-300"></div>
+              </div>
 
-          {/* Bypass Button for UI Review */}
-          <button
-            onClick={handleBypass}
-            className="
-              w-full px-6 py-3
-              bg-stone-100 border-2 border-stone-400
-              text-stone-600 font-medium
-              hover:bg-stone-200
-              transition-colors
-            "
-          >
-            Revisar UI (sin backend)
-          </button>
+              {/* Bypass Button for UI Review */}
+              <button
+                onClick={handleBypass}
+                className="
+                  w-full px-6 py-3
+                  bg-stone-100 border-2 border-stone-400
+                  text-stone-600 font-medium
+                  hover:bg-stone-200
+                  transition-colors
+                "
+              >
+                Revisar UI (sin backend)
+              </button>
+            </>
+          )}
         </div>
 
         {/* Footer */}

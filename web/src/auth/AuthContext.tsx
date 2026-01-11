@@ -17,6 +17,7 @@ interface AuthContextType {
   error: string | null
   isAuthenticated: boolean
   isBypassMode: boolean
+  isBypassEnabled: boolean
   login: () => void
   logout: () => Promise<void>
   clearError: () => void
@@ -30,6 +31,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 // Frappe backend URL - used in production OAuth flows
 export const FRAPPE_URL = import.meta.env.VITE_FRAPPE_URL || 'http://localhost:8000'
+// Authentication bypass - disabled by default for security
+const IS_BYPASS_ENABLED = import.meta.env.VITE_ENABLE_AUTH_BYPASS === 'true'
 
 // Provider props
 interface AuthProviderProps {
@@ -87,8 +90,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return
     }
 
-    // Check for bypass mode first
-    if (sessionStorage.getItem(BYPASS_STORAGE_KEY) === 'true') {
+    // Check for bypass mode first (only if bypass is enabled)
+    if (IS_BYPASS_ENABLED && sessionStorage.getItem(BYPASS_STORAGE_KEY) === 'true') {
       setUser(BYPASS_USER)
       storeUser(BYPASS_USER)
       setIsBypassMode(true)
@@ -210,6 +213,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Enable bypass mode (for UI review without backend)
   const bypassAuth = useCallback(() => {
+    if (!IS_BYPASS_ENABLED) {
+      console.warn('Authentication bypass is disabled. Set VITE_ENABLE_AUTH_BYPASS=true in .env to enable for development.')
+      return
+    }
     sessionStorage.setItem(BYPASS_STORAGE_KEY, 'true')
     setUser(BYPASS_USER)
     storeUser(BYPASS_USER)
@@ -297,6 +304,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     error,
     isAuthenticated: !!user,
     isBypassMode,
+    isBypassEnabled: IS_BYPASS_ENABLED,
     login,
     logout,
     clearError,
