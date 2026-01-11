@@ -48,8 +48,7 @@ def get_tasks(filters=None, limit=50, offset=0):
         ],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="priority asc, due_date asc",
-        ignore_permissions=True
+        order_by="priority asc, due_date asc"
     )
 
     # Enrich with project info
