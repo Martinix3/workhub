@@ -77,11 +77,12 @@ export const productionApi = {
     return data
   },
 
-  async recordReading(ccpId: string, value: string, lotNumber?: string): Promise<void> {
+  async recordReading(ccpId: string, value: string, lotNumber?: string, correctiveAction?: string): Promise<void> {
     await frappe.call('workhub_frappe_app.api.production.record_reading', {
       ccp_id: ccpId,
       value,
-      lot_number: lotNumber
+      lot_number: lotNumber,
+      corrective_action: correctiveAction
     })
   },
 
