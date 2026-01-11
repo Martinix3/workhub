@@ -5,7 +5,8 @@ import type { NavigationSection } from './components/shell/types'
 import { AuthProvider, useAuth, LoginPage, ProtectedRoute, RoleGuard } from './auth'
 import { LoadingState } from './components/ui/LoadingState'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { GlobalActions } from './components/GlobalActions'
+import { SmartNotepadFAB } from './components/smart-notepad'
+import { ToastProvider } from './hooks/useToast'
 
 // Lazy-loaded Page Components (code splitting)
 const CommandCenterPage = lazy(() => import('./pages/CommandCenterPage').then(m => ({ default: m.CommandCenterPage })))
@@ -26,10 +27,8 @@ const MarketingDashboardPage = lazy(() => import('./pages/MarketingDashboardPage
 const MyDayPage = lazy(() => import('./pages/tasks/MyDayPage').then(m => ({ default: m.MyDayPage })))
 const ProjectsPage = lazy(() => import('./pages/tasks/ProjectsPage').then(m => ({ default: m.ProjectsPage })))
 const NewProjectPage = lazy(() => import('./pages/tasks/NewProjectPage').then(m => ({ default: m.NewProjectPage })))
-const TemplatesPage = lazy(() => import('./pages/tasks/TemplatesPage').then(m => ({ default: m.TemplatesPage })))
 const KanbanPage = lazy(() => import('./pages/tasks/KanbanPage').then(m => ({ default: m.KanbanPage })))
 const TaskDashboardPage = lazy(() => import('./pages/tasks/DashboardPage').then(m => ({ default: m.DashboardPage })))
-const ManagerAnalyticsPage = lazy(() => import('./pages/tasks/ManagerAnalyticsPage').then(m => ({ default: m.ManagerAnalyticsPage })))
 
 // Settings & Admin (lazy-loaded)
 const SettingsPage = lazy(() => import('./pages/settings').then(m => ({ default: m.SettingsPage })))
@@ -39,9 +38,6 @@ const UserDetailPage = lazy(() => import('./pages/admin/UserDetailPage').then(m 
 const CreateUserPage = lazy(() => import('./pages/admin/CreateUserPage').then(m => ({ default: m.CreateUserPage })))
 const RolesPage = lazy(() => import('./pages/admin/RolesPage').then(m => ({ default: m.RolesPage })))
 const InvitationsPage = lazy(() => import('./pages/admin/InvitationsPage').then(m => ({ default: m.InvitationsPage })))
-const AdminTemplatesPage = lazy(() => import('./pages/admin/TemplatesPage').then(m => ({ default: m.AdminTemplatesPage })))
-const NewTemplatePage = lazy(() => import('./pages/admin/NewTemplatePage').then(m => ({ default: m.NewTemplatePage })))
-const EditTemplatePage = lazy(() => import('./pages/admin/EditTemplatePage').then(m => ({ default: m.EditTemplatePage })))
 
 // Icons
 import {
@@ -67,10 +63,8 @@ const navigationSections: NavigationSection[] = [
     items: [
       { label: 'Mi Día', href: '/tareas' },
       { label: 'Proyectos', href: '/tareas/proyectos' },
-      { label: 'Plantillas', href: '/tareas/plantillas' },
       { label: 'Kanban', href: '/tareas/kanban' },
-      { label: 'Dashboard', href: '/tareas/dashboard' },
-      { label: 'Analytics', href: '/tareas/analytics' }
+      { label: 'Dashboard', href: '/tareas/dashboard' }
     ]
   },
   {
@@ -157,16 +151,10 @@ function AppContent() {
             <Route path="/tareas" element={<MyDayPage />} />
             <Route path="/tareas/proyectos" element={<ProjectsPage />} />
             <Route path="/tareas/proyectos/nuevo" element={<NewProjectPage />} />
-            <Route path="/tareas/plantillas" element={<TemplatesPage />} />
             <Route path="/tareas/kanban" element={<KanbanPage />} />
             <Route path="/tareas/dashboard" element={
               <RoleGuard roles={['System Manager', 'Sales Manager']}>
                 <TaskDashboardPage />
-              </RoleGuard>
-            } />
-            <Route path="/tareas/analytics" element={
-              <RoleGuard roles={['System Manager', 'Sales Manager']}>
-                <ManagerAnalyticsPage />
               </RoleGuard>
             } />
 
@@ -210,9 +198,6 @@ function AppContent() {
               <Route path="users/:userId" element={<UserDetailPage />} />
               <Route path="roles" element={<RolesPage />} />
               <Route path="invitations" element={<InvitationsPage />} />
-              <Route path="templates" element={<AdminTemplatesPage />} />
-              <Route path="templates/new" element={<NewTemplatePage />} />
-              <Route path="templates/:templateId/edit" element={<EditTemplatePage />} />
             </Route>
 
             {/* 404 */}
@@ -221,8 +206,8 @@ function AppContent() {
         </Suspense>
       </ErrorBoundary>
 
-      {/* Global Actions (Smart Notepad + Quick Task) - available on all pages */}
-      <GlobalActions />
+      {/* Smart Notepad FAB - available on all pages */}
+      <SmartNotepadFAB />
     </AppShell>
   )
 }
@@ -248,7 +233,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppWithAuth />
+        <ToastProvider>
+          <AppWithAuth />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   )

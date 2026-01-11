@@ -1,6 +1,7 @@
 import type { MarketingDashboardProps, MarketingKPIs, Campaign, PlatformStats } from './types'
 import { TrendingUp, TrendingDown, Minus, Plus, Pause, Instagram, Facebook } from 'lucide-react'
-import { ExportKPIsButton } from '../../ui'
+import { CustomKPIGrid } from '../../kpi-builder'
+import { useCustomKPIs } from '../../../api'
 
 interface KPICardProps {
   kpi: { value: number; previousValue: number; change: number; label: string }
@@ -214,8 +215,7 @@ export function MarketingDashboard({
   onViewCampaign,
   onViewPost: _onViewPost,
   onNewCampaign,
-  onNewPost,
-  onExport
+  onNewPost
 }: MarketingDashboardProps) {
   const kpiConfig: { key: keyof MarketingKPIs; format: 'number' | 'percent' | 'roi' }[] = [
     { key: 'leadsGenerated', format: 'number' },
@@ -223,6 +223,9 @@ export function MarketingDashboard({
     { key: 'campaignROI', format: 'roi' },
     { key: 'followerGrowth', format: 'number' },
   ]
+
+  // Fetch custom KPIs for MKT department
+  const { data: customKPIs } = useCustomKPIs('MKT', true)
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
@@ -238,7 +241,6 @@ export function MarketingDashboard({
         </div>
 
         <div className="flex items-center gap-2">
-          {onExport && <ExportKPIsButton onExport={onExport} />}
           <button
             onClick={onNewPost}
             className="
@@ -278,6 +280,27 @@ export function MarketingDashboard({
           <KPICard key={key} kpi={kpis[key]} format={format} />
         ))}
       </div>
+
+      {/* Custom KPIs Section - Only show if there are custom KPIs */}
+      {customKPIs && customKPIs.length > 0 && (
+        <div className="mb-8">
+          {/* Section Header */}
+          <div className="mb-4">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              KPIs Personalizados
+            </h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Tus indicadores personalizados de marketing
+            </p>
+          </div>
+
+          {/* Custom KPI Grid */}
+          <CustomKPIGrid
+            department="MKT"
+            includeShared={true}
+          />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Campaigns */}

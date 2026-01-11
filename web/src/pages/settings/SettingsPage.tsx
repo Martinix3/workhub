@@ -1,12 +1,13 @@
-// Settings Page with tabs for Profile, Preferences, Notifications, and Departments
+// Settings Page with tabs for Profile, Preferences, Notifications, Departments, and KPIs
 import { useState } from 'react'
-import { User, Settings, Bell, Building2 } from 'lucide-react'
+import { User, Settings, Bell, Building2, BarChart3 } from 'lucide-react'
 import { ProfileTab } from './ProfileTab'
 import { PreferencesTab } from './PreferencesTab'
 import { NotificationsTab } from './NotificationsTab'
 import { DepartmentsTab } from './DepartmentsTab'
+import { KPIsTab } from './KPIsTab'
 
-type TabId = 'profile' | 'preferences' | 'notifications' | 'departments'
+type TabId = 'profile' | 'preferences' | 'notifications' | 'departments' | 'kpis'
 
 interface Tab {
   id: TabId
@@ -19,6 +20,7 @@ const tabs: Tab[] = [
   { id: 'preferences', label: 'Preferencias', icon: <Settings size={18} /> },
   { id: 'notifications', label: 'Notificaciones', icon: <Bell size={18} /> },
   { id: 'departments', label: 'Departamentos', icon: <Building2 size={18} /> },
+  { id: 'kpis', label: 'KPIs', icon: <BarChart3 size={18} /> },
 ]
 
 export function SettingsPage() {
@@ -34,6 +36,8 @@ export function SettingsPage() {
         return <NotificationsTab />
       case 'departments':
         return <DepartmentsTab />
+      case 'kpis':
+        return <KPIsTab />
       default:
         return null
     }

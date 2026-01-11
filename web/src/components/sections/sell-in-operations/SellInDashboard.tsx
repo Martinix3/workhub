@@ -2,7 +2,8 @@ import type { SellInDashboardProps, KPIs } from './types'
 import { KPICard } from './KPICard'
 import { MiniBarChart } from './MiniBarChart'
 import { ActivityFeed } from './ActivityFeed'
-import { ExportKPIsButton } from '../../ui'
+import { CustomKPIGrid } from '../../kpi-builder'
+import { useCustomKPIs } from '../../../api'
 import { Plus } from 'lucide-react'
 
 export function SellInDashboard({
@@ -10,10 +11,12 @@ export function SellInDashboard({
   recentActivity,
   salesTrends,
   onKpiClick,
-  onCreateOrder,
-  onExport
+  onCreateOrder
 }: SellInDashboardProps) {
   const kpiKeys: (keyof KPIs)[] = ['salesThisMonth', 'activeOrders', 'newCustomers', 'avgOrderValue']
+
+  // Fetch custom KPIs for SALES department
+  const { data: customKPIs } = useCustomKPIs('SALES', true)
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
@@ -29,25 +32,22 @@ export function SellInDashboard({
         </div>
 
         {/* Quick Actions */}
-        <div className="flex items-center gap-2">
-          {onExport && <ExportKPIsButton onExport={onExport} />}
-          <button
-            onClick={onCreateOrder}
-            className="
-              inline-flex items-center gap-2 px-4 py-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium text-sm uppercase tracking-wider
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:shadow-[2px_2px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
-              transition-all duration-75
-            "
-          >
-            <Plus size={18} />
-            Nuevo Pedido
-          </button>
-        </div>
+        <button
+          onClick={onCreateOrder}
+          className="
+            inline-flex items-center gap-2 px-4 py-2
+            bg-amber-400 hover:bg-amber-500
+            text-stone-900 font-medium text-sm uppercase tracking-wider
+            border-2 border-stone-900
+            shadow-[4px_4px_0_#1c1917]
+            hover:shadow-[2px_2px_0_#1c1917]
+            hover:translate-x-[2px] hover:translate-y-[2px]
+            transition-all duration-75
+          "
+        >
+          <Plus size={18} />
+          Nuevo Pedido
+        </button>
       </div>
 
       {/* KPI Grid */}
@@ -60,6 +60,27 @@ export function SellInDashboard({
           />
         ))}
       </div>
+
+      {/* Custom KPIs Section - Only show if there are custom KPIs */}
+      {customKPIs && customKPIs.length > 0 && (
+        <div className="mb-8">
+          {/* Section Header */}
+          <div className="mb-4">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              KPIs Personalizados
+            </h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+              Tus indicadores personalizados de ventas
+            </p>
+          </div>
+
+          {/* Custom KPI Grid */}
+          <CustomKPIGrid
+            department="SALES"
+            includeShared={true}
+          />
+        </div>
+      )}
 
       {/* Charts & Activity Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">

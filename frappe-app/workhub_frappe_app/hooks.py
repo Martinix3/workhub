@@ -95,8 +95,8 @@ fixtures = [
     {"dt": "Custom Field", "filters": [["dt", "=", "Sales Order"], ["fieldname", "=", "sales_type"]]},
     # Project templates con sus tareas
     {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]},
-    # Preset saved filters (Mis Tareas, Vencidas, Esta Semana)
-    {"dt": "WH Saved Filter", "filters": [["is_preset", "=", 1]]}
+    # KPI metrics
+    {"dt": "WH KPI Metric", "filters": [["is_active", "=", 1]]}
 ]
 
 # Boot Session
