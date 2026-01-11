@@ -28,11 +28,12 @@ def match_customer(name: str, threshold: float = 0.6) -> dict:
         }
 
     name = name.strip().lower()
+    sanitized_name = sanitize_search_term(name)
 
     # First try exact match (case insensitive)
     exact = frappe.db.get_value(
         "Customer",
-        {"customer_name": ["like", name]},
+        {"customer_name": ["like", sanitized_name]},
         ["name", "customer_name", "customer_group", "territory"],
         as_dict=True
     )
