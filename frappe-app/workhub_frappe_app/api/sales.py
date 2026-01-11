@@ -227,8 +227,7 @@ def get_opportunities(filters=None, limit=50, offset=0):
                 "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="expected_closing asc",
-        ignore_permissions=True
+        order_by="expected_closing asc"
     )
 
     # Get stage summary for pipeline view
