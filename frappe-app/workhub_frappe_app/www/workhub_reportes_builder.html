@@ -17,6 +17,13 @@
 				<a href="/workhub_reportes" class="btn btn-outline-secondary">
 					Cancelar
 				</a>
+				<button class="btn btn-outline-primary ml-2" onclick="frappe.workhub.reportBuilder.showPreview()">
+					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+					</svg>
+					Vista Previa
+				</button>
 				<button class="btn btn-primary ml-2" onclick="saveReport()">
 					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -141,6 +148,51 @@
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
 					</svg>
 					<p class="text-muted mt-3 text-center">Selecciona una sección del canvas para configurar sus propiedades</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Preview Modal -->
+	<div id="preview-modal" class="preview-modal" style="display: none;">
+		<div class="preview-modal-overlay" onclick="frappe.workhub.reportBuilder.closePreview()"></div>
+		<div class="preview-modal-content" id="preview-modal-content">
+			<!-- Header -->
+			<div class="preview-header">
+				<div class="preview-title">
+					<h4>📊 Vista Previa del Reporte</h4>
+					<p class="text-muted mb-0">Vista en tiempo real del reporte</p>
+				</div>
+				<div class="preview-actions">
+					<button class="btn btn-sm btn-outline-secondary" onclick="frappe.workhub.reportBuilder.refreshPreview()">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+						</svg>
+						Actualizar
+					</button>
+					<button class="btn btn-sm btn-outline-primary ml-2" onclick="frappe.workhub.reportBuilder.toggleFullscreen()">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+						</svg>
+						Pantalla Completa
+					</button>
+					<button class="btn btn-sm btn-outline-success ml-2" onclick="frappe.workhub.reportBuilder.exportFromPreview()">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+						</svg>
+						Exportar
+					</button>
+					<button class="btn btn-sm btn-outline-secondary ml-2" onclick="frappe.workhub.reportBuilder.closePreview()">✕</button>
+				</div>
+			</div>
+
+			<!-- Preview Body -->
+			<div class="preview-body" id="preview-body">
+				<div class="preview-loading">
+					<div class="spinner-border text-primary" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+					<p class="mt-3 text-muted">Generando vista previa...</p>
 				</div>
 			</div>
 		</div>
@@ -483,6 +535,296 @@
 	.builder-properties {
 		max-height: 300px;
 	}
+}
+
+/* Preview Modal */
+.preview-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.preview-modal-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(4px);
+}
+
+.preview-modal-content {
+	position: relative;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+	width: 90%;
+	height: 85%;
+	max-width: 1400px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	transition: all 0.3s ease;
+}
+
+.preview-modal-content.fullscreen {
+	width: 100%;
+	height: 100%;
+	max-width: 100%;
+	border-radius: 0;
+}
+
+.preview-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20px;
+	border-bottom: 1px solid #e0e0e0;
+	background: #f8f9fa;
+	flex-shrink: 0;
+}
+
+.preview-title h4 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.preview-title p {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+}
+
+.preview-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.preview-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 24px;
+	background: #fff;
+}
+
+.preview-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	min-height: 300px;
+}
+
+.preview-report-header {
+	text-align: center;
+	padding: 40px 20px;
+	border-bottom: 2px solid #007bff;
+	margin-bottom: 32px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	border-radius: 8px;
+}
+
+.preview-report-header h1 {
+	margin: 0 0 12px 0;
+	font-size: 32px;
+	font-weight: 700;
+}
+
+.preview-report-header .metadata {
+	display: flex;
+	justify-content: center;
+	gap: 24px;
+	flex-wrap: wrap;
+	font-size: 14px;
+	opacity: 0.9;
+}
+
+.preview-section {
+	margin-bottom: 32px;
+	padding: 24px;
+	background: white;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.preview-section-header {
+	font-size: 20px;
+	font-weight: 600;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 2px solid #007bff;
+	color: #333;
+}
+
+.preview-section-text {
+	font-size: 14px;
+	line-height: 1.6;
+	color: #555;
+	white-space: pre-wrap;
+}
+
+.preview-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 16px;
+}
+
+.preview-kpi-card {
+	padding: 20px;
+	border-radius: 8px;
+	color: white;
+	text-align: center;
+}
+
+.preview-kpi-card .kpi-value {
+	font-size: 32px;
+	font-weight: 700;
+	margin: 8px 0;
+}
+
+.preview-kpi-card .kpi-label {
+	font-size: 14px;
+	opacity: 0.9;
+	font-weight: 500;
+}
+
+.preview-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+}
+
+.preview-table th {
+	background: #007bff;
+	color: white;
+	padding: 12px;
+	text-align: left;
+	font-weight: 600;
+	border: 1px solid #0056b3;
+}
+
+.preview-table td {
+	padding: 10px 12px;
+	border: 1px solid #e0e0e0;
+}
+
+.preview-table tbody tr:nth-child(even) {
+	background: #f8f9fa;
+}
+
+.preview-table tbody tr:hover {
+	background: #e9ecef;
+}
+
+.preview-chart-placeholder {
+	background: #f8f9fa;
+	border: 2px dashed #ccc;
+	border-radius: 8px;
+	padding: 60px 20px;
+	text-align: center;
+	color: #6c757d;
+}
+
+.preview-chart-placeholder svg {
+	width: 64px;
+	height: 64px;
+	margin: 0 auto 16px;
+	display: block;
+	color: #adb5bd;
+}
+
+.preview-no-data {
+	text-align: center;
+	padding: 40px;
+	color: #6c757d;
+	font-style: italic;
+}
+
+/* Export Modal */
+.export-format-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 10000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.export-format-modal .modal-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.export-format-modal .modal-dialog {
+	position: relative;
+	background: white;
+	border-radius: 8px;
+	padding: 24px;
+	max-width: 400px;
+	width: 90%;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.export-format-modal .modal-header {
+	margin-bottom: 20px;
+}
+
+.export-format-modal h5 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.export-format-options {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.export-format-option {
+	padding: 16px;
+	border: 2px solid #e0e0e0;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.export-format-option:hover {
+	border-color: #007bff;
+	background: #f8f9fa;
+}
+
+.export-format-option input[type="radio"] {
+	width: 20px;
+	height: 20px;
+}
+
+.export-format-option label {
+	margin: 0;
+	cursor: pointer;
+	flex: 1;
+	font-weight: 500;
 }
 </style>
 

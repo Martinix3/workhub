@@ -1163,6 +1163,401 @@ frappe.workhub.reportBuilder = {};
 	};
 
 	// ==========================================
+	// PREVIEW FUNCTIONALITY
+	// ==========================================
+
+	let previewData = null;
+
+	/**
+	 * Show the preview modal
+	 */
+	frappe.workhub.reportBuilder.showPreview = function() {
+		const modal = document.getElementById('preview-modal');
+		if (!modal) return;
+
+		// Validate there are sections
+		if (state.sections.length === 0) {
+			frappe.show_alert({
+				message: 'Agrega al menos una sección para ver la vista previa',
+				indicator: 'orange'
+			});
+			return;
+		}
+
+		// Show modal
+		modal.style.display = 'flex';
+
+		// Generate preview
+		refreshPreviewContent();
+	};
+
+	/**
+	 * Close the preview modal
+	 */
+	frappe.workhub.reportBuilder.closePreview = function() {
+		const modal = document.getElementById('preview-modal');
+		if (!modal) return;
+
+		modal.style.display = 'none';
+
+		// Reset fullscreen
+		const content = document.getElementById('preview-modal-content');
+		if (content) {
+			content.classList.remove('fullscreen');
+		}
+	};
+
+	/**
+	 * Refresh the preview content
+	 */
+	frappe.workhub.reportBuilder.refreshPreview = function() {
+		refreshPreviewContent();
+	};
+
+	/**
+	 * Toggle fullscreen mode
+	 */
+	frappe.workhub.reportBuilder.toggleFullscreen = function() {
+		const content = document.getElementById('preview-modal-content');
+		if (!content) return;
+
+		content.classList.toggle('fullscreen');
+
+		// Update button text
+		const btn = event.target.closest('button');
+		if (btn) {
+			const isFullscreen = content.classList.contains('fullscreen');
+			btn.innerHTML = isFullscreen ?
+				'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>Salir Pantalla Completa' :
+				'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>Pantalla Completa';
+		}
+	};
+
+	/**
+	 * Export from preview
+	 */
+	frappe.workhub.reportBuilder.exportFromPreview = function() {
+		// Create export format modal
+		const modalHtml = `
+			<div class="export-format-modal" id="export-format-modal">
+				<div class="modal-overlay" onclick="document.getElementById('export-format-modal').remove()"></div>
+				<div class="modal-dialog">
+					<div class="modal-header">
+						<h5>Seleccionar Formato de Exportación</h5>
+					</div>
+					<div class="export-format-options">
+						<div class="export-format-option" onclick="document.querySelector('input[value=PDF]').checked = true">
+							<input type="radio" name="export-format" value="PDF" id="format-pdf" checked>
+							<label for="format-pdf">
+								<strong>PDF</strong><br>
+								<small class="text-muted">Formato ejecutivo para presentaciones</small>
+							</label>
+						</div>
+						<div class="export-format-option" onclick="document.querySelector('input[value=EXCEL]').checked = true">
+							<input type="radio" name="export-format" value="EXCEL" id="format-excel">
+							<label for="format-excel">
+								<strong>Excel</strong><br>
+								<small class="text-muted">Hoja de cálculo con datos estructurados</small>
+							</label>
+						</div>
+						<div class="export-format-option" onclick="document.querySelector('input[value=CSV]').checked = true">
+							<input type="radio" name="export-format" value="CSV" id="format-csv">
+							<label for="format-csv">
+								<strong>CSV</strong><br>
+								<small class="text-muted">Datos en formato de texto plano</small>
+							</label>
+						</div>
+					</div>
+					<div class="d-flex justify-content-end gap-2">
+						<button class="btn btn-secondary" onclick="document.getElementById('export-format-modal').remove()">Cancelar</button>
+						<button class="btn btn-primary" onclick="frappe.workhub.reportBuilder.executeExport()">Exportar</button>
+					</div>
+				</div>
+			</div>
+		`;
+
+		document.body.insertAdjacentHTML('beforeend', modalHtml);
+	};
+
+	/**
+	 * Execute the export with selected format
+	 */
+	frappe.workhub.reportBuilder.executeExport = function() {
+		const formatRadio = document.querySelector('input[name="export-format"]:checked');
+		if (!formatRadio) return;
+
+		const format = formatRadio.value;
+
+		// Close export modal
+		const exportModal = document.getElementById('export-format-modal');
+		if (exportModal) {
+			exportModal.remove();
+		}
+
+		// Show alert that report must be saved first
+		frappe.show_alert({
+			message: 'Guarda el reporte primero para exportarlo',
+			indicator: 'orange'
+		});
+	};
+
+	/**
+	 * Refresh the preview content by rendering sections
+	 */
+	function refreshPreviewContent() {
+		const body = document.getElementById('preview-body');
+		if (!body) return;
+
+		// Show loading
+		body.innerHTML = `
+			<div class="preview-loading">
+				<div class="spinner-border text-primary" role="status">
+					<span class="sr-only">Cargando...</span>
+				</div>
+				<p class="mt-3 text-muted">Generando vista previa...</p>
+			</div>
+		`;
+
+		// Get report metadata
+		const title = document.getElementById('report-title')?.value || 'Sin título';
+		const description = document.getElementById('report-description')?.value || '';
+		const reportType = document.getElementById('report-type')?.value || 'Custom';
+		const category = document.getElementById('report-category')?.value || 'Custom';
+
+		// Render preview
+		setTimeout(() => {
+			renderPreview(title, description, reportType, category);
+		}, 500);
+	}
+
+	/**
+	 * Render the preview
+	 */
+	function renderPreview(title, description, reportType, category) {
+		const body = document.getElementById('preview-body');
+		if (!body) return;
+
+		const now = new Date();
+		const dateStr = now.toLocaleDateString('es-ES', {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		});
+		const timeStr = now.toLocaleTimeString('es-ES', {
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+
+		let html = `
+			<div class="preview-report-header">
+				<h1>${escapeHtml(title)}</h1>
+				${description ? `<p style="font-size: 16px; margin: 8px 0;">${escapeHtml(description)}</p>` : ''}
+				<div class="metadata">
+					<span><strong>Tipo:</strong> ${escapeHtml(reportType)}</span>
+					<span><strong>Categoría:</strong> ${escapeHtml(category)}</span>
+					<span><strong>Generado:</strong> ${dateStr} a las ${timeStr}</span>
+					<span><strong>Secciones:</strong> ${state.sections.length}</span>
+				</div>
+			</div>
+		`;
+
+		// Render sections
+		if (state.sections.length === 0) {
+			html += `
+				<div class="preview-no-data">
+					<p>No hay secciones para mostrar</p>
+					<p class="small">Agrega secciones desde el panel izquierdo</p>
+				</div>
+			`;
+		} else {
+			state.sections.forEach((section, index) => {
+				if (!section.is_visible) return;
+
+				html += renderPreviewSection(section, index);
+			});
+		}
+
+		body.innerHTML = html;
+	}
+
+	/**
+	 * Render a preview section
+	 */
+	function renderPreviewSection(section, index) {
+		let html = '<div class="preview-section">';
+
+		// Section header (except for Header type which renders its own)
+		if (section.section_type !== 'Header') {
+			html += `<div class="preview-section-header">${escapeHtml(section.title)}</div>`;
+		}
+
+		// Render by type
+		switch (section.section_type) {
+			case 'Header':
+				html += renderHeaderSection(section);
+				break;
+			case 'Text':
+				html += renderTextSection(section);
+				break;
+			case 'KPI':
+				html += renderKPISection(section);
+				break;
+			case 'Chart':
+				html += renderChartSection(section);
+				break;
+			case 'Table':
+				html += renderTableSection(section);
+				break;
+			default:
+				html += `<p class="text-muted">Tipo de sección no soportado: ${section.section_type}</p>`;
+		}
+
+		html += '</div>';
+		return html;
+	}
+
+	/**
+	 * Render header section
+	 */
+	function renderHeaderSection(section) {
+		return `
+			<div style="text-align: center; padding: 20px; border-bottom: 3px solid #007bff;">
+				<h2 style="font-size: 28px; font-weight: 700; margin: 0; color: #333;">${escapeHtml(section.title)}</h2>
+			</div>
+		`;
+	}
+
+	/**
+	 * Render text section
+	 */
+	function renderTextSection(section) {
+		const content = section.config.content || 'Sin contenido';
+		const textAlign = section.config.text_align || 'left';
+		const fontStyle = section.config.font_style || 'normal';
+
+		return `
+			<div class="preview-section-text" style="text-align: ${textAlign}; font-style: ${fontStyle};">
+				${escapeHtml(content).replace(/\n/g, '<br>')}
+			</div>
+		`;
+	}
+
+	/**
+	 * Render KPI section
+	 */
+	function renderKPISection(section) {
+		const kpis = section.config.kpis || [];
+
+		if (kpis.length === 0) {
+			return '<p class="preview-no-data">No hay KPIs configurados</p>';
+		}
+
+		let html = '<div class="preview-kpi-grid">';
+
+		kpis.forEach((kpi, idx) => {
+			const color = kpi.color || '#007bff';
+			const icon = kpi.icon || '📊';
+			const label = kpi.label || 'KPI';
+			const value = '---'; // Placeholder since we don't have real data
+
+			html += `
+				<div class="preview-kpi-card" style="background: linear-gradient(135deg, ${color} 0%, ${adjustColor(color, -20)} 100%);">
+					<div style="font-size: 32px;">${icon}</div>
+					<div class="kpi-value">${value}</div>
+					<div class="kpi-label">${escapeHtml(label)}</div>
+					${kpi.format ? `<div class="small mt-1" style="opacity: 0.8;">Formato: ${kpi.format}</div>` : ''}
+				</div>
+			`;
+		});
+
+		html += '</div>';
+		return html;
+	}
+
+	/**
+	 * Render chart section
+	 */
+	function renderChartSection(section) {
+		const chartType = section.config.chart_type || 'bar';
+		const xField = section.config.x_field || 'X';
+		const yField = section.config.y_field || 'Y';
+
+		return `
+			<div class="preview-chart-placeholder">
+				<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+				</svg>
+				<h5>Gráfico: ${chartType.toUpperCase()}</h5>
+				<p class="mb-1"><strong>Eje X:</strong> ${escapeHtml(xField)}</p>
+				<p class="mb-1"><strong>Eje Y:</strong> ${escapeHtml(yField)}</p>
+				<p class="small text-muted mt-2">Los gráficos se renderizan con datos reales en el visor de reportes</p>
+			</div>
+		`;
+	}
+
+	/**
+	 * Render table section
+	 */
+	function renderTableSection(section) {
+		const columns = section.config.columns || [];
+
+		if (columns.length === 0) {
+			return '<p class="preview-no-data">No hay columnas configuradas</p>';
+		}
+
+		let html = '<table class="preview-table"><thead><tr>';
+
+		// Headers
+		columns.forEach(col => {
+			html += `<th>${escapeHtml(col.label || col.field)}</th>`;
+		});
+
+		html += '</tr></thead><tbody>';
+
+		// Sample data rows
+		for (let i = 0; i < 3; i++) {
+			html += '<tr>';
+			columns.forEach(col => {
+				let sampleValue = '---';
+				if (col.type === 'number' || col.type === 'currency') {
+					sampleValue = (Math.random() * 1000).toFixed(2);
+				} else if (col.type === 'date') {
+					sampleValue = new Date().toLocaleDateString('es-ES');
+				} else {
+					sampleValue = `Dato ${i + 1}`;
+				}
+				html += `<td>${sampleValue}</td>`;
+			});
+			html += '</tr>';
+		}
+
+		html += '</tbody></table>';
+		html += '<p class="small text-muted mt-2">Mostrando datos de ejemplo. Los datos reales se cargan en el visor de reportes.</p>';
+
+		return html;
+	}
+
+	/**
+	 * Adjust color brightness
+	 */
+	function adjustColor(color, amount) {
+		// Simple color adjustment (darken/lighten)
+		const usePound = color[0] === '#';
+		color = color.slice(1);
+
+		const num = parseInt(color, 16);
+		let r = (num >> 16) + amount;
+		let g = ((num >> 8) & 0x00FF) + amount;
+		let b = (num & 0x0000FF) + amount;
+
+		r = Math.max(0, Math.min(255, r));
+		g = Math.max(0, Math.min(255, g));
+		b = Math.max(0, Math.min(255, b));
+
+		return (usePound ? '#' : '') + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+	}
+
+	// ==========================================
 	// EXPORT PUBLIC API
 	// ==========================================
 
