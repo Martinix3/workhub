@@ -2317,6 +2317,332 @@ frappe.workhub.offlineIndicator = {
 };
 
 // ==========================================
+// TASK EDITOR (MOBILE)
+// ==========================================
+
+/**
+ * Task Editor Module
+ *
+ * Handles task editing on mobile via drawer interface.
+ * Integrates with MobileTaskDrawer component for edit functionality.
+ *
+ * Features:
+ * - Click/tap on task to open edit drawer
+ * - Extracts task data from DOM element
+ * - Opens MobileTaskDrawer in edit mode
+ * - Handles task updates and UI refresh
+ * - Works with existing task list rendering
+ */
+frappe.workhub.taskEditor = {
+    /**
+     * Initialize task editor
+     */
+    init() {
+        console.log('[Task Editor] Initializing...');
+
+        // Load MobileTaskDrawer component dynamically
+        this.loadComponent();
+
+        console.log('[Task Editor] Initialized');
+    },
+
+    /**
+     * Load MobileTaskDrawer component dynamically
+     */
+    loadComponent() {
+        // Check if already loaded
+        if (frappe.workhub.MobileTaskDrawer) {
+            console.log('[Task Editor] MobileTaskDrawer already loaded');
+            this.setupTaskClickHandlers();
+            return;
+        }
+
+        // Check if script is already loading
+        const existingScript = document.querySelector('script[src*="mobile-task-drawer.js"]');
+        if (existingScript) {
+            console.log('[Task Editor] MobileTaskDrawer script already loading');
+            this.waitForComponent();
+            return;
+        }
+
+        // Load component script
+        console.log('[Task Editor] Loading MobileTaskDrawer component...');
+        const script = document.createElement('script');
+        script.src = '/assets/workhub_frappe_app/js/components/mobile-task-drawer.js';
+        script.async = true;
+        script.onload = () => {
+            console.log('[Task Editor] MobileTaskDrawer component script loaded');
+            this.waitForComponent();
+        };
+        script.onerror = (error) => {
+            console.error('[Task Editor] Failed to load MobileTaskDrawer component:', error);
+        };
+        document.head.appendChild(script);
+    },
+
+    /**
+     * Wait for MobileTaskDrawer component to be available
+     */
+    waitForComponent() {
+        const checkInterval = setInterval(() => {
+            if (frappe.workhub.MobileTaskDrawer) {
+                clearInterval(checkInterval);
+                console.log('[Task Editor] MobileTaskDrawer component ready');
+                this.setupTaskClickHandlers();
+            }
+        }, 100);
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            if (!frappe.workhub.MobileTaskDrawer) {
+                console.warn('[Task Editor] MobileTaskDrawer component not available after timeout');
+            }
+        }, 10000);
+    },
+
+    /**
+     * Setup click handlers for tasks
+     */
+    setupTaskClickHandlers() {
+        console.log('[Task Editor] Setting up task click handlers...');
+
+        // Use event delegation for dynamically added tasks
+        document.addEventListener('click', (e) => {
+            // Find closest task element
+            const taskElement = e.target.closest('[data-task-id]');
+
+            if (!taskElement) return;
+
+            // Skip if clicking on action buttons (complete, delete, etc.)
+            if (e.target.closest('.task-action, .task-complete-btn, .task-delete-btn')) {
+                return;
+            }
+
+            // Skip if clicking on swipeable task during swipe
+            if (taskElement.classList.contains('swiping')) {
+                return;
+            }
+
+            // Get task data
+            const taskData = this.extractTaskData(taskElement);
+
+            if (taskData && taskData.id) {
+                console.log('[Task Editor] Opening edit drawer for task:', taskData.id);
+                this.openEditDrawer(taskData);
+            }
+        });
+
+        // Also observe DOM for new tasks and add explicit handlers
+        this.observeTaskList();
+
+        console.log('[Task Editor] Task click handlers ready');
+    },
+
+    /**
+     * Observe task list for dynamically added tasks
+     */
+    observeTaskList() {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    // Check if added node is a task or contains tasks
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const tasks = node.matches && node.matches('[data-task-id]')
+                            ? [node]
+                            : node.querySelectorAll('[data-task-id]');
+
+                        if (tasks.length > 0) {
+                            console.log(`[Task Editor] ${tasks.length} new task(s) detected`);
+                        }
+                    }
+                });
+            });
+        });
+
+        // Start observing document body for task additions
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        console.log('[Task Editor] DOM observer started');
+    },
+
+    /**
+     * Extract task data from DOM element
+     * @param {HTMLElement} taskElement - Task element
+     * @returns {Object} Task data object
+     */
+    extractTaskData(taskElement) {
+        try {
+            const taskData = {
+                id: taskElement.dataset.taskId || taskElement.getAttribute('data-task-id'),
+                name: '',
+                description: '',
+                status: 'BACKLOG',
+                priority: 'P2',
+                department: 'SALES',
+                dueDate: null,
+                assignedTo: null
+            };
+
+            // Extract task name
+            const nameElement = taskElement.querySelector('.task-name, .task-title, [data-task-name]');
+            if (nameElement) {
+                taskData.name = nameElement.textContent.trim() || nameElement.dataset.taskName;
+            }
+
+            // Extract description
+            const descElement = taskElement.querySelector('.task-description, .task-desc, [data-task-description]');
+            if (descElement) {
+                taskData.description = descElement.textContent.trim() || descElement.dataset.taskDescription || '';
+            }
+
+            // Extract status
+            const statusElement = taskElement.querySelector('[data-task-status]');
+            if (statusElement) {
+                taskData.status = statusElement.dataset.taskStatus || taskData.status;
+            } else if (taskElement.dataset.taskStatus) {
+                taskData.status = taskElement.dataset.taskStatus;
+            }
+
+            // Extract priority
+            const priorityElement = taskElement.querySelector('[data-task-priority]');
+            if (priorityElement) {
+                taskData.priority = priorityElement.dataset.taskPriority || taskData.priority;
+            } else if (taskElement.dataset.taskPriority) {
+                taskData.priority = taskElement.dataset.taskPriority;
+            }
+
+            // Extract department
+            const deptElement = taskElement.querySelector('[data-task-department]');
+            if (deptElement) {
+                taskData.department = deptElement.dataset.taskDepartment || taskData.department;
+            } else if (taskElement.dataset.taskDepartment) {
+                taskData.department = taskElement.dataset.taskDepartment;
+            }
+
+            // Extract due date
+            const dueDateElement = taskElement.querySelector('[data-task-due-date]');
+            if (dueDateElement) {
+                taskData.dueDate = dueDateElement.dataset.taskDueDate || null;
+            } else if (taskElement.dataset.taskDueDate) {
+                taskData.dueDate = taskElement.dataset.taskDueDate;
+            }
+
+            // Extract assigned to
+            const assignedElement = taskElement.querySelector('[data-task-assigned]');
+            if (assignedElement) {
+                taskData.assignedTo = assignedElement.dataset.taskAssigned || null;
+            } else if (taskElement.dataset.taskAssigned) {
+                taskData.assignedTo = taskElement.dataset.taskAssigned;
+            }
+
+            return taskData;
+        } catch (error) {
+            console.error('[Task Editor] Error extracting task data:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Open edit drawer for task
+     * @param {Object} taskData - Task data object
+     */
+    openEditDrawer(taskData) {
+        if (!frappe.workhub.MobileTaskDrawer) {
+            console.error('[Task Editor] MobileTaskDrawer component not available');
+            frappe.show_alert({
+                message: __('Task editor not available. Please refresh the page.'),
+                indicator: 'red'
+            }, 3);
+            return;
+        }
+
+        try {
+            // Open edit drawer
+            frappe.workhub.MobileTaskDrawer.openEditTaskDrawer(taskData, {
+                onSave: (updatedTask) => {
+                    console.log('[Task Editor] Task updated:', updatedTask);
+                    // Refresh task list or update specific task in DOM
+                    this.refreshTaskInList(updatedTask);
+                },
+                onCancel: () => {
+                    console.log('[Task Editor] Edit cancelled');
+                }
+            });
+        } catch (error) {
+            console.error('[Task Editor] Error opening edit drawer:', error);
+            frappe.show_alert({
+                message: __('Failed to open task editor. Please try again.'),
+                indicator: 'red'
+            }, 3);
+        }
+    },
+
+    /**
+     * Refresh task in list after update
+     * @param {Object} updatedTask - Updated task data
+     */
+    refreshTaskInList(updatedTask) {
+        if (!updatedTask || !updatedTask.id) return;
+
+        // Find task element by ID
+        const taskElement = document.querySelector(`[data-task-id="${updatedTask.id}"]`);
+
+        if (!taskElement) {
+            console.warn('[Task Editor] Task element not found for refresh:', updatedTask.id);
+            // Trigger a full list refresh event
+            frappe.ui.trigger_event('task:list:refresh');
+            return;
+        }
+
+        // Update task element data attributes
+        if (updatedTask.status) {
+            taskElement.dataset.taskStatus = updatedTask.status;
+            const statusElement = taskElement.querySelector('[data-task-status]');
+            if (statusElement) {
+                statusElement.dataset.taskStatus = updatedTask.status;
+                statusElement.textContent = updatedTask.status;
+            }
+        }
+
+        if (updatedTask.priority) {
+            taskElement.dataset.taskPriority = updatedTask.priority;
+            const priorityElement = taskElement.querySelector('[data-task-priority]');
+            if (priorityElement) {
+                priorityElement.dataset.taskPriority = updatedTask.priority;
+                priorityElement.textContent = updatedTask.priority;
+            }
+        }
+
+        // Update task name
+        if (updatedTask.name) {
+            const nameElement = taskElement.querySelector('.task-name, .task-title, [data-task-name]');
+            if (nameElement) {
+                nameElement.textContent = updatedTask.name;
+                nameElement.dataset.taskName = updatedTask.name;
+            }
+        }
+
+        // Update description
+        if (updatedTask.description !== undefined) {
+            const descElement = taskElement.querySelector('.task-description, .task-desc, [data-task-description]');
+            if (descElement) {
+                descElement.textContent = updatedTask.description;
+                descElement.dataset.taskDescription = updatedTask.description;
+            }
+        }
+
+        console.log('[Task Editor] Task element refreshed:', updatedTask.id);
+
+        // Trigger refresh event for other components
+        frappe.ui.trigger_event('task:updated', updatedTask);
+    }
+};
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 (function initWorkHub() {
@@ -2354,6 +2680,11 @@ frappe.workhub.offlineIndicator = {
         // Inicializar Offline Indicator (PWA)
         if (frappe.workhub && frappe.workhub.offlineIndicator) {
             frappe.workhub.offlineIndicator.init();
+        }
+
+        // Inicializar Task Editor (Mobile task editing)
+        if (frappe.workhub && frappe.workhub.taskEditor) {
+            frappe.workhub.taskEditor.init();
         }
 
         // Inicializar Command Palette (Cmd+K)
