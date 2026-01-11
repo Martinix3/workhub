@@ -399,6 +399,7 @@ interface TaskCardProps {
 
 function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoing }: TaskCardProps) {
   const priority = priorityConfig[task.priority]
+  const isBlockedByDependencies = (task.blocked_by_count ?? 0) > 0
 
   return (
     <div
@@ -406,13 +407,21 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
         bg-white
         border-2 border-stone-900
         border-t-4 ${statusBorderTop[task.status]}
+        ${isBlockedByDependencies ? 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-white' : ''}
         ${highlighted
           ? 'shadow-[4px_4px_0_#1c1917]'
           : 'shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]'
         }
         transition-all duration-75
+        relative
       `}
     >
+      {/* Blocked warning indicator */}
+      {isBlockedByDependencies && (
+        <div className="absolute top-2 right-2 text-red-500 opacity-60">
+          <AlertTriangle size={14} />
+        </div>
+      )}
       <div className="p-4 flex items-start gap-4">
         {/* Checkbox */}
         {task.status !== 'BLOCKED' && onComplete && (
@@ -445,6 +454,17 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
             {task.status === 'BLOCKED' && (
               <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700">
                 BLOQUEADA
+              </span>
+            )}
+            {isBlockedByDependencies && task.status !== 'BLOCKED' && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 border border-red-300">
+                <AlertTriangle size={10} />
+                Bloqueada por {task.blocked_by_count}
+              </span>
+            )}
+            {(task.blocks_count ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 border border-amber-300">
+                Bloquea {task.blocks_count}
               </span>
             )}
           </div>

@@ -30,6 +30,9 @@ export interface Task {
   source_name?: string
   worked_today?: boolean
   total_work_days?: number
+  // Dependency counts
+  blocked_by_count?: number
+  blocks_count?: number
 }
 
 export interface Project {
