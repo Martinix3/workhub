@@ -1,11 +1,15 @@
 // Kanban Board Page - Enhanced with priority bars, avatars, drag effects, FAB
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen } from 'lucide-react'
+import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, Menu } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useKanban, useTaskMutations } from '../../api'
-import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
+import { useKanban, useTaskMutations, useSavedFilter } from '../../api'
+import { SavedFiltersPanel } from '../../components/sections/tasks/SavedFiltersPanel'
+import { FilterBar } from '../../components/sections/tasks/FilterBar'
+import { SaveFilterModal } from '../../components/sections/tasks/SaveFilterModal'
+import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn, TaskFilters } from '../../components/sections/tasks/types'
+import type { SavedFilter, FilterCriteria } from '../../api/services/saved-filters'
 
 const columnConfig: Record<TaskStatus, { label: string; headerBg: string; bg: string; dropBg: string }> = {
   BACKLOG: { label: 'BACKLOG', headerBg: 'bg-stone-600', bg: 'bg-stone-100', dropBg: 'bg-stone-200' },
@@ -25,12 +29,79 @@ export function KanbanPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const projectFilter = searchParams.get('project')
+  const filterIdFromUrl = searchParams.get('filter')
+
+  // Saved filters state
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [activeFilterId, setActiveFilterId] = useState<string | null>(filterIdFromUrl)
+  const [currentFilters, setCurrentFilters] = useState<FilterCriteria>({})
+  const [showSaveModal, setShowSaveModal] = useState(false)
+
+  // Legacy department filter (for backwards compatibility)
   const [departmentFilter, setDepartmentFilter] = useState<Department | 'ALL'>('ALL')
 
-  // Build filters object
-  const filters = {
+  // Load saved filter from URL
+  const { data: savedFilter, loading: savedFilterLoading } = useSavedFilter(filterIdFromUrl || '')
+
+  // Apply saved filter when loaded
+  useEffect(() => {
+    if (savedFilter && savedFilter.filter_json) {
+      setCurrentFilters(savedFilter.filter_json)
+      setActiveFilterId(savedFilter.name)
+    }
+  }, [savedFilter])
+
+  // Keyboard shortcut 's' to toggle sidebar
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only trigger if not typing in an input/textarea and 's' is pressed
+      if (
+        e.key === 's' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault()
+        setSidebarOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [])
+
+  // Convert FilterCriteria to TaskFilters for useKanban
+  const convertToTaskFilters = (criteria: FilterCriteria): TaskFilters => {
+    const taskFilters: TaskFilters = {}
+
+    // Status - take first if array
+    if (criteria.status) {
+      taskFilters.status = Array.isArray(criteria.status) ? criteria.status[0] : criteria.status
+    }
+
+    // Priority - take first if array
+    if (criteria.priority) {
+      taskFilters.priority = Array.isArray(criteria.priority) ? criteria.priority[0] : criteria.priority
+    }
+
+    // Direct mappings
+    if (criteria.department) taskFilters.department = criteria.department
+    if (criteria.assigned_to) taskFilters.assigned_to = criteria.assigned_to
+    if (criteria.project) taskFilters.project = criteria.project
+    if (criteria.search) taskFilters.search = criteria.search
+
+    // Note: due_date filters are not supported in TaskFilters yet
+    // They would need backend support
+
+    return taskFilters
+  }
+
+  // Build filters object - merge legacy filters with saved filter criteria
+  const filters: TaskFilters = {
     ...(projectFilter ? { project: projectFilter } : {}),
-    ...(departmentFilter !== 'ALL' ? { department: departmentFilter } : {})
+    ...(departmentFilter !== 'ALL' && !currentFilters.department ? { department: departmentFilter } : {}),
+    ...convertToTaskFilters(currentFilters)
   }
   const hasFilters = Object.keys(filters).length > 0
 
@@ -42,14 +113,59 @@ export function KanbanPage() {
     searchParams.delete('project')
     setSearchParams(searchParams)
   }
+
   const { quickAdd } = useTaskMutations()
+
+  // Handle filter selection from sidebar
+  const handleFilterSelect = (filter: SavedFilter) => {
+    setActiveFilterId(filter.name)
+    setCurrentFilters(filter.filter_json)
+    // Update URL with filter ID for shareable links
+    searchParams.set('filter', filter.name)
+    setSearchParams(searchParams)
+  }
+
+  // Handle filter changes from FilterBar
+  const handleFilterChange = (newFilters: FilterCriteria) => {
+    setCurrentFilters(newFilters)
+    // Clear active filter ID when manually changing filters
+    if (activeFilterId) {
+      setActiveFilterId(null)
+      searchParams.delete('filter')
+      setSearchParams(searchParams)
+    }
+  }
+
+  // Handle department filter (update current filters)
+  const handleDepartmentChange = (dept: Department | 'ALL') => {
+    setDepartmentFilter(dept)
+    if (dept !== 'ALL') {
+      setCurrentFilters(prev => ({ ...prev, department: dept }))
+    } else {
+      setCurrentFilters(prev => {
+        const { department, ...rest } = prev
+        return rest
+      })
+    }
+    // Clear active filter when manually changing
+    if (activeFilterId) {
+      setActiveFilterId(null)
+      searchParams.delete('filter')
+      setSearchParams(searchParams)
+    }
+  }
+
+  // Handle save filter success
+  const handleSaveSuccess = () => {
+    // Refetch would happen automatically via useSavedFilters hook
+  }
 
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
 
-  if (loading) {
+  if (loading || (filterIdFromUrl && savedFilterLoading)) {
     return <LoadingState message="Cargando tablero..." />
   }
 
@@ -109,128 +225,168 @@ export function KanbanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100">
-      {/* Header */}
-      <div className="bg-white border-b-2 border-stone-900 px-4 lg:px-8 py-4">
-        <div className="max-w-full mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-stone-500 uppercase tracking-wider text-xs font-bold">Kanban Board</p>
-            <h1 className="font-serif text-2xl font-bold text-stone-900">
-              {projectFilter ? projectFilter.replace('WHP-', 'Proyecto ') : 'Todas las Tareas'}
-            </h1>
-            {projectFilter && (
-              <button
-                onClick={clearProjectFilter}
-                className="mt-1 flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium"
-              >
-                <FolderOpen size={12} />
-                Ver todas las tareas
-                <X size={12} />
-              </button>
-            )}
-          </div>
+    <div className="min-h-screen bg-stone-100 flex">
+      {/* Saved Filters Sidebar */}
+      {sidebarOpen && (
+        <aside className="hidden lg:block flex-shrink-0">
+          <SavedFiltersPanel
+            activeFilterId={activeFilterId}
+            onFilterSelect={handleFilterSelect}
+            onCreateNew={() => setShowSaveModal(true)}
+          />
+        </aside>
+      )}
 
-          <div className="flex items-center gap-4">
-            {/* Task count */}
-            <div className="px-3 py-1 border-2 border-stone-900 font-mono font-bold text-sm">
-              {totalTasks} tareas
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Header */}
+        <div className="bg-white border-b-2 border-stone-900 px-4 lg:px-8 py-4">
+          <div className="max-w-full mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Sidebar toggle button */}
+              <button
+                onClick={() => setSidebarOpen(prev => !prev)}
+                className="
+                  p-2
+                  border-2 border-stone-900
+                  bg-white hover:bg-stone-100
+                  shadow-[2px_2px_0_#1c1917]
+                  hover:shadow-[3px_3px_0_#1c1917]
+                  hover:translate-x-[-1px] hover:translate-y-[-1px]
+                  transition-all duration-75
+                "
+                title="Alternar panel de filtros (tecla: s)"
+              >
+                <Menu size={18} />
+              </button>
+
+              <div>
+                <p className="text-stone-500 uppercase tracking-wider text-xs font-bold">Kanban Board</p>
+                <h1 className="font-serif text-2xl font-bold text-stone-900">
+                  {projectFilter ? projectFilter.replace('WHP-', 'Proyecto ') : 'Todas las Tareas'}
+                </h1>
+                {projectFilter && (
+                  <button
+                    onClick={clearProjectFilter}
+                    className="mt-1 flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium"
+                  >
+                    <FolderOpen size={12} />
+                    Ver todas las tareas
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Department Filter */}
-            <div className="flex gap-2">
-              {(['ALL', 'SALES', 'OPS', 'MKT'] as const).map((dept) => (
-                <button
-                  key={dept}
-                  onClick={() => setDepartmentFilter(dept)}
-                  className={`
-                    px-3 py-1.5 text-xs font-medium uppercase tracking-wider
-                    border-2 border-stone-900
-                    transition-all duration-75
-                    ${departmentFilter === dept
-                      ? 'bg-stone-900 text-white'
-                      : 'bg-white text-stone-900 hover:bg-stone-100'
-                    }
-                  `}
-                >
-                  {dept === 'ALL' ? 'Todos' : dept}
-                </button>
-              ))}
+            <div className="flex items-center gap-4">
+              {/* Task count */}
+              <div className="px-3 py-1 border-2 border-stone-900 font-mono font-bold text-sm">
+                {totalTasks} tareas
+              </div>
+
+              {/* Department Filter */}
+              <div className="flex gap-2">
+                {(['ALL', 'SALES', 'OPS', 'MKT'] as const).map((dept) => (
+                  <button
+                    key={dept}
+                    onClick={() => handleDepartmentChange(dept)}
+                    className={`
+                      px-3 py-1.5 text-xs font-medium uppercase tracking-wider
+                      border-2 border-stone-900
+                      transition-all duration-75
+                      ${departmentFilter === dept
+                        ? 'bg-stone-900 text-white'
+                        : 'bg-white text-stone-900 hover:bg-stone-100'
+                      }
+                    `}
+                  >
+                    {dept === 'ALL' ? 'Todos' : dept}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Board */}
-      <div className="p-4 lg:p-6 overflow-x-auto">
-        <div className="flex gap-4 min-w-max">
-          {allColumns.map((column) => {
-            const config = columnConfig[column.status]
-            const isDropTarget = dragOverColumn === column.status
+        {/* Filter Bar */}
+        <FilterBar
+          currentFilters={currentFilters}
+          onFilterChange={handleFilterChange}
+          onSaveClick={() => setShowSaveModal(true)}
+        />
 
-            return (
-              <div
-                key={column.status}
-                className={`
-                  w-72 flex-shrink-0
-                  border-2 border-stone-900
-                  ${config.bg}
-                  transition-all duration-75
-                  ${isDropTarget
-                    ? 'shadow-[6px_6px_0_#f59e0b]'
-                    : 'shadow-[4px_4px_0_#1c1917]'
-                  }
-                `}
-                onDragOver={(e) => handleDragOver(e, column.status)}
-                onDragLeave={handleDragLeave}
-                onDrop={() => handleDrop(column.status)}
-              >
-                {/* Column Header */}
-                <div className={`${config.headerBg} p-3 border-b-2 border-stone-900`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm uppercase tracking-wider text-stone-900">
-                      {config.label}
-                    </span>
-                    <span className="
-                      w-8 h-8 flex items-center justify-center
-                      bg-stone-900 text-white
-                      font-mono font-bold text-sm
-                    ">
-                      {column.tasks.length}
-                    </span>
+        {/* Board */}
+        <div className="flex-1 p-4 lg:p-6 overflow-x-auto">
+          <div className="flex gap-4 min-w-max">
+            {allColumns.map((column) => {
+              const config = columnConfig[column.status]
+              const isDropTarget = dragOverColumn === column.status
+
+              return (
+                <div
+                  key={column.status}
+                  className={`
+                    w-72 flex-shrink-0
+                    border-2 border-stone-900
+                    ${config.bg}
+                    transition-all duration-75
+                    ${isDropTarget
+                      ? 'shadow-[6px_6px_0_#f59e0b]'
+                      : 'shadow-[4px_4px_0_#1c1917]'
+                    }
+                  `}
+                  onDragOver={(e) => handleDragOver(e, column.status)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={() => handleDrop(column.status)}
+                >
+                  {/* Column Header */}
+                  <div className={`${config.headerBg} p-3 border-b-2 border-stone-900`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm uppercase tracking-wider text-stone-900">
+                        {config.label}
+                      </span>
+                      <span className="
+                        w-8 h-8 flex items-center justify-center
+                        bg-stone-900 text-white
+                        font-mono font-bold text-sm
+                      ">
+                        {column.tasks.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tasks Container */}
+                  <div className={`
+                    p-3 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto space-y-3
+                    ${isDropTarget ? config.dropBg : ''}
+                    transition-colors
+                  `}>
+                    {column.tasks.map((task) => (
+                      <TaskCard
+                        key={task.name}
+                        task={task}
+                        onDragStart={() => handleDragStart(task)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => navigate(`/tareas/tarea/${task.name}`)}
+                        isDragging={draggedTask?.name === task.name}
+                      />
+                    ))}
+
+                    {/* Empty State */}
+                    {column.tasks.length === 0 && (
+                      <div className="
+                        h-32 border-2 border-dashed border-stone-400
+                        flex items-center justify-center
+                        text-stone-400 text-sm uppercase tracking-wider
+                      ">
+                        Arrastra aquí
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Tasks Container */}
-                <div className={`
-                  p-3 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto space-y-3
-                  ${isDropTarget ? config.dropBg : ''}
-                  transition-colors
-                `}>
-                  {column.tasks.map((task) => (
-                    <TaskCard
-                      key={task.name}
-                      task={task}
-                      onDragStart={() => handleDragStart(task)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => navigate(`/tareas/tarea/${task.name}`)}
-                      isDragging={draggedTask?.name === task.name}
-                    />
-                  ))}
-
-                  {/* Empty State */}
-                  {column.tasks.length === 0 && (
-                    <div className="
-                      h-32 border-2 border-dashed border-stone-400
-                      flex items-center justify-center
-                      text-stone-400 text-sm uppercase tracking-wider
-                    ">
-                      Arrastra aquí
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </div>
 
@@ -313,6 +469,14 @@ export function KanbanPage() {
           </form>
         </div>
       )}
+
+      {/* Save Filter Modal */}
+      <SaveFilterModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        currentFilters={currentFilters}
+        onSaved={handleSaveSuccess}
+      />
     </div>
   )
 }
