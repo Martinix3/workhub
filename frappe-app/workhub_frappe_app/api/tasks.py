@@ -3,10 +3,33 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate, add_days
+from frappe.utils import nowdate, getdate, add_days, now_datetime
 import json
 
 from workhub_frappe_app.api.utils import require_auth, require_permission
+
+
+def _enrich_task_assignees(task):
+    """Enrich task with assignees data including user info"""
+    if not task.get("name"):
+        return []
+
+    assignees = frappe.get_all("WH Task Assignee",
+        filters={"parent": task["name"]},
+        fields=["user", "role", "added_at", "added_by"],
+        order_by="idx"
+    )
+
+    # Enrich with user info
+    for assignee in assignees:
+        if assignee.get("user"):
+            user_info = frappe.db.get_value("User", assignee["user"],
+                ["full_name", "email"], as_dict=True)
+            if user_info:
+                assignee["user_name"] = user_info.full_name
+                assignee["user_email"] = user_info.email
+
+    return assignees
 
 
 @frappe.whitelist()
@@ -17,6 +40,7 @@ def get_tasks(filters=None, limit=50, offset=0):
         filters = json.loads(filters)
 
     filter_conditions = {}
+    assignee_filter = None
 
     if filters:
         if filters.get("status"):
@@ -30,12 +54,27 @@ def get_tasks(filters=None, limit=50, offset=0):
             filter_conditions["project"] = filters["project"]
         if filters.get("department"):
             filter_conditions["department"] = filters["department"]
+        # Support both assigned_to (legacy) and assignees filtering
         if filters.get("assigned_to"):
-            filter_conditions["assigned_to"] = filters["assigned_to"]
+            assignee_filter = filters["assigned_to"]
+        if filters.get("assignees"):
+            assignee_filter = filters["assignees"]
         if filters.get("is_inbox"):
             filter_conditions["is_inbox"] = 1
         if filters.get("search"):
             filter_conditions["title"] = ["like", f"%{filters['search']}%"]
+
+    # If filtering by assignee, get task IDs first
+    if assignee_filter:
+        task_ids = frappe.get_all("WH Task Assignee",
+            filters={"user": assignee_filter},
+            pluck="parent"
+        )
+        if task_ids:
+            filter_conditions["name"] = ["in", task_ids]
+        else:
+            # No tasks for this assignee
+            return []
 
     tasks = frappe.get_list("WH Task",
         filters=filter_conditions,
@@ -52,8 +91,11 @@ def get_tasks(filters=None, limit=50, offset=0):
         ignore_permissions=True
     )
 
-    # Enrich with project info
+    # Enrich with project info and assignees
     for task in tasks:
+        # Add assignees with user info
+        task["assignees"] = _enrich_task_assignees(task)
+
         if task.get("project"):
             project_data = frappe.db.get_value("WH Project", task["project"],
                 ["title", "health"], as_dict=True)
@@ -78,6 +120,10 @@ def get_task(task_id):
         frappe.throw(_("Task ID is required"))
 
     task = frappe.get_doc("WH Task", task_id)
+    task_dict = task.as_dict()
+
+    # Get assignees with user info
+    task_dict["assignees"] = _enrich_task_assignees(task_dict)
 
     # Get dependencies
     predecessors = frappe.get_all("WH Task Dependency",
@@ -100,7 +146,7 @@ def get_task(task_id):
         fields=["name", "title", "status", "priority", "assigned_to"])
 
     return {
-        "task": task.as_dict(),
+        "task": task_dict,
         "predecessors": predecessors,
         "successors": successors,
         "subtasks": subtasks
@@ -124,12 +170,28 @@ def create_task(data):
     doc.priority = data.get("priority", "P1")
     doc.project = data.get("project")
     doc.department = data.get("department")
-    doc.assigned_to = data.get("assigned_to") or frappe.session.user
     doc.start_date = data.get("start_date")
     doc.due_date = data.get("due_date")
     doc.estimated_hours = data.get("estimated_hours")
     doc.is_milestone = data.get("is_milestone", 0)
     doc.parent_task = data.get("parent_task")
+
+    # Handle assignees - support both new array format and legacy assigned_to
+    if data.get("assignees"):
+        # New multi-assignee format
+        for assignee_data in data["assignees"]:
+            doc.append("assignees", {
+                "user": assignee_data.get("user"),
+                "role": assignee_data.get("role", "Collaborator"),
+                "added_at": now_datetime(),
+                "added_by": frappe.session.user
+            })
+    elif data.get("assigned_to"):
+        # Legacy single assignee - convert to Owner
+        doc.assigned_to = data["assigned_to"]
+    else:
+        # Default to current user as Owner
+        doc.assigned_to = frappe.session.user
 
     # If no project, mark as inbox
     if not doc.project and not doc.parent_task:
@@ -162,6 +224,19 @@ def update_task(task_id, data):
     for field in allowed_fields:
         if field in data:
             setattr(doc, field, data[field])
+
+    # Handle assignees update if provided
+    if "assignees" in data:
+        # Clear existing assignees
+        doc.assignees = []
+        # Add new assignees
+        for assignee_data in data["assignees"]:
+            doc.append("assignees", {
+                "user": assignee_data.get("user"),
+                "role": assignee_data.get("role", "Collaborator"),
+                "added_at": now_datetime(),
+                "added_by": frappe.session.user
+            })
 
     doc.save()
     return {"success": True, "task_id": doc.name}
@@ -421,4 +496,69 @@ def quick_add(title, priority="P1", department=None, assigned_to=None):
     doc.assigned_to = assigned_to or frappe.session.user
     doc.is_inbox = 1
     doc.insert()
+    return {"success": True, "task_id": doc.name}
+
+
+@frappe.whitelist()
+def add_assignee(task_id, user, role="Collaborator"):
+    """Add an assignee to a task"""
+    require_permission("WH Task", "write")
+
+    if not task_id:
+        frappe.throw(_("Task ID is required"))
+    if not user:
+        frappe.throw(_("User is required"))
+
+    # Check if user is already assigned
+    existing = frappe.db.exists("WH Task Assignee", {
+        "parent": task_id,
+        "user": user
+    })
+
+    if existing:
+        frappe.throw(_("User is already assigned to this task"))
+
+    doc = frappe.get_doc("WH Task", task_id)
+    doc.append("assignees", {
+        "user": user,
+        "role": role,
+        "added_at": now_datetime(),
+        "added_by": frappe.session.user
+    })
+    doc.save()
+
+    return {"success": True, "task_id": doc.name}
+
+
+@frappe.whitelist()
+def remove_assignee(task_id, user):
+    """Remove an assignee from a task"""
+    require_permission("WH Task", "write")
+
+    if not task_id:
+        frappe.throw(_("Task ID is required"))
+    if not user:
+        frappe.throw(_("User is required"))
+
+    doc = frappe.get_doc("WH Task", task_id)
+
+    # Find and remove the assignee
+    assignee_to_remove = None
+    for assignee in doc.assignees:
+        if assignee.user == user:
+            assignee_to_remove = assignee
+            break
+
+    if not assignee_to_remove:
+        frappe.throw(_("User is not assigned to this task"))
+
+    # Check if this is the only Owner - if so, don't allow removal
+    if assignee_to_remove.role == "Owner":
+        other_owners = [a for a in doc.assignees if a.role == "Owner" and a.user != user]
+        if not other_owners and len(doc.assignees) > 1:
+            frappe.throw(_("Cannot remove the only Owner. Promote another assignee to Owner first"))
+
+    doc.remove(assignee_to_remove)
+    doc.save()
+
     return {"success": True, "task_id": doc.name}
