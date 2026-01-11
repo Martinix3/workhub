@@ -1,0 +1,420 @@
+name: Visual Regression Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'web/**'
+      - '.github/workflows/visual-regression.yml'
+  workflow_dispatch:
+
+# Cancel in-progress runs when a new workflow with the same group name is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '0'
+
+jobs:
+  visual-regression:
+    name: Visual Regression Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: ./web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_FRAPPE_URL: http://localhost:8001
+          VITE_APP_MODE: test
+          VITE_GOOGLE_CLIENT_ID: test-client-id
+          VITE_ENABLE_AUTH_BYPASS: 'true'
+
+      - name: Run visual regression tests
+        id: visual-tests
+        run: npm run test:visual
+        continue-on-error: true
+        env:
+          CI: true
+          WH_WEB_PORT: 5177
+          WH_BASE_URL: http://localhost:5177
+          VITE_FRAPPE_URL: http://localhost:8001
+          VITE_APP_MODE: test
+          VITE_GOOGLE_CLIENT_ID: test-client-id
+          VITE_ENABLE_AUTH_BYPASS: 'true'
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-results
+          path: |
+            web/test-results/
+            web/playwright-report/
+          retention-days: 30
+
+      - name: Upload screenshot artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-screenshots
+          path: |
+            web/test-results/**/*-diff.png
+            web/test-results/**/*-actual.png
+            web/test-results/**/*-expected.png
+          retention-days: 30
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 30
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: web/e2e/reports/lighthouse/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Comment PR with test results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Read test results
+            let testResults = {
+              passed: false,
+              message: 'Visual regression tests did not complete'
+            };
+
+            try {
+              const resultsPath = path.join(process.cwd(), 'web/test-results/results.json');
+              if (fs.existsSync(resultsPath)) {
+                const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+                const stats = results.stats || {};
+                const passed = stats.failures === 0 && stats.errors === 0;
+
+                testResults = {
+                  passed,
+                  total: stats.tests || 0,
+                  passed_count: stats.passes || 0,
+                  failed: stats.failures || 0,
+                  skipped: stats.skipped || 0,
+                  duration: stats.duration || 0
+                };
+              }
+            } catch (error) {
+              console.error('Error reading test results:', error);
+            }
+
+            // Format duration
+            const formatDuration = (ms) => {
+              const minutes = Math.floor(ms / 60000);
+              const seconds = Math.floor((ms % 60000) / 1000);
+              return `${minutes}m ${seconds}s`;
+            };
+
+            // Build comment body
+            const icon = testResults.passed ? '✅' : '❌';
+            const status = testResults.passed ? 'PASSED' : 'FAILED';
+
+            let body = `## ${icon} Visual Regression Tests ${status}\n\n`;
+
+            if (testResults.total) {
+              body += `### Test Summary\n\n`;
+              body += `- **Total Tests:** ${testResults.total}\n`;
+              body += `- **Passed:** ${testResults.passed_count}\n`;
+              body += `- **Failed:** ${testResults.failed}\n`;
+              body += `- **Skipped:** ${testResults.skipped}\n`;
+              body += `- **Duration:** ${formatDuration(testResults.duration)}\n\n`;
+            }
+
+            if (!testResults.passed && testResults.failed > 0) {
+              body += `### ⚠️ Visual Regressions Detected\n\n`;
+              body += `${testResults.failed} visual regression test(s) failed. This indicates visual changes were detected.\n\n`;
+              body += `**Next Steps:**\n`;
+              body += `1. Download the \`visual-regression-screenshots\` artifact from this workflow run\n`;
+              body += `2. Review the diff images to verify if changes are intentional\n`;
+              body += `3. If changes are intentional, update baselines:\n`;
+              body += `   \`\`\`bash\n`;
+              body += `   cd web\n`;
+              body += `   npm run test:visual -- --update-snapshots\n`;
+              body += `   git add e2e/screenshots/\n`;
+              body += `   git commit -m "Update visual regression baselines"\n`;
+              body += `   \`\`\`\n`;
+              body += `4. If changes are unintentional, fix the visual regressions\n\n`;
+            } else if (testResults.passed) {
+              body += `### ✅ All Visual Tests Passed\n\n`;
+              body += `No visual regressions detected. All screenshots match the baseline images.\n\n`;
+            }
+
+            body += `### 📊 Reports\n\n`;
+            body += `- [Playwright HTML Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n`;
+            body += `- [Test Results Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n`;
+
+            if (!testResults.passed) {
+              body += `- [Screenshot Diffs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n`;
+            }
+
+            body += `\n---\n`;
+            body += `*Workflow run: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*\n`;
+            body += `*Commit: ${{ github.sha }}*\n`;
+
+            // Post or update comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Visual Regression Tests')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      - name: Fail workflow if tests failed
+        if: steps.visual-tests.outcome == 'failure'
+        run: |
+          echo "Visual regression tests failed. Review the test results and screenshot diffs."
+          exit 1
+
+  # Cross-browser validation job (runs in parallel)
+  cross-browser-validation:
+    name: Cross-Browser Validation (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    defaults:
+      run:
+        working-directory: ./web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser - ${{ matrix.browser }}
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run visual tests on ${{ matrix.browser }}
+        run: npm run test:visual -- --project=${{ matrix.browser }}
+        env:
+          CI: true
+          WH_WEB_PORT: 5177
+          WH_BASE_URL: http://localhost:5177
+          VITE_FRAPPE_URL: http://localhost:8001
+          VITE_APP_MODE: test
+          VITE_GOOGLE_CLIENT_ID: test-client-id
+          VITE_ENABLE_AUTH_BYPASS: 'true'
+
+      - name: Upload ${{ matrix.browser }} test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.browser }}
+          path: web/test-results/
+          retention-days: 30
+
+      - name: Upload ${{ matrix.browser }} screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.browser }}
+          path: |
+            web/test-results/**/*-diff.png
+            web/test-results/**/*-actual.png
+            web/test-results/**/*-expected.png
+          retention-days: 30
+
+  # Performance testing job
+  performance-tests:
+    name: Lighthouse Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: ./web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Lighthouse performance tests
+        run: npx playwright test e2e/visual/performance/lighthouse.perf.spec.ts
+        env:
+          CI: true
+          WH_WEB_PORT: 5177
+          WH_BASE_URL: http://localhost:5177
+          VITE_FRAPPE_URL: http://localhost:8001
+          VITE_APP_MODE: test
+          VITE_GOOGLE_CLIENT_ID: test-client-id
+          VITE_ENABLE_AUTH_BYPASS: 'true'
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-performance-reports
+          path: web/e2e/reports/lighthouse/
+          retention-days: 30
+
+      - name: Comment PR with performance results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            let body = `## 📊 Lighthouse Performance Results\n\n`;
+
+            try {
+              const reportsDir = path.join(process.cwd(), 'web/e2e/reports/lighthouse');
+
+              if (fs.existsSync(reportsDir)) {
+                const files = fs.readdirSync(reportsDir).filter(f => f.endsWith('.json'));
+
+                if (files.length > 0) {
+                  body += `### Performance Metrics\n\n`;
+                  body += `| Page | Performance | Accessibility | Best Practices | SEO |\n`;
+                  body += `|------|-------------|---------------|----------------|-----|\n`;
+
+                  for (const file of files) {
+                    const reportPath = path.join(reportsDir, file);
+                    const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+                    const categories = report.categories || {};
+
+                    const pageName = file.replace('.json', '').replace(/-/g, ' ');
+                    const perf = categories.performance?.score ? Math.round(categories.performance.score * 100) : 'N/A';
+                    const a11y = categories.accessibility?.score ? Math.round(categories.accessibility.score * 100) : 'N/A';
+                    const bp = categories['best-practices']?.score ? Math.round(categories['best-practices'].score * 100) : 'N/A';
+                    const seo = categories.seo?.score ? Math.round(categories.seo.score * 100) : 'N/A';
+
+                    const perfIcon = perf >= 85 ? '✅' : '⚠️';
+                    const a11yIcon = a11y >= 95 ? '✅' : '⚠️';
+
+                    body += `| ${pageName} | ${perfIcon} ${perf} | ${a11yIcon} ${a11y} | ${bp} | ${seo} |\n`;
+                  }
+
+                  body += `\n**Thresholds:** Performance ≥85, Accessibility ≥95\n\n`;
+                } else {
+                  body += `No Lighthouse reports found.\n\n`;
+                }
+              } else {
+                body += `No Lighthouse reports generated.\n\n`;
+              }
+            } catch (error) {
+              console.error('Error reading Lighthouse results:', error);
+              body += `Error reading Lighthouse results: ${error.message}\n\n`;
+            }
+
+            body += `\n---\n`;
+            body += `*Workflow run: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*\n`;
+
+            // Post or update comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Lighthouse Performance Results')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
