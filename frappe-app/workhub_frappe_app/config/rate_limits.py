@@ -1,5 +1,32 @@
 # WorkHub Rate Limiting Configuration
 # Centralized configuration for rate limits across different endpoint categories
+#
+# USAGE:
+# ------
+# This configuration file is used by the @rate_limit decorator in api/rate_limiter.py
+# to determine appropriate limits for different endpoints.
+#
+# To apply rate limiting to an endpoint:
+#   from workhub_frappe_app.api.rate_limiter import rate_limit
+#
+#   @frappe.whitelist()
+#   @rate_limit(limit=10, window=60, identifier="user")
+#   def my_sensitive_endpoint():
+#       pass
+#
+# Or use the helper to get configuration:
+#   from workhub_frappe_app.config.rate_limits import get_rate_limit_config
+#
+#   config = get_rate_limit_config("my_endpoint")
+#
+# MODIFYING LIMITS:
+# -----------------
+# 1. Edit the appropriate category (AUTH_RATE_LIMIT, GUEST_RATE_LIMIT, SENSITIVE_RATE_LIMIT)
+# 2. Or add/update endpoint-specific limits in ENDPOINT_LIMITS
+# 3. Restart Frappe bench to apply changes
+# 4. Monitor logs for rate limit errors and adjust as needed
+#
+# See: frappe-app/workhub_frappe_app/api/RATE_LIMITING.md for complete documentation
 
 """
 Rate Limiting Strategy:

@@ -1,5 +1,32 @@
 # WorkHub Rate Limiter
 # Redis-based rate limiting for API endpoints using sliding window algorithm
+#
+# RATE LIMITING STRATEGY:
+# -----------------------
+# This module implements rate limiting to protect WorkHub's authentication and
+# sensitive API endpoints from abuse. The strategy is built on three principles:
+#
+# 1. SLIDING WINDOW ALGORITHM:
+#    - Tracks individual request timestamps (not just counters)
+#    - Provides accurate rate limiting without boundary burst attacks
+#    - Automatically cleans up old timestamps outside the window
+#
+# 2. DUAL IDENTIFIER SUPPORT:
+#    - IP-based limiting: For guest/public endpoints to prevent enumeration
+#    - User-based limiting: For authenticated endpoints to prevent account abuse
+#    - Automatically detects proxies via X-Forwarded-For header
+#
+# 3. GRACEFUL DEGRADATION:
+#    - Fails open if Redis is unavailable (allows requests)
+#    - Logs errors for monitoring without blocking legitimate users
+#    - Critical for production stability
+#
+# SECURITY CONSIDERATIONS:
+# - All auth endpoints (login, OAuth, token generation): Strict limits (5-10/min)
+# - Public endpoints (user info, session checks): Moderate limits (15-20/min)
+# - Admin operations (user creation, role management): Per-user limits (10-20/min)
+#
+# See: frappe-app/workhub_frappe_app/api/RATE_LIMITING.md for complete documentation
 
 import time
 import frappe

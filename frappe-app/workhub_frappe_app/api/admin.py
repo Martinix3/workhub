@@ -102,7 +102,7 @@ def get_user_detail(user_id):
 
 
 @frappe.whitelist()
-@rate_limit(limit=10, window=60, identifier="user")
+@rate_limit(limit=10, window=60, identifier="user")  # Rate Limiting: 10 requests/min PER USER to prevent mass account creation
 def create_user(email, first_name, last_name=None, roles=None, send_welcome_email=True):
     """
     Create a new user.
@@ -116,6 +116,14 @@ def create_user(email, first_name, last_name=None, roles=None, send_welcome_emai
 
     Returns:
         dict: Created user object
+
+    Rate Limiting Strategy:
+    - Limit: 10 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: User creation is a sensitive operation that could be abused to create
+      spam accounts or overwhelm the system. Rate limiting per user prevents abuse
+      from compromised System Manager accounts.
+    - Protection: Prevents mass account creation attacks while allowing legitimate
+      bulk user provisioning (e.g., onboarding multiple employees).
     """
     require_any_role("System Manager")
 
@@ -266,7 +274,7 @@ def get_roles():
 
 
 @frappe.whitelist()
-@rate_limit(limit=20, window=60, identifier="user")
+@rate_limit(limit=20, window=60, identifier="user")  # Rate Limiting: 20 requests/min PER USER to allow batch operations while preventing abuse
 def assign_role(user_id, role):
     """
     Assign a role to a user.
@@ -277,6 +285,14 @@ def assign_role(user_id, role):
 
     Returns:
         dict: Updated user with roles
+
+    Rate Limiting Strategy:
+    - Limit: 20 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: Role assignment is critical for access control. The limit is higher
+      than other admin operations to allow batch role assignments during onboarding
+      or reorganization, while still preventing automated privilege escalation attacks.
+    - Protection: Prevents attackers from rapidly assigning administrative roles to
+      compromised accounts or performing mass permission changes.
     """
     require_any_role("System Manager")
 
@@ -311,7 +327,7 @@ def assign_role(user_id, role):
 
 
 @frappe.whitelist()
-@rate_limit(limit=20, window=60, identifier="user")
+@rate_limit(limit=20, window=60, identifier="user")  # Rate Limiting: 20 requests/min PER USER to allow batch operations while preventing abuse
 def remove_role(user_id, role):
     """
     Remove a role from a user.
@@ -322,6 +338,13 @@ def remove_role(user_id, role):
 
     Returns:
         dict: Updated user with roles
+
+    Rate Limiting Strategy:
+    - Limit: 20 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: Role removal is as sensitive as assignment. The limit allows batch
+      operations during access reviews or offboarding while preventing abuse.
+    - Protection: Prevents attackers from rapidly stripping permissions from legitimate
+      users or performing mass permission changes to disrupt operations.
     """
     require_any_role("System Manager")
 
@@ -357,7 +380,7 @@ def remove_role(user_id, role):
 
 
 @frappe.whitelist()
-@rate_limit(limit=10, window=60, identifier="user")
+@rate_limit(limit=10, window=60, identifier="user")  # Rate Limiting: 10 requests/min PER USER to prevent invitation spam
 def send_invitation(email, first_name=None, roles=None, message=None):
     """
     Send an invitation email to a new user.
@@ -371,6 +394,14 @@ def send_invitation(email, first_name=None, roles=None, message=None):
 
     Returns:
         dict: Invitation result
+
+    Rate Limiting Strategy:
+    - Limit: 10 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: Invitation sending triggers email delivery, which could be abused for
+      spam or to overwhelm email infrastructure. Rate limiting per user prevents abuse
+      while allowing legitimate batch invitations.
+    - Protection: Prevents attackers from using the invitation system to send spam emails,
+      harass users, or cause email service disruption.
     """
     require_any_role("System Manager")
 

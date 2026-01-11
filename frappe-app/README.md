@@ -35,6 +35,13 @@ bench start
 
 ```
 workhub_frappe_app/
+├── api/                           # API endpoints
+│   ├── auth.py                    # Authentication endpoints (rate-limited)
+│   ├── admin.py                   # Admin/user management (rate-limited)
+│   ├── rate_limiter.py            # Rate limiting module
+│   └── RATE_LIMITING.md           # Rate limiting documentation
+├── config/                        # Configuration
+│   └── rate_limits.py             # Rate limit settings
 ├── public/
 │   ├── js/
 │   │   └── workhub.bundle.js      # Shell (sidebar, header, bottom nav)
@@ -61,6 +68,21 @@ workhub_frappe_app/
 ```bash
 bench --site workhub.localhost clear-cache
 ```
+
+## API Rate Limiting
+
+WorkHub implements Redis-based rate limiting on authentication and sensitive endpoints to prevent abuse. See [workhub_frappe_app/api/RATE_LIMITING.md](./workhub_frappe_app/api/RATE_LIMITING.md) for complete documentation including:
+
+- Rate limiting configuration and strategy
+- Endpoint-specific limits
+- Client-side 429 response handling
+- Monitoring and troubleshooting
+
+**Quick reference:**
+- Auth endpoints: 5-20 req/min per IP/user
+- Admin endpoints: 10-20 req/min per user
+- All limits enforce 60-second sliding window
+- Graceful fallback if Redis unavailable
 
 ---
 
