@@ -497,6 +497,9 @@
 		// Add resize event listeners to handles
 		this._setupResizeHandles(bar, task, handleLeft, handleRight);
 
+		// Add click handler to open task detail sidebar
+		this._setupTaskBarClick(bar, task);
+
 		return bar;
 	}
 
@@ -604,6 +607,19 @@
 		avatar.className = 'gantt-task-bar__avatar';
 
 		// Extract initials from assigned user
+		const initials = this._getInitials(assignedTo);
+
+		avatar.textContent = initials;
+		avatar.title = assignedTo;
+
+		return avatar;
+	}
+
+	/**
+	 * Get initials from user name or email
+	 * @private
+	 */
+	_getInitials(assignedTo) {
 		let initials = '?';
 		if (assignedTo) {
 			// If it's an email, use first letter
@@ -619,11 +635,7 @@
 				}
 			}
 		}
-
-		avatar.textContent = initials;
-		avatar.title = assignedTo;
-
-		return avatar;
+		return initials;
 	}
 		/**
 		 * Render today line
@@ -2066,6 +2078,298 @@
 			error: (error) => {
 				frappe.unfreeze();
 				console.error('Error refreshing chart data:', error);
+			}
+		});
+	}
+
+	/**
+	 * Setup click handler on task bar to open detail sidebar
+	 * @private
+	 */
+	_setupTaskBarClick(barElement, task) {
+		let clickStartTime = 0;
+		let clickStartX = 0;
+		let clickStartY = 0;
+
+		// Track mousedown to detect drag vs click
+		barElement.addEventListener('mousedown', (e) => {
+			clickStartTime = Date.now();
+			clickStartX = e.clientX;
+			clickStartY = e.clientY;
+		});
+
+		// Use click event to open sidebar
+		barElement.addEventListener('click', (e) => {
+			// Check if this was a drag (mouse moved significantly or took too long)
+			const timeDiff = Date.now() - clickStartTime;
+			const distanceX = Math.abs(e.clientX - clickStartX);
+			const distanceY = Math.abs(e.clientY - clickStartY);
+			const isDrag = timeDiff > 200 || distanceX > 5 || distanceY > 5;
+
+			// Only open if not dragging/resizing
+			if (isDrag || this.dragState.isDragging || this.resizeState.isResizing) {
+				return;
+			}
+
+			// Don't trigger on handle clicks
+			if (e.target.closest('.gantt-task-bar__handle')) {
+				return;
+			}
+
+			this.openTaskDetail(task);
+		});
+	}
+
+	/**
+	 * Open task detail sidebar
+	 * @public
+	 */
+	openTaskDetail(task) {
+		const sidebar = document.getElementById('task-detail-sidebar');
+		const overlay = document.getElementById('sidebar-overlay');
+		const content = document.getElementById('task-detail-content');
+
+		if (!sidebar || !overlay || !content) {
+			console.error('Sidebar elements not found');
+			return;
+		}
+
+		// Populate sidebar content
+		content.innerHTML = this._renderTaskDetailContent(task);
+
+		// Setup event listeners
+		this._setupTaskDetailListeners(task);
+
+		// Show sidebar
+		sidebar.classList.add('open');
+		overlay.classList.add('active');
+	}
+
+	/**
+	 * Close task detail sidebar
+	 * @public
+	 */
+	closeTaskDetail() {
+		const sidebar = document.getElementById('task-detail-sidebar');
+		const overlay = document.getElementById('sidebar-overlay');
+
+		if (sidebar && overlay) {
+			sidebar.classList.remove('open');
+			overlay.classList.remove('active');
+		}
+	}
+
+	/**
+	 * Render task detail content HTML
+	 * @private
+	 */
+	_renderTaskDetailContent(task) {
+		// Format dates
+		const startDate = task.start_date ? this._formatDate(new Date(task.start_date)) : 'Sin definir';
+		const dueDate = task.due_date ? this._formatDate(new Date(task.due_date)) : 'Sin definir';
+
+		// Status label
+		const statusLabel = this._formatStatus(task.status);
+
+		// Get dependencies for this task
+		const predecessors = this.dependencies.filter(d => d.successor === task.name);
+		const successors = this.dependencies.filter(d => d.predecessor === task.name);
+
+		// Build HTML
+		let html = `
+			<div class="task-detail">
+				<!-- Task Title -->
+				<div class="task-detail__section">
+					<h4 class="task-detail__task-title">${task.title || task.name}</h4>
+				</div>
+
+				<!-- Description -->
+				${task.description ? `
+				<div class="task-detail__section">
+					<label class="task-detail__label">Descripción</label>
+					<div class="task-detail__value task-detail__description">
+						${task.description}
+					</div>
+				</div>
+				` : ''}
+
+				<!-- Dates -->
+				<div class="task-detail__section">
+					<label class="task-detail__label">Fechas</label>
+					<div class="task-detail__dates">
+						<div class="task-detail__date-item">
+							<span class="task-detail__date-label">Inicio:</span>
+							<span class="task-detail__date-value">${startDate}</span>
+						</div>
+						<div class="task-detail__date-item">
+							<span class="task-detail__date-label">Fin:</span>
+							<span class="task-detail__date-value">${dueDate}</span>
+						</div>
+						${task.duration_days ? `
+						<div class="task-detail__date-item">
+							<span class="task-detail__date-label">Duración:</span>
+							<span class="task-detail__date-value">${task.duration_days} día${task.duration_days !== 1 ? 's' : ''}</span>
+						</div>
+						` : ''}
+					</div>
+				</div>
+
+				<!-- Assigned User -->
+				${task.assigned_to ? `
+				<div class="task-detail__section">
+					<label class="task-detail__label">Asignado a</label>
+					<div class="task-detail__assigned">
+						<div class="task-detail__avatar">
+							${this._getInitials(task.assigned_to)}
+						</div>
+						<span class="task-detail__assigned-name">${task.assigned_name || task.assigned_to}</span>
+					</div>
+				</div>
+				` : ''}
+
+				<!-- Status with dropdown -->
+				<div class="task-detail__section">
+					<label class="task-detail__label">Estado</label>
+					<select class="task-detail__status-select" id="task-status-select" data-task-id="${task.name}">
+						<option value="BACKLOG" ${task.status === 'BACKLOG' ? 'selected' : ''}>Backlog</option>
+						<option value="NEXT" ${task.status === 'NEXT' ? 'selected' : ''}>Siguiente</option>
+						<option value="DOING" ${task.status === 'DOING' ? 'selected' : ''}>En Curso</option>
+						<option value="BLOCKED" ${task.status === 'BLOCKED' ? 'selected' : ''}>Bloqueada</option>
+						<option value="DONE" ${task.status === 'DONE' ? 'selected' : ''}>Completada</option>
+					</select>
+				</div>
+
+				<!-- Priority -->
+				${task.priority ? `
+				<div class="task-detail__section">
+					<label class="task-detail__label">Prioridad</label>
+					<div class="task-detail__priority task-detail__priority--${task.priority.toLowerCase()}">
+						${task.priority}
+					</div>
+				</div>
+				` : ''}
+
+				<!-- Dependencies -->
+				${predecessors.length > 0 || successors.length > 0 ? `
+				<div class="task-detail__section">
+					<label class="task-detail__label">Dependencias</label>
+					<div class="task-detail__dependencies">
+						${predecessors.length > 0 ? `
+						<div class="task-detail__dep-group">
+							<div class="task-detail__dep-type">Predecesoras:</div>
+							<ul class="task-detail__dep-list">
+								${predecessors.map(d => {
+									const predTask = this.tasks.find(t => t.name === d.predecessor);
+									return `<li class="task-detail__dep-item">
+										${predTask ? predTask.title : d.predecessor} <span class="task-detail__dep-type-label">(${d.type})</span>
+									</li>`;
+								}).join('')}
+							</ul>
+						</div>
+						` : ''}
+						${successors.length > 0 ? `
+						<div class="task-detail__dep-group">
+							<div class="task-detail__dep-type">Sucesoras:</div>
+							<ul class="task-detail__dep-list">
+								${successors.map(d => {
+									const succTask = this.tasks.find(t => t.name === d.successor);
+									return `<li class="task-detail__dep-item">
+										${succTask ? succTask.title : d.successor} <span class="task-detail__dep-type-label">(${d.type})</span>
+									</li>`;
+								}).join('')}
+							</ul>
+						</div>
+						` : ''}
+					</div>
+				</div>
+				` : ''}
+
+				<!-- Estimated Hours -->
+				${task.estimated_hours ? `
+				<div class="task-detail__section">
+					<label class="task-detail__label">Horas Estimadas</label>
+					<div class="task-detail__value">${task.estimated_hours} horas</div>
+				</div>
+				` : ''}
+			</div>
+		`;
+
+		return html;
+	}
+
+	/**
+	 * Setup event listeners for task detail sidebar
+	 * @private
+	 */
+	_setupTaskDetailListeners(task) {
+		// Status change listener
+		setTimeout(() => {
+			const statusSelect = document.getElementById('task-status-select');
+			if (statusSelect) {
+				statusSelect.addEventListener('change', (e) => {
+					const newStatus = e.target.value;
+					this._updateTaskStatus(task.name, newStatus);
+				});
+			}
+		}, 100); // Small delay to ensure DOM is ready
+	}
+
+	/**
+	 * Update task status via API
+	 * @private
+	 */
+	_updateTaskStatus(taskId, newStatus) {
+		// Show loading
+		frappe.freeze('Actualizando estado...');
+
+		// Call API
+		frappe.call({
+			method: 'workhub_frappe_app.api.tasks.update_task',
+			args: {
+				task_id: taskId,
+				data: JSON.stringify({ status: newStatus })
+			},
+			callback: (response) => {
+				frappe.unfreeze();
+
+				if (response.message) {
+					// Show success message
+					frappe.show_alert({
+						message: 'Estado actualizado correctamente',
+						indicator: 'green'
+					}, 3);
+
+					// Update local task data
+					const task = this.tasks.find(t => t.name === taskId);
+					if (task) {
+						task.status = newStatus;
+
+						// Update progress based on status
+						const statusProgress = {
+							'BACKLOG': 0,
+							'NEXT': 10,
+							'DOING': 50,
+							'BLOCKED': 50,
+							'DONE': 100
+						};
+						task.progress = statusProgress[newStatus] || 0;
+					}
+
+					// Re-render chart to show updated status
+					this.render();
+
+					// Close sidebar
+					this.closeTaskDetail();
+				}
+			},
+			error: (error) => {
+				frappe.unfreeze();
+				frappe.msgprint({
+					title: 'Error',
+					message: 'No se pudo actualizar el estado de la tarea',
+					indicator: 'red'
+				});
+				console.error('Error updating task status:', error);
 			}
 		});
 	}
