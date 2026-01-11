@@ -1,0 +1,185 @@
+/**
+ * Global CSS for Visual Regression Testing
+ *
+ * This stylesheet is used via Playwright's `stylePath` option in toHaveScreenshot()
+ * to hide dynamic elements that cause false positives in visual regression tests.
+ *
+ * Usage:
+ * await expect(page).toHaveScreenshot('component.png', {
+ *   stylePath: 'e2e/config/screenshot.css'
+ * });
+ *
+ * Alternative: Use visual-test-helpers.ts functions for programmatic control
+ */
+
+/* ===================================================================
+   DISABLE ANIMATIONS AND TRANSITIONS
+   =================================================================== */
+
+/* Disable all animations and transitions for stable screenshots */
+*,
+*::before,
+*::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* ===================================================================
+   HIDE DYNAMIC ELEMENTS
+   =================================================================== */
+
+/* Hide elements marked with data-dynamic attribute */
+[data-dynamic="timestamp"],
+[data-dynamic="avatar"],
+[data-dynamic="date"],
+[data-dynamic="time"],
+[data-dynamic="user-avatar"],
+[data-dynamic="profile-picture"],
+[data-dynamic="count"],
+[data-dynamic="badge"] {
+  visibility: hidden !important;
+}
+
+/* ===================================================================
+   HIDE LOADING STATES
+   =================================================================== */
+
+/* Hide loading spinners and skeleton loaders */
+.loading-spinner,
+.skeleton-loader,
+.shimmer,
+.loading-skeleton,
+.skeleton,
+[role="progressbar"],
+[aria-busy="true"] {
+  visibility: hidden !important;
+}
+
+/* ===================================================================
+   HIDE DYNAMIC BADGES AND COUNTERS
+   =================================================================== */
+
+/* Hide notification badges and unread counts */
+.notification-badge,
+.unread-count,
+.badge-count,
+.counter-badge {
+  visibility: hidden !important;
+}
+
+/* ===================================================================
+   HIDE LIVE TIMESTAMPS
+   =================================================================== */
+
+/* Hide timestamp elements that change over time */
+time[datetime],
+.timestamp,
+.relative-time,
+.last-updated,
+.updated-at,
+.created-at,
+.time-ago {
+  visibility: hidden !important;
+}
+
+/* ===================================================================
+   HIDE ANIMATED ELEMENTS
+   =================================================================== */
+
+/* Hide elements with animation classes */
+.pulse,
+.animate-pulse,
+.animate-spin,
+.animate-bounce,
+.animate-ping,
+.animate-fade,
+.blinking,
+.rotating {
+  visibility: hidden !important;
+}
+
+/* ===================================================================
+   HIDE DYNAMIC IMAGES
+   =================================================================== */
+
+/* Hide user avatars and profile pictures */
+.user-avatar,
+.profile-picture,
+.profile-avatar,
+.avatar-img,
+img[alt*="avatar" i],
+img[alt*="profile" i] {
+  visibility: hidden !important;
+}
+
+/* ===================================================================
+   HIDE VIDEO AND MEDIA
+   =================================================================== */
+
+/* Hide video elements and media players that may have dynamic content */
+video,
+.video-player,
+[data-dynamic="video"] {
+  visibility: hidden !important;
+}
+
+/* ===================================================================
+   HIDE REAL-TIME INDICATORS
+   =================================================================== */
+
+/* Hide online status indicators and live badges */
+.online-indicator,
+.status-indicator,
+.presence-badge,
+.live-badge,
+[data-status="online"],
+[data-status="offline"] {
+  visibility: hidden !important;
+}
+
+/* ===================================================================
+   HIDE DYNAMIC CHARTS (OPTIONAL)
+   =================================================================== */
+
+/*
+ * Uncomment if chart animations cause issues.
+ * Note: This may affect visual tests specifically for charts.
+ */
+/*
+canvas[data-dynamic="chart"],
+.chart-canvas,
+[data-chart="live"] {
+  visibility: hidden !important;
+}
+*/
+
+/* ===================================================================
+   ENSURE STABLE RENDERING
+   =================================================================== */
+
+/* Force box-sizing to prevent layout shifts */
+* {
+  box-sizing: border-box !important;
+}
+
+/* Disable smooth scrolling for instant positioning */
+html,
+body {
+  scroll-behavior: auto !important;
+}
+
+/* ===================================================================
+   NOTES
+   =================================================================== */
+
+/*
+ * - Use `visibility: hidden` instead of `display: none` to preserve layout
+ * - All rules use !important to override application styles
+ * - Add custom selectors to this file as needed for your application
+ * - Keep this file in sync with visual-test-helpers.ts
+ * - Consider using data-testid or data-dynamic attributes in source code
+ *   for easier targeting of dynamic elements
+ */
