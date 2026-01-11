@@ -179,8 +179,7 @@ def get_lots(filters=None, limit=50, offset=0):
                 "manufacturing_date", "batch_qty", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     # Add status and stock info
