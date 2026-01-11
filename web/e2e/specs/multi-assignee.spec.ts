@@ -798,3 +798,52 @@ test.describe('Multi-Assignee - Edge Cases', () => {
     }
   })
 })
+
+test.describe('Visual Regression', () => {
+  test('captura Kanban con multi-assignee display', async ({ authenticatedPage }) => {
+    const kanbanPage = new KanbanPage(authenticatedPage)
+    await kanbanPage.gotoKanban()
+    await authenticatedPage.waitForTimeout(2000)
+
+    // Capture full page showing multi-assignee avatars
+    await expect(authenticatedPage).toHaveScreenshot('multi-assignee-kanban.png', {
+      fullPage: true,
+      animations: 'disabled',
+    })
+  })
+
+  test('captura tarjeta con avatares apilados', async ({ authenticatedPage }) => {
+    const kanbanPage = new KanbanPage(authenticatedPage)
+    await kanbanPage.gotoKanban()
+    await authenticatedPage.waitForTimeout(2000)
+
+    if (await kanbanPage.isLoaded()) {
+      // Capture first task card with assignees
+      const taskCard = authenticatedPage.locator('main h3').first().locator('xpath=ancestor::*[3]')
+      if (await taskCard.isVisible().catch(() => false)) {
+        await expect(taskCard).toHaveScreenshot('multi-assignee-card.png', {
+          animations: 'disabled',
+        })
+      }
+    }
+  })
+
+  test('captura tooltip de asignado en hover', async ({ authenticatedPage }) => {
+    const kanbanPage = new KanbanPage(authenticatedPage)
+    await kanbanPage.gotoKanban()
+    await authenticatedPage.waitForTimeout(2000)
+
+    if (await kanbanPage.isLoaded()) {
+      // Hover on avatar to show tooltip
+      const avatar = authenticatedPage.locator('[class*="rounded-full"][class*="border"]').first()
+      if (await avatar.isVisible().catch(() => false)) {
+        await avatar.hover()
+        await authenticatedPage.waitForTimeout(500)
+
+        await expect(authenticatedPage).toHaveScreenshot('multi-assignee-tooltip.png', {
+          animations: 'disabled',
+        })
+      }
+    }
+  })
+})

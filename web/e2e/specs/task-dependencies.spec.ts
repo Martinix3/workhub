@@ -907,3 +907,71 @@ test.describe('Task Dependencies - Workflow State Transitions', () => {
     expect(newCount).toBeLessThanOrEqual(initialCount + 10) // Allow some variance
   })
 })
+
+test.describe('Visual Regression', () => {
+  test('captura panel de tareas bloqueadas', async ({ authenticatedPage }) => {
+    const depsPage = new TaskDependenciesPage(authenticatedPage)
+    await depsPage.gotoMyDay()
+    await authenticatedPage.waitForTimeout(2000)
+
+    // Capture full page with blocked tasks panel
+    await expect(authenticatedPage).toHaveScreenshot('task-dependencies-panel.png', {
+      fullPage: true,
+      animations: 'disabled',
+    })
+  })
+
+  test('captura tarjeta con razon de bloqueo', async ({ authenticatedPage }) => {
+    const depsPage = new TaskDependenciesPage(authenticatedPage)
+    await depsPage.gotoMyDay()
+    await depsPage.waitForBlockedPanelLoaded()
+
+    const cardCount = await depsPage.getBlockedTaskCardCount()
+    if (cardCount > 0) {
+      await authenticatedPage.waitForTimeout(500)
+
+      // Capture first blocked task card
+      const firstCard = authenticatedPage.locator('main h3').first().locator('xpath=ancestor::*[3]')
+      if (await firstCard.isVisible().catch(() => false)) {
+        await expect(firstCard).toHaveScreenshot('task-dependencies-blocked-card.png', {
+          animations: 'disabled',
+        })
+      }
+    }
+  })
+
+  test('captura botones de desbloqueo', async ({ authenticatedPage }) => {
+    const depsPage = new TaskDependenciesPage(authenticatedPage)
+    await depsPage.gotoMyDay()
+    await depsPage.waitForBlockedPanelLoaded()
+
+    const nextButtonVisible = await depsPage.unblockToNextButton.first().isVisible().catch(() => false)
+    if (nextButtonVisible) {
+      await authenticatedPage.waitForTimeout(500)
+
+      // Capture unblock buttons
+      const buttonsContainer = depsPage.unblockToNextButton.first().locator('xpath=ancestor::div[1]')
+      await expect(buttonsContainer).toHaveScreenshot('task-dependencies-unblock-buttons.png', {
+        animations: 'disabled',
+      })
+    }
+  })
+
+  test('captura badges BLOCKED en Kanban', async ({ authenticatedPage }) => {
+    const kanbanPage = new KanbanPage(authenticatedPage)
+    await kanbanPage.gotoKanban()
+
+    if (await kanbanPage.isLoaded()) {
+      await authenticatedPage.waitForTimeout(2000)
+
+      const blockedBadges = authenticatedPage.locator('text=/^BLOCKED$/').first()
+      if (await blockedBadges.isVisible().catch(() => false)) {
+        // Capture card with BLOCKED badge
+        const cardWithBadge = blockedBadges.locator('xpath=ancestor::*[5]')
+        await expect(cardWithBadge).toHaveScreenshot('task-dependencies-blocked-badge.png', {
+          animations: 'disabled',
+        })
+      }
+    }
+  })
+})

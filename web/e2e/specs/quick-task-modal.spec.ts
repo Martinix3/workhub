@@ -938,4 +938,97 @@ test.describe('Quick Task Modal', () => {
       expect(title).toBe('')
     })
   })
+
+  test.describe('Visual Regression', () => {
+    test('captura modal abierto con todos los campos', async ({ authenticatedPage }) => {
+      const quickTaskModal = new QuickTaskModalPage(authenticatedPage)
+
+      await authenticatedPage.goto('/')
+      await authenticatedPage.waitForLoadState('domcontentloaded')
+
+      // Open modal
+      await quickTaskModal.openWithKeyboard()
+      await quickTaskModal.waitForOpen()
+      await quickTaskModal.waitForOptionsToLoad()
+      await authenticatedPage.waitForTimeout(500)
+
+      // Capture modal with all fields
+      await expect(quickTaskModal.modal).toHaveScreenshot('quick-task-modal-open.png', {
+        animations: 'disabled',
+      })
+
+      await quickTaskModal.close()
+    })
+
+    test('captura modal con formulario lleno', async ({ authenticatedPage }) => {
+      const quickTaskModal = new QuickTaskModalPage(authenticatedPage)
+
+      await authenticatedPage.goto('/')
+      await authenticatedPage.waitForLoadState('domcontentloaded')
+
+      // Open modal and fill
+      await quickTaskModal.openWithKeyboard()
+      await quickTaskModal.waitForOpen()
+      await quickTaskModal.waitForOptionsToLoad()
+
+      await quickTaskModal.fillTitle('Test Task for Screenshot')
+      await quickTaskModal.selectPriority('P1')
+      await quickTaskModal.selectDepartment('SALES')
+      await authenticatedPage.waitForTimeout(500)
+
+      // Capture filled form
+      await expect(quickTaskModal.modal).toHaveScreenshot('quick-task-modal-filled.png', {
+        animations: 'disabled',
+      })
+
+      await quickTaskModal.close()
+    })
+
+    test('captura estado de exito', async ({ authenticatedPage }) => {
+      const quickTaskModal = new QuickTaskModalPage(authenticatedPage)
+
+      await authenticatedPage.goto('/')
+      await authenticatedPage.waitForLoadState('domcontentloaded')
+
+      // Open modal and create task
+      await quickTaskModal.openWithKeyboard()
+      await quickTaskModal.waitForOpen()
+
+      await quickTaskModal.fillTitle(`Visual Test Task ${Date.now()}`)
+      await quickTaskModal.submit()
+
+      // Wait for success state
+      await authenticatedPage.waitForTimeout(1500)
+
+      const isSuccess = await quickTaskModal.isSuccessState()
+      if (isSuccess) {
+        // Capture success state
+        await expect(quickTaskModal.modal).toHaveScreenshot('quick-task-modal-success.png', {
+          animations: 'disabled',
+        })
+      }
+    })
+
+    test('captura estado de validacion', async ({ authenticatedPage }) => {
+      const quickTaskModal = new QuickTaskModalPage(authenticatedPage)
+
+      await authenticatedPage.goto('/')
+      await authenticatedPage.waitForLoadState('domcontentloaded')
+
+      // Open modal
+      await quickTaskModal.openWithKeyboard()
+      await quickTaskModal.waitForOpen()
+
+      // Try to submit without title
+      await quickTaskModal.submit()
+      await authenticatedPage.waitForTimeout(500)
+
+      // Capture validation state
+      await expect(quickTaskModal.modal).toHaveScreenshot('quick-task-modal-validation.png', {
+        animations: 'disabled',
+      })
+
+      await quickTaskModal.close()
+    })
+  })
 })

@@ -846,4 +846,60 @@ test.describe('Notification Digest', () => {
       }
     })
   })
+
+  test.describe('Visual Regression', () => {
+    test('captura bell button con badge', async ({ authenticatedPage }) => {
+      await authenticatedPage.waitForTimeout(1000)
+
+      // Capture notification bell area
+      await expect(notificationCenter.bellButton).toHaveScreenshot('notification-bell.png', {
+        animations: 'disabled',
+      })
+    })
+
+    test('captura dropdown de notificaciones', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+      await authenticatedPage.waitForTimeout(500)
+
+      // Capture dropdown panel
+      await expect(notificationCenter.dropdown).toHaveScreenshot('notification-dropdown.png', {
+        animations: 'disabled',
+      })
+    })
+
+    test('captura estado vacio de notificaciones', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const isEmpty = await notificationCenter.isEmpty()
+      if (isEmpty) {
+        await authenticatedPage.waitForTimeout(500)
+
+        await expect(notificationCenter.dropdown).toHaveScreenshot('notification-empty.png', {
+          animations: 'disabled',
+        })
+      }
+    })
+
+    test('captura notificacion con acciones', async ({ authenticatedPage }) => {
+      await notificationCenter.open()
+      await notificationCenter.waitForDataLoaded()
+
+      const hasNotifications = await notificationCenter.hasNotifications()
+      if (hasNotifications) {
+        const count = await notificationCenter.getNotificationCount()
+        if (count > 0) {
+          // Hover first notification to show actions
+          const notification = notificationCenter.notificationItems.nth(0)
+          await notification.hover()
+          await authenticatedPage.waitForTimeout(300)
+
+          await expect(notification).toHaveScreenshot('notification-item-actions.png', {
+            animations: 'disabled',
+          })
+        }
+      }
+    })
+  })
 })

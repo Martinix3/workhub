@@ -948,3 +948,52 @@ test.describe('Saved Filters - Edge Cases', () => {
     }
   })
 })
+
+test.describe('Visual Regression', () => {
+  test('captura panel de filtros guardados', async ({ authenticatedPage }) => {
+    const filtersPage = new SavedFiltersPage(authenticatedPage)
+    await filtersPage.gotoTasksWithFilters()
+    await authenticatedPage.waitForTimeout(2000)
+
+    // Capture full page with filters panel
+    await expect(authenticatedPage).toHaveScreenshot('saved-filters-panel.png', {
+      fullPage: true,
+      animations: 'disabled',
+    })
+  })
+
+  test('captura modal de nueva vista', async ({ authenticatedPage }) => {
+    const filtersPage = new SavedFiltersPage(authenticatedPage)
+    await filtersPage.gotoTasksWithFilters()
+    await filtersPage.waitForPanelLoaded()
+
+    const buttonVisible = await filtersPage.newFilterButton.isVisible().catch(() => false)
+    if (buttonVisible) {
+      await filtersPage.clickNewFilter()
+      await authenticatedPage.waitForTimeout(500)
+
+      await expect(authenticatedPage).toHaveScreenshot('saved-filters-modal.png', {
+        animations: 'disabled',
+      })
+
+      await filtersPage.clickCancelSaveFilter()
+    }
+  })
+
+  test('captura filtro activo destacado', async ({ authenticatedPage }) => {
+    const filtersPage = new SavedFiltersPage(authenticatedPage)
+    await filtersPage.gotoTasksWithFilters()
+    await filtersPage.waitForPanelLoaded()
+
+    const filterCount = await filtersPage.getFilterItemsCount()
+    if (filterCount > 0) {
+      await filtersPage.clickFilterByIndex(0)
+      await authenticatedPage.waitForTimeout(500)
+
+      await expect(authenticatedPage).toHaveScreenshot('saved-filters-active.png', {
+        fullPage: true,
+        animations: 'disabled',
+      })
+    }
+  })
+})
