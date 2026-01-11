@@ -135,6 +135,14 @@ export const salesApi = {
       { order_id: orderId }
     )
     return result
+  },
+
+  async getOrderWorkLinks(orderId: string): Promise<WorkLink[]> {
+    const result = await frappe.call<WorkLink[]>(
+      'workhub_frappe_app.api.sales.get_order_worklinks',
+      { order_id: orderId }
+    )
+    return result
   }
 }
 
@@ -190,6 +198,14 @@ export interface CancelOrderResponse {
   success: boolean
   order_id: string
   message: string
+}
+
+// WorkLink type
+export interface WorkLink {
+  id: string
+  taskId: string
+  taskTitle: string
+  taskStatus: string
 }
 
 export default salesApi
