@@ -6,6 +6,7 @@ import {
 import { SidePanel } from '../../../ui/SidePanel'
 import type { OrderDetailPanelProps, OrderDetail, SalesType } from './types'
 import type { OrderItem } from '../types'
+import { useOrderDetail } from '../../../../api/hooks/useSalesData'
 
 // Status configuration
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -16,32 +17,6 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   invoiced: { label: 'Facturado', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300' },
   paid: { label: 'Pagado', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
   cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
-}
-
-// Mock data for demo - replace with actual API call
-const mockOrderDetail: OrderDetail = {
-  id: 'ORD-2024-0042',
-  orderNumber: 'ORD-2024-0042',
-  customerId: 'CUST-001',
-  customerName: 'Restaurante El Mezcalito',
-  orderDate: '2024-01-15',
-  deliveryDate: '2024-01-22',
-  status: 'confirmed',
-  salesType: 'sell_in',
-  items: [
-    { itemCode: 'MZ-TOB-750', itemName: 'Mezcal Tobalá 750ml', qty: 12, rate: 2500, amount: 30000 },
-    { itemCode: 'MZ-ESP-750', itemName: 'Mezcal Espadín 750ml', qty: 6, rate: 1200, amount: 7200 },
-    { itemCode: 'MZ-CUI-750', itemName: 'Mezcal Cuishe 750ml', qty: 4, rate: 1800, amount: 7200 },
-  ],
-  subtotal: 44400,
-  tax: 7104,
-  total: 51504,
-  deliveryProgress: 0,
-  invoiceProgress: 0,
-  assignedDistributor: {
-    id: 'DIST-001',
-    name: 'Distribuidora Oaxaca Norte'
-  }
 }
 
 // Collapsible Section Component
@@ -104,22 +79,19 @@ export function OrderDetailPanel({
   onCancelOrder
 }: OrderDetailPanelProps) {
   const [order, setOrder] = useState<OrderDetail | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
 
-  // Load order when panel opens
+  // Fetch order detail from API
+  const { data: orderData, loading, error } = useOrderDetail(isOpen ? orderId : null)
+
+  // Update local state when hook data changes
   useEffect(() => {
-    if (isOpen && orderId) {
-      setIsLoading(true)
-      // TODO: Replace with actual API call
-      setTimeout(() => {
-        setOrder({ ...mockOrderDetail, id: orderId, orderNumber: orderId })
-        setIsLoading(false)
-        setHasChanges(false)
-      }, 500)
+    if (orderData) {
+      setOrder(orderData)
+      setHasChanges(false)
     }
-  }, [isOpen, orderId])
+  }, [orderData])
 
   const handleItemsChange = (items: OrderItem[]) => {
     if (!order) return
@@ -199,7 +171,7 @@ export function OrderDetailPanel({
       width="lg"
     >
       {/* Loading State */}
-      {isLoading && (
+      {loading && (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 size={32} className="animate-spin text-amber-500 mx-auto mb-3" />
@@ -209,7 +181,7 @@ export function OrderDetailPanel({
       )}
 
       {/* Order Content */}
-      {!isLoading && order && (
+      {!loading && order && (
         <div className="flex flex-col h-full">
           {/* Header with status */}
           <div className="px-6 py-4 border-b-2 border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
@@ -537,10 +509,12 @@ export function OrderDetailPanel({
       )}
 
       {/* Error State */}
-      {!isLoading && !order && orderId && (
+      {!loading && !order && orderId && (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-stone-500">No se pudo cargar el pedido</p>
+            <p className="text-stone-500">
+              {error ? error.message : 'No se pudo cargar el pedido'}
+            </p>
             <button
               onClick={onClose}
               className="mt-4 text-sm text-amber-600 hover:underline"
