@@ -9,46 +9,37 @@ test.describe('Tareas - Mi Dia', () => {
     const myDayPage = new MyDayPage(authenticatedPage)
     await myDayPage.gotoMyDay()
 
-    // Should show main content, loading, empty state, or error (backend not available)
-    const isLoading = await myDayPage.loadingIndicator.isVisible().catch(() => false)
-    const mainContent = await authenticatedPage.locator('main, [class*="min-h-screen"]').isVisible().catch(() => false)
-    const hasError = await authenticatedPage.locator('text=Error').isVisible().catch(() => false)
+    // Wait for page to finish loading
+    await authenticatedPage.waitForLoadState('domcontentloaded')
 
-    expect(isLoading || mainContent || hasError).toBe(true)
+    // Main content should be visible
+    await expect(authenticatedPage.locator('main, [class*="min-h-screen"]')).toBeVisible()
   })
 
-  test('muestra tareas, estado vacio, o error de conexion', async ({ authenticatedPage }) => {
+  test('muestra tareas o estado vacio', async ({ authenticatedPage }) => {
     const myDayPage = new MyDayPage(authenticatedPage)
     await myDayPage.gotoMyDay()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for loading to complete
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    // Either tasks are visible, empty state, loading, or error (backend not available)
+    // Either tasks are visible or empty state is shown
     const taskCount = await myDayPage.getTaskCount()
     const hasEmptyState = await myDayPage.emptyState.isVisible().catch(() => false)
-    const isLoading = await myDayPage.loadingIndicator.isVisible().catch(() => false)
-    const hasError = await authenticatedPage.locator('text="Error"').isVisible().catch(() => false)
-    const hasAuthError = await authenticatedPage.locator('text="Authentication"').isVisible().catch(() => false)
-    const hasCrashError = await authenticatedPage.locator('text="Algo salió mal"').isVisible().catch(() => false)
 
-    expect(taskCount > 0 || hasEmptyState || isLoading || hasError || hasAuthError || hasCrashError).toBe(true)
+    // At least one should be true: either we have tasks or we show empty state
+    expect(taskCount > 0 || hasEmptyState).toBe(true)
   })
 
   test('input de quick add presente', async ({ authenticatedPage }) => {
     const myDayPage = new MyDayPage(authenticatedPage)
     await myDayPage.gotoMyDay()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    // Check if quick add is available (may not be visible if loading)
-    const isLoaded = await myDayPage.isLoaded()
-    if (isLoaded) {
-      const quickAddVisible = await myDayPage.quickAddInput.isVisible().catch(() => false)
-      // Test passes whether quick add is visible or not
-      expect(typeof quickAddVisible).toBe('boolean')
-    } else {
-      expect(true).toBe(true)
-    }
+    // Quick add input should be visible
+    await expect(myDayPage.quickAddInput).toBeVisible()
   })
 
   test('navegacion a Mi Dia desde sidebar', async ({ authenticatedPage }) => {
@@ -58,13 +49,9 @@ test.describe('Tareas - Mi Dia', () => {
 
     // Click on Tareas in sidebar
     const tareasLink = authenticatedPage.locator('text=Mi Dia, a[href="/tareas"]').first()
-    if (await tareasLink.isVisible()) {
-      await tareasLink.click()
-      await expect(authenticatedPage).toHaveURL(/\/tareas/)
-    } else {
-      // Sidebar may not be expanded
-      expect(true).toBe(true)
-    }
+    await expect(tareasLink).toBeVisible()
+    await tareasLink.click()
+    await expect(authenticatedPage).toHaveURL(/\/tareas/)
   })
 })
 
@@ -73,71 +60,68 @@ test.describe('Tareas - Proyectos', () => {
     const projectsPage = new ProjectsPage(authenticatedPage)
     await projectsPage.gotoProjects()
 
-    // Should show title, loading, or content
-    const title = await projectsPage.pageTitle.isVisible().catch(() => false)
-    const isLoading = await projectsPage.loadingIndicator.isVisible().catch(() => false)
-    const mainContent = await authenticatedPage.locator('main').isVisible().catch(() => false)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('domcontentloaded')
 
-    expect(title || isLoading || mainContent).toBe(true)
+    // Page title should be visible
+    await expect(projectsPage.pageTitle).toBeVisible()
   })
 
   test('muestra proyectos o estado vacio', async ({ authenticatedPage }) => {
     const projectsPage = new ProjectsPage(authenticatedPage)
     await projectsPage.gotoProjects()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for loading to complete
+    await authenticatedPage.waitForLoadState('networkidle')
 
     const projectCount = await projectsPage.getProjectCount()
     const hasEmptyState = await projectsPage.emptyState.isVisible().catch(() => false)
-    const isLoading = await projectsPage.loadingIndicator.isVisible().catch(() => false)
 
-    expect(projectCount >= 0 || hasEmptyState || isLoading).toBe(true)
+    // Should have projects or show empty state
+    expect(projectCount > 0 || hasEmptyState).toBe(true)
   })
 
   test('filtros de estado funcionan', async ({ authenticatedPage }) => {
     const projectsPage = new ProjectsPage(authenticatedPage)
     await projectsPage.gotoProjects()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    // Try to filter - if filters exist
-    const activeFilter = await projectsPage.activeFilter.isVisible().catch(() => false)
-    if (activeFilter) {
-      await projectsPage.filterByStatus('active')
-      await authenticatedPage.waitForTimeout(300)
-      // Filter clicked successfully
-      expect(true).toBe(true)
-    } else {
-      expect(true).toBe(true)
-    }
+    // Active filter should be visible
+    await expect(projectsPage.activeFilter).toBeVisible()
+
+    // Click filter
+    await projectsPage.filterByStatus('active')
+
+    // Page should still be loaded after filtering
+    await authenticatedPage.waitForLoadState('networkidle')
   })
 
   test('boton nuevo proyecto visible', async ({ authenticatedPage }) => {
     const projectsPage = new ProjectsPage(authenticatedPage)
     await projectsPage.gotoProjects()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await projectsPage.isLoaded()
-    const buttonVisible = await projectsPage.newProjectButton.isVisible().catch(() => false)
-
-    expect(buttonVisible || !isLoaded).toBe(true)
+    // New project button should be visible
+    await expect(projectsPage.newProjectButton).toBeVisible()
   })
 
   test('health indicators muestran colores correctos', async ({ authenticatedPage }) => {
     const projectsPage = new ProjectsPage(authenticatedPage)
     await projectsPage.gotoProjects()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await projectsPage.isLoaded()
-    if (isLoaded) {
-      const health = await projectsPage.getHealthDistribution()
-      // Just verify we can get the distribution
-      expect(health.green >= 0 && health.yellow >= 0 && health.red >= 0).toBe(true)
-    } else {
-      expect(true).toBe(true)
-    }
+    const health = await projectsPage.getHealthDistribution()
+
+    // Health distribution values should be non-negative numbers
+    expect(health.green).toBeGreaterThanOrEqual(0)
+    expect(health.yellow).toBeGreaterThanOrEqual(0)
+    expect(health.red).toBeGreaterThanOrEqual(0)
   })
 })
 
@@ -146,105 +130,59 @@ test.describe('Tareas - Multi-Assignee Display', () => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    if (!(await kanbanPage.isLoaded())) {
-      expect(true).toBe(true)
-      return
-    }
-
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
     // Check if any tasks have assignee avatar groups (multi-assignee display)
     const assigneeGroups = authenticatedPage.locator('[class*="flex"][class*="items-center"] > div[class*="-space-x-"]')
-    const hasAssigneeGroups = await assigneeGroups.first().isVisible().catch(() => false)
 
-    // Test passes whether assignees are shown or not (depends on backend data)
-    expect(typeof hasAssigneeGroups).toBe('boolean')
+    // At least the kanban board should be loaded (tasks may or may not have assignees based on data)
+    const isLoaded = await kanbanPage.isLoaded()
+    expect(isLoaded).toBe(true)
   })
 
   test('badge de Owner visible en asignado principal', async ({ authenticatedPage }) => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    if (!(await kanbanPage.isLoaded())) {
-      expect(true).toBe(true)
-      return
-    }
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    await authenticatedPage.waitForTimeout(1000)
-
-    // Check for Owner badge (Crown icon) on task cards
-    const ownerBadges = authenticatedPage.locator('svg[class*="lucide-crown"]')
-    const hasOwnerBadge = await ownerBadges.first().isVisible().catch(() => false)
-
-    // Test passes whether owner badges are shown or not (depends on backend data)
-    expect(typeof hasOwnerBadge).toBe('boolean')
+    // Kanban page should be loaded
+    expect(await kanbanPage.isLoaded()).toBe(true)
   })
 
   test('tooltips muestran lista completa de asignados', async ({ authenticatedPage }) => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    if (!(await kanbanPage.isLoaded())) {
-      expect(true).toBe(true)
-      return
-    }
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    await authenticatedPage.waitForTimeout(1000)
-
-    // Check if assignee avatars exist to hover
-    const assigneeAvatars = authenticatedPage.locator('[class*="rounded-full"][class*="border-2"]').first()
-    const avatarVisible = await assigneeAvatars.isVisible().catch(() => false)
-
-    if (avatarVisible) {
-      await assigneeAvatars.hover()
-      await authenticatedPage.waitForTimeout(300)
-
-      // Check if tooltip appears (may contain role info like "Owner" or "Collaborator")
-      const tooltip = authenticatedPage.locator('[class*="tooltip"], [class*="absolute"][class*="z-"]')
-      const tooltipVisible = await tooltip.first().isVisible().catch(() => false)
-
-      expect(typeof tooltipVisible).toBe('boolean')
-    } else {
-      expect(true).toBe(true)
-    }
+    // Kanban page should be loaded
+    expect(await kanbanPage.isLoaded()).toBe(true)
   })
 
   test('indicador de overflow muestra +N cuando hay mas de 3 asignados', async ({ authenticatedPage }) => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    if (!(await kanbanPage.isLoaded())) {
-      expect(true).toBe(true)
-      return
-    }
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    await authenticatedPage.waitForTimeout(1000)
-
-    // Check for overflow indicator like "+2" or "+3"
-    const overflowIndicator = authenticatedPage.locator('text=/^\\+\\d+$/').first()
-    const hasOverflow = await overflowIndicator.isVisible().catch(() => false)
-
-    // Test passes whether overflow indicator exists or not (depends on task data)
-    expect(typeof hasOverflow).toBe('boolean')
+    // Kanban page should be loaded
+    expect(await kanbanPage.isLoaded()).toBe(true)
   })
 
   test('todos los asignados ven tarea en Mi Dia', async ({ authenticatedPage }) => {
     const myDayPage = new MyDayPage(authenticatedPage)
     await myDayPage.gotoMyDay()
 
-    if (!(await myDayPage.isLoaded())) {
-      expect(true).toBe(true)
-      return
-    }
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    await authenticatedPage.waitForTimeout(1000)
-
-    // Verify tasks are shown (multi-assignee filtering works)
-    const taskCount = await myDayPage.getTaskCount()
-    const hasEmptyState = await myDayPage.emptyState.isVisible().catch(() => false)
-
-    // Test verifies My Day is working (actual multi-user testing requires separate sessions)
-    expect(taskCount >= 0 || hasEmptyState).toBe(true)
+    // My Day page should be loaded
+    expect(await myDayPage.isLoaded()).toBe(true)
   })
 })
 
@@ -253,79 +191,66 @@ test.describe('Tareas - Kanban', () => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    // Should show title or be loading
-    const title = await kanbanPage.pageTitle.isVisible().catch(() => false)
-    const isLoading = await kanbanPage.loadingIndicator.isVisible().catch(() => false)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('domcontentloaded')
 
-    expect(title || isLoading).toBe(true)
+    // Page title should be visible
+    await expect(kanbanPage.pageTitle).toBeVisible()
   })
 
-  test('muestra 5 columnas de estado o error de backend', async ({ authenticatedPage }) => {
+  test('muestra 5 columnas de estado', async ({ authenticatedPage }) => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await kanbanPage.isLoaded()
-    const hasError = await authenticatedPage.locator('text=Error, text=Authentication, text=Algo salió mal').first().isVisible().catch(() => false)
-
-    if (isLoaded && !hasError) {
-      const columnCount = await kanbanPage.getColumnCount()
-      expect(columnCount).toBe(5)
-    } else {
-      // Backend not available - test passes
-      expect(true).toBe(true)
-    }
+    const columnCount = await kanbanPage.getColumnCount()
+    expect(columnCount).toBe(5)
   })
 
   test('filtros de departamento visibles', async ({ authenticatedPage }) => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    await authenticatedPage.waitForTimeout(500)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const filtersVisible = await kanbanPage.departmentFilters.first().isVisible().catch(() => false)
-    expect(typeof filtersVisible).toBe('boolean')
+    // At least one department filter should be visible
+    await expect(kanbanPage.departmentFilters.first()).toBeVisible()
   })
 
   test('quick add en columna Backlog', async ({ authenticatedPage }) => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await kanbanPage.isLoaded()
-    if (isLoaded) {
-      const quickAddVisible = await kanbanPage.quickAddButton.isVisible().catch(() => false)
-      // Quick add should be in Backlog column
-      expect(typeof quickAddVisible).toBe('boolean')
-    } else {
-      expect(true).toBe(true)
-    }
+    // Quick add button should be visible
+    await expect(kanbanPage.quickAddButton).toBeVisible()
   })
 
   test('tareas son draggable', async ({ authenticatedPage }) => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await kanbanPage.isLoaded()
-    if (isLoaded) {
-      const taskCount = await kanbanPage.taskCards.count()
-      if (taskCount > 0) {
-        // Check if task cards or their parent containers are draggable
-        const firstTask = kanbanPage.taskCards.first()
-        // Try to find draggable attribute on task or parent container
-        const draggable = await firstTask.getAttribute('draggable')
-        const parentDraggable = await firstTask.locator('xpath=ancestor::*[@draggable="true"]').count()
-        // Task should be draggable via attribute or parent container
-        expect(draggable === 'true' || parentDraggable > 0 || taskCount > 0).toBe(true)
-      } else {
-        expect(true).toBe(true)
-      }
+    const taskCount = await kanbanPage.taskCards.count()
+
+    if (taskCount > 0) {
+      // Check if task cards or their parent containers are draggable
+      const firstTask = kanbanPage.taskCards.first()
+      const draggable = await firstTask.getAttribute('draggable')
+      const parentDraggable = await firstTask.locator('xpath=ancestor::*[@draggable="true"]').count()
+
+      // At least one should be true
+      expect(draggable === 'true' || parentDraggable > 0).toBe(true)
     } else {
-      expect(true).toBe(true)
+      // If no tasks, test should pass (empty board is valid state)
+      expect(taskCount).toBe(0)
     }
   })
 })
@@ -335,79 +260,55 @@ test.describe('Tareas - Dashboard KPIs', () => {
     const dashboardPage = new TaskDashboardPage(authenticatedPage)
     await dashboardPage.gotoDashboard()
 
-    // Should show title, loading, or error (permission denied if not manager)
-    const title = await dashboardPage.pageTitle.isVisible().catch(() => false)
-    const isLoading = await dashboardPage.loadingIndicator.isVisible().catch(() => false)
-    const hasError = await dashboardPage.hasError()
-    const mainContent = await authenticatedPage.locator('main').isVisible().catch(() => false)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('domcontentloaded')
 
-    expect(title || isLoading || hasError || mainContent).toBe(true)
+    // Page title should be visible
+    await expect(dashboardPage.pageTitle).toBeVisible()
   })
 
-  test('muestra 4 KPI cards principales o error de backend', async ({ authenticatedPage }) => {
+  test('muestra 4 KPI cards principales', async ({ authenticatedPage }) => {
     const dashboardPage = new TaskDashboardPage(authenticatedPage)
     await dashboardPage.gotoDashboard()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await dashboardPage.isLoaded()
-    const hasAuthError = await authenticatedPage.locator('text="Authentication"').isVisible().catch(() => false)
-    const hasError = await authenticatedPage.locator('text="Error"').isVisible().catch(() => false)
-    const hasCrashError = await authenticatedPage.locator('text="Algo salió mal"').isVisible().catch(() => false)
-    const hasBackendError = hasAuthError || hasError || hasCrashError
-
-    if (isLoaded && !(await dashboardPage.hasError()) && !hasBackendError) {
-      const cardCount = await dashboardPage.getKPICardCount()
-      expect(cardCount).toBeGreaterThanOrEqual(4)
-    } else {
-      // Not loaded, permission error, or backend not available - test passes
-      expect(true).toBe(true)
-    }
+    const cardCount = await dashboardPage.getKPICardCount()
+    expect(cardCount).toBeGreaterThanOrEqual(4)
   })
 
   test('health distribution chart visible', async ({ authenticatedPage }) => {
     const dashboardPage = new TaskDashboardPage(authenticatedPage)
     await dashboardPage.gotoDashboard()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await dashboardPage.isLoaded()
-    if (isLoaded && !(await dashboardPage.hasError())) {
-      const hasChart = await dashboardPage.hasHealthDistribution()
-      expect(typeof hasChart).toBe('boolean')
-    } else {
-      expect(true).toBe(true)
-    }
+    const hasChart = await dashboardPage.hasHealthDistribution()
+    expect(hasChart).toBe(true)
   })
 
   test('weekly trend chart visible', async ({ authenticatedPage }) => {
     const dashboardPage = new TaskDashboardPage(authenticatedPage)
     await dashboardPage.gotoDashboard()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await dashboardPage.isLoaded()
-    if (isLoaded && !(await dashboardPage.hasError())) {
-      const hasChart = await dashboardPage.hasWeeklyTrend()
-      expect(typeof hasChart).toBe('boolean')
-    } else {
-      expect(true).toBe(true)
-    }
+    const hasChart = await dashboardPage.hasWeeklyTrend()
+    expect(hasChart).toBe(true)
   })
 
   test('seccion En Riesgo muestra proyectos o mensaje vacio', async ({ authenticatedPage }) => {
     const dashboardPage = new TaskDashboardPage(authenticatedPage)
     await dashboardPage.gotoDashboard()
 
-    await authenticatedPage.waitForTimeout(1000)
+    // Wait for page to load
+    await authenticatedPage.waitForLoadState('networkidle')
 
-    const isLoaded = await dashboardPage.isLoaded()
-    if (isLoaded && !(await dashboardPage.hasError())) {
-      const atRiskVisible = await dashboardPage.atRiskSection.isVisible().catch(() => false)
-      expect(typeof atRiskVisible).toBe('boolean')
-    } else {
-      expect(true).toBe(true)
-    }
+    // At Risk section should be visible
+    await expect(dashboardPage.atRiskSection).toBeVisible()
   })
 })
 
@@ -419,7 +320,8 @@ test.describe('Tareas - Visual Regression', () => {
     const myDayPage = new MyDayPage(authenticatedPage)
     await myDayPage.gotoMyDay()
 
-    await authenticatedPage.waitForTimeout(1500)
+    // Wait for page to be fully loaded
+    await authenticatedPage.waitForLoadState('networkidle')
 
     await expect(authenticatedPage).toHaveScreenshot('tasks-my-day.png', {
       fullPage: true,
@@ -431,7 +333,8 @@ test.describe('Tareas - Visual Regression', () => {
     const projectsPage = new ProjectsPage(authenticatedPage)
     await projectsPage.gotoProjects()
 
-    await authenticatedPage.waitForTimeout(1500)
+    // Wait for page to be fully loaded
+    await authenticatedPage.waitForLoadState('networkidle')
 
     await expect(authenticatedPage).toHaveScreenshot('tasks-projects.png', {
       fullPage: true,
@@ -443,7 +346,8 @@ test.describe('Tareas - Visual Regression', () => {
     const kanbanPage = new KanbanPage(authenticatedPage)
     await kanbanPage.gotoKanban()
 
-    await authenticatedPage.waitForTimeout(1500)
+    // Wait for page to be fully loaded
+    await authenticatedPage.waitForLoadState('networkidle')
 
     await expect(authenticatedPage).toHaveScreenshot('tasks-kanban.png', {
       fullPage: true,
@@ -455,7 +359,8 @@ test.describe('Tareas - Visual Regression', () => {
     const dashboardPage = new TaskDashboardPage(authenticatedPage)
     await dashboardPage.gotoDashboard()
 
-    await authenticatedPage.waitForTimeout(1500)
+    // Wait for page to be fully loaded
+    await authenticatedPage.waitForLoadState('networkidle')
 
     await expect(authenticatedPage).toHaveScreenshot('tasks-dashboard.png', {
       fullPage: true,

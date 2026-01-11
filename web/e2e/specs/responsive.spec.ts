@@ -1,102 +1,67 @@
-import { test, expect } from '@playwright/test'
-import { LoginPage } from '../pages/login.page'
+import { test, expect } from '../fixtures/auth.fixture'
 import { ShellPage } from '../pages/shell.page'
-
-// Helper to login
-async function login(page: any) {
-  const loginPage = new LoginPage(page)
-  await loginPage.goto('/login')
-  await loginPage.bypassLogin()
-}
 
 test.describe('Responsive - Mobile (iPhone 12)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('sidebar comportamiento en mobile', async ({ page }) => {
-    await login(page)
-
-    const shellPage = new ShellPage(page)
+  test('sidebar comportamiento en mobile', async ({ authenticatedPage }) => {
+    const shellPage = new ShellPage(authenticatedPage)
 
     // Check the page loaded correctly
-    await expect(page.locator('main, [class*="container"]')).toBeVisible()
+    await expect(authenticatedPage.locator('main, [class*="container"]')).toBeVisible()
 
-    // On mobile, the layout should adapt
-    // Either sidebar is hidden OR hamburger is visible
-    const sidebarVisible = await shellPage.sidebar.isVisible().catch(() => false)
-    const hamburgerVisible = await shellPage.hamburgerMenu.isVisible().catch(() => false)
+    // On mobile, hamburger menu should be visible
+    await expect(shellPage.hamburgerMenu).toBeVisible()
 
-    // At least one of these should be true for responsive behavior
-    expect(sidebarVisible || hamburgerVisible).toBe(true)
+    // Sidebar should be hidden initially on mobile
+    // (may not be strictly hidden if layout varies, but hamburger presence indicates mobile mode)
   })
 
-  test('hamburger menu abre sidebar', async ({ page }) => {
-    await login(page)
+  test('hamburger menu abre sidebar', async ({ authenticatedPage }) => {
+    const shellPage = new ShellPage(authenticatedPage)
 
-    const shellPage = new ShellPage(page)
+    // Wait for hamburger to be ready
+    await expect(shellPage.hamburgerMenu).toBeVisible()
 
-    // If hamburger is visible, it should open sidebar
-    const hamburgerVisible = await shellPage.hamburgerMenu.isVisible().catch(() => false)
+    // Click hamburger menu
+    await shellPage.hamburgerMenu.click()
 
-    if (hamburgerVisible) {
-      await shellPage.hamburgerMenu.click()
-      // Sidebar should now be visible
-      await expect(shellPage.sidebar).toBeVisible()
-    } else {
-      // If no hamburger, sidebar is probably always visible (not truly mobile layout)
-      await expect(shellPage.sidebar).toBeVisible()
-    }
+    // Sidebar should now be visible
+    await expect(shellPage.sidebar).toBeVisible()
   })
 
-  test('overlay cierra sidebar', async ({ page }) => {
-    await login(page)
+  test('overlay cierra sidebar', async ({ authenticatedPage }) => {
+    const shellPage = new ShellPage(authenticatedPage)
 
-    const shellPage = new ShellPage(page)
+    // Wait for hamburger to be ready
+    await expect(shellPage.hamburgerMenu).toBeVisible()
 
-    // If hamburger exists, test overlay behavior
-    const hamburgerVisible = await shellPage.hamburgerMenu.isVisible().catch(() => false)
+    // Open sidebar
+    await shellPage.hamburgerMenu.click()
+    await expect(shellPage.sidebar).toBeVisible()
 
-    if (hamburgerVisible) {
-      // Open sidebar
-      await shellPage.hamburgerMenu.click()
-      await page.waitForTimeout(300)
+    // Wait for overlay to appear
+    await expect(shellPage.sidebarOverlay).toBeVisible()
 
-      const sidebarVisible = await shellPage.sidebar.isVisible().catch(() => false)
-      if (!sidebarVisible) {
-        // Sidebar doesn't open - mobile layout might be different
-        expect(true).toBe(true)
-        return
-      }
+    // Click overlay to close sidebar
+    await shellPage.sidebarOverlay.click()
 
-      // Click overlay if exists
-      const overlayVisible = await shellPage.sidebarOverlay.isVisible().catch(() => false)
-      if (overlayVisible) {
-        await shellPage.sidebarOverlay.click()
-        await page.waitForTimeout(300)
-        // Check if sidebar closed - if not, that's ok
-        const stillVisible = await shellPage.sidebar.isVisible().catch(() => false)
-        expect(stillVisible || !stillVisible).toBe(true)
-      }
-    }
-    // Test passes if hamburger doesn't exist (desktop-like layout)
-    expect(true).toBe(true)
+    // Sidebar should be hidden after clicking overlay
+    await expect(shellPage.sidebar).not.toBeVisible()
   })
 })
 
 test.describe('Responsive - Tablet (iPad)', () => {
   test.use({ viewport: { width: 768, height: 1024 } })
 
-  test('sidebar visible en tablet', async ({ page }) => {
-    await login(page)
-
-    const shellPage = new ShellPage(page)
+  test('sidebar visible en tablet', async ({ authenticatedPage }) => {
+    const shellPage = new ShellPage(authenticatedPage)
     // On tablet, sidebar should be visible
     await expect(shellPage.sidebar).toBeVisible()
   })
 
-  test('contenido principal visible', async ({ page }) => {
-    await login(page)
-
-    const shellPage = new ShellPage(page)
+  test('contenido principal visible', async ({ authenticatedPage }) => {
+    const shellPage = new ShellPage(authenticatedPage)
     await expect(shellPage.mainContent).toBeVisible()
   })
 })
@@ -104,10 +69,8 @@ test.describe('Responsive - Tablet (iPad)', () => {
 test.describe('Responsive - Desktop', () => {
   test.use({ viewport: { width: 1280, height: 720 } })
 
-  test('sidebar y contenido side-by-side', async ({ page }) => {
-    await login(page)
-
-    const shellPage = new ShellPage(page)
+  test('sidebar y contenido side-by-side', async ({ authenticatedPage }) => {
+    const shellPage = new ShellPage(authenticatedPage)
 
     await expect(shellPage.sidebar).toBeVisible()
     await expect(shellPage.mainContent).toBeVisible()
@@ -125,10 +88,8 @@ test.describe('Responsive - Desktop', () => {
     }
   })
 
-  test('hamburger menu oculto en desktop', async ({ page }) => {
-    await login(page)
-
-    const shellPage = new ShellPage(page)
+  test('hamburger menu oculto en desktop', async ({ authenticatedPage }) => {
+    const shellPage = new ShellPage(authenticatedPage)
     await expect(shellPage.hamburgerMenu).not.toBeVisible()
   })
 })
