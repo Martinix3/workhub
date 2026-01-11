@@ -4,20 +4,32 @@ import { ShellPage } from '../pages/shell.page'
 /**
  * Auth fixtures for E2E tests
  * Provides pre-authenticated pages for different user roles
+ *
+ * Note: These fixtures use bypass mode for testing, which stores auth state in sessionStorage.
+ * For testing cookie-based OAuth authentication, use the direct test cases in auth.spec.ts
+ * that simulate the OAuth callback flow with ?auth_success=true parameter.
+ *
+ * Cookie-based auth flow (production):
+ * 1. User clicks "Login with Google"
+ * 2. Backend OAuth callback sets HTTP-only cookie and redirects to /?auth_success=true
+ * 3. Frontend verifies cookie via API call and stores user info
+ * 4. All subsequent API calls use the cookie automatically (credentials: 'include')
+ * 5. Logout clears the HTTP-only cookie via API call
  */
 
 type AuthFixtures = {
-  /** Page with demo user logged in (Sales Manager, Viewer roles) */
+  /** Page with demo user logged in (Sales Manager, Viewer roles) - uses bypass mode */
   authenticatedPage: Page
   /** ShellPage instance with authenticated user */
   shellPage: ShellPage
-  /** Page with admin user (System Manager role) - for admin tests */
+  /** Page with admin user (System Manager role) - for admin tests - uses bypass mode */
   adminPage: Page
 }
 
 export const test = base.extend<AuthFixtures>({
   authenticatedPage: async ({ page }, use) => {
     // Navigate to login and use bypass mode
+    // Bypass mode is used for testing to avoid OAuth dependencies
     await page.goto('/login')
     await page.waitForLoadState('domcontentloaded')
 

@@ -80,13 +80,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check auth with backend (only called on initial mount or after OAuth callback)
   const checkAuth = useCallback(async (forceCheck = false) => {
-    // Skip if already checked and not forcing (but verify we have a token)
+    // Skip if already checked and not forcing
     const storedUser = getStoredUser()
-    const hasToken = frappe.isAuthenticated()
-    if (!forceCheck && storedUser && hasToken) {
+    if (!forceCheck && storedUser && authChecked) {
       setUser(storedUser)
       setLoading(false)
-      setAuthChecked(true)
       return
     }
 
@@ -100,46 +98,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return
     }
 
-    // If we have a token, fetch user info
-    if (hasToken) {
-      setLoading(true)
-      try {
-        // Use getUserInfo which returns full user details
-        const userInfo = await frappe.getUserInfo()
+    // Verify authentication via cookie
+    setLoading(true)
+    try {
+      // Call verify_auth_cookie endpoint which reads the HTTP-only cookie
+      const authInfo = await frappe.verifyAuthCookie()
 
-        if (userInfo && userInfo.user !== 'Guest') {
-          const authUser: AuthUser = {
-            email: userInfo.email || userInfo.user,
-            name: userInfo.full_name || userInfo.user,
-            avatarUrl: userInfo.user_image || undefined,
-            roles: userInfo.roles
-          }
-          setUser(authUser)
-          storeUser(authUser)
-        } else {
-          // Token exists but returns Guest - token is invalid
-          setUser(null)
-          storeUser(null)
-          frappe.clearAuthToken()
+      if (authInfo.authenticated && authInfo.user !== 'Guest') {
+        const authUser: AuthUser = {
+          email: authInfo.email || authInfo.user,
+          name: authInfo.full_name || authInfo.user,
+          avatarUrl: authInfo.user_image || undefined,
+          roles: authInfo.roles || []
         }
-      } catch (err) {
-        console.error('Auth check failed:', err)
-        // On network errors, keep the token - it might be valid
-        // Just use cached user if available, or set to null
-        if (!storedUser) {
-          setUser(null)
-        }
-        // DON'T clear the token on network errors
-      } finally {
-        setLoading(false)
-        setAuthChecked(true)
+        setUser(authUser)
+        storeUser(authUser)
+      } else {
+        // Not authenticated or cookie is invalid
+        setUser(null)
+        storeUser(null)
       }
-    } else {
-      // No token and not forcing - user is not authenticated
+    } catch (err) {
+      console.error('Auth check failed:', err)
+      // On network errors, use cached user if available
+      if (!storedUser) {
+        setUser(null)
+      }
+    } finally {
       setLoading(false)
       setAuthChecked(true)
     }
-  }, [])
+  }, [authChecked])
 
   // Initialize auth on mount - only once
   useEffect(() => {
@@ -192,10 +181,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Clear all auth data
       sessionStorage.removeItem(BYPASS_STORAGE_KEY)
       sessionStorage.removeItem(USER_STORAGE_KEY)
-      frappe.clearAuthToken()
       setIsBypassMode(false)
 
       if (!isBypassMode) {
+        // Call logout endpoint which clears the HTTP-only cookie
         await frappe.logout()
       }
       setUser(null)
@@ -205,7 +194,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Even if logout fails on server, clear local state
       setUser(null)
       storeUser(null)
-      frappe.clearAuthToken()
     } finally {
       setLoading(false)
     }
@@ -229,49 +217,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null)
   }, [])
 
-  // Handle OAuth callback (check URL for auth tokens)
+  // Handle OAuth callback (check URL for auth success)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const authSuccess = params.get('auth_success')
-    const token = params.get('token')
+    const authError = params.get('auth_error')
 
-    if (authSuccess === 'true' && token) {
-      // Store the API token from OAuth callback
-      frappe.setAuthToken(token)
-
-      // Clear URL params (security: don't leave token in URL)
+    if (authSuccess === 'true') {
+      // Clear URL params (security: clean up URL)
       window.history.replaceState({}, '', window.location.pathname)
 
-      // Verify the token works, then redirect
+      // Verify the auth cookie and redirect
       const verifyAndRedirect = async () => {
         try {
-          const userInfo = await frappe.getUserInfo()
-          if (userInfo && userInfo.user !== 'Guest') {
+          // Call verify_auth_cookie endpoint which reads the HTTP-only cookie
+          const authInfo = await frappe.verifyAuthCookie()
+
+          if (authInfo.authenticated && authInfo.user !== 'Guest') {
             const authUser: AuthUser = {
-              email: userInfo.email || userInfo.user,
-              name: userInfo.full_name || userInfo.user,
-              avatarUrl: userInfo.user_image || undefined,
-              roles: userInfo.roles
+              email: authInfo.email || authInfo.user,
+              name: authInfo.full_name || authInfo.user,
+              avatarUrl: authInfo.user_image || undefined,
+              roles: authInfo.roles || []
             }
             setUser(authUser)
             storeUser(authUser)
             setLoading(false)
             setAuthChecked(true)
           } else {
-            // Token didn't work - clear it
-            frappe.clearAuthToken()
+            // Cookie authentication failed
             setError('La autenticación falló. Por favor intenta de nuevo.')
             setLoading(false)
             setAuthChecked(true)
             return
           }
         } catch (err) {
-          // Network error or other issue - keep the token and let user retry
+          // Network error or other issue
           console.error('Auth verification failed:', err)
-          // DON'T clear the token on network errors - it might be valid
-          // Just mark as checked and let the user continue
+          setError('Error al verificar la autenticación')
           setLoading(false)
           setAuthChecked(true)
+          return
         }
 
         // Redirect to stored URL
@@ -283,20 +269,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       verifyAndRedirect()
-    } else if (authSuccess === 'true') {
-      // OAuth success but no token - this shouldn't happen
-      window.history.replaceState({}, '', window.location.pathname)
-      setError('No se recibió el token de autenticación')
-      setLoading(false)
-      setAuthChecked(true)
     }
 
-    const authError = params.get('auth_error')
     if (authError) {
       setError(decodeURIComponent(authError))
       window.history.replaceState({}, '', window.location.pathname)
     }
-  }, [checkAuth])
+  }, [])
 
   const value: AuthContextType = {
     user,

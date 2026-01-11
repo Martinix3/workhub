@@ -222,8 +222,13 @@ scheduler_events = {
 
 # Request Events
 # ----------------
-# before_request = ["workhub_frappe_app.utils.before_request"]
-# after_request = ["workhub_frappe_app.utils.after_request"]
+# Cookie authentication middleware runs before each request
+before_request = ["workhub_frappe_app.api.middleware.authenticate_with_cookie"]
+
+# CORS credentials header middleware runs after each request
+# Adds Access-Control-Allow-Credentials: true to enable cookie-based auth
+# with cross-origin requests (required for credentials: 'include')
+after_request = ["workhub_frappe_app.api.middleware.add_cors_credentials_header"]
 
 # Job Events
 # ----------
