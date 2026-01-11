@@ -371,7 +371,7 @@ frappe.workhub.reportBuilder = {};
 		}
 
 		// Select the new section
-		selectSection(state.sections.length - 1);
+		frappe.workhub.reportBuilder.selectSection(state.sections.length - 1);
 	}
 
 	/**
@@ -595,11 +595,31 @@ frappe.workhub.reportBuilder = {};
 
 		const section = state.sections[state.selectedSectionIndex];
 
-		// Base properties for all sections
+		// Build the properties panel based on section type
+		let html = renderCommonProperties(section);
+
+		// Add type-specific properties
+		if (section.section_type === 'Chart') {
+			html += renderChartProperties(section);
+		} else if (section.section_type === 'Table') {
+			html += renderTableProperties(section);
+		} else if (section.section_type === 'KPI') {
+			html += renderKPIProperties(section);
+		} else if (section.section_type === 'Text') {
+			html += renderTextProperties(section);
+		}
+
+		content.innerHTML = html;
+	}
+
+	/**
+	 * Render common properties shared by all section types
+	 */
+	function renderCommonProperties(section) {
 		let html = `
 			<div class="form-group">
 				<label>Título de la Sección *</label>
-				<input type="text" class="form-control" id="prop-title" value="${section.title}"
+				<input type="text" class="form-control" id="prop-title" value="${escapeHtml(section.title)}"
 					   onchange="frappe.workhub.reportBuilder.updateSectionProperty('title', this.value)">
 			</div>
 			<div class="form-group">
@@ -611,84 +631,266 @@ frappe.workhub.reportBuilder = {};
 			</div>
 		`;
 
-		// Type-specific properties
+		// Add data source selector for data-driven sections
 		if (section.section_type !== 'Header' && section.section_type !== 'Text') {
 			html += `
 				<div class="form-group">
-					<label>Origen de Datos</label>
+					<label>Origen de Datos *</label>
 					<select class="form-control" id="prop-datasource" onchange="frappe.workhub.reportBuilder.updateSectionProperty('data_source', this.value)">
 						<option value="">-- Seleccionar --</option>
 						${state.dataSources.map(ds => `
 							<option value="${ds.id}" ${section.data_source === ds.id ? 'selected' : ''}>${ds.label}</option>
 						`).join('')}
 					</select>
+					<small class="text-muted">Selecciona la fuente de datos para esta sección</small>
 				</div>
+				<hr>
 			`;
 		}
 
-		// Chart-specific
-		if (section.section_type === 'Chart') {
-			const chartTypes = window.reportBuilderContext?.chartTypes || [];
-			html += `
-				<div class="form-group">
-					<label>Tipo de Gráfico</label>
-					<select class="form-control" id="prop-chart-type" onchange="frappe.workhub.reportBuilder.updateConfigProperty('chart_type', this.value)">
-						${chartTypes.map(ct => `
-							<option value="${ct.id}" ${section.config.chart_type === ct.id ? 'selected' : ''}>${ct.label}</option>
-						`).join('')}
-					</select>
-				</div>
-				<div class="form-group">
-					<label>Campo X (Eje horizontal)</label>
-					<input type="text" class="form-control" id="prop-x-field" value="${section.config.x_field || ''}"
-						   onchange="frappe.workhub.reportBuilder.updateConfigProperty('x_field', this.value)" placeholder="Ej: month, category">
-				</div>
-				<div class="form-group">
-					<label>Campo Y (Eje vertical)</label>
-					<input type="text" class="form-control" id="prop-y-field" value="${section.config.y_field || ''}"
-						   onchange="frappe.workhub.reportBuilder.updateConfigProperty('y_field', this.value)" placeholder="Ej: count, total">
-				</div>
-			`;
-		}
+		return html;
+	}
 
-		// Text-specific
-		if (section.section_type === 'Text') {
-			html += `
-				<div class="form-group">
-					<label>Contenido</label>
-					<textarea class="form-control" id="prop-content" rows="6"
-							  onchange="frappe.workhub.reportBuilder.updateConfigProperty('content', this.value)"
-							  placeholder="Escribe el contenido de texto...">${section.config.content || ''}</textarea>
-				</div>
-			`;
-		}
+	/**
+	 * Render chart-specific configuration properties
+	 */
+	function renderChartProperties(section) {
+		const chartTypes = window.reportBuilderContext?.chartTypes || [];
+		const colors = section.config.colors || ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8'];
 
-		// Table-specific
-		if (section.section_type === 'Table') {
-			html += `
-				<div class="form-group">
-					<label>Mostrar Totales</label>
-					<select class="form-control" id="prop-show-totals" onchange="frappe.workhub.reportBuilder.updateConfigProperty('show_totals', this.value === 'true')">
-						<option value="false" ${!section.config.show_totals ? 'selected' : ''}>No</option>
-						<option value="true" ${section.config.show_totals ? 'selected' : ''}>Sí</option>
-					</select>
+		return `
+			<h6 class="mb-3">⚙️ Configuración del Gráfico</h6>
+			<div class="form-group">
+				<label>Tipo de Gráfico *</label>
+				<select class="form-control" id="prop-chart-type" onchange="frappe.workhub.reportBuilder.updateConfigProperty('chart_type', this.value)">
+					${chartTypes.map(ct => `
+						<option value="${ct.id}" ${section.config.chart_type === ct.id ? 'selected' : ''}>${ct.label}</option>
+					`).join('')}
+				</select>
+			</div>
+			<div class="form-group">
+				<label>Campo X (Eje horizontal) *</label>
+				<input type="text" class="form-control" id="prop-x-field" value="${escapeHtml(section.config.x_field || '')}"
+					   onchange="frappe.workhub.reportBuilder.updateConfigProperty('x_field', this.value)"
+					   placeholder="Ej: month, category, name">
+				<small class="text-muted">Campo de los datos para el eje X</small>
+			</div>
+			<div class="form-group">
+				<label>Campo Y (Eje vertical) *</label>
+				<input type="text" class="form-control" id="prop-y-field" value="${escapeHtml(section.config.y_field || '')}"
+					   onchange="frappe.workhub.reportBuilder.updateConfigProperty('y_field', this.value)"
+					   placeholder="Ej: count, total, value">
+				<small class="text-muted">Campo de los datos para el eje Y</small>
+			</div>
+			<div class="form-group">
+				<label>Colores del Gráfico</label>
+				<div class="color-inputs" id="chart-colors-container">
+					${colors.map((color, idx) => `
+						<div class="input-group mb-2">
+							<input type="color" class="form-control form-control-color" value="${color}"
+								   onchange="frappe.workhub.reportBuilder.updateChartColor(${idx}, this.value)"
+								   style="max-width: 60px;">
+							<input type="text" class="form-control" value="${color}"
+								   onchange="frappe.workhub.reportBuilder.updateChartColor(${idx}, this.value)"
+								   placeholder="#007bff">
+							<button class="btn btn-outline-danger btn-sm" onclick="frappe.workhub.reportBuilder.removeChartColor(${idx})" type="button">✕</button>
+						</div>
+					`).join('')}
 				</div>
-				<div class="form-group">
-					<label>Filas por página</label>
-					<input type="number" class="form-control" id="prop-page-size" value="${section.config.page_size || 50}"
-						   onchange="frappe.workhub.reportBuilder.updateConfigProperty('page_size', parseInt(this.value))" min="10" max="1000">
-				</div>
-				<div class="form-group">
-					<label>Columnas (JSON)</label>
-					<textarea class="form-control" id="prop-columns" rows="4"
-							  onchange="frappe.workhub.reportBuilder.updateConfigPropertyJSON('columns', this.value)"
-							  placeholder='[{"field": "name", "label": "Nombre"}]'>${JSON.stringify(section.config.columns || [], null, 2)}</textarea>
-					<small class="text-muted">Define columnas en formato JSON</small>
-				</div>
-			`;
-		}
+				<button class="btn btn-sm btn-outline-primary mt-2" onclick="frappe.workhub.reportBuilder.addChartColor()" type="button">+ Agregar Color</button>
+				<small class="text-muted d-block mt-2">Define la paleta de colores para el gráfico</small>
+			</div>
+		`;
+	}
 
-		content.innerHTML = html;
+	/**
+	 * Render table-specific configuration properties
+	 */
+	function renderTableProperties(section) {
+		const sortOptions = section.config.sort_by || {};
+		const filters = section.config.filters || {};
+
+		return `
+			<h6 class="mb-3">⚙️ Configuración de la Tabla</h6>
+			<div class="form-group">
+				<label>Columnas *</label>
+				<textarea class="form-control font-monospace" id="prop-columns" rows="6"
+						  onchange="frappe.workhub.reportBuilder.updateConfigPropertyJSON('columns', this.value)"
+						  placeholder='[{"field": "name", "label": "Nombre", "type": "text"}]'>${JSON.stringify(section.config.columns || [], null, 2)}</textarea>
+				<small class="text-muted">Define columnas en formato JSON. Tipos: text, number, currency, date, link</small>
+			</div>
+			<div class="form-group">
+				<label>Ordenar por</label>
+				<div class="row">
+					<div class="col-8">
+						<input type="text" class="form-control" id="prop-sort-field" value="${escapeHtml(sortOptions.field || '')}"
+							   onchange="frappe.workhub.reportBuilder.updateTableSorting(this.value, document.getElementById('prop-sort-order').value)"
+							   placeholder="Nombre del campo">
+					</div>
+					<div class="col-4">
+						<select class="form-control" id="prop-sort-order" onchange="frappe.workhub.reportBuilder.updateTableSorting(document.getElementById('prop-sort-field').value, this.value)">
+							<option value="asc" ${sortOptions.order === 'asc' ? 'selected' : ''}>ASC</option>
+							<option value="desc" ${sortOptions.order === 'desc' ? 'selected' : ''}>DESC</option>
+						</select>
+					</div>
+				</div>
+				<small class="text-muted">Campo y dirección de ordenamiento por defecto</small>
+			</div>
+			<div class="form-group">
+				<label>Filtros (JSON)</label>
+				<textarea class="form-control font-monospace" id="prop-filters" rows="4"
+						  onchange="frappe.workhub.reportBuilder.updateConfigPropertyJSON('filters', this.value)"
+						  placeholder='{"status": "Active", "priority": "High"}'>${JSON.stringify(filters, null, 2)}</textarea>
+				<small class="text-muted">Filtros adicionales para la tabla en formato JSON</small>
+			</div>
+			<div class="row">
+				<div class="col-6">
+					<div class="form-group">
+						<label>Mostrar Totales</label>
+						<select class="form-control" id="prop-show-totals" onchange="frappe.workhub.reportBuilder.updateConfigProperty('show_totals', this.value === 'true')">
+							<option value="false" ${!section.config.show_totals ? 'selected' : ''}>No</option>
+							<option value="true" ${section.config.show_totals ? 'selected' : ''}>Sí</option>
+						</select>
+					</div>
+				</div>
+				<div class="col-6">
+					<div class="form-group">
+						<label>Filas por página</label>
+						<input type="number" class="form-control" id="prop-page-size" value="${section.config.page_size || 50}"
+							   onchange="frappe.workhub.reportBuilder.updateConfigProperty('page_size', parseInt(this.value))"
+							   min="10" max="1000" step="10">
+					</div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label>Agrupar por</label>
+				<input type="text" class="form-control" id="prop-group-by" value="${escapeHtml(section.config.group_by || '')}"
+					   onchange="frappe.workhub.reportBuilder.updateConfigProperty('group_by', this.value)"
+					   placeholder="Nombre del campo para agrupar">
+				<small class="text-muted">Agrupar filas por este campo (opcional)</small>
+			</div>
+		`;
+	}
+
+	/**
+	 * Render KPI-specific configuration properties
+	 */
+	function renderKPIProperties(section) {
+		const kpis = section.config.kpis || [];
+
+		return `
+			<h6 class="mb-3">⚙️ Configuración de KPIs</h6>
+			<div id="kpi-list" class="mb-3">
+				${kpis.map((kpi, idx) => `
+					<div class="card mb-2" style="border-left: 4px solid ${kpi.color || '#007bff'};">
+						<div class="card-body p-3">
+							<div class="d-flex justify-content-between align-items-start mb-2">
+								<strong>${escapeHtml(kpi.label || 'KPI ' + (idx + 1))}</strong>
+								<button class="btn btn-sm btn-outline-danger" onclick="frappe.workhub.reportBuilder.removeKPI(${idx})" type="button">✕</button>
+							</div>
+							<div class="form-group mb-2">
+								<label class="small">Etiqueta *</label>
+								<input type="text" class="form-control form-control-sm" value="${escapeHtml(kpi.label || '')}"
+									   onchange="frappe.workhub.reportBuilder.updateKPIProperty(${idx}, 'label', this.value)"
+									   placeholder="Ej: Total de Ventas">
+							</div>
+							<div class="form-group mb-2">
+								<label class="small">Campo Métrica *</label>
+								<input type="text" class="form-control form-control-sm" value="${escapeHtml(kpi.metric_field || '')}"
+									   onchange="frappe.workhub.reportBuilder.updateKPIProperty(${idx}, 'metric_field', this.value)"
+									   placeholder="Ej: total_sales, count">
+							</div>
+							<div class="form-group mb-2">
+								<label class="small">Tipo de Agregación</label>
+								<select class="form-control form-control-sm" onchange="frappe.workhub.reportBuilder.updateKPIProperty(${idx}, 'aggregation', this.value)">
+									<option value="sum" ${kpi.aggregation === 'sum' ? 'selected' : ''}>Suma</option>
+									<option value="avg" ${kpi.aggregation === 'avg' ? 'selected' : ''}>Promedio</option>
+									<option value="count" ${kpi.aggregation === 'count' ? 'selected' : ''}>Contar</option>
+									<option value="min" ${kpi.aggregation === 'min' ? 'selected' : ''}>Mínimo</option>
+									<option value="max" ${kpi.aggregation === 'max' ? 'selected' : ''}>Máximo</option>
+								</select>
+							</div>
+							<div class="form-group mb-2">
+								<label class="small">Formato</label>
+								<select class="form-control form-control-sm" onchange="frappe.workhub.reportBuilder.updateKPIProperty(${idx}, 'format', this.value)">
+									<option value="number" ${kpi.format === 'number' ? 'selected' : ''}>Número</option>
+									<option value="currency" ${kpi.format === 'currency' ? 'selected' : ''}>Moneda</option>
+									<option value="percentage" ${kpi.format === 'percentage' ? 'selected' : ''}>Porcentaje</option>
+									<option value="text" ${kpi.format === 'text' ? 'selected' : ''}>Texto</option>
+								</select>
+							</div>
+							<div class="form-group mb-2">
+								<label class="small">Comparación (opcional)</label>
+								<input type="text" class="form-control form-control-sm" value="${escapeHtml(kpi.comparison_field || '')}"
+									   onchange="frappe.workhub.reportBuilder.updateKPIProperty(${idx}, 'comparison_field', this.value)"
+									   placeholder="Ej: last_month_sales">
+								<small class="text-muted">Campo para comparar vs período anterior</small>
+							</div>
+							<div class="row">
+								<div class="col-6">
+									<div class="form-group mb-0">
+										<label class="small">Color</label>
+										<input type="color" class="form-control form-control-color form-control-sm" value="${kpi.color || '#007bff'}"
+											   onchange="frappe.workhub.reportBuilder.updateKPIProperty(${idx}, 'color', this.value)">
+									</div>
+								</div>
+								<div class="col-6">
+									<div class="form-group mb-0">
+										<label class="small">Icono</label>
+										<input type="text" class="form-control form-control-sm" value="${escapeHtml(kpi.icon || '')}"
+											   onchange="frappe.workhub.reportBuilder.updateKPIProperty(${idx}, 'icon', this.value)"
+											   placeholder="📊">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				`).join('')}
+			</div>
+			<button class="btn btn-sm btn-outline-primary" onclick="frappe.workhub.reportBuilder.addKPI()" type="button">+ Agregar KPI</button>
+			${kpis.length === 0 ? '<p class="text-muted mt-2 mb-0 small">Agrega al menos un KPI para esta sección</p>' : ''}
+		`;
+	}
+
+	/**
+	 * Render text-specific configuration properties
+	 */
+	function renderTextProperties(section) {
+		return `
+			<h6 class="mb-3">⚙️ Configuración de Texto</h6>
+			<div class="form-group">
+				<label>Contenido *</label>
+				<textarea class="form-control" id="prop-content" rows="8"
+						  onchange="frappe.workhub.reportBuilder.updateConfigProperty('content', this.value)"
+						  placeholder="Escribe el contenido de texto aquí...&#10;&#10;Puedes usar Markdown para formatear:&#10;- **negrita** para negrita&#10;- *cursiva* para cursiva&#10;- # Título para encabezados">${escapeHtml(section.config.content || '')}</textarea>
+				<small class="text-muted">Soporta formato Markdown básico</small>
+			</div>
+			<div class="form-group">
+				<label>Alineación</label>
+				<select class="form-control" id="prop-text-align" onchange="frappe.workhub.reportBuilder.updateConfigProperty('text_align', this.value)">
+					<option value="left" ${section.config.text_align === 'left' ? 'selected' : ''}>Izquierda</option>
+					<option value="center" ${section.config.text_align === 'center' ? 'selected' : ''}>Centro</option>
+					<option value="right" ${section.config.text_align === 'right' ? 'selected' : ''}>Derecha</option>
+					<option value="justify" ${section.config.text_align === 'justify' ? 'selected' : ''}>Justificado</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label>Estilo de Fuente</label>
+				<select class="form-control" id="prop-font-style" onchange="frappe.workhub.reportBuilder.updateConfigProperty('font_style', this.value)">
+					<option value="normal" ${!section.config.font_style || section.config.font_style === 'normal' ? 'selected' : ''}>Normal</option>
+					<option value="italic" ${section.config.font_style === 'italic' ? 'selected' : ''}>Cursiva</option>
+				</select>
+			</div>
+		`;
+	}
+
+	/**
+	 * Escape HTML to prevent XSS
+	 */
+	function escapeHtml(text) {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
 	}
 
 	/**
@@ -729,6 +931,143 @@ frappe.workhub.reportBuilder = {};
 				message: 'JSON inválido: ' + e.message,
 				indicator: 'red'
 			});
+		}
+	};
+
+	// ==========================================
+	// CHART CONFIGURATION HELPERS
+	// ==========================================
+
+	/**
+	 * Update a chart color at specific index
+	 * @param {number} index - Color index
+	 * @param {string} color - Color value
+	 */
+	frappe.workhub.reportBuilder.updateChartColor = function(index, color) {
+		if (state.selectedSectionIndex !== null) {
+			const section = state.sections[state.selectedSectionIndex];
+			if (!section.config.colors) {
+				section.config.colors = [];
+			}
+			section.config.colors[index] = color;
+			renderProperties();
+		}
+	};
+
+	/**
+	 * Remove a chart color
+	 * @param {number} index - Color index to remove
+	 */
+	frappe.workhub.reportBuilder.removeChartColor = function(index) {
+		if (state.selectedSectionIndex !== null) {
+			const section = state.sections[state.selectedSectionIndex];
+			if (section.config.colors && section.config.colors.length > 1) {
+				section.config.colors.splice(index, 1);
+				renderProperties();
+			} else {
+				frappe.show_alert({
+					message: 'Debe haber al menos un color',
+					indicator: 'orange'
+				});
+			}
+		}
+	};
+
+	/**
+	 * Add a new chart color
+	 */
+	frappe.workhub.reportBuilder.addChartColor = function() {
+		if (state.selectedSectionIndex !== null) {
+			const section = state.sections[state.selectedSectionIndex];
+			if (!section.config.colors) {
+				section.config.colors = [];
+			}
+			section.config.colors.push('#999999');
+			renderProperties();
+		}
+	};
+
+	// ==========================================
+	// TABLE CONFIGURATION HELPERS
+	// ==========================================
+
+	/**
+	 * Update table sorting configuration
+	 * @param {string} field - Field to sort by
+	 * @param {string} order - Sort order (asc/desc)
+	 */
+	frappe.workhub.reportBuilder.updateTableSorting = function(field, order) {
+		if (state.selectedSectionIndex !== null) {
+			const section = state.sections[state.selectedSectionIndex];
+			section.config.sort_by = {
+				field: field,
+				order: order
+			};
+			renderSections();
+		}
+	};
+
+	// ==========================================
+	// KPI CONFIGURATION HELPERS
+	// ==========================================
+
+	/**
+	 * Add a new KPI
+	 */
+	frappe.workhub.reportBuilder.addKPI = function() {
+		if (state.selectedSectionIndex !== null) {
+			const section = state.sections[state.selectedSectionIndex];
+			if (!section.config.kpis) {
+				section.config.kpis = [];
+			}
+			section.config.kpis.push({
+				label: 'Nuevo KPI',
+				metric_field: '',
+				aggregation: 'sum',
+				format: 'number',
+				comparison_field: '',
+				color: '#007bff',
+				icon: '📊'
+			});
+			renderProperties();
+		}
+	};
+
+	/**
+	 * Update a KPI property
+	 * @param {number} index - KPI index
+	 * @param {string} key - Property key
+	 * @param {*} value - Property value
+	 */
+	frappe.workhub.reportBuilder.updateKPIProperty = function(index, key, value) {
+		if (state.selectedSectionIndex !== null) {
+			const section = state.sections[state.selectedSectionIndex];
+			if (section.config.kpis && section.config.kpis[index]) {
+				section.config.kpis[index][key] = value;
+				renderProperties();
+			}
+		}
+	};
+
+	/**
+	 * Remove a KPI
+	 * @param {number} index - KPI index to remove
+	 */
+	frappe.workhub.reportBuilder.removeKPI = function(index) {
+		if (!confirm('¿Eliminar este KPI?')) {
+			return;
+		}
+
+		if (state.selectedSectionIndex !== null) {
+			const section = state.sections[state.selectedSectionIndex];
+			if (section.config.kpis) {
+				section.config.kpis.splice(index, 1);
+				renderProperties();
+				frappe.show_alert({
+					message: 'KPI eliminado',
+					indicator: 'orange'
+				});
+			}
 		}
 	};
 
