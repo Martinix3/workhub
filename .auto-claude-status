@@ -3,13 +3,13 @@
   "spec": "030-connect-order-detail-panel-apis",
   "state": "building",
   "subtasks": {
-    "completed": 12,
+    "completed": 16,
     "total": 21,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "React Hooks",
+    "current": "Connect OrderDetailPanel",
     "id": null,
     "total": 4
   },
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 8,
+    "number": 12,
     "started_at": "2026-01-11T07:56:40.148048"
   },
-  "last_update": "2026-01-11T08:07:52.088096"
+  "last_update": "2026-01-11T08:16:32.248134"
 }

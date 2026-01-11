@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import {
   X, Loader2, Save, Calendar, User, Truck, Building2,
-  Package, Plus, Minus, Receipt, ChevronDown, ChevronUp
+  Package, Plus, Minus, Receipt, ChevronDown, ChevronUp, Link
 } from 'lucide-react'
 import { SidePanel } from '../../../ui/SidePanel'
 import type { OrderDetailPanelProps, OrderDetail, SalesType } from './types'
 import type { OrderItem } from '../types'
-import { useOrderDetail, useUpdateOrder, useCancelOrder } from '../../../../api/hooks/useSalesData'
+import { useOrderDetail, useUpdateOrder, useCancelOrder, useOrderWorkLinks } from '../../../../api/hooks/useSalesData'
 
 // Status configuration
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -89,6 +89,9 @@ export function OrderDetailPanel({
 
   // Cancel order mutation hook
   const { cancelOrder, loading: isCancelling, error: cancelError } = useCancelOrder()
+
+  // Fetch WorkLinks for this order
+  const { data: workLinks = [], loading: workLinksLoading } = useOrderWorkLinks(isOpen && order ? order.id : null)
 
   // Update local state when hook data changes
   useEffect(() => {
@@ -478,6 +481,49 @@ export function OrderDetailPanel({
                   </span>
                 </div>
               </div>
+            </Section>
+
+            {/* WorkLinks Section */}
+            <Section
+              title="Tareas Asociadas"
+              icon={<Link size={20} />}
+              badge={workLinks.length > 0 ? `${workLinks.length}` : undefined}
+              defaultOpen={false}
+            >
+              {workLinksLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 size={20} className="animate-spin text-amber-500" />
+                  <span className="ml-2 text-sm text-stone-500">Cargando tareas...</span>
+                </div>
+              ) : workLinks.length > 0 ? (
+                <div className="space-y-2">
+                  {workLinks.map((workLink) => (
+                    <div
+                      key={workLink.id}
+                      className="p-3 bg-stone-50 dark:bg-stone-800/50 border-2 border-stone-200 dark:border-stone-700"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
+                            {workLink.taskTitle}
+                          </p>
+                          <p className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-1">
+                            ID: {workLink.taskId}
+                          </p>
+                        </div>
+                        <span className="px-2 py-1 text-xs font-medium uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-700 flex-shrink-0">
+                          {workLink.taskStatus}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Link size={32} className="mx-auto text-stone-300 dark:text-stone-600 mb-2" />
+                  <p className="text-sm text-stone-500">No hay tareas asociadas a este pedido</p>
+                </div>
+              )}
             </Section>
           </div>
 
