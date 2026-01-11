@@ -4,27 +4,16 @@
 import { useState, useCallback, useEffect } from 'react'
 import { X, Loader2, CheckCircle, AlertCircle, Calendar, Zap } from 'lucide-react'
 import { useQuickTask, useQuickTaskOptions } from '../../api/hooks/useQuickTask'
-import type { QuickTaskData } from '../../api/services/tasks'
-
-type ModalStep = 'input' | 'success' | 'error'
-
-interface QuickTaskModalProps {
-  isOpen: boolean
-  onClose: () => void
-  initialContext?: {
-    doctype?: string
-    docId?: string
-  }
-}
+import type { QuickTaskData, QuickTaskModalProps, ModalStep, Priority, Department } from './types'
 
 export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskModalProps) {
   const [step, setStep] = useState<ModalStep>('input')
   const [title, setTitle] = useState('')
-  const [priority, setPriority] = useState<'P0' | 'P1' | 'P2'>('P2')
+  const [priority, setPriority] = useState<Priority>('P2')
   const [dueDate, setDueDate] = useState('')
   const [project, setProject] = useState('')
   const [assignee, setAssignee] = useState('')
-  const [department, setDepartment] = useState<'SALES' | 'OPS' | 'MKT' | ''>('')
+  const [department, setDepartment] = useState<Department>('')
   const [resultMessage, setResultMessage] = useState('')
 
   const { creating, createError, createTask, reset } = useQuickTask()
@@ -257,7 +246,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                 </label>
                 <select
                   value={department}
-                  onChange={(e) => setDepartment(e.target.value as 'SALES' | 'OPS' | 'MKT' | '')}
+                  onChange={(e) => setDepartment(e.target.value as Department)}
                   className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none bg-white"
                   disabled={creating}
                 >

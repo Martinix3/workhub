@@ -2,16 +2,7 @@
 // Displays clickable chips with ERP document suggestions for WorkLink creation
 
 import { Link2, Loader2, AlertCircle } from 'lucide-react'
-import type { WorkLinkSuggestion } from '../../api/services/tasks'
-
-interface WorkLinkSuggestionsProps {
-  suggestions: WorkLinkSuggestion[]
-  loading?: boolean
-  error?: Error | null
-  onSelect?: (suggestion: WorkLinkSuggestion) => void
-  selectedDoctype?: string
-  selectedDocId?: string
-}
+import type { WorkLinkSuggestion, WorkLinkSuggestionsProps } from './types'
 
 export function WorkLinkSuggestions({
   suggestions,
