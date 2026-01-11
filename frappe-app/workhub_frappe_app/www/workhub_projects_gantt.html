@@ -665,14 +665,102 @@
 
 		// Auto-schedule
 		document.getElementById('btn-auto-schedule').addEventListener('click', function() {
-			// TODO: Show confirmation and call API (Phase 6)
-			frappe.msgprint('Auto-schedule será implementado en Phase 6');
+			// Show confirmation dialog
+			frappe.confirm(
+				'¿Deseas auto-programar todas las tareas sin fecha basándote en las dependencias?',
+				function() {
+					// Yes - proceed with auto-scheduling
+					autoScheduleTasks();
+				}
+			);
 		});
 
 		// Export
 		document.getElementById('btn-export').addEventListener('click', function() {
 			// TODO: Export as PNG (Phase 6)
 			frappe.msgprint('Export será implementado en Phase 6');
+		});
+	}
+
+	/**
+	 * Auto-schedule all tasks based on dependencies
+	 */
+	function autoScheduleTasks() {
+		if (!ganttChart || !window.ganttData.project) {
+			frappe.msgprint('No se pudo cargar el proyecto');
+			return;
+		}
+
+		const projectId = window.ganttData.project.name;
+
+		// Show loading indicator
+		frappe.freeze('Auto-programando tareas...');
+
+		// Call auto_schedule API
+		frappe.call({
+			method: 'workhub_frappe_app.api.gantt.auto_schedule',
+			args: {
+				project_id: projectId
+			},
+			callback: function(r) {
+				frappe.unfreeze();
+
+				if (r.message && r.message.success) {
+					// Show success message with count
+					frappe.show_alert({
+						message: `${r.message.scheduled_count} tareas programadas exitosamente`,
+						indicator: 'green'
+					}, 5);
+
+					// Refresh chart data to show updated dates
+					refreshChartData();
+				} else {
+					frappe.msgprint({
+						title: 'Error',
+						message: 'No se pudo auto-programar las tareas',
+						indicator: 'red'
+					});
+				}
+			},
+			error: function(err) {
+				frappe.unfreeze();
+				frappe.msgprint({
+					title: 'Error',
+					message: 'Ocurrió un error al auto-programar: ' + (err.message || 'Error desconocido'),
+					indicator: 'red'
+				});
+			}
+		});
+	}
+
+	/**
+	 * Refresh chart data from backend
+	 */
+	function refreshChartData() {
+		if (!ganttChart || !window.ganttData.project) {
+			return;
+		}
+
+		const projectId = window.ganttData.project.name;
+
+		// Fetch fresh data from API
+		frappe.call({
+			method: 'workhub_frappe_app.api.gantt.get_gantt_view',
+			args: {
+				project_id: projectId
+			},
+			callback: function(r) {
+				if (r.message) {
+					// Update window data
+					window.ganttData = r.message;
+
+					// Re-bind data to chart
+					ganttChart.setData(window.ganttData);
+
+					// Re-render chart
+					ganttChart.render();
+				}
+			}
 		});
 	}
 </script>
