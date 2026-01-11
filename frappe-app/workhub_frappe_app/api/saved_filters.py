@@ -390,3 +390,113 @@ def share_filter(filter_id, shared):
         "is_shared": doc.is_shared,
         "message": _("Filter {0}").format(_("shared") if shared else _("unshared"))
     }
+
+
+@frappe.whitelist()
+def get_filter_counts(entity_type=None):
+    """
+    Get item counts for all user's saved filters.
+    Returns {filter_id: count} for showing badge counts in sidebar.
+
+    Args:
+        entity_type: Optional filter by entity_type (task/project)
+
+    Returns:
+        Dict mapping filter_id to count of matching items
+    """
+    require_auth()
+
+    # Get all saved filters for the user
+    filters = get_saved_filters(entity_type)
+
+    counts = {}
+
+    for filter_data in filters:
+        filter_id = filter_data["name"]
+        filter_json = filter_data.get("filter_json", {})
+        filter_entity_type = filter_data.get("entity_type", "task")
+
+        # Resolve dynamic placeholders
+        resolved_criteria = resolve_filter_criteria(filter_json)
+
+        # Build filter conditions for counting
+        filter_conditions = _build_filter_conditions(resolved_criteria)
+
+        # Determine the DocType to query
+        doctype = "WH Task" if filter_entity_type == "task" else "WH Project"
+
+        # Count matching items
+        try:
+            count = frappe.db.count(doctype, filters=filter_conditions)
+            counts[filter_id] = count
+        except Exception as e:
+            # Log error but continue with other filters
+            frappe.log_error(f"Error counting filter {filter_id}: {str(e)}")
+            counts[filter_id] = 0
+
+    return counts
+
+
+def _build_filter_conditions(resolved_criteria):
+    """
+    Build Frappe filter conditions from resolved filter criteria.
+
+    Args:
+        resolved_criteria: Dict with resolved filter criteria
+
+    Returns:
+        Dict of filter conditions for frappe.db.count/get_list
+    """
+    conditions = {}
+
+    if not resolved_criteria:
+        return conditions
+
+    # Handle status filter (can be single value or list)
+    if "status" in resolved_criteria and resolved_criteria["status"]:
+        status = resolved_criteria["status"]
+        if isinstance(status, list):
+            conditions["status"] = ["in", status]
+        else:
+            conditions["status"] = status
+
+    # Handle priority filter (can be single value or list)
+    if "priority" in resolved_criteria and resolved_criteria["priority"]:
+        priority = resolved_criteria["priority"]
+        if isinstance(priority, list):
+            conditions["priority"] = ["in", priority]
+        else:
+            conditions["priority"] = priority
+
+    # Handle department filter
+    if "department" in resolved_criteria and resolved_criteria["department"]:
+        conditions["department"] = resolved_criteria["department"]
+
+    # Handle assigned_to filter
+    if "assigned_to" in resolved_criteria and resolved_criteria["assigned_to"]:
+        conditions["assigned_to"] = resolved_criteria["assigned_to"]
+
+    # Handle project filter
+    if "project" in resolved_criteria and resolved_criteria["project"]:
+        conditions["project"] = resolved_criteria["project"]
+
+    # Handle due_date filter with operators
+    if "due_date_op" in resolved_criteria and "due_date_value" in resolved_criteria:
+        due_date_op = resolved_criteria["due_date_op"]
+        due_date_value = resolved_criteria["due_date_value"]
+
+        if due_date_op and due_date_value:
+            if due_date_op == "<":
+                conditions["due_date"] = ["<", due_date_value]
+            elif due_date_op == ">":
+                conditions["due_date"] = [">", due_date_value]
+            elif due_date_op == "between" and isinstance(due_date_value, list) and len(due_date_value) >= 2:
+                conditions["due_date"] = ["between", [due_date_value[0], due_date_value[1]]]
+            elif due_date_op == "in_range" and isinstance(due_date_value, list) and len(due_date_value) >= 2:
+                conditions["due_date"] = ["between", [due_date_value[0], due_date_value[1]]]
+
+    # Handle search filter (title contains)
+    if "search" in resolved_criteria and resolved_criteria["search"]:
+        conditions["title"] = ["like", f"%{resolved_criteria['search']}%"]
+
+    return conditions
