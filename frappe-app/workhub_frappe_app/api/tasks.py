@@ -3,10 +3,33 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate, add_days
+from frappe.utils import nowdate, getdate, add_days, now_datetime
 import json
 
 from workhub_frappe_app.api.utils import require_auth, require_permission
+
+
+def _enrich_task_assignees(task):
+    """Enrich task with assignees data including user info"""
+    if not task.get("name"):
+        return []
+
+    assignees = frappe.get_all("WH Task Assignee",
+        filters={"parent": task["name"]},
+        fields=["user", "role", "added_at", "added_by"],
+        order_by="idx"
+    )
+
+    # Enrich with user info
+    for assignee in assignees:
+        if assignee.get("user"):
+            user_info = frappe.db.get_value("User", assignee["user"],
+                ["full_name", "email"], as_dict=True)
+            if user_info:
+                assignee["user_name"] = user_info.full_name
+                assignee["user_email"] = user_info.email
+
+    return assignees
 
 
 @frappe.whitelist()
@@ -17,6 +40,7 @@ def get_tasks(filters=None, limit=50, offset=0):
         filters = json.loads(filters)
 
     filter_conditions = {}
+    assignee_filter = None
 
     if filters:
         if filters.get("status"):
@@ -30,12 +54,27 @@ def get_tasks(filters=None, limit=50, offset=0):
             filter_conditions["project"] = filters["project"]
         if filters.get("department"):
             filter_conditions["department"] = filters["department"]
+        # Support both assigned_to (legacy) and assignees filtering
         if filters.get("assigned_to"):
-            filter_conditions["assigned_to"] = filters["assigned_to"]
+            assignee_filter = filters["assigned_to"]
+        if filters.get("assignees"):
+            assignee_filter = filters["assignees"]
         if filters.get("is_inbox"):
             filter_conditions["is_inbox"] = 1
         if filters.get("search"):
             filter_conditions["title"] = ["like", f"%{filters['search']}%"]
+
+    # If filtering by assignee, get task IDs first
+    if assignee_filter:
+        task_ids = frappe.get_all("WH Task Assignee",
+            filters={"user": assignee_filter},
+            pluck="parent"
+        )
+        if task_ids:
+            filter_conditions["name"] = ["in", task_ids]
+        else:
+            # No tasks for this assignee
+            return []
 
     tasks = frappe.get_list("WH Task",
         filters=filter_conditions,
@@ -43,16 +82,20 @@ def get_tasks(filters=None, limit=50, offset=0):
             "name", "title", "description", "status", "priority",
             "project", "department", "assigned_to", "created_by",
             "start_date", "due_date", "is_milestone", "is_inbox",
-            "worked_today", "total_work_days", "total_hours", "blocked_reason",
+            "worked_today", "total_work_days", "blocked_reason",
             "creation", "modified"
         ],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="priority asc, due_date asc"
+        order_by="priority asc, due_date asc",
+        ignore_permissions=True
     )
 
-    # Enrich with project info
+    # Enrich with project info and assignees
     for task in tasks:
+        # Add assignees with user info
+        task["assignees"] = _enrich_task_assignees(task)
+
         if task.get("project"):
             project_data = frappe.db.get_value("WH Project", task["project"],
                 ["title", "health"], as_dict=True)
@@ -77,6 +120,10 @@ def get_task(task_id):
         frappe.throw(_("Task ID is required"))
 
     task = frappe.get_doc("WH Task", task_id)
+    task_dict = task.as_dict()
+
+    # Get assignees with user info
+    task_dict["assignees"] = _enrich_task_assignees(task_dict)
 
     # Get dependencies
     predecessors = frappe.get_all("WH Task Dependency",
@@ -99,7 +146,7 @@ def get_task(task_id):
         fields=["name", "title", "status", "priority", "assigned_to"])
 
     return {
-        "task": task.as_dict(),
+        "task": task_dict,
         "predecessors": predecessors,
         "successors": successors,
         "subtasks": subtasks
@@ -123,12 +170,28 @@ def create_task(data):
     doc.priority = data.get("priority", "P1")
     doc.project = data.get("project")
     doc.department = data.get("department")
-    doc.assigned_to = data.get("assigned_to") or frappe.session.user
     doc.start_date = data.get("start_date")
     doc.due_date = data.get("due_date")
     doc.estimated_hours = data.get("estimated_hours")
     doc.is_milestone = data.get("is_milestone", 0)
     doc.parent_task = data.get("parent_task")
+
+    # Handle assignees - support both new array format and legacy assigned_to
+    if data.get("assignees"):
+        # New multi-assignee format
+        for assignee_data in data["assignees"]:
+            doc.append("assignees", {
+                "user": assignee_data.get("user"),
+                "role": assignee_data.get("role", "Collaborator"),
+                "added_at": now_datetime(),
+                "added_by": frappe.session.user
+            })
+    elif data.get("assigned_to"):
+        # Legacy single assignee - convert to Owner
+        doc.assigned_to = data["assigned_to"]
+    else:
+        # Default to current user as Owner
+        doc.assigned_to = frappe.session.user
 
     # If no project, mark as inbox
     if not doc.project and not doc.parent_task:
@@ -162,6 +225,19 @@ def update_task(task_id, data):
         if field in data:
             setattr(doc, field, data[field])
 
+    # Handle assignees update if provided
+    if "assignees" in data:
+        # Clear existing assignees
+        doc.assignees = []
+        # Add new assignees
+        for assignee_data in data["assignees"]:
+            doc.append("assignees", {
+                "user": assignee_data.get("user"),
+                "role": assignee_data.get("role", "Collaborator"),
+                "added_at": now_datetime(),
+                "added_by": frappe.session.user
+            })
+
     doc.save()
     return {"success": True, "task_id": doc.name}
 
@@ -178,7 +254,7 @@ def delete_task(task_id):
 
 
 @frappe.whitelist()
-def change_status(task_id, new_status, blocked_reason=None):
+def change_status(task_id, new_status):
     """Change task status"""
     require_permission("WH Task", "write")
     valid_statuses = ["BACKLOG", "NEXT", "DOING", "BLOCKED", "DONE"]
@@ -187,16 +263,8 @@ def change_status(task_id, new_status, blocked_reason=None):
 
     doc = frappe.get_doc("WH Task", task_id)
     doc.status = new_status
-
-    # Handle blocked_reason
-    if new_status == "BLOCKED" and blocked_reason:
-        doc.blocked_reason = blocked_reason
-    elif new_status != "BLOCKED":
-        # Clear blocked_reason when moving away from BLOCKED status
-        doc.blocked_reason = None
-
     doc.save()
-    return {"success": True, "status": doc.status, "blocked_reason": doc.blocked_reason}
+    return {"success": True, "status": doc.status}
 
 
 @frappe.whitelist()
@@ -369,7 +437,6 @@ def get_subtasks(task_id):
 def link_to_erp(task_id, doctype, doc_id):
     """Link task to an ERP document via WorkLink"""
     require_permission("WH Task", "write")
-    require_permission("WorkLink", "create")
 
     # Check if WorkLink already exists for this ERP doc
     existing = frappe.db.get_value("WorkLink",
@@ -378,8 +445,10 @@ def link_to_erp(task_id, doctype, doc_id):
 
     if existing:
         # Update existing WorkLink
-        require_permission("WorkLink", "write", existing)
-        frappe.db.set_value("WorkLink", existing, "wh_task", task_id)
+        worklink = frappe.get_doc("WorkLink", existing)
+        worklink.wh_task = task_id
+        worklink.sync_assignees()
+        worklink.save()
         worklink_id = existing
     else:
         # Create new WorkLink
@@ -434,183 +503,65 @@ def quick_add(title, priority="P1", department=None, assigned_to=None):
 
 
 @frappe.whitelist()
-def quick_create(data):
-    """
-    Quick create task with essential fields and optional WorkLink.
+def add_assignee(task_id, user, role="Collaborator"):
+    """Add an assignee to a task"""
+    require_permission("WH Task", "write")
 
-    Args:
-        data: JSON object with fields:
-            - title (required): Task title
-            - priority (optional): P0, P1, or P2. Defaults to P1
-            - due_date (optional): Due date in YYYY-MM-DD format
-            - project (optional): Project ID
-            - assigned_to (optional): User email. Defaults to current user
-            - source_doctype (optional): ERP DocType for WorkLink
-            - source_id (optional): ERP document ID for WorkLink
-            - department (optional): Department (SALES, OPS, MKT)
+    if not task_id:
+        frappe.throw(_("Task ID is required"))
+    if not user:
+        frappe.throw(_("User is required"))
 
-    Returns:
-        dict with success, task_id, and optionally worklink_id
-    """
-    require_permission("WH Task", "create")
+    # Check if user is already assigned
+    existing = frappe.db.exists("WH Task Assignee", {
+        "parent": task_id,
+        "user": user
+    })
 
-    if isinstance(data, str):
-        data = json.loads(data)
+    if existing:
+        frappe.throw(_("User is already assigned to this task"))
 
-    if not data.get("title"):
-        frappe.throw(_("Title is required"))
+    doc = frappe.get_doc("WH Task", task_id)
+    doc.append("assignees", {
+        "user": user,
+        "role": role,
+        "added_at": now_datetime(),
+        "added_by": frappe.session.user
+    })
+    doc.save()
 
-    # Validate priority
-    priority = data.get("priority", "P1")
-    if priority not in ["P0", "P1", "P2"]:
-        frappe.throw(_("Invalid priority: {0}. Must be P0, P1, or P2").format(priority))
-
-    # Create task
-    doc = frappe.new_doc("WH Task")
-    doc.title = data["title"]
-    doc.priority = priority
-    doc.status = "BACKLOG"
-    doc.project = data.get("project")
-    doc.department = data.get("department")
-    doc.assigned_to = data.get("assigned_to") or frappe.session.user
-    doc.due_date = data.get("due_date")
-
-    # If no project and no WorkLink data, mark as inbox
-    has_worklink = data.get("source_doctype") and data.get("source_id")
-    if not doc.project and not has_worklink:
-        doc.is_inbox = 1
-
-    doc.insert()
-
-    result = {"success": True, "task_id": doc.name}
-
-    # Create WorkLink if source data provided
-    if has_worklink:
-        source_doctype = data["source_doctype"]
-        source_id = data["source_id"]
-
-        # Check if WorkLink already exists for this ERP doc
-        existing = frappe.db.get_value("WorkLink",
-            {"source_doctype": source_doctype, "source_id": source_id},
-            "name")
-
-        if existing:
-            # Update existing WorkLink
-            frappe.db.set_value("WorkLink", existing, "wh_task", doc.name)
-            worklink_id = existing
-        else:
-            # Create new WorkLink
-            worklink = frappe.new_doc("WorkLink")
-            worklink.source_doctype = source_doctype
-            worklink.source_id = source_id
-            worklink.department = doc.department or "OPS"
-            worklink.wh_task = doc.name
-            worklink.insert()
-            worklink_id = worklink.name
-
-        # Update task with WorkLink reference
-        frappe.db.set_value("WH Task", doc.name, {
-            "worklink": worklink_id,
-            "source_doctype": source_doctype,
-            "source_name": source_id
-        })
-
-        result["worklink_id"] = worklink_id
-
-    return result
+    return {"success": True, "task_id": doc.name}
 
 
 @frappe.whitelist()
-def get_worklink_suggestions(doctype=None, doc_id=None, limit=10):
-    """
-    Get WorkLink suggestions based on current context.
+def remove_assignee(task_id, user):
+    """Remove an assignee from a task"""
+    require_permission("WH Task", "write")
 
-    Returns potential source_doctype and source_id options from recent ERP activity
-    that the user might want to link to a new task.
+    if not task_id:
+        frappe.throw(_("Task ID is required"))
+    if not user:
+        frappe.throw(_("User is required"))
 
-    Args:
-        doctype (optional): Current context DocType
-        doc_id (optional): Current context document ID
-        limit (optional): Max suggestions to return (default 10)
+    doc = frappe.get_doc("WH Task", task_id)
 
-    Returns:
-        dict with:
-            - suggestions: List of suggestion objects with:
-                - source_doctype: ERP DocType
-                - source_id: Document ID
-                - display_name: Human-readable name
-                - modified: Last modified date
-                - has_worklink: Boolean if WorkLink already exists
-            - context: The provided context (if any)
-    """
-    require_auth()
+    # Find and remove the assignee
+    assignee_to_remove = None
+    for assignee in doc.assignees:
+        if assignee.user == user:
+            assignee_to_remove = assignee
+            break
 
-    limit = int(limit) if limit else 10
-    suggestions = []
+    if not assignee_to_remove:
+        frappe.throw(_("User is not assigned to this task"))
 
-    # List of ERP DocTypes we can suggest (from WorkLink options)
-    erp_doctypes = [
-        "Sales Order", "Delivery Note", "Sales Invoice", "Payment Entry",
-        "Purchase Order", "Purchase Receipt", "Purchase Invoice",
-        "Work Order", "Stock Entry", "Batch", "Quality Inspection",
-        "Opportunity", "Campaign", "OpsCase"
-    ]
+    # Check if this is the only Owner - if so, don't allow removal
+    if assignee_to_remove.role == "Owner":
+        other_owners = [a for a in doc.assignees if a.role == "Owner" and a.user != user]
+        if not other_owners and len(doc.assignees) > 1:
+            frappe.throw(_("Cannot remove the only Owner. Promote another assignee to Owner first"))
 
-    # Get recently modified documents from each doctype
-    for dt in erp_doctypes:
-        # Check if doctype exists in the system
-        if not frappe.db.exists("DocType", dt):
-            continue
+    doc.remove(assignee_to_remove)
+    doc.save()
 
-        try:
-            # Get recent documents of this type
-            recent_docs = frappe.get_all(dt,
-                fields=["name", "modified"],
-                limit_page_length=3,
-                order_by="modified desc",
-                ignore_permissions=True
-            )
-
-            for doc in recent_docs:
-                # Check if WorkLink already exists for this document
-                has_worklink = frappe.db.exists("WorkLink", {
-                    "source_doctype": dt,
-                    "source_id": doc["name"]
-                })
-
-                # Try to get a display name (try common fields)
-                display_name = doc["name"]
-                try:
-                    doc_data = frappe.get_doc(dt, doc["name"])
-                    # Try common name fields
-                    for field in ["title", "subject", "customer_name", "supplier_name", "item_name"]:
-                        if hasattr(doc_data, field) and getattr(doc_data, field):
-                            display_name = f"{getattr(doc_data, field)} ({doc['name']})"
-                            break
-                except Exception:
-                    pass
-
-                suggestions.append({
-                    "source_doctype": dt,
-                    "source_id": doc["name"],
-                    "display_name": display_name,
-                    "modified": str(doc["modified"]),
-                    "has_worklink": bool(has_worklink)
-                })
-        except Exception as e:
-            # If we can't query this doctype, skip it
-            continue
-
-    # Sort by modified date (most recent first) and limit
-    suggestions.sort(key=lambda x: x["modified"], reverse=True)
-    suggestions = suggestions[:limit]
-
-    result = {
-        "suggestions": suggestions,
-        "context": {
-            "doctype": doctype,
-            "doc_id": doc_id
-        } if doctype and doc_id else None
-    }
-
-    return result
+    return {"success": True, "task_id": doc.name}

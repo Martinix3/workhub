@@ -97,11 +97,12 @@ def clear_old_notifications(days=30):
 def send_daily_emails():
     """Scheduler: Enviar email diario a las 8am"""
     # Obtener usuarios con email diario activado
-    # Por ahora, todos los usuarios con tareas asignadas
+    # Por ahora, todos los usuarios con tareas asignadas (via assignees table)
     users = frappe.db.sql("""
-        SELECT DISTINCT assigned_to as user
-        FROM `tabWH Task`
-        WHERE status NOT IN ('DONE')
+        SELECT DISTINCT ta.user
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON t.name = ta.parent
+        WHERE t.status NOT IN ('DONE')
     """, as_dict=True)
 
     for user_row in users:
@@ -123,10 +124,19 @@ def _send_daily_digest(user, email):
     """Enviar digest diario a un usuario"""
     today = nowdate()
 
+    # Get all task IDs where user is assigned (any role)
+    task_ids = frappe.get_all("WH Task Assignee",
+        filters={"user": user},
+        pluck="parent"
+    )
+
+    if not task_ids:
+        return  # No tasks to report
+
     # Tareas para hoy
     today_tasks = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", task_ids],
             "status": ["in", ["DOING", "NEXT"]],
             "due_date": today
         },
@@ -136,7 +146,7 @@ def _send_daily_digest(user, email):
     # Vencidas
     overdue = frappe.get_all("WH Task",
         filters={
-            "assigned_to": user,
+            "name": ["in", task_ids],
             "status": ["not in", ["DONE"]],
             "due_date": ["<", today]
         },
@@ -145,7 +155,7 @@ def _send_daily_digest(user, email):
 
     # Bloqueadas
     blocked = frappe.get_all("WH Task",
-        filters={"assigned_to": user, "status": "BLOCKED"},
+        filters={"name": ["in", task_ids], "status": "BLOCKED"},
         fields=["title", "blocked_reason"],
         limit=5)
 
@@ -201,7 +211,7 @@ def send_overdue_alerts():
 
     # Tareas que acaban de vencer (due_date = ayer y no notificadas)
     newly_overdue = frappe.db.sql("""
-        SELECT t.name, t.title, t.assigned_to, t.due_date, t.project
+        SELECT t.name, t.title, t.due_date, t.project
         FROM `tabWH Task` t
         WHERE t.status NOT IN ('DONE')
         AND t.due_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
@@ -214,15 +224,24 @@ def send_overdue_alerts():
     """, as_dict=True)
 
     for task in newly_overdue:
-        create_notification(
-            user=task["assigned_to"],
-            notification_type="OVERDUE",
-            title=f"Tarea vencida: {task['title']}",
-            message=f"La tarea '{task['title']}' vencio el {task['due_date']}",
-            reference_doctype="WH Task",
-            reference_name=task["name"],
-            priority="HIGH"
+        # Get all assignees for this task
+        assignees = frappe.get_all("WH Task Assignee",
+            filters={"parent": task["name"]},
+            pluck="user"
         )
+
+        # Notify each assignee
+        for assignee in assignees:
+            if assignee and assignee != "Administrator":
+                create_notification(
+                    user=assignee,
+                    notification_type="OVERDUE",
+                    title=f"Tarea vencida: {task['title']}",
+                    message=f"La tarea '{task['title']}' vencio el {task['due_date']}",
+                    reference_doctype="WH Task",
+                    reference_name=task["name"],
+                    priority="HIGH"
+                )
 
 
 def check_project_health():
@@ -258,7 +277,7 @@ def notify_blocked_dependencies():
     # Tareas que bloquean a otras y llevan mas de 2 dias sin moverse
     blocking_tasks = frappe.db.sql("""
         SELECT DISTINCT
-            t.name, t.title, t.assigned_to, t.status,
+            t.name, t.title, t.status,
             COUNT(d.successor) as blocking_count
         FROM `tabWH Task` t
         JOIN `tabWH Task Dependency` d ON d.predecessor = t.name AND d.is_active = 1
@@ -277,15 +296,24 @@ def notify_blocked_dependencies():
         })
 
         if not existing:
-            create_notification(
-                user=task["assigned_to"],
-                notification_type="DEPENDENCY",
-                title=f"Tarea bloqueando a {task['blocking_count']} otras",
-                message=f"Tu tarea '{task['title']}' esta bloqueando a {task['blocking_count']} tareas de otros. Considera priorizarla.",
-                reference_doctype="WH Task",
-                reference_name=task["name"],
-                priority="MEDIUM"
+            # Get all assignees for this task
+            assignees = frappe.get_all("WH Task Assignee",
+                filters={"parent": task["name"]},
+                pluck="user"
             )
+
+            # Notify each assignee
+            for assignee in assignees:
+                if assignee and assignee != "Administrator":
+                    create_notification(
+                        user=assignee,
+                        notification_type="DEPENDENCY",
+                        title=f"Tarea bloqueando a {task['blocking_count']} otras",
+                        message=f"Tu tarea '{task['title']}' esta bloqueando a {task['blocking_count']} tareas de otros. Considera priorizarla.",
+                        reference_doctype="WH Task",
+                        reference_name=task["name"],
+                        priority="MEDIUM"
+                    )
 
 
 # ========== HELPER FUNCTIONS ==========
@@ -316,19 +344,32 @@ def create_notification(user, notification_type, title, message, reference_docty
     return doc.name
 
 
-def notify_task_assigned(task_id, assigned_to, assigned_by=None):
-    """Notificar cuando se asigna una tarea"""
+def notify_task_assigned(task_id, assignees, assigned_by=None):
+    """Notificar cuando se asigna una tarea
+
+    Args:
+        task_id: ID de la tarea
+        assignees: Usuario individual (string) o lista de usuarios
+        assigned_by: Usuario que hizo la asignacion (opcional)
+    """
     task = frappe.get_doc("WH Task", task_id)
 
-    create_notification(
-        user=assigned_to,
-        notification_type="TASK_ASSIGNED",
-        title=f"Nueva tarea: {task.title}",
-        message=f"Te han asignado la tarea '{task.title}'" + (f" por {assigned_by}" if assigned_by else ""),
-        reference_doctype="WH Task",
-        reference_name=task_id,
-        priority="MEDIUM" if task.priority != "P0" else "HIGH"
-    )
+    # Normalizar assignees a lista
+    if isinstance(assignees, str):
+        assignees = [assignees]
+
+    # Notificar a cada asignado
+    for assignee in assignees:
+        if assignee and assignee != "Administrator":
+            create_notification(
+                user=assignee,
+                notification_type="TASK_ASSIGNED",
+                title=f"Nueva tarea: {task.title}",
+                message=f"Te han asignado la tarea '{task.title}'" + (f" por {assigned_by}" if assigned_by else ""),
+                reference_doctype="WH Task",
+                reference_name=task_id,
+                priority="MEDIUM" if task.priority != "P0" else "HIGH"
+            )
 
 
 def notify_task_completed(task_id):
@@ -342,12 +383,22 @@ def notify_task_completed(task_id):
 
     for dep in waiting_tasks:
         successor = frappe.get_doc("WH Task", dep["successor"])
-        create_notification(
-            user=successor.assigned_to,
-            notification_type="COMPLETED",
-            title=f"Tarea desbloqueada: {successor.title}",
-            message=f"La tarea '{task.title}' se completo. Tu tarea '{successor.title}' ya puede avanzar.",
-            reference_doctype="WH Task",
-            reference_name=dep["successor"],
-            priority="LOW"
+
+        # Get all assignees of the successor task
+        successor_assignees = frappe.get_all("WH Task Assignee",
+            filters={"parent": dep["successor"]},
+            pluck="user"
         )
+
+        # Notify each assignee of the successor task
+        for assignee in successor_assignees:
+            if assignee and assignee != "Administrator":
+                create_notification(
+                    user=assignee,
+                    notification_type="COMPLETED",
+                    title=f"Tarea desbloqueada: {successor.title}",
+                    message=f"La tarea '{task.title}' se completo. Tu tarea '{successor.title}' ya puede avanzar.",
+                    reference_doctype="WH Task",
+                    reference_name=dep["successor"],
+                    priority="LOW"
+                )

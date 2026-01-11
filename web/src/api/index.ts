@@ -26,6 +26,9 @@ export {
 // Sales types
 export type { Product, CreateOrderData, CreateOrderResponse, CreateOrderItem } from './services/sales'
 
+// Task types
+export type { TaskAssignee, AssigneeRole } from '../components/sections/tasks/types'
+
 // Command Center Hooks
 export {
   useAreaSummaries,

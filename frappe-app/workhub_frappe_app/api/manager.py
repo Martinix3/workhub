@@ -13,6 +13,34 @@ from workhub_frappe_app.services.ai_recommendations import (
 )
 
 
+def _get_user_task_ids(user):
+    """Get task IDs where user is assigned (any role)"""
+    task_ids = frappe.get_all("WH Task Assignee",
+        filters={"user": user},
+        pluck="parent"
+    )
+    return task_ids if task_ids else []
+
+
+def _enrich_task_assignees(task):
+    """Enrich task with assignees data including user info"""
+    if not task.get("name"):
+        return []
+
+    assignees = frappe.get_all("WH Task Assignee",
+        filters={"parent": task["name"]},
+        fields=["user", "role"],
+        order_by="idx"
+    )
+
+    # Enrich with user info
+    for assignee in assignees:
+        if assignee.get("user"):
+            assignee["user_name"] = frappe.db.get_value("User", assignee["user"], "full_name")
+
+    return assignees
+
+
 @frappe.whitelist()
 def get_overview():
     """Vista completa para meetings - estado de todo el equipo"""
@@ -40,6 +68,10 @@ def get_overview():
         limit=10)
 
     for t in critical_tasks:
+        # Add assignees
+        t["assignees"] = _enrich_task_assignees(t)
+
+        # Keep assigned_name for backward compatibility
         if t.get("assigned_to"):
             t["assigned_name"] = frappe.db.get_value("User", t["assigned_to"], "full_name")
         if t.get("project"):
@@ -53,21 +85,26 @@ def get_overview():
         limit=10)
 
     for t in blocked_tasks:
+        # Add assignees
+        t["assignees"] = _enrich_task_assignees(t)
+
+        # Keep assigned_name for backward compatibility
         if t.get("assigned_to"):
             t["assigned_name"] = frappe.db.get_value("User", t["assigned_to"], "full_name")
 
-    # Workload por persona
+    # Workload por persona (from assignees table)
     team_workload = frappe.db.sql("""
         SELECT
-            assigned_to as user,
-            SUM(CASE WHEN status = 'DOING' THEN 1 ELSE 0 END) as doing,
-            SUM(CASE WHEN status = 'NEXT' THEN 1 ELSE 0 END) as next,
-            SUM(CASE WHEN status = 'BLOCKED' THEN 1 ELSE 0 END) as blocked,
-            SUM(CASE WHEN status = 'DONE' AND modified >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as completed_week,
-            COUNT(*) as total
-        FROM `tabWH Task`
-        WHERE status != 'DONE' OR (status = 'DONE' AND modified >= DATE_SUB(CURDATE(), INTERVAL 7 DAY))
-        GROUP BY assigned_to
+            ta.user as user,
+            SUM(CASE WHEN t.status = 'DOING' THEN 1 ELSE 0 END) as doing,
+            SUM(CASE WHEN t.status = 'NEXT' THEN 1 ELSE 0 END) as next,
+            SUM(CASE WHEN t.status = 'BLOCKED' THEN 1 ELSE 0 END) as blocked,
+            SUM(CASE WHEN t.status = 'DONE' AND t.modified >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as completed_week,
+            COUNT(DISTINCT ta.parent) as total
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON ta.parent = t.name
+        WHERE t.status != 'DONE' OR (t.status = 'DONE' AND t.modified >= DATE_SUB(CURDATE(), INTERVAL 7 DAY))
+        GROUP BY ta.user
     """, as_dict=True)
 
     for member in team_workload:
@@ -89,6 +126,10 @@ def get_overview():
         limit=10)
 
     for t in recent_completions:
+        # Add assignees
+        t["assignees"] = _enrich_task_assignees(t)
+
+        # Keep assigned_name for backward compatibility
         if t.get("assigned_to"):
             t["assigned_name"] = frappe.db.get_value("User", t["assigned_to"], "full_name")
 
@@ -103,6 +144,9 @@ def get_overview():
         order_by="due_date asc")
 
     for m in upcoming_milestones:
+        # Add assignees
+        m["assignees"] = _enrich_task_assignees(m)
+
         if m.get("project"):
             m["project_title"] = frappe.db.get_value("WH Project", m["project"], "title")
 
@@ -183,24 +227,32 @@ def get_person_summary(user_id, days=7):
     """Resumen de una persona para 1-on-1s"""
     require_auth()
 
-    # Tareas completadas
-    completed = frappe.get_all("WH Task",
-        filters={
-            "assigned_to": user_id,
-            "status": "DONE",
-            "modified": [">=", add_days(nowdate(), -days)]
-        },
-        fields=["name", "title", "project", "modified", "priority"],
-        order_by="modified desc")
+    # Get user task IDs from assignees table
+    user_task_ids = _get_user_task_ids(user_id)
 
-    # Tareas actuales
-    current = frappe.get_all("WH Task",
-        filters={
-            "assigned_to": user_id,
-            "status": ["in", ["DOING", "NEXT", "BLOCKED"]]
-        },
-        fields=["name", "title", "status", "priority", "project", "due_date", "blocked_reason"],
-        order_by="priority asc, due_date asc")
+    if not user_task_ids:
+        # User has no tasks
+        completed = []
+        current = []
+    else:
+        # Tareas completadas
+        completed = frappe.get_all("WH Task",
+            filters={
+                "name": ["in", user_task_ids],
+                "status": "DONE",
+                "modified": [">=", add_days(nowdate(), -days)]
+            },
+            fields=["name", "title", "project", "modified", "priority"],
+            order_by="modified desc")
+
+        # Tareas actuales
+        current = frappe.get_all("WH Task",
+            filters={
+                "name": ["in", user_task_ids],
+                "status": ["in", ["DOING", "NEXT", "BLOCKED"]]
+            },
+            fields=["name", "title", "status", "priority", "project", "due_date", "blocked_reason"],
+            order_by="priority asc, due_date asc")
 
     # Dias trabajados (del work log)
     work_days = frappe.db.sql("""
@@ -213,12 +265,13 @@ def get_person_summary(user_id, days=7):
     # Velocity
     velocity = len(completed) / (days / 7) if days >= 7 else len(completed)
 
-    # Proyectos activos
+    # Proyectos activos (from assignees table)
     active_projects = frappe.db.sql("""
         SELECT DISTINCT t.project, p.title, p.health
-        FROM `tabWH Task` t
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON ta.parent = t.name
         JOIN `tabWH Project` p ON t.project = p.name
-        WHERE t.assigned_to = %s AND t.status != 'DONE' AND t.project IS NOT NULL
+        WHERE ta.user = %s AND t.status != 'DONE' AND t.project IS NOT NULL
     """, (user_id,), as_dict=True)
 
     user_info = frappe.db.get_value("User", user_id,
@@ -257,10 +310,12 @@ def get_team_kpis():
         WHERE status = 'DONE' AND modified >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
     """)[0][0]
 
-    # Velocity promedio del equipo
+    # Velocity promedio del equipo (from assignees table)
     team_size = frappe.db.sql("""
-        SELECT COUNT(DISTINCT assigned_to) FROM `tabWH Task`
-        WHERE status != 'DONE'
+        SELECT COUNT(DISTINCT ta.user)
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON ta.parent = t.name
+        WHERE t.status != 'DONE'
     """)[0][0] or 1
 
     avg_velocity = completed_week / team_size
@@ -303,12 +358,21 @@ def get_team_kpis():
 
 @frappe.whitelist()
 def reassign_task(task_id, new_user):
-    """Reasignar tarea a otro usuario"""
+    """Reasignar tarea a otro usuario (cambia el owner principal)"""
     require_any_role("System Manager", "Projects Manager")
 
     task = frappe.get_doc("WH Task", task_id)
     old_user = task.assigned_to
+
+    # Update primary owner
     task.assigned_to = new_user
+
+    # Update assignees table - change the Owner role
+    for assignee in task.assignees:
+        if assignee.role == "Owner":
+            assignee.user = new_user
+            break
+
     task.save()
 
     # Crear notificacion para nuevo asignado
@@ -326,14 +390,23 @@ def reassign_task(task_id, new_user):
 
 @frappe.whitelist()
 def bulk_reassign(task_ids, new_user):
-    """Reasignar multiples tareas"""
+    """Reasignar multiples tareas (cambia el owner principal de todas)"""
     require_any_role("System Manager", "Projects Manager")
 
     if isinstance(task_ids, str):
         task_ids = json.loads(task_ids)
 
     for task_id in task_ids:
-        frappe.db.set_value("WH Task", task_id, "assigned_to", new_user)
+        task = frappe.get_doc("WH Task", task_id)
+        task.assigned_to = new_user
+
+        # Update assignees table - change the Owner role
+        for assignee in task.assignees:
+            if assignee.role == "Owner":
+                assignee.user = new_user
+                break
+
+        task.save()
 
     # Una sola notificacion
     _create_notification(
@@ -368,15 +441,16 @@ def get_department_summary(department):
         GROUP BY status
     """, (department,), as_dict=True)
 
-    # Miembros del departamento con tareas
+    # Miembros del departamento con tareas (from assignees table)
     members = frappe.db.sql("""
         SELECT
-            assigned_to as user,
-            COUNT(*) as task_count,
-            SUM(CASE WHEN status = 'BLOCKED' THEN 1 ELSE 0 END) as blocked
-        FROM `tabWH Task`
-        WHERE department = %s AND status != 'DONE'
-        GROUP BY assigned_to
+            ta.user as user,
+            COUNT(DISTINCT ta.parent) as task_count,
+            SUM(CASE WHEN t.status = 'BLOCKED' THEN 1 ELSE 0 END) as blocked
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON ta.parent = t.name
+        WHERE t.department = %s AND t.status != 'DONE'
+        GROUP BY ta.user
     """, (department,), as_dict=True)
 
     for m in members:
