@@ -935,7 +935,9 @@
 						message: __('No se pudo calcular la ruta crítica'),
 						indicator: 'red'
 					});
-					console.error('Critical path calculation error:', error);
+					if (frappe.boot.developer_mode) {
+						console.error('Critical path calculation error:', error);
+					}
 				}
 			});
 		}
@@ -1045,7 +1047,7 @@
 					assignedItem.className = 'gantt-tooltip__item';
 					assignedItem.innerHTML = `
 						<span class="gantt-tooltip__label">Asignado:</span>
-						<span class="gantt-tooltip__value">${milestone.assigned_name || milestone.assigned_to}</span>
+						<span class="gantt-tooltip__value">${this._escapeHtml(milestone.assigned_name || milestone.assigned_to)}</span>
 					`;
 					tooltip.appendChild(assignedItem);
 				}
@@ -1102,14 +1104,24 @@
 		}
 
 		/**
-	/**
-	 * Render dependency arrows between tasks
-	 * @private
-	 */
-	_renderDependencies() {
-		if (!this.dependencies || this.dependencies.length === 0) {
-			return;
+		 * Escape HTML to prevent XSS attacks
+		 * @private
+		 */
+		_escapeHtml(text) {
+			if (!text) return '';
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
 		}
+
+		/**
+		 * Render dependency arrows between tasks
+		 * @private
+		 */
+		_renderDependencies() {
+			if (!this.dependencies || this.dependencies.length === 0) {
+				return;
+			}
 
 		// Create or get SVG layer
 		if (!this.elements.svg) {
@@ -2099,7 +2111,9 @@
 					indicator: 'red'
 				});
 
+				if (frappe.boot.developer_mode) {
 				console.error('Error saving task dates:', error);
+			}
 			}
 		});
 	}
@@ -2122,7 +2136,9 @@
 	 */
 	_refreshChartData() {
 		if (!this.project || !this.project.name) {
+			if (frappe.boot.developer_mode) {
 			console.error('No project ID available for refresh');
+		}
 			return;
 		}
 
@@ -2154,7 +2170,9 @@
 			},
 			error: (error) => {
 				frappe.unfreeze();
+				if (frappe.boot.developer_mode) {
 				console.error('Error refreshing chart data:', error);
+			}
 			}
 		});
 	}
@@ -2207,7 +2225,9 @@
 		const content = document.getElementById('task-detail-content');
 
 		if (!sidebar || !overlay || !content) {
+			if (frappe.boot.developer_mode) {
 			console.error('Sidebar elements not found');
+		}
 			return;
 		}
 
@@ -2257,7 +2277,7 @@
 			<div class="task-detail">
 				<!-- Task Title -->
 				<div class="task-detail__section">
-					<h4 class="task-detail__task-title">${task.title || task.name}</h4>
+					<h4 class="task-detail__task-title">${this._escapeHtml(task.title || task.name)}</h4>
 				</div>
 
 				<!-- Description -->
@@ -2265,7 +2285,7 @@
 				<div class="task-detail__section">
 					<label class="task-detail__label">Descripción</label>
 					<div class="task-detail__value task-detail__description">
-						${task.description}
+						${this._escapeHtml(task.description)}
 					</div>
 				</div>
 				` : ''}
@@ -2299,7 +2319,7 @@
 						<div class="task-detail__avatar">
 							${this._getInitials(task.assigned_to)}
 						</div>
-						<span class="task-detail__assigned-name">${task.assigned_name || task.assigned_to}</span>
+						<span class="task-detail__assigned-name">${this._escapeHtml(task.assigned_name || task.assigned_to)}</span>
 					</div>
 				</div>
 				` : ''}
@@ -2338,7 +2358,7 @@
 								${predecessors.map(d => {
 									const predTask = this.tasks.find(t => t.name === d.predecessor);
 									return `<li class="task-detail__dep-item">
-										${predTask ? predTask.title : d.predecessor} <span class="task-detail__dep-type-label">(${d.type})</span>
+										${this._escapeHtml(predTask ? predTask.title : d.predecessor)} <span class="task-detail__dep-type-label">(${d.type})</span>
 									</li>`;
 								}).join('')}
 							</ul>
@@ -2351,7 +2371,7 @@
 								${successors.map(d => {
 									const succTask = this.tasks.find(t => t.name === d.successor);
 									return `<li class="task-detail__dep-item">
-										${succTask ? succTask.title : d.successor} <span class="task-detail__dep-type-label">(${d.type})</span>
+										${this._escapeHtml(succTask ? succTask.title : d.successor)} <span class="task-detail__dep-type-label">(${d.type})</span>
 									</li>`;
 								}).join('')}
 							</ul>
@@ -2446,7 +2466,9 @@
 					message: 'No se pudo actualizar el estado de la tarea',
 					indicator: 'red'
 				});
+				if (frappe.boot.developer_mode) {
 				console.error('Error updating task status:', error);
+			}
 			}
 		});
 	}
@@ -2753,7 +2775,9 @@
 					indicator: 'red'
 				});
 
+				if (frappe.boot.developer_mode) {
 				console.error('Error creating dependency:', error);
+			}
 			}
 		});
 	}
@@ -3035,7 +3059,9 @@
 					indicator: 'red'
 				});
 
+				if (frappe.boot.developer_mode) {
 				console.error('Error toggling milestone:', error);
+			}
 			}
 		});
 	}
@@ -3198,7 +3224,9 @@
 					indicator: 'red'
 				});
 
+				if (frappe.boot.developer_mode) {
 				console.error('Error removing dependencies:', error);
+			}
 			});
 	}
 
@@ -3312,7 +3340,9 @@
 				indicator: 'red'
 			});
 
+			if (frappe.boot.developer_mode) {
 			console.error('Export error:', error);
+		}
 		}
 	}
 

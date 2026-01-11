@@ -81,10 +81,19 @@ def update_task_schedule(task_id, start_date=None, due_date=None):
 
     task = frappe.get_doc("WH Task", task_id)
 
+    # Parse dates
+    new_start = getdate(start_date) if start_date else task.start_date
+    new_due = getdate(due_date) if due_date else task.due_date
+
+    # VALIDATION: Ensure start_date is before due_date
+    if new_start and new_due and new_start > new_due:
+        frappe.throw(_("La fecha de inicio no puede ser posterior a la fecha de fin"))
+
+    # Update task
     if start_date:
-        task.start_date = getdate(start_date)
+        task.start_date = new_start
     if due_date:
-        task.due_date = getdate(due_date)
+        task.due_date = new_due
 
     task.save()
 
