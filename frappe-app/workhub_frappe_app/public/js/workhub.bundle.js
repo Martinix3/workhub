@@ -2672,6 +2672,325 @@ frappe.workhub.taskEditor = {
 };
 
 // ==========================================
+// FAB (FLOATING ACTION BUTTON)
+// ==========================================
+/**
+ * FAB Component for Quick Task Creation
+ *
+ * Floating action button that's always accessible on mobile.
+ * Opens the MobileTaskDrawer for creating new tasks.
+ *
+ * Features:
+ * - Fixed position in bottom-right corner (mobile only)
+ * - Touch-optimized (56px tap target)
+ * - Haptic feedback on tap
+ * - Safe area insets support
+ * - GPU-accelerated animations
+ * - Pulse animation on first appearance
+ * - Auto-hides when drawer is open
+ *
+ * Integration:
+ * - Uses MobileTaskDrawer.openNewTaskDrawer() for task creation
+ * - Automatically hides when drawer opens
+ * - Works with mobile-drawer.css and mobile-forms.css
+ */
+frappe.workhub.fab = {
+    button: null,
+    isPulsing: false,
+
+    /**
+     * Initialize FAB component
+     */
+    init() {
+        console.log('[FAB] Initializing...');
+
+        // Only initialize on mobile devices
+        if (!this.isMobileDevice()) {
+            console.log('[FAB] Skipping - not a mobile device');
+            return;
+        }
+
+        // Create FAB DOM element
+        this.createFAB();
+
+        // Setup event listeners
+        this.setupEventListeners();
+
+        // Add pulse animation on first load (if user hasn't seen it before)
+        this.maybeShowPulse();
+
+        console.log('[FAB] Initialized');
+    },
+
+    /**
+     * Check if current device is mobile
+     * @returns {boolean}
+     */
+    isMobileDevice() {
+        // Check window width (mobile breakpoint: 768px)
+        if (window.innerWidth > 768) {
+            return false;
+        }
+
+        // Check for touch support
+        const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        return hasTouch;
+    },
+
+    /**
+     * Create the FAB DOM element and inject into page
+     */
+    createFAB() {
+        // Check if FAB already exists
+        if (document.querySelector('.wh-fab')) {
+            console.log('[FAB] Already exists');
+            this.button = document.querySelector('.wh-fab');
+            return;
+        }
+
+        // Create FAB button
+        const button = document.createElement('button');
+        button.className = 'wh-fab';
+        button.setAttribute('type', 'button');
+        button.setAttribute('aria-label', __('Create new task'));
+        button.setAttribute('title', __('Create new task'));
+
+        // Create plus icon (SVG)
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('class', 'wh-fab__icon');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '2.5');
+        icon.setAttribute('stroke-linecap', 'round');
+        icon.setAttribute('stroke-linejoin', 'round');
+        icon.setAttribute('aria-hidden', 'true');
+
+        // Plus icon paths (horizontal and vertical lines)
+        const horizontalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        horizontalLine.setAttribute('x1', '12');
+        horizontalLine.setAttribute('y1', '5');
+        horizontalLine.setAttribute('x2', '12');
+        horizontalLine.setAttribute('y2', '19');
+
+        const verticalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        verticalLine.setAttribute('x1', '5');
+        verticalLine.setAttribute('y1', '12');
+        verticalLine.setAttribute('x2', '19');
+        verticalLine.setAttribute('y2', '12');
+
+        // Assemble icon
+        icon.appendChild(horizontalLine);
+        icon.appendChild(verticalLine);
+
+        // Assemble button
+        button.appendChild(icon);
+
+        // Inject into page
+        document.body.appendChild(button);
+
+        // Store reference
+        this.button = button;
+
+        console.log('[FAB] DOM element created');
+    },
+
+    /**
+     * Setup event listeners
+     */
+    setupEventListeners() {
+        if (!this.button) {
+            console.warn('[FAB] Button not initialized');
+            return;
+        }
+
+        // Click event - open task creation drawer
+        this.button.addEventListener('click', () => {
+            this.handleClick();
+        });
+
+        // Listen for drawer open/close events
+        frappe.ui.on('drawer:opened', () => {
+            this.hide();
+        });
+
+        frappe.ui.on('drawer:closed', () => {
+            this.show();
+        });
+
+        // Listen for task creation to provide feedback
+        frappe.ui.on('task:created', (task) => {
+            console.log('[FAB] Task created:', task);
+            // FAB will auto-show when drawer closes
+        });
+
+        console.log('[FAB] Event listeners registered');
+    },
+
+    /**
+     * Handle FAB click
+     */
+    handleClick() {
+        console.log('[FAB] Clicked');
+
+        // Trigger haptic feedback
+        this.triggerHapticFeedback();
+
+        // Remove pulse animation if active
+        if (this.isPulsing) {
+            this.button.classList.remove('pulse');
+            this.isPulsing = false;
+        }
+
+        // Open task creation drawer
+        if (frappe.workhub && frappe.workhub.MobileTaskDrawer) {
+            // Emit drawer opened event (for auto-hiding FAB)
+            frappe.ui.trigger_event('drawer:opened');
+
+            // Open drawer
+            const drawer = frappe.workhub.MobileTaskDrawer.openNewTaskDrawer({
+                onSave: (task) => {
+                    console.log('[FAB] Task created via FAB:', task);
+                },
+                onCancel: () => {
+                    // Emit drawer closed event (for showing FAB again)
+                    frappe.ui.trigger_event('drawer:closed');
+                }
+            });
+
+            // Override drawer close method to emit event
+            const originalClose = drawer.close.bind(drawer);
+            drawer.close = () => {
+                originalClose();
+                frappe.ui.trigger_event('drawer:closed');
+            };
+        } else {
+            console.error('[FAB] MobileTaskDrawer not available');
+            frappe.show_alert({
+                message: __('Task creation not available'),
+                indicator: 'red'
+            }, 3);
+        }
+    },
+
+    /**
+     * Trigger haptic feedback (if available)
+     */
+    triggerHapticFeedback() {
+        // Check if haptic feedback is supported and enabled
+        if (!navigator.vibrate) {
+            return;
+        }
+
+        // Check user preference for reduced motion
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        // Check localStorage preference
+        const hapticEnabled = localStorage.getItem('workhub_haptic_feedback');
+        if (hapticEnabled === 'false') {
+            return;
+        }
+
+        // Medium vibration pattern for FAB tap
+        try {
+            navigator.vibrate([15, 10, 15]);
+        } catch (error) {
+            // Silently fail if vibration API throws error
+            console.debug('[FAB] Haptic feedback not available:', error);
+        }
+    },
+
+    /**
+     * Show pulse animation on first load
+     */
+    maybeShowPulse() {
+        if (!this.button) {
+            return;
+        }
+
+        // Check if user has seen pulse before
+        const hasSeenPulse = localStorage.getItem('workhub_fab_pulse_seen');
+        if (hasSeenPulse === 'true') {
+            return;
+        }
+
+        // Add pulse animation
+        this.button.classList.add('pulse');
+        this.isPulsing = true;
+
+        // Mark as seen after animation completes (6 seconds = 3 pulses × 2s)
+        setTimeout(() => {
+            this.button.classList.remove('pulse');
+            this.isPulsing = false;
+            localStorage.setItem('workhub_fab_pulse_seen', 'true');
+        }, 6000);
+
+        console.log('[FAB] Showing pulse animation');
+    },
+
+    /**
+     * Hide FAB
+     */
+    hide() {
+        if (!this.button) {
+            return;
+        }
+
+        this.button.classList.add('hidden');
+        this.button.setAttribute('aria-hidden', 'true');
+        console.log('[FAB] Hidden');
+    },
+
+    /**
+     * Show FAB
+     */
+    show() {
+        if (!this.button) {
+            return;
+        }
+
+        this.button.classList.remove('hidden');
+        this.button.setAttribute('aria-hidden', 'false');
+        console.log('[FAB] Shown');
+    },
+
+    /**
+     * Check if FAB is visible
+     * @returns {boolean}
+     */
+    isVisible() {
+        if (!this.button) {
+            return false;
+        }
+
+        return !this.button.classList.contains('hidden');
+    },
+
+    /**
+     * Destroy FAB and clean up
+     */
+    destroy() {
+        if (!this.button) {
+            return;
+        }
+
+        // Remove DOM element
+        if (this.button.parentNode) {
+            this.button.parentNode.removeChild(this.button);
+        }
+
+        // Clear reference
+        this.button = null;
+        this.isPulsing = false;
+
+        console.log('[FAB] Destroyed');
+    }
+};
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 (function initWorkHub() {
@@ -2714,6 +3033,11 @@ frappe.workhub.taskEditor = {
         // Inicializar Task Editor (Mobile task editing)
         if (frappe.workhub && frappe.workhub.taskEditor) {
             frappe.workhub.taskEditor.init();
+        }
+
+        // Inicializar FAB (Floating Action Button for mobile task creation)
+        if (frappe.workhub && frappe.workhub.fab) {
+            frappe.workhub.fab.init();
         }
 
         // Inicializar Command Palette (Cmd+K)

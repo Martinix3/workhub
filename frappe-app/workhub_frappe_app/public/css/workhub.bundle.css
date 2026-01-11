@@ -28,6 +28,7 @@
 @import url('/assets/workhub_frappe_app/css/components/mobile-forms.css');
 @import url('/assets/workhub_frappe_app/css/components/mobile-drawer.css');
 @import url('/assets/workhub_frappe_app/css/components/offline-indicator.css');
+@import url('/assets/workhub_frappe_app/css/components/fab.css');
 
 /* === Layout Utilities === */
 .wh-container {

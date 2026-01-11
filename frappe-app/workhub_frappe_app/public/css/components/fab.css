@@ -1,0 +1,195 @@
+/**
+ * FAB (Floating Action Button) Component - Neobrutalismo Editorial
+ * Quick task creation button always accessible on mobile
+ * Fixed position in bottom-right corner
+ */
+
+/* === FAB CONTAINER === */
+.wh-fab {
+	position: fixed;
+	bottom: calc(var(--mobile-bottom-nav-height) + var(--space-4));
+	right: var(--space-4);
+	z-index: 1998; /* Below drawer (2000) but above most content */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--touch-target-large);
+	height: var(--touch-target-large);
+	background: var(--primary);
+	border: var(--border-width) solid var(--border-1);
+	border-radius: 50%;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+	            0 2px 8px rgba(0, 0, 0, 0.15);
+	cursor: pointer;
+	transition: transform var(--mobile-transition-fast),
+	            box-shadow var(--mobile-transition-fast),
+	            background var(--mobile-transition-fast);
+	/* GPU acceleration */
+	-webkit-transform: translateZ(0);
+	transform: translateZ(0);
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden;
+	will-change: transform;
+	/* Prevent text selection */
+	-webkit-user-select: none;
+	user-select: none;
+	/* Tap highlight */
+	-webkit-tap-highlight-color: rgba(245, 206, 62, 0.3);
+}
+
+/* Hover state (desktop) */
+@media (hover: hover) {
+	.wh-fab:hover {
+		transform: translateZ(0) scale(1.05);
+		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25),
+		            0 3px 10px rgba(0, 0, 0, 0.2);
+		background: var(--primary-hover);
+	}
+}
+
+/* Active/pressed state */
+.wh-fab:active {
+	transform: translateZ(0) scale(0.95);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+	            0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Hidden state */
+.wh-fab.hidden {
+	transform: translateZ(0) translateY(calc(100% + var(--space-4)));
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* === FAB ICON === */
+.wh-fab__icon {
+	width: 24px;
+	height: 24px;
+	stroke: var(--text-inverse);
+	stroke-width: 2.5px;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	fill: none;
+	transition: transform var(--mobile-transition-fast);
+	/* GPU acceleration */
+	-webkit-transform: translateZ(0);
+	transform: translateZ(0);
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden;
+}
+
+/* Rotate icon on active */
+.wh-fab:active .wh-fab__icon {
+	transform: translateZ(0) rotate(90deg);
+}
+
+/* === SAFE AREA ADJUSTMENTS === */
+/* Account for safe area insets (notched devices) */
+@supports (padding: max(0px)) {
+	.wh-fab {
+		bottom: calc(var(--mobile-bottom-nav-height) + var(--space-4) + var(--safe-area-bottom));
+		right: calc(var(--space-4) + var(--safe-area-right));
+	}
+}
+
+/* === MOBILE-SPECIFIC === */
+@media (max-width: 768px) {
+	/* Ensure FAB is visible on mobile */
+	.wh-fab {
+		display: flex;
+	}
+}
+
+/* === TABLET AND UP === */
+@media (min-width: 769px) {
+	/* Hide FAB on desktop (use traditional "New Task" buttons) */
+	.wh-fab {
+		display: none;
+	}
+}
+
+/* === LANDSCAPE ADJUSTMENTS === */
+/* Reduce size slightly in landscape mode for more screen space */
+@media (max-width: 768px) and (orientation: landscape) {
+	.wh-fab {
+		width: calc(var(--touch-target-large) * 0.9);
+		height: calc(var(--touch-target-large) * 0.9);
+		bottom: calc(var(--space-3) + var(--safe-area-bottom));
+		right: calc(var(--space-3) + var(--safe-area-right));
+	}
+
+	.wh-fab__icon {
+		width: 20px;
+		height: 20px;
+	}
+}
+
+/* === ACCESSIBILITY === */
+/* Focus state for keyboard navigation */
+.wh-fab:focus-visible {
+	outline: 3px solid var(--primary);
+	outline-offset: 4px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+	.wh-fab {
+		border-width: 3px;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+	}
+
+	.wh-fab__icon {
+		stroke-width: 3px;
+	}
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+	.wh-fab,
+	.wh-fab__icon {
+		transition: none;
+	}
+
+	.wh-fab:active .wh-fab__icon {
+		transform: none;
+	}
+}
+
+/* === PRINT STYLES === */
+@media print {
+	.wh-fab {
+		display: none;
+	}
+}
+
+/* === PULSE ANIMATION (Optional) === */
+/* Subtle pulse on first appearance to draw attention */
+@keyframes fab-pulse {
+	0% {
+		transform: translateZ(0) scale(1);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+		            0 2px 8px rgba(0, 0, 0, 0.15);
+	}
+	50% {
+		transform: translateZ(0) scale(1.05);
+		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25),
+		            0 3px 10px rgba(0, 0, 0, 0.2);
+	}
+	100% {
+		transform: translateZ(0) scale(1);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+		            0 2px 8px rgba(0, 0, 0, 0.15);
+	}
+}
+
+/* Apply pulse animation on page load (first 3 seconds) */
+.wh-fab.pulse {
+	animation: fab-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
+}
+
+/* Don't pulse if user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	.wh-fab.pulse {
+		animation: none;
+	}
+}
