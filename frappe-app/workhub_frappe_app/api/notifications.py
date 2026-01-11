@@ -177,6 +177,9 @@ def send_overdue_alerts():
     """, as_dict=True)
 
     for task in newly_overdue:
+        # Fetch task priority for proper routing
+        task_priority = frappe.db.get_value("WH Task", task["name"], "priority")
+
         create_notification(
             user=task["assigned_to"],
             notification_type="OVERDUE",
@@ -184,7 +187,8 @@ def send_overdue_alerts():
             message=f"La tarea '{task['title']}' vencio el {task['due_date']}",
             reference_doctype="WH Task",
             reference_name=task["name"],
-            priority="HIGH"
+            priority="HIGH",
+            task_priority=task_priority
         )
 
 
@@ -240,6 +244,9 @@ def notify_blocked_dependencies():
         })
 
         if not existing:
+            # Fetch task priority for proper routing
+            task_priority = frappe.db.get_value("WH Task", task["name"], "priority")
+
             create_notification(
                 user=task["assigned_to"],
                 notification_type="DEPENDENCY",
@@ -247,7 +254,8 @@ def notify_blocked_dependencies():
                 message=f"Tu tarea '{task['title']}' esta bloqueando a {task['blocking_count']} tareas de otros. Considera priorizarla.",
                 reference_doctype="WH Task",
                 reference_name=task["name"],
-                priority="MEDIUM"
+                priority="MEDIUM",
+                task_priority=task_priority
             )
 
 
@@ -722,7 +730,8 @@ def notify_task_assigned(task_id, assigned_to, assigned_by=None):
         message=f"Te han asignado la tarea '{task.title}'" + (f" por {assigned_by}" if assigned_by else ""),
         reference_doctype="WH Task",
         reference_name=task_id,
-        priority="MEDIUM" if task.priority != "P0" else "HIGH"
+        priority="MEDIUM" if task.priority != "P0" else "HIGH",
+        task_priority=task.priority
     )
 
 
@@ -744,5 +753,6 @@ def notify_task_completed(task_id):
             message=f"La tarea '{task.title}' se completo. Tu tarea '{successor.title}' ya puede avanzar.",
             reference_doctype="WH Task",
             reference_name=dep["successor"],
-            priority="LOW"
+            priority="LOW",
+            task_priority=successor.priority
         )
