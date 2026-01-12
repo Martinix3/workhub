@@ -63,9 +63,10 @@ export const tasksApi = {
     })
   },
 
-  async completeTask(taskId: string): Promise<Task> {
+  async completeTask(taskId: string, notes?: string): Promise<Task> {
     return frappe.call<Task>('workhub_frappe_app.api.tasks.complete_task', {
-      task_id: taskId
+      task_id: taskId,
+      completion_notes: notes
     })
   },
 
