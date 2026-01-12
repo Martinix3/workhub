@@ -7,6 +7,7 @@ from frappe.utils import nowdate, getdate, add_days, now
 import json
 
 from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.notifications import create_notification
 
 
 @frappe.whitelist()
@@ -265,6 +266,19 @@ def complete_task(task_id, completion_notes=None):
         doc.completion_notes = completion_notes
 
     doc.save()
+
+    # Notify task creator about completion
+    if doc.created_by and doc.created_by != frappe.session.user:
+        create_notification(
+            user=doc.created_by,
+            notification_type="COMPLETED",
+            title=f"Tarea completada: {doc.title}",
+            message=f"La tarea '{doc.title}' ha sido completada",
+            reference_doctype="WH Task",
+            reference_name=task_id,
+            priority="MEDIUM",
+            task_priority=doc.priority
+        )
 
     result = {
         "success": True,
