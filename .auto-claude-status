@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "001-create-generic-data-hook-factory",
+  "spec": "044-fix-task-completion-flow-add-missing-complete-task",
   "state": "building",
   "subtasks": {
-    "completed": 17,
-    "total": 18,
+    "completed": 3,
+    "total": 4,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "Verification & Cleanup",
+    "current": "Integration & Verification",
     "id": null,
-    "total": 3
+    "total": 1
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 19,
-    "started_at": "2026-01-10T20:25:53.759439"
+    "number": 4,
+    "started_at": "2026-01-12T04:13:27.983311"
   },
-  "last_update": "2026-01-10T21:02:44.156300"
+  "last_update": "2026-01-12T04:17:50.431449"
 }

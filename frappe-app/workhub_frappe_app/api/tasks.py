@@ -255,6 +255,9 @@ def complete_task(task_id, completion_notes=None):
     if doc.status == "DONE":
         frappe.throw(_("Task is already completed"))
 
+    if doc.status != "DOING":
+        frappe.throw(_("Cannot complete task in {0} status. Task must be in DOING status.").format(doc.status))
+
     # Set status to DONE
     doc.status = "DONE"
 
