@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "040-auditor-a-reparaci-n-y-estabilizaci-n-de-tests-e2e",
-  "state": "complete",
+  "spec": "042-suite-completo-de-pruebas-visuales-y-regression-te",
+  "state": "building",
   "subtasks": {
-    "completed": 18,
-    "total": 18,
-    "in_progress": 0,
+    "completed": 35,
+    "total": 36,
+    "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "",
-    "id": 0,
-    "total": 0
+    "current": "Final Validation",
+    "id": null,
+    "total": 3
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 0,
-    "started_at": "2026-01-11T21:14:52.597098"
+    "number": 1,
+    "started_at": "2026-01-12T03:36:44.859622"
   },
-  "last_update": "2026-01-11T21:14:52.653493"
+  "last_update": "2026-01-12T03:36:44.919292"
 }

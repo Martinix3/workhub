@@ -27,12 +27,29 @@ export default defineConfig({
     },
   },
 
+  // Visual regression screenshot defaults
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixels: 100, // Allow up to 100 pixels difference for component tests
+    },
+  },
+
   projects: [
     // Desktop Chrome - runs all tests
     // Responsive tests handle their own viewports via test.use()
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    // Desktop Firefox - cross-browser testing
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    // Desktop Safari (WebKit) - cross-browser testing
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
   ],
 
