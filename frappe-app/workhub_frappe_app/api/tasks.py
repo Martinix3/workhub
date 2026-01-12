@@ -3,10 +3,11 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate, add_days
+from frappe.utils import nowdate, getdate, add_days, now
 import json
 
 from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.notifications import create_notification
 
 
 @frappe.whitelist()
@@ -236,6 +237,66 @@ def change_status(task_id, new_status):
                 ", ".join([t["title"] for t in incomplete_blocked_tasks[:3]])
             )
             result["blocked_tasks"] = incomplete_blocked_tasks
+
+    return result
+
+
+@frappe.whitelist()
+def complete_task(task_id, completion_notes=None):
+    """Complete a task with validation and timestamp"""
+    require_permission("WH Task", "write")
+
+    if not task_id:
+        frappe.throw(_("Task ID is required"))
+
+    doc = frappe.get_doc("WH Task", task_id)
+
+    # Validate status transition
+    if doc.status == "DONE":
+        frappe.throw(_("Task is already completed"))
+
+    if doc.status != "DOING":
+        frappe.throw(_("Cannot complete task in {0} status. Task must be in DOING status.").format(doc.status))
+
+    # Set status to DONE
+    doc.status = "DONE"
+
+    # Set completion timestamp server-side
+    doc.completed_at = now()
+
+    # Set completion notes if provided
+    if completion_notes:
+        doc.completion_notes = completion_notes
+
+    doc.save()
+
+    # Notify task creator about completion
+    if doc.created_by and doc.created_by != frappe.session.user:
+        create_notification(
+            user=doc.created_by,
+            notification_type="COMPLETED",
+            title=f"Tarea completada: {doc.title}",
+            message=f"La tarea '{doc.title}' ha sido completada",
+            reference_doctype="WH Task",
+            reference_name=task_id,
+            priority="MEDIUM",
+            task_priority=doc.priority
+        )
+
+    result = {
+        "success": True,
+        "status": doc.status,
+        "completed_at": doc.completed_at
+    }
+
+    # Check if completing a task that blocks other incomplete tasks
+    incomplete_blocked_tasks = _get_incomplete_blocked_tasks(task_id)
+    if incomplete_blocked_tasks:
+        result["warning"] = _("This task is blocking {0} incomplete task(s): {1}").format(
+            len(incomplete_blocked_tasks),
+            ", ".join([t["title"] for t in incomplete_blocked_tasks[:3]])
+        )
+        result["blocked_tasks"] = incomplete_blocked_tasks
 
     return result
 

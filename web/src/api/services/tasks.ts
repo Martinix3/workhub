@@ -63,6 +63,13 @@ export const tasksApi = {
     })
   },
 
+  async completeTask(taskId: string, notes?: string): Promise<Task> {
+    return frappe.call<Task>('workhub_frappe_app.api.tasks.complete_task', {
+      task_id: taskId,
+      completion_notes: notes
+    })
+  },
+
   async bulkChangeStatus(taskIds: string[], status: TaskStatus): Promise<void> {
     await frappe.call('workhub_frappe_app.api.tasks.bulk_change_status', {
       task_ids: taskIds,
