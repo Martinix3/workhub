@@ -139,10 +139,10 @@ export function SaveFilterModal({
 
   return (
     <Modal isOpen={isOpen} onClose={handleCancel} title="Guardar Vista" size="md">
-      <div className="p-6 space-y-6">
+      <div data-testid="save-filter-modal" className="p-6 space-y-6">
         {/* Error message */}
         {error && (
-          <div className="p-3 bg-red-100 border-2 border-red-500 text-red-900 text-sm">
+          <div data-testid="error-message" className="p-3 bg-red-100 border-2 border-red-500 text-red-900 text-sm">
             {error.message}
           </div>
         )}
@@ -153,6 +153,7 @@ export function SaveFilterModal({
             Nombre de la vista
           </label>
           <input
+            data-testid="filter-title-input"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -178,10 +179,11 @@ export function SaveFilterModal({
             Filtros a guardar
           </label>
           {filterChips.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div data-testid="filter-chips" className="flex flex-wrap gap-2">
               {filterChips.map((chip, idx) => (
                 <div
                   key={idx}
+                  data-testid={`filter-chip-${idx}`}
                   className="
                     inline-flex items-center gap-2
                     px-3 py-1.5
@@ -200,7 +202,9 @@ export function SaveFilterModal({
               ))}
             </div>
           ) : (
-            <div className="
+            <div
+              data-testid="no-filters-message"
+              className="
               p-4
               bg-stone-50
               border-2 border-stone-900
@@ -217,6 +221,7 @@ export function SaveFilterModal({
         <div className="flex items-center gap-3">
           <label className="relative inline-flex items-center cursor-pointer">
             <input
+              data-testid="share-toggle"
               type="checkbox"
               checked={isShared}
               onChange={(e) => setIsShared(e.target.checked)}
@@ -250,6 +255,7 @@ export function SaveFilterModal({
         {/* Action buttons */}
         <div className="flex justify-end gap-3 pt-4 border-t-2 border-stone-900">
           <button
+            data-testid="cancel-button"
             onClick={handleCancel}
             disabled={loading}
             className="
@@ -267,6 +273,7 @@ export function SaveFilterModal({
             Cancelar
           </button>
           <button
+            data-testid="save-button"
             onClick={handleSave}
             disabled={loading || !title.trim()}
             className="

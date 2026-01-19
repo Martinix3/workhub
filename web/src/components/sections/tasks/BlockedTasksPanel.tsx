@@ -39,7 +39,7 @@ export function BlockedTasksPanel({
   }
 
   return (
-    <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917]">
+    <div data-testid="blocked-tasks-panel" className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917]">
       {/* Header */}
       <div className="p-6 border-b-2 border-stone-200">
         <div className="flex items-center justify-between">
@@ -49,7 +49,7 @@ export function BlockedTasksPanel({
               Tareas Bloqueadas
             </h2>
           </div>
-          <div className="px-3 py-1 bg-red-100 border-2 border-red-500">
+          <div data-testid="blocked-count-badge" className="px-3 py-1 bg-red-100 border-2 border-red-500">
             <span className="font-mono text-lg font-bold text-red-700">{tasks.length}</span>
           </div>
         </div>
@@ -58,7 +58,7 @@ export function BlockedTasksPanel({
       {/* Content */}
       <div className="p-6">
         {tasks.length === 0 ? (
-          <div className="text-center py-8">
+          <div data-testid="empty-state" className="text-center py-8">
             <CheckCircle size={48} className="mx-auto mb-4 text-emerald-400" />
             <h3 className="font-serif text-lg font-bold text-stone-900 mb-2">
               Sin Bloqueos
@@ -68,7 +68,7 @@ export function BlockedTasksPanel({
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div data-testid="blocked-tasks-list" className="space-y-4">
             {tasks.map((task) => (
               <BlockedTaskCard
                 key={task.name}
@@ -96,9 +96,10 @@ function BlockedTaskCard({ task, onUnblock, onClick }: BlockedTaskCardProps) {
   const isOverdue = task.due_date && new Date(task.due_date) < new Date()
 
   return (
-    <div className="bg-stone-50 border-2 border-stone-300 hover:border-stone-900 hover:shadow-[2px_2px_0_#1c1917] transition-all duration-75">
+    <div data-testid={`blocked-task-${task.name}`} className="bg-stone-50 border-2 border-stone-300 hover:border-stone-900 hover:shadow-[2px_2px_0_#1c1917] transition-all duration-75">
       {/* Task Info */}
       <div
+        data-testid="task-info"
         className="p-4 cursor-pointer"
         onClick={onClick}
       >
@@ -106,19 +107,19 @@ function BlockedTaskCard({ task, onUnblock, onClick }: BlockedTaskCardProps) {
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className={`px-1.5 py-0.5 text-xs font-medium ${priority.softBg} ${priority.text}`}>
+              <span data-testid="priority-badge" className={`px-1.5 py-0.5 text-xs font-medium ${priority.softBg} ${priority.text}`}>
                 {task.priority}
               </span>
               {task.project_title && (
-                <span className="text-xs text-stone-500 truncate">{task.project_title}</span>
+                <span data-testid="project-title" className="text-xs text-stone-500 truncate">{task.project_title}</span>
               )}
               {isOverdue && (
-                <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 animate-pulse">
+                <span data-testid="overdue-badge" className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 animate-pulse">
                   VENCIDA
                 </span>
               )}
             </div>
-            <h3 className="font-medium text-stone-900 hover:underline">
+            <h3 data-testid="task-title" className="font-medium text-stone-900 hover:underline">
               {task.title}
             </h3>
           </div>
@@ -126,7 +127,7 @@ function BlockedTaskCard({ task, onUnblock, onClick }: BlockedTaskCardProps) {
 
         {/* Blocked Reason */}
         {task.blocked_reason && (
-          <div className="mb-3 p-3 bg-red-50 border-l-4 border-red-500">
+          <div data-testid="blocked-reason" className="mb-3 p-3 bg-red-50 border-l-4 border-red-500">
             <div className="flex items-start gap-2">
               <AlertTriangle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-700 flex-1">
@@ -163,6 +164,7 @@ function BlockedTaskCard({ task, onUnblock, onClick }: BlockedTaskCardProps) {
       {onUnblock && (
         <div className="px-4 pb-4 flex gap-2">
           <button
+            data-testid="unblock-to-next-button"
             onClick={(e) => {
               e.stopPropagation()
               onUnblock(task.name, 'NEXT')
@@ -181,6 +183,7 @@ function BlockedTaskCard({ task, onUnblock, onClick }: BlockedTaskCardProps) {
             Next
           </button>
           <button
+            data-testid="unblock-to-doing-button"
             onClick={(e) => {
               e.stopPropagation()
               onUnblock(task.name, 'DOING')

@@ -49,7 +49,7 @@ export function AssigneeAvatarGroup({
   const owner = assignees.find(a => a.role === 'Owner')
 
   return (
-    <div className={`relative inline-flex items-center ${className}`}>
+    <div data-testid="assignee-group" className={`relative inline-flex items-center ${className}`}>
       {/* Stacked avatars */}
       <div className="flex -space-x-2">
         {visibleAssignees.map((assignee, index) => {
@@ -59,11 +59,13 @@ export function AssigneeAvatarGroup({
           return (
             <div
               key={assignee.user}
+              data-testid={`assignee-avatar-${index}`}
               className="group relative"
               style={{ zIndex: visibleAssignees.length - index }}
             >
               {/* Avatar */}
               <div
+                data-testid={`avatar-${assignee.user}`}
                 className={`
                   ${config.avatar}
                   bg-white border-2 border-stone-400
@@ -77,6 +79,7 @@ export function AssigneeAvatarGroup({
                 {/* Owner badge */}
                 {isOwner && (
                   <div
+                    data-testid={`owner-badge-${index}`}
                     className={`
                       absolute -top-1 -right-1
                       ${config.badge}
@@ -123,7 +126,7 @@ export function AssigneeAvatarGroup({
 
         {/* Overflow indicator */}
         {remainingCount > 0 && (
-          <div className="group relative" style={{ zIndex: 0 }}>
+          <div data-testid="assignee-overflow" className="group relative" style={{ zIndex: 0 }}>
             <div
               className={`
                 ${config.avatar}

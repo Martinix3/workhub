@@ -114,9 +114,10 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div data-testid="quick-task-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
+        data-testid="modal-backdrop"
         className="absolute inset-0 bg-black/50"
         onClick={handleClose}
       />
@@ -127,13 +128,14 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
         <div className="flex items-center justify-between p-4 border-b-2 border-stone-200">
           <div className="flex items-center gap-2">
             <Zap size={20} className="text-amber-500" />
-            <h2 className="font-serif text-lg font-bold">
+            <h2 data-testid="modal-title" className="font-serif text-lg font-bold">
               {step === 'input' && 'Crear Tarea Rápida'}
               {step === 'success' && 'Tarea Creada'}
               {step === 'error' && 'Error'}
             </h2>
           </div>
           <button
+            data-testid="close-button"
             onClick={handleClose}
             className="p-1 hover:bg-stone-100 transition-colors"
           >
@@ -145,13 +147,14 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
         <div className="p-4">
           {/* Step: Input */}
           {step === 'input' && (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form data-testid="task-form" onSubmit={handleSubmit} className="space-y-4">
               {/* Title Field */}
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">
                   Título <span className="text-red-500">*</span>
                 </label>
                 <input
+                  data-testid="task-title-input"
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -168,8 +171,9 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                 <label className="block text-sm font-medium text-stone-700 mb-2">
                   Prioridad
                 </label>
-                <div className="flex gap-2">
+                <div data-testid="priority-buttons" className="flex gap-2">
                   <button
+                    data-testid="priority-p0-button"
                     type="button"
                     onClick={() => setPriority('P0')}
                     disabled={creating}
@@ -182,6 +186,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                     P0 - Crítica
                   </button>
                   <button
+                    data-testid="priority-p1-button"
                     type="button"
                     onClick={() => setPriority('P1')}
                     disabled={creating}
@@ -194,6 +199,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                     P1 - Alta
                   </button>
                   <button
+                    data-testid="priority-p2-button"
                     type="button"
                     onClick={() => setPriority('P2')}
                     disabled={creating}
@@ -216,6 +222,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                 <div className="relative">
                   <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                   <input
+                    data-testid="due-date-input"
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
@@ -231,6 +238,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                   Proyecto
                 </label>
                 <select
+                  data-testid="project-select"
                   value={project}
                   onChange={(e) => setProject(e.target.value)}
                   className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none bg-white"
@@ -254,6 +262,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                   Asignar a
                 </label>
                 <select
+                  data-testid="assignee-select"
                   value={assignee}
                   onChange={(e) => setAssignee(e.target.value)}
                   className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none bg-white"
@@ -277,6 +286,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                   Departamento
                 </label>
                 <select
+                  data-testid="department-select"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value as Department)}
                   className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none bg-white"
@@ -305,13 +315,14 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
 
               {/* Error Display */}
               {createError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm">
+                <div data-testid="error-message" className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm">
                   {createError.message}
                 </div>
               )}
 
               {/* Submit Button */}
               <button
+                data-testid="submit-button"
                 type="submit"
                 disabled={!title.trim() || creating}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
@@ -333,7 +344,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
 
           {/* Step: Success */}
           {step === 'success' && (
-            <div className="text-center py-6 space-y-4">
+            <div data-testid="success-state" className="text-center py-6 space-y-4">
               <CheckCircle size={48} className="mx-auto text-green-600" />
               <p className="text-lg font-medium">{resultMessage}</p>
               <p className="text-sm text-stone-500">
@@ -344,7 +355,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
 
           {/* Step: Error */}
           {step === 'error' && (
-            <div className="text-center py-6 space-y-4">
+            <div data-testid="error-state" className="text-center py-6 space-y-4">
               <AlertCircle size={48} className="mx-auto text-red-600" />
               <p className="text-lg font-medium text-red-700">{resultMessage}</p>
               {createError && (
@@ -352,12 +363,14 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
               )}
               <div className="flex gap-3 justify-center">
                 <button
+                  data-testid="back-button"
                   onClick={handleBack}
                   className="px-6 py-2 border-2 border-stone-300 hover:border-stone-400 font-medium uppercase tracking-wider transition-colors"
                 >
                   Volver
                 </button>
                 <button
+                  data-testid="close-error-button"
                   onClick={handleClose}
                   className="px-6 py-2 bg-stone-900 text-white font-medium uppercase tracking-wider hover:bg-stone-800 transition-colors"
                 >

@@ -70,9 +70,10 @@ export function BlockedReasonModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div data-testid="blocked-reason-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
+        data-testid="modal-backdrop"
         className="absolute inset-0 bg-black/50"
         onClick={handleCancel}
       />
@@ -83,11 +84,12 @@ export function BlockedReasonModal({
         <div className="flex items-center justify-between p-4 border-b-2 border-stone-200 dark:border-stone-700">
           <div className="flex items-center gap-2">
             <AlertCircle size={20} className="text-amber-500" />
-            <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            <h2 data-testid="modal-title" className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
               Task Blocked
             </h2>
           </div>
           <button
+            data-testid="close-button"
             onClick={handleCancel}
             className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
           >
@@ -98,7 +100,7 @@ export function BlockedReasonModal({
         {/* Content */}
         <div className="p-4 space-y-4">
           {taskName && (
-            <p className="text-sm text-stone-600 dark:text-stone-400">
+            <p data-testid="task-name" className="text-sm text-stone-600 dark:text-stone-400">
               You're blocking: <span className="font-medium text-stone-900 dark:text-stone-100">{taskName}</span>
             </p>
           )}
@@ -112,6 +114,7 @@ export function BlockedReasonModal({
             </label>
             <textarea
               id="blocked-reason"
+              data-testid="reason-input"
               value={reason}
               onChange={(e) => {
                 setReason(e.target.value)
@@ -129,7 +132,7 @@ export function BlockedReasonModal({
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+            <div data-testid="error-message" className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
               {error}
             </div>
           )}
@@ -137,12 +140,14 @@ export function BlockedReasonModal({
           {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
             <button
+              data-testid="cancel-button"
               onClick={handleCancel}
               className="flex-1 px-4 py-2 border-2 border-stone-300 dark:border-stone-600 hover:border-stone-400 dark:hover:border-stone-500 text-stone-700 dark:text-stone-300 font-medium uppercase tracking-wider transition-colors"
             >
               Cancel
             </button>
             <button
+              data-testid="confirm-button"
               onClick={handleConfirm}
               disabled={!reason.trim()}
               className="flex-1 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0"

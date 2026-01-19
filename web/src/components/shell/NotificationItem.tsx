@@ -89,6 +89,7 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
 
   return (
     <div
+      data-testid={`notification-item-${notification.id}`}
       className={`
         border-b border-slate-700 last:border-b-0
         ${notification.read ? 'bg-[#0f172a]' : 'bg-[#1e293b]'}
@@ -98,17 +99,20 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
       <div className="p-3">
         {/* Header: Icon, Title, Time, Priority */}
         <div className="flex items-start gap-2 mb-1">
-          <div className={`mt-0.5 ${getPriorityColor(notification.priority)}`}>
+          <div data-testid="notification-icon" className={`mt-0.5 ${getPriorityColor(notification.priority)}`}>
             {getNotificationIcon(notification.type, 16)}
           </div>
           <div className="flex-1 min-w-0">
             <button
+              data-testid="notification-content"
               onClick={handleClick}
               className="text-left w-full group"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h4 className={`
+                  <h4
+                    data-testid="notification-title"
+                    className={`
                     text-sm font-medium font-['Inter'] truncate
                     ${notification.read ? 'text-slate-300' : 'text-white'}
                     ${notification.action_url ? 'group-hover:text-[#f5ce3e]' : ''}
@@ -116,12 +120,14 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
                     {notification.title}
                   </h4>
                 </div>
-                <span className="text-xs text-slate-500 font-['Inter'] whitespace-nowrap flex-shrink-0">
+                <span data-testid="notification-time" className="text-xs text-slate-500 font-['Inter'] whitespace-nowrap flex-shrink-0">
                   {formatTimeAgo(notification.created_at)}
                 </span>
               </div>
               {/* Message */}
-              <p className={`
+              <p
+                data-testid="notification-message"
+                className={`
                 text-xs font-['Inter'] mt-1 line-clamp-2
                 ${notification.read ? 'text-slate-400' : 'text-slate-300'}
               `}>
@@ -135,6 +141,7 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
         <div className="flex items-center justify-end gap-1 mt-2">
           {!notification.read && (
             <button
+              data-testid="mark-read-button"
               onClick={(e) => {
                 e.stopPropagation()
                 onMarkRead(notification.id)
@@ -146,6 +153,7 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
             </button>
           )}
           <button
+            data-testid="delete-button"
             onClick={(e) => {
               e.stopPropagation()
               onDelete(notification.id)
