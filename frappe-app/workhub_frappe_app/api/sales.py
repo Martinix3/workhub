@@ -928,6 +928,91 @@ def get_order_detail(order_id):
                     "name": distributor_name
                 }
 
+        # === NEW: Linked documents for unified panel ===
+
+        # 1. Customer fiscal data
+        customer_tax_id = frappe.db.get_value("Customer", order.customer, "tax_id") or ""
+        customer_address = order.address_display or ""
+        if not customer_address and order.customer_address:
+            customer_address = frappe.db.get_value("Address", order.customer_address, "address_display") or ""
+        if not customer_address:
+            addr_name = frappe.db.get_value(
+                "Dynamic Link",
+                {"link_doctype": "Customer", "link_name": order.customer, "parenttype": "Address"},
+                "parent"
+            )
+            if addr_name:
+                customer_address = frappe.db.get_value("Address", addr_name, "address_display") or ""
+
+        # 2. Linked Delivery Notes
+        delivery_notes = frappe.get_all(
+            "Delivery Note Item",
+            filters={"against_sales_order": order.name, "docstatus": ["!=", 2]},
+            fields=["distinct parent as name"],
+            pluck="name"
+        )
+        linked_delivery_notes = []
+        for dn_name in delivery_notes:
+            dn = frappe.db.get_value(
+                "Delivery Note", dn_name,
+                ["name", "posting_date", "docstatus", "status"],
+                as_dict=True
+            )
+            if dn:
+                linked_delivery_notes.append({
+                    "id": dn.name,
+                    "date": str(dn.posting_date),
+                    "status": dn.status,
+                    "docstatus": dn.docstatus
+                })
+
+        # 3. Linked Sales Invoices
+        linked_inv_names = frappe.get_all(
+            "Sales Invoice Item",
+            filters={"sales_order": order.name, "docstatus": ["!=", 2]},
+            fields=["distinct parent as name"],
+            pluck="name"
+        )
+        linked_invoices = []
+        for inv_name in linked_inv_names:
+            inv = frappe.db.get_value(
+                "Sales Invoice", inv_name,
+                ["name", "posting_date", "status", "outstanding_amount", "grand_total", "paid_amount"],
+                as_dict=True
+            )
+            if inv:
+                linked_invoices.append({
+                    "id": inv.name,
+                    "date": str(inv.posting_date),
+                    "status": inv.status,
+                    "total": float(inv.grand_total or 0),
+                    "outstanding": float(inv.outstanding_amount or 0),
+                    "paid": float(inv.paid_amount or 0)
+                })
+
+        # 4. Linked Payments (via Payment Entry references)
+        linked_payments = []
+        for inv_data in linked_invoices:
+            pe_refs = frappe.get_all(
+                "Payment Entry Reference",
+                filters={"reference_doctype": "Sales Invoice", "reference_name": inv_data["id"], "docstatus": 1},
+                fields=["parent"]
+            )
+            for pe_ref in pe_refs:
+                pe = frappe.db.get_value(
+                    "Payment Entry", pe_ref.parent,
+                    ["name", "posting_date", "paid_amount", "mode_of_payment", "docstatus"],
+                    as_dict=True
+                )
+                if pe and pe.docstatus == 1:
+                    linked_payments.append({
+                        "id": pe.name,
+                        "date": str(pe.posting_date),
+                        "amount": float(pe.paid_amount or 0),
+                        "method": pe.mode_of_payment or "Desconocido",
+                        "invoiceId": inv_data["id"]
+                    })
+
         # Return format matching OrderDetail interface
         return {
             "id": order.name,
@@ -946,7 +1031,14 @@ def get_order_detail(order_id):
             "salesType": sales_type,
             "priceList": order.selling_price_list or resolve_selling_price_list(sales_type),
             "priceListCurrency": order.price_list_currency or order.currency or "EUR",
-            "assignedDistributor": assigned_distributor
+            "assignedDistributor": assigned_distributor,
+            "customerTaxId": customer_tax_id,
+            "customerAddress": customer_address,
+            "linkedDocuments": {
+                "deliveryNotes": linked_delivery_notes,
+                "invoices": linked_invoices,
+                "payments": linked_payments
+            }
         }
 
     # Distributor Sell Out Order detail
