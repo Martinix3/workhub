@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react'
 import {
   X, Loader2, Save, Calendar, User, Truck, Building2,
-  Package, Plus, Minus, Receipt, ChevronDown, ChevronUp, Link
+  Package, Plus, Minus, Receipt, ChevronDown, ChevronUp, Link, CreditCard
 } from 'lucide-react'
 import { SidePanel } from '../../../ui/SidePanel'
 import type { OrderDetailPanelProps, OrderDetail, SalesType } from './types'
 import type { OrderItem } from '../types'
 import { useOrderDetail, useUpdateOrder, useCancelOrder, useOrderWorkLinks } from '../../../../api/hooks/useSalesData'
+import { DocumentTimeline } from './DocumentTimeline'
+import { CustomerInfo } from './CustomerInfo'
+import { PaymentHistory } from './PaymentHistory'
+import { salesApi } from '../../../../api/services/sales'
 
 // Status configuration
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -76,7 +80,11 @@ export function OrderDetailPanel({
   isOpen,
   onClose,
   onSave,
-  onCancelOrder
+  onCancelOrder,
+  onWorkflowComplete,
+  onDownloadPDF,
+  onDownloadDeliveryNotePDF,
+  onRegisterPayment
 }: OrderDetailPanelProps) {
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
@@ -92,6 +100,14 @@ export function OrderDetailPanel({
 
   // Fetch WorkLinks for this order
   const { data: workLinks = [], loading: workLinksLoading } = useOrderWorkLinks(isOpen && order ? order.id : null)
+
+  // Workflow states
+  const [workflowMessage, setWorkflowMessage] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCreatingDelivery, setIsCreatingDelivery] = useState(false)
+  const [isCreatingInvoice, setIsCreatingInvoice] = useState(false)
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false)
+  const [transportMethod, setTransportMethod] = useState<string | null>(null)
 
   // Update local state when hook data changes
   useEffect(() => {
@@ -192,9 +208,75 @@ export function OrderDetailPanel({
     }
   }
 
+  // Workflow handlers
+  const handleSubmitOrder = async () => {
+    if (!order) return
+    setIsSubmitting(true)
+    try {
+      const result = await salesApi.submitOrder(order.id)
+      if (result.success) {
+        setWorkflowMessage('Pedido confirmado ✓')
+        onWorkflowComplete?.()
+      }
+    } catch (err) {
+      setWorkflowMessage('Error al confirmar pedido')
+    } finally {
+      setIsSubmitting(false)
+      setTimeout(() => setWorkflowMessage(null), 3000)
+    }
+  }
+
+  const handleCreateDelivery = async () => {
+    if (!order || !transportMethod) return
+    setIsCreatingDelivery(true)
+    try {
+      const result = await salesApi.createDeliveryNote(order.id, transportMethod)
+      if (result.success) {
+        setWorkflowMessage('Albarán creado ✓')
+        onWorkflowComplete?.()
+      }
+    } catch (err) {
+      setWorkflowMessage('Error al crear albarán')
+    } finally {
+      setIsCreatingDelivery(false)
+      setTimeout(() => setWorkflowMessage(null), 3000)
+    }
+  }
+
+  const handleCreateInvoice = async () => {
+    if (!order) return
+    setIsCreatingInvoice(true)
+    try {
+      const result = await salesApi.createSalesInvoice(order.id)
+      if (result.success) {
+        setWorkflowMessage('Factura creada ✓')
+        onWorkflowComplete?.()
+      }
+    } catch (err) {
+      setWorkflowMessage('Error al crear factura')
+    } finally {
+      setIsCreatingInvoice(false)
+      setTimeout(() => setWorkflowMessage(null), 3000)
+    }
+  }
+
+  const handleRegisterPayment = (invoiceId: string) => {
+    onRegisterPayment?.(invoiceId)
+  }
+
   // Calculate if order can be edited
   const canEdit = order ? ['draft', 'confirmed'].includes(order.status) : false
   const canCancelOrder = order ? ['draft', 'confirmed'].includes(order.status) : false
+
+  const docs = order?.linkedDocuments
+  const hasDelivery = (docs?.deliveryNotes?.length || 0) > 0
+  const hasInvoice = (docs?.invoices?.length || 0) > 0
+  const isSellOut = order?.salesType === 'sell_out'
+
+  const canSubmitOrder = order?.status === 'draft' && (order?.items?.length || 0) > 0
+  const canCreateDelivery = !isSellOut && order?.status !== 'cancelled' && order?.status !== 'draft' && !hasDelivery && !!transportMethod
+  const canCreateInvoice = !isSellOut && hasDelivery && !hasInvoice
+  const canCreatePayment = !isSellOut && hasInvoice && order?.status !== 'paid'
 
   return (
     <SidePanel
@@ -254,6 +336,11 @@ export function OrderDetailPanel({
                 <span className="text-xs font-medium">Error al cancelar: {cancelError.message}</span>
               </div>
             )}
+            {workflowMessage && (
+              <div className="flex items-center gap-2 text-amber-600 mt-2">
+                <span className="text-xs font-medium">{workflowMessage}</span>
+              </div>
+            )}
           </div>
 
           {/* Body - Scrollable */}
@@ -261,27 +348,12 @@ export function OrderDetailPanel({
             {/* Customer Section */}
             <Section title="Información General" icon={<User size={20} />}>
               {/* Customer Display */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-stone-700 dark:text-stone-300">
-                  Cliente
-                </label>
-                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-600 dark:border-green-500">
-                  <div>
-                    <p className="font-medium text-stone-900 dark:text-stone-100">
-                      {order.customerName}
-                    </p>
-                    <p className="text-xs text-stone-500">ID: {order.customerId}</p>
-                  </div>
-                  {canEdit && (
-                    <button
-                      type="button"
-                      className="text-xs text-stone-500 hover:text-stone-700 underline"
-                    >
-                      Cambiar
-                    </button>
-                  )}
-                </div>
-              </div>
+              <CustomerInfo
+                customerName={order.customerName}
+                customerId={order.customerId}
+                customerTaxId={order.customerTaxId}
+                customerAddress={order.customerAddress}
+              />
 
               {/* Sales Type Toggle */}
               <div className="space-y-2">
@@ -355,6 +427,51 @@ export function OrderDetailPanel({
                   </div>
                 )}
               </div>
+            </Section>
+
+            {/* Document Lifecycle */}
+            <Section title="Flujo de Documentos" icon={<Receipt size={20} />}>
+              {/* Transport method selector */}
+              {!hasDelivery && !isSellOut && order.status !== 'draft' && order.status !== 'cancelled' && !transportMethod && (
+                <div className="mb-4 p-3 bg-[#FFF8E1] border border-[#E5A530] rounded-sm">
+                  <p className="text-xs text-[#B87A1F] mb-2">Selecciona método de transporte para crear albarán:</p>
+                  <div className="flex gap-2">
+                    {['Transporte propio', 'Agencia', 'Recogida cliente'].map((method) => (
+                      <button
+                        key={method}
+                        onClick={() => setTransportMethod(method)}
+                        className={`px-3 py-1.5 text-xs border rounded-sm transition-colors ${
+                          transportMethod === method
+                            ? 'bg-[#E5A530] text-white border-[#E5A530]'
+                            : 'border-[#E8E6E3] text-[#78716C] hover:bg-[#F5F4F2]'
+                        }`}
+                      >
+                        {method}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <DocumentTimeline
+                orderStatus={order.status}
+                orderNumber={order.orderNumber}
+                linkedDocuments={order.linkedDocuments}
+                onSubmitOrder={handleSubmitOrder}
+                onCreateDelivery={handleCreateDelivery}
+                onCreateInvoice={handleCreateInvoice}
+                onRegisterPayment={handleRegisterPayment}
+                onDownloadDeliveryNotePDF={onDownloadDeliveryNotePDF}
+                onDownloadInvoicePDF={onDownloadPDF}
+                canSubmitOrder={canSubmitOrder}
+                canCreateDelivery={canCreateDelivery}
+                canCreateInvoice={canCreateInvoice}
+                canCreatePayment={canCreatePayment}
+                isSubmitting={isSubmitting}
+                isCreatingDelivery={isCreatingDelivery}
+                isCreatingInvoice={isCreatingInvoice}
+                isCreatingPayment={isCreatingPayment}
+              />
             </Section>
 
             {/* Products Section */}
@@ -482,6 +599,13 @@ export function OrderDetailPanel({
                 </div>
               </div>
             </Section>
+
+            {/* Payment History */}
+            {docs && docs.payments.length > 0 && (
+              <Section title="Pagos" icon={<CreditCard size={20} />}>
+                <PaymentHistory payments={docs.payments} />
+              </Section>
+            )}
 
             {/* WorkLinks Section */}
             <Section
