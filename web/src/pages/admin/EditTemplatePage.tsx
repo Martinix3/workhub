@@ -5,7 +5,8 @@ import { ArrowLeft, Edit } from 'lucide-react'
 import { TemplateEditor } from '../../components/templates/TemplateEditor'
 import type { TemplateEditorData } from '../../components/templates/TemplateEditor'
 import { useTemplatePreview, useTemplateMutations } from '../../api'
-import { LoadingState, ErrorState } from '../../components/common'
+import { LoadingState } from '../../components/ui/LoadingState'
+import { ErrorState } from '../../components/ui/ErrorState'
 
 export function EditTemplatePage() {
   const navigate = useNavigate()

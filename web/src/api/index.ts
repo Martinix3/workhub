@@ -80,7 +80,8 @@ export {
 export {
   useUserSettings,
   useUserProfile,
-  useDepartments
+  useDepartments,
+  useUserKPIs
 } from './hooks/useSettings'
 
 // Admin Hooks
@@ -111,3 +112,37 @@ export {
   useAvailableMetrics,
   useCustomKPIMutations
 } from './hooks/useCustomKPIs'
+
+// Saved Filters Hooks
+export {
+  useSavedFilters,
+  useSavedFilter,
+  useSavedFilterMutations,
+  useFilterCounts
+} from './hooks/useSavedFilters'
+
+// Template Hooks
+export {
+  useTemplates,
+  useTemplatePreview,
+  useTemplateMutations
+} from './hooks/useTemplates'
+
+// Manager Analytics Hooks
+export {
+  useTeamWorkload,
+  useVelocityTrends,
+  useBlockerAnalysis,
+  useOverdueTrends,
+  useManagerAnalyticsDashboard
+} from './hooks/useManagerAnalytics'
+
+// Manager Analytics Service
+export { default as managerAnalyticsApi } from './services/manager-analytics'
+
+// Pricing Hooks
+export {
+  usePriceLists,
+  useItemPrices,
+  usePricingMutations
+} from './hooks/usePricing'

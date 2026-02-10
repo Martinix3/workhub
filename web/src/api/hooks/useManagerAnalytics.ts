@@ -9,11 +9,7 @@ import type {
   ManagerDashboardResponse
 } from '../services/manager-analytics'
 import {
-  isInBypassMode,
-  sampleTeamWorkload,
-  sampleVelocityTrends,
-  sampleBlockerAnalysis,
-  sampleOverdueTrends
+  isInBypassMode
 } from '../sample-data'
 
 interface UseDataState<T> {
@@ -38,7 +34,7 @@ export function useTeamWorkload(department?: string): UseDataState<TeamWorkloadR
       setData(workload)
     } catch (err) {
       if (isInBypassMode()) {
-        setData(sampleTeamWorkload)
+        setData(null)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch team workload'))
       }
@@ -69,7 +65,7 @@ export function useVelocityTrends(
       setData(velocity)
     } catch (err) {
       if (isInBypassMode()) {
-        setData(sampleVelocityTrends)
+        setData(null)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch velocity trends'))
       }
@@ -97,7 +93,7 @@ export function useBlockerAnalysis(department?: string): UseDataState<BlockerAna
       setData(blockers)
     } catch (err) {
       if (isInBypassMode()) {
-        setData(sampleBlockerAnalysis)
+        setData(null)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch blocker analysis'))
       }
@@ -125,7 +121,7 @@ export function useOverdueTrends(weeks: number = 8): UseDataState<OverdueTrendsR
       setData(overdue)
     } catch (err) {
       if (isInBypassMode()) {
-        setData(sampleOverdueTrends)
+        setData(null)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch overdue trends'))
       }
@@ -153,12 +149,7 @@ export function useManagerAnalyticsDashboard(department?: string) {
       setData(dashboard)
     } catch (err) {
       if (isInBypassMode()) {
-        setData({
-          workload: sampleTeamWorkload,
-          velocity: sampleVelocityTrends,
-          blockers: sampleBlockerAnalysis,
-          overdue: sampleOverdueTrends
-        })
+        setData(null)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch manager dashboard'))
       }

@@ -19,8 +19,6 @@ import {
   sampleCustomers,
   sampleOrders,
   sampleOpportunities,
-  sampleOrderDetail,
-  sampleOrderWorkLinks
 } from '../sample-data'
 
 interface UseDataState<T> {
@@ -289,7 +287,7 @@ export function useOrderDetail(orderId: string | null): UseDataState<OrderDetail
       setData(orderDetail)
     } catch (err) {
       if (isInBypassMode()) {
-        setData(sampleOrderDetail)
+        setData(null)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch order detail'))
       }
@@ -314,12 +312,7 @@ export function useUpdateOrder() {
       return result
     } catch (err) {
       if (isInBypassMode()) {
-        // Simulate order update in bypass mode by returning updated sample data
-        return {
-          ...sampleOrderDetail,
-          ...data,
-          items: data.items || sampleOrderDetail.items
-        }
+        return null
       }
       setError(err instanceof Error ? err : new Error('Failed to update order'))
       return null
@@ -379,7 +372,7 @@ export function useOrderWorkLinks(orderId: string | null): UseDataState<WorkLink
       setData(workLinks)
     } catch (err) {
       if (isInBypassMode()) {
-        setData(sampleOrderWorkLinks)
+        setData([])
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch order WorkLinks'))
       }

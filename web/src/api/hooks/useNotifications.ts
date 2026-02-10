@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import notificationsApi from '../services/notifications'
 import type { Notification } from '../types/notifications'
-import { isInBypassMode, sampleNotificationsResponse } from '../sample-data'
+import { isInBypassMode } from '../sample-data'
 
 interface UseNotificationsReturn {
   notifications: Notification[] | null
@@ -35,8 +35,8 @@ export function useNotifications(): UseNotificationsReturn {
       setUnreadCount(response.unread_count)
     } catch (err) {
       if (isInBypassMode()) {
-        setNotifications(sampleNotificationsResponse.notifications)
-        setUnreadCount(sampleNotificationsResponse.unread_count)
+        setNotifications([])
+        setUnreadCount(0)
       } else {
         setError(err instanceof Error ? err : new Error('Failed to fetch notifications'))
       }

@@ -9,10 +9,7 @@ import type {
   AssignableUser
 } from '../services/tasks'
 import {
-  isInBypassMode,
-  sampleProjectOptions,
-  sampleAssignableUsers,
-  sampleWorkLinkSuggestions
+  isInBypassMode
 } from '../sample-data'
 
 interface UseQuickTaskState {
@@ -116,8 +113,8 @@ export function useQuickTaskOptions() {
       if (isInBypassMode()) {
         // Use sample data in bypass mode
         setState({
-          projects: sampleProjectOptions,
-          users: sampleAssignableUsers,
+          projects: [],
+          users: [],
           loading: false,
           error: null
         })
@@ -171,7 +168,7 @@ export function useWorkLinkSuggestions(doctype?: string, docId?: string, limit: 
       if (isInBypassMode()) {
         // Use sample data in bypass mode
         setState({
-          suggestions: sampleWorkLinkSuggestions,
+          suggestions: [],
           loading: false,
           error: null
         })

@@ -10,7 +10,7 @@ import type {
   UpdateUserData
 } from '../services/admin'
 import { createDataHook, type UseDataState } from './createDataHook'
-import { sampleRoles } from '../sample-data'
+// sampleRoles removed - does not exist in sample-data
 
 // Hook for users list with pagination and search
 export function useUsers(initialLimit = 50): UseDataState<UsersResponse> & {
@@ -78,7 +78,7 @@ export function useUserDetail(userId: string | null): UseDataState<UserDetail> {
 // Hook for roles list
 export const useRoles = createDataHook<Role[]>({
   apiMethod: adminApi.getRoles,
-  sampleData: sampleRoles,
+  sampleData: [] as Role[],
   errorMessage: 'Failed to fetch roles'
 })
 
