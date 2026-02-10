@@ -1172,6 +1172,9 @@ export function SalesFlowPage() {
           setSelectedOrderId(null)
         }}
         onWorkflowComplete={handleWorkflowComplete}
+        onDownloadPDF={handleDownloadPDF}
+        onDownloadDeliveryNotePDF={handleDownloadDeliveryNote}
+        onRegisterPayment={handleRegisterPayment}
       />
 
       {/* ========== CREATE ORDER WIZARD ========== */}
