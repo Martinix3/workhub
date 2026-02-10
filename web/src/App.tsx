@@ -30,6 +30,14 @@ const NewProjectPage = lazy(() => import('./pages/tasks/NewProjectPage').then(m 
 const KanbanPage = lazy(() => import('./pages/tasks/KanbanPage').then(m => ({ default: m.KanbanPage })))
 const TaskDashboardPage = lazy(() => import('./pages/tasks/DashboardPage').then(m => ({ default: m.DashboardPage })))
 
+// Operations (lazy-loaded)
+const OperationsDashboardPage = lazy(() =>
+  import('./pages/operations/OperationsDashboardPage').then(m => ({ default: m.OperationsDashboardPage }))
+)
+const DeliveryListPage = lazy(() =>
+  import('./pages/operations/DeliveryListPage').then(m => ({ default: m.DeliveryListPage }))
+)
+
 // Settings & Admin (lazy-loaded)
 const SettingsPage = lazy(() => import('./pages/settings').then(m => ({ default: m.SettingsPage })))
 const AdminLayout = lazy(() => import('./pages/admin').then(m => ({ default: m.AdminLayout })))
@@ -47,7 +55,8 @@ import {
   Shield,
   BarChart3,
   LayoutDashboard,
-  CheckSquare
+  CheckSquare,
+  Truck
 } from 'lucide-react'
 
 const navigationSections: NavigationSection[] = [
@@ -83,6 +92,16 @@ const navigationSections: NavigationSection[] = [
     items: [
       { label: 'Red', href: '/distribuidores' },
       { label: 'Portal', href: '/distribuidores/portal' }
+    ]
+  },
+  {
+    label: 'OPERACIONES',
+    icon: <Truck size={18} />,
+    items: [
+      { label: 'Dashboard', href: '/operaciones' },
+      { label: 'Entregas', href: '/operaciones/entregas' },
+      { label: 'Recepciones', href: '/operaciones/recepciones' },
+      { label: 'Inventario', href: '/operaciones/inventario' },
     ]
   },
   {
@@ -167,6 +186,12 @@ function AppContent() {
             {/* Distribuidores */}
             <Route path="/distribuidores" element={<DistributorDashboardPage />} />
             <Route path="/distribuidores/portal" element={<DistributorPortalPage />} />
+
+            {/* OPERACIONES */}
+            <Route path="/operaciones" element={<OperationsDashboardPage />} />
+            <Route path="/operaciones/entregas" element={<DeliveryListPage />} />
+            <Route path="/operaciones/recepciones" element={<div className="p-8 text-center text-stone-500">Recepciones - Proximamente (Phase 2)</div>} />
+            <Route path="/operaciones/inventario" element={<div className="p-8 text-center text-stone-500">Inventario - Proximamente (Phase 3)</div>} />
 
             {/* Produccion */}
             <Route path="/produccion" element={<ProductionDashboardPage />} />
