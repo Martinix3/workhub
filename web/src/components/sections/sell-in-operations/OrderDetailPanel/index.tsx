@@ -70,10 +70,10 @@ function Section({
 
 // Format helpers
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
 
 const formatDate = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+  new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
 
 export function OrderDetailPanel({
   orderId,
@@ -120,7 +120,7 @@ export function OrderDetailPanel({
   const handleItemsChange = (items: OrderItem[]) => {
     if (!order) return
     const subtotal = items.reduce((sum, item) => sum + item.amount, 0)
-    const tax = subtotal * 0.16
+    const tax = subtotal * 0.21
     setOrder({
       ...order,
       items,
@@ -585,7 +585,7 @@ export function OrderDetailPanel({
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-stone-500 dark:text-stone-400">IVA (16%):</span>
+                  <span className="text-stone-500 dark:text-stone-400">IVA (21%):</span>
                   <span className="font-mono text-stone-700 dark:text-stone-300">
                     {formatCurrency(order.tax)}
                   </span>
