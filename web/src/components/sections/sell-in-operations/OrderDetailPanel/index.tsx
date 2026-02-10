@@ -99,7 +99,8 @@ export function OrderDetailPanel({
   const { cancelOrder, loading: isCancelling, error: cancelError } = useCancelOrder()
 
   // Fetch WorkLinks for this order
-  const { data: workLinks = [], loading: workLinksLoading } = useOrderWorkLinks(isOpen && order ? order.id : null)
+  const { data: workLinksData, loading: workLinksLoading } = useOrderWorkLinks(isOpen && order ? order.id : null)
+  const workLinks = workLinksData || []
 
   // Workflow states
   const [workflowMessage, setWorkflowMessage] = useState<string | null>(null)
