@@ -1459,6 +1459,18 @@ def create_delivery_note(order_id, submit=1, transport_method=None):
     delivery_note = make_delivery_note(order_id)
     if transport_method and hasattr(delivery_note, "workhub_transport_method"):
         delivery_note.workhub_transport_method = transport_method
+
+    # Ensure shipping address is populated
+    if not delivery_note.shipping_address_name and delivery_note.customer:
+        addr_name = frappe.db.get_value(
+            "Dynamic Link",
+            {"link_doctype": "Customer", "link_name": delivery_note.customer, "parenttype": "Address"},
+            "parent"
+        )
+        if addr_name:
+            delivery_note.shipping_address_name = addr_name
+            delivery_note.run_method("get_shipping_address", {"shipping_address_name": addr_name})
+
     delivery_note.insert()
     if int(submit) == 1:
         delivery_note.submit()
@@ -1497,6 +1509,28 @@ def create_sales_invoice(order_id, delivery_note_id=None, submit=1):
         if sales_order.docstatus == 0:
             sales_order.submit()
         sales_invoice = make_sales_invoice(order_id)
+
+    # Ensure tax template is applied (e.g. Spain IVA 21%)
+    if not sales_invoice.taxes_and_charges:
+        default_tax = frappe.db.get_value(
+            "Sales Taxes and Charges Template",
+            {"is_default": 1, "company": sales_invoice.company},
+            "name"
+        )
+        if default_tax:
+            sales_invoice.taxes_and_charges = default_tax
+            sales_invoice.run_method("set_other_charges")
+
+    # Ensure customer address is populated for the invoice
+    if not sales_invoice.customer_address and sales_invoice.customer:
+        addr_name = frappe.db.get_value(
+            "Dynamic Link",
+            {"link_doctype": "Customer", "link_name": sales_invoice.customer, "parenttype": "Address"},
+            "parent"
+        )
+        if addr_name:
+            sales_invoice.customer_address = addr_name
+            sales_invoice.run_method("get_customer_address", {"customer_address": addr_name})
 
     sales_invoice.insert()
     if int(submit) == 1:
@@ -2180,12 +2214,33 @@ def get_invoice_detail(invoice_id):
             if not delivery_note_info:
                 delivery_note_info = dn_data  # Keep first for backward compat
 
+    # Get customer tax ID
+    customer_tax_id = frappe.db.get_value("Customer", inv.customer, "tax_id") or ""
+
+    # Build full address if address_display is empty
+    customer_address = inv.address_display or ""
+    if not customer_address and inv.customer_address:
+        addr = frappe.get_doc("Address", inv.customer_address)
+        parts = [addr.address_line1, addr.address_line2, f"{addr.pincode or ''} {addr.city or ''}".strip(), addr.country]
+        customer_address = "\n".join(p for p in parts if p)
+    elif not customer_address and inv.customer:
+        addr_name = frappe.db.get_value(
+            "Dynamic Link",
+            {"link_doctype": "Customer", "link_name": inv.customer, "parenttype": "Address"},
+            "parent"
+        )
+        if addr_name:
+            addr = frappe.get_doc("Address", addr_name)
+            parts = [addr.address_line1, addr.address_line2, f"{addr.pincode or ''} {addr.city or ''}".strip(), addr.country]
+            customer_address = "\n".join(p for p in parts if p)
+
     return {
         "id": inv.name,
         "invoiceNumber": inv.name,
         "customerId": inv.customer,
         "customerName": inv.customer_name,
-        "customerAddress": inv.address_display or "",
+        "customerAddress": customer_address,
+        "customerTaxId": customer_tax_id,
         "invoiceDate": str(inv.posting_date) if inv.posting_date else None,
         "dueDate": str(inv.due_date) if inv.due_date else None,
         "total": flt(inv.grand_total),
@@ -2261,23 +2316,27 @@ def get_invoice_kpis():
 
 @frappe.whitelist()
 def get_invoice_pdf(invoice_id):
-    """
-    Generate PDF for an invoice.
-    Returns the PDF as base64 or a download URL.
-    """
+    """Generate PDF for an invoice with Santa Brisa format (fallback to default)."""
     require_auth()
     if not invoice_id:
         frappe.throw(_("Invoice ID is required"))
 
-    # Use Frappe's built-in PDF generation
+    if not frappe.db.exists("Sales Invoice", invoice_id):
+        frappe.throw(_("Sales Invoice {0} not found").format(invoice_id), frappe.DoesNotExistError)
+
     from frappe.utils.pdf import get_pdf
-
-    # Get the print format HTML — use Santa Brisa custom format
-    html = frappe.get_print("Sales Invoice", invoice_id, print_format="Santa Brisa - Factura", letterhead="Santa Brisa")
-    pdf_content = get_pdf(html)
-
-    # Return as base64 for frontend download
     import base64
+
+    # Try custom print format, fallback to default
+    print_format = "Santa Brisa - Factura"
+    letterhead = "Santa Brisa"
+    if not frappe.db.exists("Print Format", print_format):
+        print_format = None
+    if not frappe.db.exists("Letter Head", letterhead):
+        letterhead = None
+
+    html = frappe.get_print("Sales Invoice", invoice_id, print_format=print_format, letterhead=letterhead)
+    pdf_content = get_pdf(html)
     pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
 
     return {
@@ -2290,10 +2349,7 @@ def get_invoice_pdf(invoice_id):
 
 @frappe.whitelist()
 def get_delivery_note_pdf(delivery_note_id):
-    """
-    Generate PDF for a delivery note (albarán) with Santa Brisa format.
-    Returns the PDF as base64 for frontend download.
-    """
+    """Generate PDF for a delivery note (albaran) with Santa Brisa format (fallback to default)."""
     require_auth()
     if not delivery_note_id:
         frappe.throw(_("Delivery Note ID is required"))
@@ -2304,7 +2360,15 @@ def get_delivery_note_pdf(delivery_note_id):
     from frappe.utils.pdf import get_pdf
     import base64
 
-    html = frappe.get_print("Delivery Note", delivery_note_id, print_format="Santa Brisa - Albaran", letterhead="Santa Brisa")
+    # Try custom print format, fallback to default
+    print_format = "Santa Brisa - Albaran"
+    letterhead = "Santa Brisa"
+    if not frappe.db.exists("Print Format", print_format):
+        print_format = None
+    if not frappe.db.exists("Letter Head", letterhead):
+        letterhead = None
+
+    html = frappe.get_print("Delivery Note", delivery_note_id, print_format=print_format, letterhead=letterhead)
     pdf_content = get_pdf(html)
     pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
 
