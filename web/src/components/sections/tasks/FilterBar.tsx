@@ -142,7 +142,7 @@ export function FilterBar({
   return (
     <div className="
       bg-white
-      border-b-2 border-stone-900
+      border-b border-neutral-200
       px-4 lg:px-8 py-3
     ">
       <div className="max-w-full mx-auto flex items-center justify-between gap-4">
@@ -154,25 +154,22 @@ export function FilterBar({
               className="
                 inline-flex items-center gap-2
                 px-3 py-1.5
-                bg-stone-100
-                border-2 border-stone-900
-                shadow-[1px_1px_0_#1c1917]
-                hover:shadow-[2px_2px_0_#1c1917]
-                hover:translate-x-[-1px] hover:translate-y-[-1px]
+                bg-neutral-100
+                border border-neutral-200
                 transition-all duration-75
               "
             >
-              <span className="text-xs font-bold text-stone-500 uppercase">
+              <span className="text-xs font-bold text-neutral-500 uppercase">
                 {chip.label}:
               </span>
-              <span className="text-sm font-medium text-stone-900">
+              <span className="text-sm font-medium text-neutral-900">
                 {chip.value}
               </span>
               <button
                 onClick={() => removeFilter(chip.key)}
                 className="
                   ml-1 p-0.5
-                  text-stone-500 hover:text-red-500
+                  text-neutral-500 hover:text-error
                   transition-colors
                 "
                 title={`Eliminar filtro de ${chip.label}`}
@@ -191,12 +188,10 @@ export function FilterBar({
             className="
               px-3 py-1.5
               flex items-center gap-2
-              bg-white hover:bg-stone-50
-              text-stone-700 font-medium text-sm
-              border-2 border-stone-900
-              shadow-[2px_2px_0_#1c1917]
-              hover:shadow-[3px_3px_0_#1c1917]
-              hover:translate-x-[-1px] hover:translate-y-[-1px]
+              bg-white hover:bg-neutral-50
+              text-neutral-700 font-medium text-sm
+              border border-neutral-200
+              shadow-sm
               transition-all duration-75
             "
             title="Limpiar todos los filtros"
@@ -211,12 +206,10 @@ export function FilterBar({
             className="
               px-3 py-1.5
               flex items-center gap-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium text-sm
-              border-2 border-stone-900
-              shadow-[2px_2px_0_#1c1917]
-              hover:shadow-[3px_3px_0_#1c1917]
-              hover:translate-x-[-1px] hover:translate-y-[-1px]
+              bg-gold hover:bg-gold-dark
+              text-neutral-900 font-medium text-sm
+              border border-neutral-200
+              shadow-sm
               transition-all duration-75
             "
             title="Guardar vista actual"

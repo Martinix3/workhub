@@ -142,14 +142,14 @@ export function SaveFilterModal({
       <div data-testid="save-filter-modal" className="p-6 space-y-6">
         {/* Error message */}
         {error && (
-          <div data-testid="error-message" className="p-3 bg-red-100 border-2 border-red-500 text-red-900 text-sm">
+          <div data-testid="error-message" className="p-3 bg-error-light border-2 border-error-dark text-error-text text-sm">
             {error.message}
           </div>
         )}
 
         {/* Title input */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-stone-700">
+          <label className="block text-sm font-medium text-neutral-700">
             Nombre de la vista
           </label>
           <input
@@ -161,13 +161,11 @@ export function SaveFilterModal({
             className="
               w-full px-3 py-2
               bg-white
-              border-2 border-stone-900
-              shadow-[2px_2px_0_#1c1917]
-              focus:shadow-[3px_3px_0_#1c1917]
-              focus:translate-x-[-1px] focus:translate-y-[-1px]
-              focus:outline-none focus:ring-2 focus:ring-amber-400
+              border border-neutral-200
+              shadow-sm
+              focus:outline-none focus:ring-2 focus:ring-gold
               transition-all duration-75
-              font-medium text-stone-900
+              font-medium text-neutral-900
             "
             autoFocus
           />
@@ -175,7 +173,7 @@ export function SaveFilterModal({
 
         {/* Current filters summary */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-stone-700">
+          <label className="block text-sm font-medium text-neutral-700">
             Filtros a guardar
           </label>
           {filterChips.length > 0 ? (
@@ -187,15 +185,14 @@ export function SaveFilterModal({
                   className="
                     inline-flex items-center gap-2
                     px-3 py-1.5
-                    bg-stone-100
-                    border-2 border-stone-900
-                    shadow-[1px_1px_0_#1c1917]
+                    bg-neutral-100
+                    border border-neutral-200
                   "
                 >
-                  <span className="text-xs font-bold text-stone-500 uppercase">
+                  <span className="text-xs font-bold text-neutral-500 uppercase">
                     {chip.label}:
                   </span>
-                  <span className="text-sm font-medium text-stone-900">
+                  <span className="text-sm font-medium text-neutral-900">
                     {chip.value}
                   </span>
                 </div>
@@ -206,11 +203,11 @@ export function SaveFilterModal({
               data-testid="no-filters-message"
               className="
               p-4
-              bg-stone-50
-              border-2 border-stone-900
+              bg-neutral-50
+              border border-neutral-200
               text-center
             ">
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-neutral-500">
                 Sin filtros activos
               </p>
             </div>
@@ -229,9 +226,9 @@ export function SaveFilterModal({
             />
             <div className="
               w-11 h-6
-              bg-stone-300
-              border-2 border-stone-900
-              peer-focus:ring-2 peer-focus:ring-amber-400
+              bg-neutral-300
+              border border-neutral-200
+              peer-focus:ring-2 peer-focus:ring-gold
               peer
               peer-checked:after:translate-x-full
               after:content-['']
@@ -239,21 +236,21 @@ export function SaveFilterModal({
               after:top-[2px]
               after:left-[2px]
               after:bg-white
-              after:border-2
-              after:border-stone-900
+              after:border
+              after:border-neutral-200
               after:h-5
               after:w-5
               after:transition-all
-              peer-checked:bg-amber-400
+              peer-checked:bg-gold
             "></div>
           </label>
-          <label className="text-sm font-medium text-stone-700 cursor-pointer">
+          <label className="text-sm font-medium text-neutral-700 cursor-pointer">
             Compartir con equipo
           </label>
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t-2 border-stone-900">
+        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
           <button
             data-testid="cancel-button"
             onClick={handleCancel}
@@ -261,11 +258,9 @@ export function SaveFilterModal({
             className="
               px-4 py-2
               bg-white
-              text-stone-700 font-medium text-sm
-              border-2 border-stone-900
-              shadow-[2px_2px_0_#1c1917]
-              hover:shadow-[3px_3px_0_#1c1917]
-              hover:translate-x-[-1px] hover:translate-y-[-1px]
+              text-neutral-700 font-medium text-sm
+              border border-neutral-200
+              shadow-sm
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-all duration-75
             "
@@ -279,13 +274,11 @@ export function SaveFilterModal({
             className="
               px-4 py-2
               flex items-center gap-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium text-sm
-              border-2 border-stone-900
-              shadow-[2px_2px_0_#1c1917]
-              hover:shadow-[3px_3px_0_#1c1917]
-              hover:translate-x-[-1px] hover:translate-y-[-1px]
-              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0
+              bg-gold hover:bg-gold-dark
+              text-neutral-900 font-medium text-sm
+              border border-neutral-200
+              shadow-sm
+              disabled:opacity-50 disabled:cursor-not-allowed
               transition-all duration-75
             "
           >

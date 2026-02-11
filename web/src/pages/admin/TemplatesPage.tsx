@@ -79,14 +79,14 @@ export function AdminTemplatesPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-stone-100 dark:bg-stone-800 border-2 border-stone-900 dark:border-stone-100">
-              <Layers size={24} className="text-stone-900 dark:text-stone-100" />
+            <div className="p-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-100">
+              <Layers size={24} className="text-neutral-900 dark:text-neutral-100" />
             </div>
-            <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">
+            <h2 className="font-heading text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               Gestión de Plantillas
             </h2>
           </div>
-          <p className="text-sm text-stone-600 dark:text-stone-400">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
             Administra las plantillas de workflow para los departamentos
           </p>
         </div>
@@ -94,12 +94,9 @@ export function AdminTemplatesPage() {
           onClick={() => navigate('/admin/templates/new')}
           className="
             flex items-center gap-2 px-4 py-2
-            bg-stone-900 dark:bg-stone-100
-            text-stone-100 dark:text-stone-900
-            border-2 border-stone-900 dark:border-stone-100
-            shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
-            hover:shadow-[2px_2px_0_#1c1917] dark:hover:shadow-[2px_2px_0_#fafaf9]
-            hover:translate-x-[2px] hover:translate-y-[2px]
+            bg-neutral-900 dark:bg-neutral-100
+            text-neutral-100 dark:text-neutral-900
+            border border-neutral-200 dark:border-neutral-100
             transition-all duration-75
             font-medium text-sm
           "
@@ -113,28 +110,25 @@ export function AdminTemplatesPage() {
       {templatesWithActions.length === 0 ? (
         <div className="
           text-center py-16
-          bg-white dark:bg-stone-900
-          border-2 border-stone-900 dark:border-stone-100
+          bg-white dark:bg-neutral-900
+          border border-neutral-200 dark:border-neutral-100
         ">
-          <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-stone-100 dark:bg-stone-800 border-2 border-stone-900 dark:border-stone-100">
-            <Layers size={28} className="text-stone-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-100">
+            <Layers size={28} className="text-neutral-400" />
           </div>
-          <h3 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100 mb-2">
+          <h3 className="font-heading text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
             No hay plantillas disponibles
           </h3>
-          <p className="text-sm text-stone-600 dark:text-stone-400 mb-6">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
             Crea tu primera plantilla para comenzar
           </p>
           <button
             onClick={() => navigate('/admin/templates/new')}
             className="
               inline-flex items-center gap-2 px-4 py-2
-              bg-stone-900 dark:bg-stone-100
-              text-stone-100 dark:text-stone-900
-              border-2 border-stone-900 dark:border-stone-100
-              shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
-              hover:shadow-[2px_2px_0_#1c1917] dark:hover:shadow-[2px_2px_0_#fafaf9]
-              hover:translate-x-[2px] hover:translate-y-[2px]
+              bg-neutral-900 dark:bg-neutral-100
+              text-neutral-100 dark:text-neutral-900
+              border border-neutral-200 dark:border-neutral-100
               transition-all duration-75
               font-medium text-sm
             "
@@ -150,7 +144,7 @@ export function AdminTemplatesPage() {
               SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Ventas' },
               OPS: { bg: 'bg-violet-100', text: 'text-violet-700', label: 'Operaciones' },
               MKT: { bg: 'bg-pink-100', text: 'text-pink-700', label: 'Marketing' },
-              PRODUCTION: { bg: 'bg-green-100', text: 'text-green-700', label: 'Producción' },
+              PRODUCTION: { bg: 'bg-success-light', text: 'text-success-text', label: 'Producción' },
             }
             const config = deptConfig[template.department] || deptConfig.SALES
 
@@ -158,9 +152,8 @@ export function AdminTemplatesPage() {
               <div
                 key={template.name}
                 className="
-                  bg-white dark:bg-stone-900
-                  border-2 border-stone-900 dark:border-stone-100
-                  shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
+                  bg-white dark:bg-neutral-900
+                  border border-neutral-200 dark:border-neutral-100
                   p-4 lg:p-6
                   flex flex-col
                 "
@@ -180,22 +173,22 @@ export function AdminTemplatesPage() {
                 </div>
 
                 {/* Template Name */}
-                <h3 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100 mb-2">
+                <h3 className="font-heading text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
                   {template.title}
                 </h3>
 
                 {/* Separator */}
-                <div className="w-12 h-0.5 bg-stone-900 dark:bg-stone-100 mb-3" />
+                <div className="w-12 h-0.5 bg-neutral-900 dark:bg-neutral-100 mb-3" />
 
                 {/* Description */}
                 {template.description && (
-                  <p className="text-sm text-stone-600 dark:text-stone-400 mb-4 line-clamp-2 flex-1">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-2 flex-1">
                     {template.description}
                   </p>
                 )}
 
                 {/* Metadata */}
-                <div className="flex items-center gap-4 text-sm text-stone-500 dark:text-stone-400 mb-4">
+                <div className="flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400 mb-4">
                   <div className="flex items-center gap-1.5">
                     <Layers size={16} />
                     <span className="font-mono font-medium">
@@ -210,17 +203,17 @@ export function AdminTemplatesPage() {
                 </div>
 
                 {/* Admin Action Buttons */}
-                <div className="flex items-center gap-2 pt-4 border-t-2 border-stone-200 dark:border-stone-700">
+                <div className="flex items-center gap-2 pt-4 border-t-2 border-neutral-200 dark:border-neutral-700">
                   <button
                     onClick={() => handleEdit(template.name)}
                     disabled={deletingId === template.name || duplicatingId === template.name}
                     className="
                       flex-1 flex items-center justify-center gap-2 px-3 py-2
-                      bg-stone-100 dark:bg-stone-800
-                      text-stone-900 dark:text-stone-100
-                      border-2 border-stone-900 dark:border-stone-100
-                      hover:bg-stone-900 hover:text-stone-100
-                      dark:hover:bg-stone-100 dark:hover:text-stone-900
+                      bg-neutral-100 dark:bg-neutral-800
+                      text-neutral-900 dark:text-neutral-100
+                      border border-neutral-200 dark:border-neutral-100
+                      hover:bg-neutral-900 hover:text-neutral-100
+                      dark:hover:bg-neutral-100 dark:hover:text-neutral-900
                       transition-colors duration-75
                       text-sm font-medium
                       disabled:opacity-50 disabled:cursor-not-allowed
@@ -235,11 +228,11 @@ export function AdminTemplatesPage() {
                     disabled={deletingId === template.name || duplicatingId === template.name}
                     className="
                       flex items-center justify-center px-3 py-2
-                      bg-stone-100 dark:bg-stone-800
-                      text-stone-900 dark:text-stone-100
-                      border-2 border-stone-900 dark:border-stone-100
-                      hover:bg-stone-900 hover:text-stone-100
-                      dark:hover:bg-stone-100 dark:hover:text-stone-900
+                      bg-neutral-100 dark:bg-neutral-800
+                      text-neutral-900 dark:text-neutral-100
+                      border border-neutral-200 dark:border-neutral-100
+                      hover:bg-neutral-900 hover:text-neutral-100
+                      dark:hover:bg-neutral-100 dark:hover:text-neutral-900
                       transition-colors duration-75
                       disabled:opacity-50 disabled:cursor-not-allowed
                     "
@@ -256,11 +249,11 @@ export function AdminTemplatesPage() {
                     disabled={deletingId === template.name || duplicatingId === template.name}
                     className="
                       flex items-center justify-center px-3 py-2
-                      bg-stone-100 dark:bg-stone-800
-                      text-red-600 dark:text-red-400
-                      border-2 border-stone-900 dark:border-stone-100
-                      hover:bg-red-600 hover:text-stone-100
-                      dark:hover:bg-red-400 dark:hover:text-stone-900
+                      bg-neutral-100 dark:bg-neutral-800
+                      text-error-dark dark:text-error
+                      border border-neutral-200 dark:border-neutral-100
+                      hover:bg-error-dark hover:text-neutral-100
+                      dark:hover:bg-error dark:hover:text-neutral-900
                       transition-colors duration-75
                       disabled:opacity-50 disabled:cursor-not-allowed
                     "

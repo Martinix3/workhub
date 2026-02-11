@@ -47,10 +47,10 @@ export function VisualizationPicker({
       icon: BarChart3,
       preview: () => (
         <div className="flex flex-col items-center justify-center h-24 gap-1">
-          <div className="text-2xl font-bold font-mono text-stone-900 dark:text-stone-100">
+          <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100">
             {formatValue(currentValue)}
           </div>
-          <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+          <div className="flex items-center gap-1 text-xs text-success-dark dark:text-success">
             <TrendingUp size={12} />
             <span>+12%</span>
           </div>
@@ -76,7 +76,7 @@ export function VisualizationPicker({
               strokeWidth="10"
               strokeDasharray="220"
               strokeLinecap="round"
-              className="text-stone-200 dark:text-stone-700"
+              className="text-neutral-200 dark:text-neutral-700"
             />
             {/* Value arc (75% of 220 = 165) */}
             <circle
@@ -88,7 +88,7 @@ export function VisualizationPicker({
               strokeWidth="10"
               strokeDasharray="165 220"
               strokeLinecap="round"
-              className="text-green-600 dark:text-green-400"
+              className="text-success-dark dark:text-success"
             />
           </svg>
         </div>
@@ -110,7 +110,7 @@ export function VisualizationPicker({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-blue-600 dark:text-blue-400"
+              className="text-turquoise-dark dark:text-turquoise"
             />
             {/* Value dot at end */}
             <circle
@@ -118,7 +118,7 @@ export function VisualizationPicker({
               cy="10"
               r="3"
               fill="currentColor"
-              className="text-blue-600 dark:text-blue-400"
+              className="text-turquoise-dark dark:text-turquoise"
             />
           </svg>
         </div>
@@ -131,16 +131,16 @@ export function VisualizationPicker({
       icon: TrendingUp,
       preview: () => (
         <div className="flex flex-col items-center justify-center h-24 gap-2 px-4">
-          <div className="text-sm font-mono text-stone-900 dark:text-stone-100">
+          <div className="text-sm font-mono text-neutral-900 dark:text-neutral-100">
             {formatValue(currentValue)}
           </div>
-          <div className="w-full h-3 bg-stone-200 dark:bg-stone-700 border border-stone-900 dark:border-stone-100">
+          <div className="w-full h-3 bg-neutral-200 dark:bg-neutral-700 border border-neutral-900 dark:border-neutral-100">
             <div
-              className="h-full bg-green-600 dark:bg-green-400 transition-all"
+              className="h-full bg-success-dark dark:bg-success transition-all"
               style={{ width: '75%' }}
             />
           </div>
-          <div className="text-xs text-stone-500 dark:text-stone-400">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400">
             75% to goal
           </div>
         </div>
@@ -151,7 +151,7 @@ export function VisualizationPicker({
   return (
     <div className="space-y-4">
       {/* Label */}
-      <div className="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+      <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
         <BarChart3 size={16} />
         <span className="text-xs uppercase tracking-wider font-semibold">Visualization</span>
       </div>
@@ -169,20 +169,20 @@ export function VisualizationPicker({
               onClick={() => onChange(viz.type)}
               className={`
                 relative text-left p-4
-                bg-white dark:bg-stone-800
+                bg-white dark:bg-neutral-800
                 border-2
                 transition-all
                 ${
                   isSelected
-                    ? 'border-amber-600 dark:border-amber-400 shadow-[4px_4px_0_#d97706] dark:shadow-[4px_4px_0_#fbbf24]'
-                    : 'border-stone-900 dark:border-stone-100 shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#f5f5f4] hover:shadow-[4px_4px_0_#1c1917] dark:hover:shadow-[4px_4px_0_#f5f5f4]'
+                    ? 'border-gold-dark dark:border-gold shadow-md'
+                    : 'border-neutral-900 dark:border-neutral-100 shadow-sm hover:shadow-md'
                 }
               `}
             >
               {/* Selected indicator */}
               {isSelected && (
                 <div className="absolute top-2 right-2">
-                  <div className="w-3 h-3 bg-amber-600 dark:bg-amber-400 rounded-full border-2 border-white dark:border-stone-800" />
+                  <div className="w-3 h-3 bg-gold-dark dark:bg-gold rounded-full border-2 border-white dark:border-neutral-800" />
                 </div>
               )}
 
@@ -192,21 +192,21 @@ export function VisualizationPicker({
                   size={16}
                   className={`flex-shrink-0 mt-0.5 ${
                     isSelected
-                      ? 'text-amber-600 dark:text-amber-400'
-                      : 'text-stone-500 dark:text-stone-400'
+                      ? 'text-gold-dark dark:text-gold'
+                      : 'text-neutral-500 dark:text-neutral-400'
                   }`}
                 />
                 <div className="flex-1 min-w-0">
                   <p
                     className={`text-sm font-semibold mb-0.5 ${
                       isSelected
-                        ? 'text-amber-900 dark:text-amber-100'
-                        : 'text-stone-900 dark:text-stone-100'
+                        ? 'text-gold-dark dark:text-gold-light'
+                        : 'text-neutral-900 dark:text-neutral-100'
                     }`}
                   >
                     {viz.label}
                   </p>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 line-clamp-2">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
                     {viz.description}
                   </p>
                 </div>
@@ -218,8 +218,8 @@ export function VisualizationPicker({
                   border-t-2 -mx-4 px-4
                   ${
                     isSelected
-                      ? 'border-amber-600 dark:border-amber-400 bg-amber-50 dark:bg-amber-900/10'
-                      : 'border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-900/50'
+                      ? 'border-gold-dark dark:border-gold bg-gold-light dark:bg-gold-dark/10'
+                      : 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-900/50'
                   }
                 `}
               >
@@ -231,7 +231,7 @@ export function VisualizationPicker({
       </div>
 
       {/* Helper text */}
-      <p className="text-xs text-stone-500 dark:text-stone-400">
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">
         Choose how you want this KPI to be displayed on your dashboard
       </p>
     </div>

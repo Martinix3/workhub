@@ -145,20 +145,20 @@ export function AssigneeSelector({
           return (
             <div
               key={assignee.user}
-              className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-stone-300"
+              className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-neutral-300"
             >
               {/* Avatar */}
-              <div className="w-7 h-7 bg-stone-200 border border-stone-400 flex items-center justify-center flex-shrink-0">
-                <User size={14} className="text-stone-500" />
+              <div className="w-7 h-7 bg-neutral-200 border border-neutral-400 flex items-center justify-center flex-shrink-0">
+                <User size={14} className="text-neutral-500" />
               </div>
 
               {/* Name and Email */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-stone-900 truncate">
+                <p className="text-sm font-medium text-neutral-900 truncate">
                   {displayName}
                 </p>
                 {assignee.user_name && assignee.user_email && (
-                  <p className="text-xs text-stone-500 truncate">
+                  <p className="text-xs text-neutral-500 truncate">
                     {assignee.user_email}
                   </p>
                 )}
@@ -175,8 +175,8 @@ export function AssigneeSelector({
                   ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                   ${
                     isOwner
-                      ? 'bg-amber-100 border-amber-400 text-amber-900 hover:bg-amber-200'
-                      : 'bg-stone-100 border-stone-300 text-stone-600 hover:bg-stone-200'
+                      ? 'bg-gold-light border-gold text-gold-dark hover:bg-gold-light'
+                      : 'bg-neutral-100 border-neutral-300 text-neutral-600 hover:bg-neutral-200'
                   }
                 `}
                 title={isOwner ? 'Cambiar a Colaborador' : 'Cambiar a Owner'}
@@ -190,10 +190,10 @@ export function AssigneeSelector({
                 type="button"
                 onClick={() => handleRemoveAssignee(assignee.user)}
                 disabled={disabled}
-                className="p-1 hover:bg-stone-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-1 hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Quitar asignado"
               >
-                <X size={16} className="text-stone-400" />
+                <X size={16} className="text-neutral-400" />
               </button>
             </div>
           )
@@ -207,26 +207,26 @@ export function AssigneeSelector({
         disabled={disabled || hasMaxAssignees}
         className={`
           w-full px-3 py-2 text-left
-          border-2 border-stone-300
+          border-2 border-neutral-300
           bg-white
           flex items-center gap-2
           transition-colors
           ${
             disabled || hasMaxAssignees
               ? 'opacity-50 cursor-not-allowed'
-              : 'hover:border-stone-400 cursor-pointer'
+              : 'hover:border-neutral-400 cursor-pointer'
           }
-          ${isOpen ? 'border-stone-900' : ''}
+          ${isOpen ? 'border-neutral-900' : ''}
         `}
       >
-        <Plus size={16} className="text-stone-400 flex-shrink-0" />
-        <span className="flex-1 text-sm text-stone-600">
+        <Plus size={16} className="text-neutral-400 flex-shrink-0" />
+        <span className="flex-1 text-sm text-neutral-600">
           {hasMaxAssignees
             ? 'Máximo de 10 asignados alcanzado'
             : 'Agregar asignado'}
         </span>
         {value.length > 0 && (
-          <span className="text-xs text-stone-500">
+          <span className="text-xs text-neutral-500">
             {value.length}/10
           </span>
         )}
@@ -234,16 +234,16 @@ export function AssigneeSelector({
 
       {/* Validation Messages */}
       {(hasNoOwner || hasMultipleOwners) && value.length > 0 && (
-        <div className="mt-2 flex items-start gap-2 px-3 py-2 bg-red-50 border-2 border-red-400">
-          <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="mt-2 flex items-start gap-2 px-3 py-2 bg-error-light border-2 border-error">
+          <AlertCircle size={16} className="text-error-dark flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             {hasNoOwner && (
-              <p className="text-xs text-red-800">
+              <p className="text-xs text-error-text">
                 Debe haber exactamente un Owner. Usa los botones de rol para asignar uno.
               </p>
             )}
             {hasMultipleOwners && (
-              <p className="text-xs text-red-800">
+              <p className="text-xs text-error-text">
                 Solo puede haber un Owner. Cambia los demás a Colaborador.
               </p>
             )}
@@ -253,18 +253,18 @@ export function AssigneeSelector({
 
       {/* Dropdown for adding assignees */}
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] max-h-64 overflow-hidden">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 max-h-64 overflow-hidden">
           {/* Search Input */}
-          <div className="p-2 border-b border-stone-200">
-            <div className="flex items-center gap-2 px-2 py-1.5 bg-stone-50 border border-stone-300">
-              <Search size={14} className="text-stone-400" />
+          <div className="p-2 border-b border-neutral-200">
+            <div className="flex items-center gap-2 px-2 py-1.5 bg-neutral-50 border border-neutral-300">
+              <Search size={14} className="text-neutral-400" />
               <input
                 ref={inputRef}
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Buscar usuario..."
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400"
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400"
               />
             </div>
           </div>
@@ -272,11 +272,11 @@ export function AssigneeSelector({
           {/* Options */}
           <div className="max-h-48 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-sm text-stone-500">
+              <div className="p-4 text-center text-sm text-neutral-500">
                 Cargando...
               </div>
             ) : availableUsers.length === 0 ? (
-              <div className="p-4 text-center text-sm text-stone-500">
+              <div className="p-4 text-center text-sm text-neutral-500">
                 {searchTerm
                   ? 'No se encontraron usuarios'
                   : 'Todos los usuarios ya están asignados'}
@@ -287,9 +287,9 @@ export function AssigneeSelector({
                   key={user.name}
                   type="button"
                   onClick={() => handleAddAssignee(user.email)}
-                  className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-amber-50 transition-colors"
+                  className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-gold-light transition-colors"
                 >
-                  <div className="w-7 h-7 bg-stone-200 border border-stone-400 flex items-center justify-center flex-shrink-0">
+                  <div className="w-7 h-7 bg-neutral-200 border border-neutral-400 flex items-center justify-center flex-shrink-0">
                     {user.user_image ? (
                       <img
                         src={user.user_image}
@@ -297,20 +297,20 @@ export function AssigneeSelector({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User size={14} className="text-stone-500" />
+                      <User size={14} className="text-neutral-500" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-stone-900 truncate">
+                    <p className="text-sm font-medium text-neutral-900 truncate">
                       {user.full_name || user.email}
                     </p>
                     {user.full_name && (
-                      <p className="text-xs text-stone-500 truncate">
+                      <p className="text-xs text-neutral-500 truncate">
                         {user.email}
                       </p>
                     )}
                   </div>
-                  <span className="text-xs text-stone-400">
+                  <span className="text-xs text-neutral-400">
                     {hasNoOwner ? 'Owner' : 'Colaborador'}
                   </span>
                 </button>

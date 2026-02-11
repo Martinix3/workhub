@@ -53,7 +53,7 @@ export function CreateUserPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate('/admin/users')}
-          className="flex items-center gap-2 text-stone-500 hover:text-stone-700 transition-colors"
+          className="flex items-center gap-2 text-neutral-500 hover:text-neutral-700 transition-colors"
         >
           <ArrowLeft size={18} />
           <span className="text-sm">Volver a usuarios</span>
@@ -61,49 +61,49 @@ export function CreateUserPage() {
       </div>
 
       <div>
-        <h2 className="text-lg font-medium text-stone-900">Nuevo Usuario</h2>
-        <p className="text-sm text-stone-500 mt-1">
+        <h2 className="text-lg font-medium text-neutral-900">Nuevo Usuario</h2>
+        <p className="text-sm text-neutral-500 mt-1">
           Crea una nueva cuenta de usuario en el sistema
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="p-4 bg-error-light border border-error rounded-lg text-error-text text-sm">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">
-            Email <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
+            Email <span className="text-error">*</span>
           </label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="usuario@empresa.com"
-            className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-gold-dark focus:border-gold-dark transition-colors"
             required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              Nombre <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Nombre <span className="text-error">*</span>
             </label>
             <input
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Nombre"
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-gold-dark focus:border-gold-dark transition-colors"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Apellido
             </label>
             <input
@@ -111,13 +111,13 @@ export function CreateUserPage() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Apellido"
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-gold-dark focus:border-gold-dark transition-colors"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-2">
+          <label className="block text-sm font-medium text-neutral-700 mb-2">
             Roles
           </label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -127,8 +127,8 @@ export function CreateUserPage() {
                 className={`
                   flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition-colors
                   ${selectedRoles.includes(role.name)
-                    ? 'border-amber-500 bg-amber-50'
-                    : 'border-stone-200 hover:border-stone-300'
+                    ? 'border-gold-dark bg-gold-light'
+                    : 'border-neutral-200 hover:border-neutral-300'
                   }
                 `}
               >
@@ -136,22 +136,22 @@ export function CreateUserPage() {
                   type="checkbox"
                   checked={selectedRoles.includes(role.name)}
                   onChange={() => toggleRole(role.name)}
-                  className="w-4 h-4 rounded border-stone-300 text-amber-500 focus:ring-amber-500"
+                  className="w-4 h-4 rounded border-neutral-300 text-gold-dark focus:ring-gold-dark"
                 />
-                <span className="text-sm text-stone-700">{role.name}</span>
+                <span className="text-sm text-neutral-700">{role.name}</span>
               </label>
             ))}
           </div>
-          <p className="text-xs text-stone-400 mt-2">
+          <p className="text-xs text-neutral-400 mt-2">
             Selecciona los roles que tendra el usuario
           </p>
         </div>
 
-        <div className="pt-4 border-t border-stone-200 flex justify-end gap-3">
+        <div className="pt-4 border-t border-neutral-200 flex justify-end gap-3">
           <button
             type="button"
             onClick={() => navigate('/admin/users')}
-            className="px-4 py-2 text-stone-600 hover:text-stone-900 transition-colors"
+            className="px-4 py-2 text-neutral-600 hover:text-neutral-900 transition-colors"
           >
             Cancelar
           </button>
@@ -161,8 +161,8 @@ export function CreateUserPage() {
             className={`
               flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors
               ${isValid
-                ? 'bg-amber-500 text-white hover:bg-amber-600'
-                : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                ? 'bg-gold-dark text-white hover:bg-gold-dark'
+                : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
               }
             `}
           >

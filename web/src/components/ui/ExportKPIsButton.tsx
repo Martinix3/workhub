@@ -26,7 +26,7 @@ export function ExportKPIsButton({ onExport, disabled = false, className = '' }:
       <button
         onClick={() => setOpen(!open)}
         disabled={disabled || loading}
-        className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        className="px-4 py-2 bg-gold hover:bg-gold-dark text-neutral-900 font-medium border border-neutral-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
         {loading ? (
           <Loader2 size={16} className="animate-spin" />
@@ -46,18 +46,18 @@ export function ExportKPIsButton({ onExport, disabled = false, className = '' }:
           />
 
           {/* Dropdown content */}
-          <div className="absolute top-full right-0 mt-2 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] z-50 min-w-[180px]">
+          <div className="absolute top-full right-0 mt-2 bg-white border border-neutral-200 z-50 min-w-[180px]">
             <div className="py-1">
               <button
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-amber-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-gold-light transition-colors"
                 onClick={() => handleExport('csv')}
               >
                 <FileText size={16} />
                 <span className="font-medium">Export CSV</span>
               </button>
-              <div className="border-t border-stone-200" />
+              <div className="border-t border-neutral-200" />
               <button
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-amber-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-gold-light transition-colors"
                 onClick={() => handleExport('json')}
               >
                 <FileJson size={16} />

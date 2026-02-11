@@ -117,7 +117,7 @@ describe('Modal', () => {
       )
 
       // Check that the progress bar container exists
-      const progressBar = document.querySelector('.h-full.bg-amber-400')
+      const progressBar = document.querySelector('.h-full.bg-gold')
       expect(progressBar).toBeInTheDocument()
       expect(progressBar).toHaveStyle({ width: '50%' })
     })

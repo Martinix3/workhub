@@ -148,12 +148,12 @@ export function ConfirmationForm({
     <div className="space-y-5">
       {/* Customer Section */}
       <div>
-        <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
           Cliente
         </label>
         <div className="relative">
-          <div className="flex items-center border-2 border-stone-300 focus-within:border-stone-900">
-            <Search size={16} className="ml-3 text-stone-400" />
+          <div className="flex items-center border-2 border-neutral-300 focus-within:border-neutral-900">
+            <Search size={16} className="ml-3 text-neutral-400" />
             <input
               type="text"
               value={customerSearch}
@@ -166,26 +166,26 @@ export function ConfirmationForm({
               className="flex-1 px-3 py-2 outline-none"
             />
             {parsedNote.customer.matched_id && (
-              <Check size={16} className="mr-3 text-green-600" />
+              <Check size={16} className="mr-3 text-success-dark" />
             )}
           </div>
 
           {/* Customer Dropdown */}
           {showCustomerDropdown && (customers.length > 0 || customerSearch.length >= 2) && (
-            <div className="absolute z-10 w-full mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] max-h-48 overflow-auto">
+            <div className="absolute z-10 w-full mt-1 bg-white border border-neutral-200 shadow-sm max-h-48 overflow-auto">
               {searchingCustomers ? (
-                <div className="p-3 text-stone-500 text-sm">Buscando...</div>
+                <div className="p-3 text-neutral-500 text-sm">Buscando...</div>
               ) : (
                 <>
                   {customers.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => handleCustomerSelect(c)}
-                      className="w-full px-3 py-2 text-left hover:bg-stone-100 flex items-center justify-between"
+                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 flex items-center justify-between"
                     >
                       <span className="font-medium">{c.name}</span>
                       {c.is_distributor && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5">
+                        <span className="text-xs bg-turquoise-light text-turquoise-dark px-2 py-0.5">
                           Distribuidor
                         </span>
                       )}
@@ -194,7 +194,7 @@ export function ConfirmationForm({
                   {customerSearch.length >= 2 && (
                     <button
                       onClick={handleCreateNewCustomer}
-                      className="w-full px-3 py-2 text-left hover:bg-amber-50 flex items-center gap-2 text-amber-700 border-t border-stone-200"
+                      className="w-full px-3 py-2 text-left hover:bg-gold-light flex items-center gap-2 text-gold-dark border-t border-neutral-200"
                     >
                       <Plus size={16} />
                       <span>Crear nuevo: "{customerSearch}"</span>
@@ -207,7 +207,7 @@ export function ConfirmationForm({
         </div>
 
         {parsedNote.customer.is_new && parsedNote.customer.create_new && (
-          <p className="mt-1 text-xs text-amber-600">
+          <p className="mt-1 text-xs text-gold-dark">
             Se creara un nuevo cliente al guardar
           </p>
         )}
@@ -215,7 +215,7 @@ export function ConfirmationForm({
 
       {/* Activity Type */}
       <div>
-        <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
           Tipo de Actividad
         </label>
         <div className="flex flex-wrap gap-2">
@@ -225,8 +225,8 @@ export function ConfirmationForm({
               onClick={() => handleActivityChange(value)}
               className={`px-3 py-1.5 text-sm border-2 transition-all ${
                 parsedNote.activity_type === value
-                  ? 'border-stone-900 bg-stone-900 text-white'
-                  : 'border-stone-300 hover:border-stone-400'
+                  ? 'border-neutral-900 bg-neutral-900 text-white'
+                  : 'border-neutral-300 hover:border-neutral-400'
               }`}
             >
               {label}
@@ -237,13 +237,13 @@ export function ConfirmationForm({
 
       {/* Outcome */}
       <div>
-        <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
           Resultado
         </label>
         <select
           value={parsedNote.outcome}
           onChange={(e) => handleOutcomeChange(e.target.value as Outcome)}
-          className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none"
+          className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none"
         >
           {(Object.entries(OUTCOME_LABELS) as [Outcome, string][]).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
@@ -254,13 +254,13 @@ export function ConfirmationForm({
       {/* Products Section - Editable */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider">
+          <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
             Productos del Pedido
           </label>
           <button
             type="button"
             onClick={handleAddProduct}
-            className="flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800"
+            className="flex items-center gap-1 text-xs text-gold-dark hover:text-gold-dark"
           >
             <Plus size={14} />
             Agregar
@@ -268,28 +268,28 @@ export function ConfirmationForm({
         </div>
 
         {parsedNote.products.length === 0 ? (
-          <p className="text-sm text-stone-400 italic">No hay productos. Haz clic en "Agregar" para buscar.</p>
+          <p className="text-sm text-neutral-400 italic">No hay productos. Haz clic en "Agregar" para buscar.</p>
         ) : (
           <div className="space-y-2">
             {parsedNote.products.map((product, index) => (
               <div key={index} className="relative">
                 <div className={`flex items-center gap-2 p-2 border-2 ${
                   product.matched_item
-                    ? 'border-green-300 bg-green-50'
-                    : 'border-amber-300 bg-amber-50'
+                    ? 'border-success bg-success-light'
+                    : 'border-gold bg-gold-light'
                 }`}>
                   {/* Item search/display */}
                   <div className="flex-1 relative">
                     {product.matched_item ? (
                       <div className="flex items-center gap-2">
-                        <Check size={14} className="text-green-600" />
+                        <Check size={14} className="text-success-dark" />
                         <span className="font-medium">{product.description}</span>
-                        <span className="text-xs text-stone-500">({product.matched_item})</span>
+                        <span className="text-xs text-neutral-500">({product.matched_item})</span>
                       </div>
                     ) : (
                       <>
                         <div className="flex items-center gap-1">
-                          <Package size={14} className="text-amber-600" />
+                          <Package size={14} className="text-gold-dark" />
                           <input
                             type="text"
                             value={productSearches[index] ?? product.description}
@@ -309,28 +309,28 @@ export function ConfirmationForm({
                         </div>
                         {/* Item dropdown */}
                         {activeProductIndex === index && (
-                          <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] max-h-40 overflow-auto">
+                          <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-neutral-200 shadow-sm max-h-40 overflow-auto">
                             {searchingItems ? (
-                              <div className="p-2 text-stone-500 text-sm">Buscando...</div>
+                              <div className="p-2 text-neutral-500 text-sm">Buscando...</div>
                             ) : items.length > 0 ? (
                               items.map((item) => (
                                 <button
                                   key={item.id}
                                   type="button"
                                   onClick={() => handleProductItemSelect(index, item)}
-                                  className="w-full px-3 py-2 text-left hover:bg-stone-100 text-sm flex items-center justify-between"
+                                  className="w-full px-3 py-2 text-left hover:bg-neutral-100 text-sm flex items-center justify-between"
                                 >
                                   <div>
                                     <span className="font-medium">{item.name}</span>
-                                    <span className="text-xs text-stone-500 ml-2">({item.id})</span>
+                                    <span className="text-xs text-neutral-500 ml-2">({item.id})</span>
                                   </div>
                                   {item.rate > 0 && (
-                                    <span className="text-xs text-stone-500">${item.rate}</span>
+                                    <span className="text-xs text-neutral-500">${item.rate}</span>
                                   )}
                                 </button>
                               ))
                             ) : (
-                              <div className="p-2 text-stone-500 text-sm">
+                              <div className="p-2 text-neutral-500 text-sm">
                                 {productSearches[index]?.length >= 2
                                   ? 'No se encontraron productos'
                                   : 'Escribe para buscar...'}
@@ -344,13 +344,13 @@ export function ConfirmationForm({
 
                   {/* Quantity */}
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-stone-500">Qty:</span>
+                    <span className="text-xs text-neutral-500">Qty:</span>
                     <input
                       type="number"
                       min="1"
                       value={product.qty || 1}
                       onChange={(e) => handleProductQtyChange(index, parseInt(e.target.value) || 1)}
-                      className="w-14 px-2 py-1 border border-stone-300 text-center text-sm"
+                      className="w-14 px-2 py-1 border border-neutral-300 text-center text-sm"
                     />
                   </div>
 
@@ -358,7 +358,7 @@ export function ConfirmationForm({
                   <button
                     type="button"
                     onClick={() => handleRemoveProduct(index)}
-                    className="p-1 text-stone-400 hover:text-red-600"
+                    className="p-1 text-neutral-400 hover:text-error-dark"
                   >
                     <Plus size={14} className="rotate-45" />
                   </button>
@@ -366,7 +366,7 @@ export function ConfirmationForm({
 
                 {/* Warning for unmatched */}
                 {!product.matched_item && (
-                  <p className="text-xs text-amber-600 mt-1">
+                  <p className="text-xs text-gold-dark mt-1">
                     Busca y selecciona un producto del catalogo
                   </p>
                 )}
@@ -378,21 +378,21 @@ export function ConfirmationForm({
 
       {/* Notes */}
       <div>
-        <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
           Notas
         </label>
         <textarea
           value={parsedNote.notes}
           onChange={(e) => handleNotesChange(e.target.value)}
           rows={2}
-          className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none resize-none"
+          className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none resize-none"
           placeholder="Notas adicionales..."
         />
       </div>
 
       {/* Suggested Actions */}
       <div>
-        <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
           Acciones a Ejecutar
         </label>
         <div className="space-y-2">
@@ -401,17 +401,17 @@ export function ConfirmationForm({
               key={index}
               className={`flex items-center gap-3 p-3 border-2 cursor-pointer transition-all ${
                 action.enabled
-                  ? 'border-stone-900 bg-stone-50'
-                  : 'border-stone-200 hover:border-stone-300'
+                  ? 'border-neutral-900 bg-neutral-50'
+                  : 'border-neutral-200 hover:border-neutral-300'
               }`}
             >
               <input
                 type="checkbox"
                 checked={action.enabled}
                 onChange={() => handleActionToggle(index)}
-                className="w-4 h-4 accent-stone-900"
+                className="w-4 h-4 accent-neutral-900"
               />
-              <span className={action.enabled ? 'font-medium' : 'text-stone-500'}>
+              <span className={action.enabled ? 'font-medium' : 'text-neutral-500'}>
                 {action.label}
               </span>
             </label>
@@ -424,14 +424,14 @@ export function ConfirmationForm({
         <button
           onClick={onBack}
           disabled={submitting}
-          className="flex-1 py-2 text-stone-600 hover:text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-300 hover:border-stone-400 transition-colors disabled:opacity-50"
+          className="flex-1 py-2 text-neutral-600 hover:text-neutral-900 font-medium uppercase tracking-wider border-2 border-neutral-300 hover:border-neutral-400 transition-colors disabled:opacity-50"
         >
           Volver
         </button>
         <button
           onClick={onSubmit}
           disabled={submitting || enabledActionsCount === 0 || (!parsedNote.customer.matched_id && !parsedNote.customer.create_new)}
-          className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+          className="flex-1 py-2 bg-gold hover:bg-gold-dark text-neutral-900 font-medium uppercase tracking-wider border border-neutral-200 shadow-sm transition-all disabled:opacity-50"
         >
           {submitting ? 'Guardando...' : `Guardar (${enabledActionsCount})`}
         </button>

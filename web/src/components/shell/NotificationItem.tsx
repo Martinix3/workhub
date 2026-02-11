@@ -67,13 +67,13 @@ function getNotificationIcon(type: NotificationType, size = 16) {
 function getPriorityColor(priority: NotificationPriority): string {
   switch (priority) {
     case 'HIGH':
-      return 'text-red-400'
+      return 'text-error'
     case 'MEDIUM':
-      return 'text-amber-400'
+      return 'text-gold'
     case 'LOW':
-      return 'text-slate-400'
+      return 'text-neutral-400'
     default:
-      return 'text-slate-400'
+      return 'text-neutral-400'
   }
 }
 
@@ -91,9 +91,9 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
     <div
       data-testid={`notification-item-${notification.id}`}
       className={`
-        border-b border-slate-700 last:border-b-0
+        border-b border-neutral-700 last:border-b-0
         ${notification.read ? 'bg-[#0f172a]' : 'bg-[#1e293b]'}
-        hover:bg-slate-700/50 transition-colors
+        hover:bg-neutral-700/50 transition-colors
       `}
     >
       <div className="p-3">
@@ -114,13 +114,13 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
                     data-testid="notification-title"
                     className={`
                     text-sm font-medium font-['Inter'] truncate
-                    ${notification.read ? 'text-slate-300' : 'text-white'}
+                    ${notification.read ? 'text-neutral-300' : 'text-white'}
                     ${notification.action_url ? 'group-hover:text-[#f5ce3e]' : ''}
                   `}>
                     {notification.title}
                   </h4>
                 </div>
-                <span data-testid="notification-time" className="text-xs text-slate-500 font-['Inter'] whitespace-nowrap flex-shrink-0">
+                <span data-testid="notification-time" className="text-xs text-neutral-500 font-['Inter'] whitespace-nowrap flex-shrink-0">
                   {formatTimeAgo(notification.created_at)}
                 </span>
               </div>
@@ -129,7 +129,7 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
                 data-testid="notification-message"
                 className={`
                 text-xs font-['Inter'] mt-1 line-clamp-2
-                ${notification.read ? 'text-slate-400' : 'text-slate-300'}
+                ${notification.read ? 'text-neutral-400' : 'text-neutral-300'}
               `}>
                 {notification.message}
               </p>
@@ -146,7 +146,7 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
                 e.stopPropagation()
                 onMarkRead(notification.id)
               }}
-              className="p-1.5 hover:bg-slate-600 rounded text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-neutral-600 rounded text-neutral-400 hover:text-white transition-colors"
               title="Marcar como leida"
             >
               <Check size={14} />
@@ -158,7 +158,7 @@ export function NotificationItem({ notification, onMarkRead, onDelete, onNavigat
               e.stopPropagation()
               onDelete(notification.id)
             }}
-            className="p-1.5 hover:bg-slate-600 rounded text-slate-400 hover:text-red-400 transition-colors"
+            className="p-1.5 hover:bg-neutral-600 rounded text-neutral-400 hover:text-error transition-colors"
             title="Eliminar"
           >
             <Trash2 size={14} />

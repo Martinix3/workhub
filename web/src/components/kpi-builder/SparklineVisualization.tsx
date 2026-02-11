@@ -78,14 +78,14 @@ export function SparklineVisualization({
   const getColorClass = () => {
     switch (color) {
       case 'green':
-        return 'text-green-600 dark:text-green-400'
+        return 'text-success-dark dark:text-success'
       case 'amber':
-        return 'text-amber-600 dark:text-amber-400'
+        return 'text-gold-dark dark:text-gold'
       case 'red':
-        return 'text-red-600 dark:text-red-400'
+        return 'text-error-dark dark:text-error'
       case 'blue':
       default:
-        return 'text-blue-600 dark:text-blue-400'
+        return 'text-turquoise-dark dark:text-turquoise'
     }
   }
 
@@ -110,12 +110,12 @@ export function SparklineVisualization({
   const getTrendIndicator = () => {
     switch (trend) {
       case 'up':
-        return { symbol: '↑', color: 'text-green-600 dark:text-green-400' }
+        return { symbol: '↑', color: 'text-success-dark dark:text-success' }
       case 'down':
-        return { symbol: '↓', color: 'text-red-600 dark:text-red-400' }
+        return { symbol: '↓', color: 'text-error-dark dark:text-error' }
       case 'stable':
       default:
-        return { symbol: '→', color: 'text-stone-400 dark:text-stone-500' }
+        return { symbol: '→', color: 'text-neutral-400 dark:text-neutral-500' }
     }
   }
 
@@ -183,7 +183,7 @@ export function SparklineVisualization({
               stroke="currentColor"
               strokeWidth="1"
               strokeDasharray="2,2"
-              className="text-stone-300 dark:text-stone-600"
+              className="text-neutral-300 dark:text-neutral-600"
             />
           )}
         </svg>
@@ -194,11 +194,11 @@ export function SparklineVisualization({
             className="
               absolute -top-8 left-1/2 -translate-x-1/2
               px-2 py-1
-              bg-stone-900 dark:bg-stone-100
-              text-white dark:text-stone-900
+              bg-neutral-900 dark:bg-neutral-100
+              text-white dark:text-neutral-900
               text-xs font-mono
-              border-2 border-stone-900 dark:border-stone-100
-              shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#f5f5f4]
+              border border-neutral-200
+              shadow-sm
               whitespace-nowrap
               pointer-events-none
               z-10
@@ -222,7 +222,7 @@ export function SparklineVisualization({
       {/* Label with trend indicator */}
       <div className="flex items-center gap-1.5">
         {label && (
-          <div className="font-sans text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 text-center">
+          <div className="font-sans text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 text-center">
             {label}
           </div>
         )}

@@ -194,7 +194,7 @@ export function KPIBuilderModal({
       <div className="p-6 space-y-6">
         {/* Title Input - shown on all steps */}
         <div className="space-y-2">
-          <label className="text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">
+          <label className="text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">
             KPI Title
           </label>
           <input
@@ -204,10 +204,10 @@ export function KPIBuilderModal({
             placeholder="e.g. Monthly Sales Target"
             className="
               w-full px-4 py-3
-              bg-white dark:bg-stone-800
-              border-2 border-stone-900 dark:border-stone-100
-              text-sm text-stone-900 dark:text-stone-100
-              placeholder:text-stone-400
+              bg-white dark:bg-neutral-800
+              border border-neutral-200
+              text-sm text-neutral-900 dark:text-neutral-100
+              placeholder:text-neutral-400
               focus:outline-none focus:ring-0
             "
           />
@@ -243,7 +243,7 @@ export function KPIBuilderModal({
             />
 
             {/* Sharing Toggle */}
-            <div className="space-y-3 pt-4 border-t-2 border-stone-900 dark:border-stone-100">
+            <div className="space-y-3 pt-4 border-t border-neutral-200">
               <label className="flex items-start gap-3 cursor-pointer group">
                 <input
                   type="checkbox"
@@ -251,20 +251,20 @@ export function KPIBuilderModal({
                   onChange={(e) => setIsShared(e.target.checked)}
                   className="
                     mt-1 h-5 w-5
-                    border-2 border-stone-900 dark:border-stone-100
-                    text-amber-500
+                    border border-neutral-200
+                    text-gold-dark
                     focus:ring-0 focus:ring-offset-0
                     cursor-pointer
                   "
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <Users size={16} className="text-stone-600 dark:text-stone-400" />
-                    <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+                    <Users size={16} className="text-neutral-600 dark:text-neutral-400" />
+                    <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                       Share with department
                     </span>
                   </div>
-                  <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
                     {isShared
                       ? `All members of the ${department} department will see this KPI on their dashboard.`
                       : 'This KPI will only be visible to you.'}
@@ -277,15 +277,15 @@ export function KPIBuilderModal({
 
         {/* Error message */}
         {error && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border-2 border-red-600 dark:border-red-400">
-            <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+          <div className="p-3 bg-error-light dark:bg-error-dark/20 border-2 border-error-dark dark:border-error">
+            <p className="text-sm text-error-text dark:text-error font-medium">
               {error.message}
             </p>
           </div>
         )}
 
         {/* Navigation buttons */}
-        <div className="flex items-center justify-between gap-4 pt-4 border-t-2 border-stone-900 dark:border-stone-100">
+        <div className="flex items-center justify-between gap-4 pt-4 border-t border-neutral-200">
           {/* Back button */}
           <button
             type="button"
@@ -293,16 +293,13 @@ export function KPIBuilderModal({
             disabled={step === 'metric' || loading}
             className="
               flex items-center gap-2 px-4 py-2
-              bg-white dark:bg-stone-800
-              border-2 border-stone-900 dark:border-stone-100
-              text-stone-900 dark:text-stone-100
+              bg-white dark:bg-neutral-800
+              border border-neutral-200
+              text-neutral-900 dark:text-neutral-100
               font-medium text-sm uppercase tracking-wider
-              shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#f5f5f4]
-              hover:shadow-[4px_4px_0_#1c1917] dark:hover:shadow-[4px_4px_0_#f5f5f4]
-              hover:-translate-x-[2px] hover:-translate-y-[2px]
+              shadow-sm
+              hover:shadow-md
               disabled:opacity-50 disabled:cursor-not-allowed
-              disabled:hover:shadow-[2px_2px_0_#1c1917] dark:disabled:hover:shadow-[2px_2px_0_#f5f5f4]
-              disabled:hover:translate-x-0 disabled:hover:translate-y-0
               transition-all
             "
           >
@@ -318,16 +315,13 @@ export function KPIBuilderModal({
               disabled={!canProceed || loading || !title.trim()}
               className="
                 flex items-center gap-2 px-6 py-2
-                bg-amber-400 dark:bg-amber-500
-                border-2 border-stone-900 dark:border-stone-100
-                text-stone-900 dark:text-stone-100
+                bg-gold dark:bg-gold-dark
+                border border-neutral-200
+                text-neutral-900 dark:text-neutral-100
                 font-bold text-sm uppercase tracking-wider
-                shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#f5f5f4]
-                hover:shadow-[2px_2px_0_#1c1917] dark:hover:shadow-[2px_2px_0_#f5f5f4]
-                hover:translate-x-[2px] hover:translate-y-[2px]
+                shadow-sm
+                hover:shadow-md
                 disabled:opacity-50 disabled:cursor-not-allowed
-                disabled:hover:shadow-[4px_4px_0_#1c1917] dark:disabled:hover:shadow-[4px_4px_0_#f5f5f4]
-                disabled:hover:translate-x-0 disabled:hover:translate-y-0
                 transition-all
               "
             >
@@ -350,16 +344,13 @@ export function KPIBuilderModal({
               disabled={!canProceed || loading}
               className="
                 flex items-center gap-2 px-6 py-2
-                bg-amber-400 dark:bg-amber-500
-                border-2 border-stone-900 dark:border-stone-100
-                text-stone-900 dark:text-stone-100
+                bg-gold dark:bg-gold-dark
+                border border-neutral-200
+                text-neutral-900 dark:text-neutral-100
                 font-bold text-sm uppercase tracking-wider
-                shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#f5f5f4]
-                hover:shadow-[2px_2px_0_#1c1917] dark:hover:shadow-[2px_2px_0_#f5f5f4]
-                hover:translate-x-[2px] hover:translate-y-[2px]
+                shadow-sm
+                hover:shadow-md
                 disabled:opacity-50 disabled:cursor-not-allowed
-                disabled:hover:shadow-[4px_4px_0_#1c1917] dark:disabled:hover:shadow-[4px_4px_0_#f5f5f4]
-                disabled:hover:translate-x-0 disabled:hover:translate-y-0
                 transition-all
               "
             >
@@ -374,22 +365,22 @@ export function KPIBuilderModal({
           <div
             className={`h-2 w-2 rounded-full transition-colors ${
               step === 'metric'
-                ? 'bg-amber-500'
-                : 'bg-stone-300 dark:bg-stone-600'
+                ? 'bg-gold-dark'
+                : 'bg-neutral-300 dark:bg-neutral-600'
             }`}
           />
           <div
             className={`h-2 w-2 rounded-full transition-colors ${
               step === 'thresholds'
-                ? 'bg-amber-500'
-                : 'bg-stone-300 dark:bg-stone-600'
+                ? 'bg-gold-dark'
+                : 'bg-neutral-300 dark:bg-neutral-600'
             }`}
           />
           <div
             className={`h-2 w-2 rounded-full transition-colors ${
               step === 'visualization'
-                ? 'bg-amber-500'
-                : 'bg-stone-300 dark:bg-stone-600'
+                ? 'bg-gold-dark'
+                : 'bg-neutral-300 dark:bg-neutral-600'
             }`}
           />
         </div>

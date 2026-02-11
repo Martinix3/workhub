@@ -33,7 +33,7 @@ export function NLTaskFAB({ onTaskCreated }: NLTaskFABProps) {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-amber-400 hover:bg-amber-500 text-stone-900 border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-center group"
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gold hover:bg-gold-dark text-neutral-900 border border-neutral-200 shadow-sm transition-all flex items-center justify-center group"
         aria-label="Crear tarea con lenguaje natural"
         title="Crear Tarea - Lenguaje natural y voz (Ctrl+N)"
       >

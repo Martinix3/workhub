@@ -20,32 +20,32 @@ export function CustomerSearch({ selectedCustomer, onSelect }: CustomerSearchPro
   return (
     <div className="space-y-2">
       {/* Label */}
-      <label className="flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300">
+      <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
         <User size={16} />
-        Cliente <span className="text-red-500">*</span>
+        Cliente <span className="text-error">*</span>
       </label>
 
       {/* Selected customer display or search input */}
       {selectedCustomer ? (
         <div className="
           flex items-center justify-between p-3
-          bg-green-50 dark:bg-green-900/20
-          border-2 border-green-600 dark:border-green-500
+          bg-success-light dark:bg-success-dark/20
+          border-2 border-success-dark dark:border-success-dark
         ">
           <div>
-            <p className="font-medium text-stone-900 dark:text-stone-100">
+            <p className="font-medium text-neutral-900 dark:text-neutral-100">
               {selectedCustomer.name}
             </p>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-neutral-500">
               {selectedCustomer.zone} · {selectedCustomer.contactPhone || 'Sin teléfono'}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Check size={18} className="text-green-600" />
+            <Check size={18} className="text-success-dark" />
             <button
               type="button"
               onClick={() => onSelect(null as any)}
-              className="text-xs text-stone-500 hover:text-stone-700 underline"
+              className="text-xs text-neutral-500 hover:text-neutral-700 underline"
             >
               Cambiar
             </button>
@@ -54,7 +54,7 @@ export function CustomerSearch({ selectedCustomer, onSelect }: CustomerSearchPro
       ) : (
         <div className="relative" onClick={e => e.stopPropagation()}>
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
               placeholder="Buscar cliente por nombre..."
@@ -66,11 +66,11 @@ export function CustomerSearch({ selectedCustomer, onSelect }: CustomerSearchPro
               onFocus={() => setShowDropdown(true)}
               className="
                 w-full pl-9 pr-4 py-3
-                bg-white dark:bg-stone-800
-                border-2 border-stone-900 dark:border-stone-100
-                text-sm text-stone-900 dark:text-stone-100
-                placeholder:text-stone-400
-                focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-300
+                bg-white dark:bg-neutral-800
+                border border-neutral-200 dark:border-neutral-100
+                text-sm text-neutral-900 dark:text-neutral-100
+                placeholder:text-neutral-400
+                focus:outline-none focus:ring-2 focus:ring-gold dark:focus:ring-gold
               "
             />
           </div>
@@ -79,13 +79,13 @@ export function CustomerSearch({ selectedCustomer, onSelect }: CustomerSearchPro
           {showDropdown && (
             <div className="
               absolute top-full left-0 right-0 z-10 mt-1
-              bg-white dark:bg-stone-800
-              border-2 border-stone-900 dark:border-stone-100
-              shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#f5f5f4]
+              bg-white dark:bg-neutral-800
+              border border-neutral-200 dark:border-neutral-100
+              shadow-sm
               max-h-60 overflow-y-auto
             ">
               {loading ? (
-                <div className="p-4 text-sm text-stone-500">Buscando...</div>
+                <div className="p-4 text-sm text-neutral-500">Buscando...</div>
               ) : customers && customers.length > 0 ? (
                 customers.map(customer => (
                   <button
@@ -98,25 +98,25 @@ export function CustomerSearch({ selectedCustomer, onSelect }: CustomerSearchPro
                     }}
                     className="
                       w-full px-4 py-3 text-left
-                      hover:bg-stone-100 dark:hover:bg-stone-700
-                      border-b border-stone-200 dark:border-stone-700 last:border-0
+                      hover:bg-neutral-100 dark:hover:bg-neutral-700
+                      border-b border-neutral-200 dark:border-neutral-700 last:border-0
                       transition-colors
                     "
                   >
-                    <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
+                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       {customer.name}
                     </p>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-xs text-neutral-500">
                       {customer.zone} · {customer.type === 'distributor' ? 'Distribuidor' : 'Directo'}
                     </p>
                   </button>
                 ))
               ) : searchTerm ? (
-                <div className="p-4 text-sm text-stone-500">
+                <div className="p-4 text-sm text-neutral-500">
                   No se encontraron clientes
                 </div>
               ) : (
-                <div className="p-4 text-sm text-stone-500">
+                <div className="p-4 text-sm text-neutral-500">
                   Escribe para buscar clientes
                 </div>
               )}

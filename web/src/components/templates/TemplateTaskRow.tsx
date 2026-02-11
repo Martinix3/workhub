@@ -39,14 +39,14 @@ export function TemplateTaskRow({
       onDragLeave={onDragLeave}
       onDrop={() => onDrop(index)}
       className={`
-        border-2 border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-800
+        border-2 border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800
         transition-all duration-75
         ${isDragging
           ? 'opacity-50 rotate-1'
           : ''
         }
         ${isDragOver && !isDragging
-          ? 'border-amber-400 shadow-[4px_4px_0_#f59e0b]'
+          ? 'border-gold shadow-sm'
           : ''
         }
       `}
@@ -57,12 +57,12 @@ export function TemplateTaskRow({
         <div className="flex items-center gap-2 pt-2">
           <button
             type="button"
-            className="cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
+            className="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
             disabled={loading}
           >
             <GripVertical size={18} />
           </button>
-          <span className="inline-flex items-center justify-center w-6 h-6 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-bold font-mono">
+          <span className="inline-flex items-center justify-center w-6 h-6 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-bold font-mono">
             {task.sequence}
           </span>
         </div>
@@ -75,7 +75,7 @@ export function TemplateTaskRow({
             value={task.title}
             onChange={(e) => onUpdate(task.id, { title: e.target.value })}
             placeholder="Título de la tarea"
-            className="w-full px-3 py-2 border-2 border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:border-stone-900 dark:focus:border-stone-100 focus:outline-none text-sm font-medium"
+            className="w-full px-3 py-2 border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:border-neutral-900 dark:focus:border-neutral-100 focus:outline-none text-sm font-medium"
             disabled={loading}
           />
 
@@ -85,7 +85,7 @@ export function TemplateTaskRow({
             onChange={(e) => onUpdate(task.id, { description: e.target.value })}
             placeholder="Descripción de la tarea (opcional)"
             rows={2}
-            className="w-full px-3 py-2 border-2 border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:border-stone-900 dark:focus:border-stone-100 focus:outline-none text-sm resize-none"
+            className="w-full px-3 py-2 border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:border-neutral-900 dark:focus:border-neutral-100 focus:outline-none text-sm resize-none"
             disabled={loading}
           />
 
@@ -93,7 +93,7 @@ export function TemplateTaskRow({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Offset Days */}
             <div>
-              <label className="block text-xs text-stone-500 dark:text-stone-400 mb-1">
+              <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
                 Inicio (día)
               </label>
               <input
@@ -101,14 +101,14 @@ export function TemplateTaskRow({
                 min="0"
                 value={task.offset_days}
                 onChange={(e) => onUpdate(task.id, { offset_days: parseInt(e.target.value) || 0 })}
-                className="w-full px-2 py-1.5 border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-mono text-sm focus:border-stone-900 dark:focus:border-stone-100 focus:outline-none"
+                className="w-full px-2 py-1.5 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono text-sm focus:border-neutral-900 dark:focus:border-neutral-100 focus:outline-none"
                 disabled={loading}
               />
             </div>
 
             {/* Duration Days */}
             <div>
-              <label className="block text-xs text-stone-500 dark:text-stone-400 mb-1">
+              <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
                 Duración (días)
               </label>
               <input
@@ -116,24 +116,24 @@ export function TemplateTaskRow({
                 min="1"
                 value={task.duration_days}
                 onChange={(e) => onUpdate(task.id, { duration_days: parseInt(e.target.value) || 1 })}
-                className="w-full px-2 py-1.5 border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-mono text-sm focus:border-stone-900 dark:focus:border-stone-100 focus:outline-none"
+                className="w-full px-2 py-1.5 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono text-sm focus:border-neutral-900 dark:focus:border-neutral-100 focus:outline-none"
                 disabled={loading}
               />
             </div>
 
             {/* Default Assignee Role */}
             <div>
-              <label className="block text-xs text-stone-500 dark:text-stone-400 mb-1">
+              <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
                 Rol Asignado
               </label>
               <div className="relative">
-                <User size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400" />
+                <User size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   type="text"
                   value={task.default_assignee_role}
                   onChange={(e) => onUpdate(task.id, { default_assignee_role: e.target.value })}
                   placeholder="Ej: Manager"
-                  className="w-full pl-7 pr-2 py-1.5 border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm focus:border-stone-900 dark:focus:border-stone-100 focus:outline-none"
+                  className="w-full pl-7 pr-2 py-1.5 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:border-neutral-900 dark:focus:border-neutral-100 focus:outline-none"
                   disabled={loading}
                 />
               </div>
@@ -141,7 +141,7 @@ export function TemplateTaskRow({
 
             {/* Depends On */}
             <div>
-              <label className="block text-xs text-stone-500 dark:text-stone-400 mb-1">
+              <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
                 Depende de #
               </label>
               <input
@@ -153,7 +153,7 @@ export function TemplateTaskRow({
                   depends_on_sequence: e.target.value ? parseInt(e.target.value) : undefined
                 })}
                 placeholder="0"
-                className="w-full px-2 py-1.5 border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 font-mono text-sm focus:border-stone-900 dark:focus:border-stone-100 focus:outline-none"
+                className="w-full px-2 py-1.5 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono text-sm focus:border-neutral-900 dark:focus:border-neutral-100 focus:outline-none"
                 disabled={loading}
               />
             </div>
@@ -165,10 +165,10 @@ export function TemplateTaskRow({
               type="checkbox"
               checked={task.is_milestone}
               onChange={(e) => onUpdate(task.id, { is_milestone: e.target.checked })}
-              className="w-4 h-4 border-2 border-stone-900 dark:border-stone-100 checked:bg-amber-400"
+              className="w-4 h-4 border border-neutral-200 checked:bg-gold"
               disabled={loading}
             />
-            <span className="text-sm text-stone-700 dark:text-stone-300">
+            <span className="text-sm text-neutral-700 dark:text-neutral-300">
               Marcar como hito
             </span>
           </label>
@@ -178,7 +178,7 @@ export function TemplateTaskRow({
         <button
           type="button"
           onClick={() => onRemove(task.id)}
-          className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors mt-2"
+          className="p-2 text-neutral-400 hover:text-error hover:bg-error-light dark:hover:bg-error-dark/20 transition-colors mt-2"
           disabled={loading}
         >
           <Trash2 size={18} />

@@ -58,8 +58,8 @@ export function ConfirmDialog({
 
   // Button styles based on variant
   const confirmButtonClass = variant === 'destructive'
-    ? 'flex-1 flex items-center justify-center gap-2 py-2 bg-red-500 hover:bg-red-600 text-white font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0'
-    : 'flex-1 flex items-center justify-center gap-2 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0'
+    ? 'flex-1 flex items-center justify-center gap-2 py-2 bg-error hover:bg-error-dark text-white font-medium border border-neutral-200 transition-all disabled:opacity-50'
+    : 'flex-1 flex items-center justify-center gap-2 py-2 bg-gold hover:bg-gold-dark text-neutral-900 font-medium border border-neutral-200 transition-all disabled:opacity-50'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -70,30 +70,30 @@ export function ConfirmDialog({
       />
 
       {/* Dialog */}
-      <div className="relative bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[8px_8px_0_#1c1917] dark:shadow-[8px_8px_0_#f5f5f4] w-full max-w-md">
+      <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 w-full max-w-md">
         {/* Header */}
-        <div className="flex items-center gap-3 p-4 border-b-2 border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-800">
+        <div className="flex items-center gap-3 p-4 border-b border-neutral-200 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-800">
           {variant === 'destructive' && (
-            <AlertCircle size={24} className="text-red-600 flex-shrink-0" />
+            <AlertCircle size={24} className="text-error-dark flex-shrink-0" />
           )}
-          <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+          <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100">
             {title}
           </h2>
         </div>
 
         {/* Content */}
         <div className="p-6">
-          <p className="text-stone-700 dark:text-stone-300 leading-relaxed">
+          <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
             {message}
           </p>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 p-4 border-t-2 border-stone-200 dark:border-stone-700">
+        <div className="flex gap-3 p-4 border-t border-neutral-200 dark:border-neutral-700">
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 py-2 border-2 border-stone-300 hover:border-stone-400 dark:border-stone-600 dark:hover:border-stone-500 font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+            className="flex-1 py-2 border border-neutral-200 hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500 font-medium transition-colors disabled:opacity-50"
           >
             {cancelLabel}
           </button>

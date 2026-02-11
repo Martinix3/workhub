@@ -2,15 +2,15 @@ import type { ExecutiveDashboardProps, AreaSummary, PriorityAlert, AreaStatus } 
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, ChevronRight, X, DollarSign, Package, Factory, CheckCircle, Megaphone } from 'lucide-react'
 
 const statusColors: Record<AreaStatus, { bg: string; border: string; dot: string }> = {
-  green: { bg: 'bg-green-50 dark:bg-green-950', border: 'border-green-500', dot: 'bg-green-500' },
-  yellow: { bg: 'bg-amber-50 dark:bg-amber-950', border: 'border-amber-500', dot: 'bg-amber-500' },
-  red: { bg: 'bg-red-50 dark:bg-red-950', border: 'border-red-500', dot: 'bg-red-500' },
+  green: { bg: 'bg-success-light dark:bg-success-dark', border: 'border-success-dark', dot: 'bg-success' },
+  yellow: { bg: 'bg-gold-light dark:bg-gold-dark/20', border: 'border-gold-dark', dot: 'bg-gold-dark' },
+  red: { bg: 'bg-error-light dark:bg-error-dark', border: 'border-error-dark', dot: 'bg-error' },
 }
 
 const priorityColors = {
-  high: 'border-l-red-500 bg-red-50 dark:bg-red-950',
-  medium: 'border-l-amber-500 bg-amber-50 dark:bg-amber-950',
-  low: 'border-l-stone-400 bg-stone-50 dark:bg-stone-800',
+  high: 'border-l-error-dark bg-error-light dark:bg-error-dark',
+  medium: 'border-l-gold-dark bg-gold-light dark:bg-gold-dark/20',
+  low: 'border-l-neutral-400 bg-neutral-50 dark:bg-neutral-800',
 }
 
 const categoryLabels = {
@@ -52,49 +52,46 @@ function AreaCard({ area, onClick }: AreaCardProps) {
       onClick={onClick}
       className={`
         w-full text-left
-        bg-white dark:bg-stone-900
-        border-2 border-stone-900 dark:border-stone-100
+        bg-white dark:bg-neutral-900
+        border border-neutral-200 dark:border-neutral-100
         border-l-4 ${status.border}
         p-4 lg:p-6
-        shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
-        hover:translate-x-[2px] hover:translate-y-[2px]
-        hover:shadow-[2px_2px_0_#1c1917] dark:hover:shadow-[2px_2px_0_#fafaf9]
         transition-all duration-75
         group
       `}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="text-stone-400 dark:text-stone-500">
+          <div className="text-neutral-400 dark:text-neutral-500">
             {areaIcons[area.icon]}
           </div>
           <div>
-            <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            <h3 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100">
               {area.name}
             </h3>
             <div className="flex items-center gap-2 mt-1">
               <div className={`w-2 h-2 rounded-full ${status.dot}`} />
-              <span className="text-xs text-stone-500 uppercase tracking-wider">
+              <span className="text-xs text-neutral-500 uppercase tracking-wider">
                 {area.status === 'green' ? 'OK' : area.status === 'yellow' ? 'Atencion' : 'Critico'}
               </span>
             </div>
           </div>
         </div>
-        <ChevronRight size={20} className="text-stone-400 group-hover:text-stone-600 transition-colors" />
+        <ChevronRight size={20} className="text-neutral-400 group-hover:text-neutral-600 transition-colors" />
       </div>
 
       <div className="mb-4">
-        <div className="font-mono text-3xl font-bold text-stone-900 dark:text-stone-100">
+        <div className="font-mono text-3xl font-bold text-neutral-900 dark:text-neutral-100">
           {formatValue(area.mainKPI.value)}
         </div>
-        <div className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+        <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
           {area.mainKPI.label}
         </div>
         <div className={`
           flex items-center gap-1 font-mono text-sm font-medium mt-2
-          ${isPositive ? 'text-green-600 dark:text-green-400' : ''}
-          ${isNegative ? 'text-red-600 dark:text-red-400' : ''}
-          ${!isPositive && !isNegative ? 'text-stone-400' : ''}
+          ${isPositive ? 'text-success-dark dark:text-success' : ''}
+          ${isNegative ? 'text-error-dark dark:text-error' : ''}
+          ${!isPositive && !isNegative ? 'text-neutral-400' : ''}
         `}>
           {isPositive && <TrendingUp size={14} />}
           {isNegative && <TrendingDown size={14} />}
@@ -104,13 +101,13 @@ function AreaCard({ area, onClick }: AreaCardProps) {
       </div>
 
       {area.secondaryKPIs && area.secondaryKPIs.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-stone-200 dark:border-stone-700">
+        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
           {area.secondaryKPIs.map((kpi, i) => (
             <div key={i}>
-              <div className="font-mono text-lg font-bold text-stone-700 dark:text-stone-300">
+              <div className="font-mono text-lg font-bold text-neutral-700 dark:text-neutral-300">
                 {formatValue(kpi.value)}
               </div>
-              <div className="text-[10px] text-stone-400 uppercase tracking-wider">
+              <div className="text-[10px] text-neutral-400 uppercase tracking-wider">
                 {kpi.label}
               </div>
             </div>
@@ -132,34 +129,33 @@ function AlertCard({ alert, onView, onDismiss }: AlertCardProps) {
 
   return (
     <div className={`
-      bg-white dark:bg-stone-900
-      border-2 border-stone-900 dark:border-stone-100
+      bg-white dark:bg-neutral-900
+      border border-neutral-200 dark:border-neutral-100
       border-l-4 ${priorityClass}
       p-4
-      shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
     `}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] uppercase tracking-wider text-stone-500 bg-stone-100 dark:bg-stone-800 px-1.5 py-0.5">
+            <span className="text-[10px] uppercase tracking-wider text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5">
               {categoryLabels[alert.category]}
             </span>
             {alert.priority === 'high' && (
-              <AlertTriangle size={14} className="text-red-500" />
+              <AlertTriangle size={14} className="text-error" />
             )}
           </div>
-          <h4 className="font-medium text-stone-900 dark:text-stone-100 mb-1">
+          <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-1">
             {alert.title}
           </h4>
-          <p className="text-sm text-stone-500 dark:text-stone-400">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             {alert.description}
           </p>
         </div>
         <button
           onClick={onDismiss}
-          className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+          className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
         >
-          <X size={16} className="text-stone-400" />
+          <X size={16} className="text-neutral-400" />
         </button>
       </div>
       {alert.actionUrl && (
@@ -188,30 +184,30 @@ export function ExecutiveDashboard({
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
+        <h1 className="font-heading text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
           Command Center
         </h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
           Vision ejecutiva consolidada
         </p>
       </div>
 
       {/* Critical Alerts Banner */}
       {criticalAlerts.length > 0 && (
-        <div className="mb-8 p-4 bg-red-50 dark:bg-red-950 border-2 border-red-500">
+        <div className="mb-8 p-4 bg-error-light dark:bg-error-dark border-2 border-error-dark">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle size={20} className="text-red-500" />
-            <h2 className="font-bold text-red-700 dark:text-red-300 uppercase tracking-wider text-sm">
+            <AlertTriangle size={20} className="text-error" />
+            <h2 className="font-bold text-error-text dark:text-error uppercase tracking-wider text-sm">
               {criticalAlerts.length} Alerta{criticalAlerts.length > 1 ? 's' : ''} Critica{criticalAlerts.length > 1 ? 's' : ''}
             </h2>
           </div>
           <div className="space-y-2">
             {criticalAlerts.map((alert) => (
               <div key={alert.id} className="flex items-center justify-between text-sm">
-                <span className="text-stone-900 dark:text-stone-100">{alert.title}</span>
+                <span className="text-neutral-900 dark:text-neutral-100">{alert.title}</span>
                 <button
                   onClick={() => onViewAlert?.(alert.id)}
-                  className="text-red-600 dark:text-red-400 hover:underline font-medium"
+                  className="text-error-dark dark:text-error hover:underline font-medium"
                 >
                   Atender
                 </button>
@@ -224,7 +220,7 @@ export function ExecutiveDashboard({
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Area Cards Grid */}
         <div className="lg:col-span-2">
-          <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-4">
+          <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-4">
             Estado por Area
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -240,7 +236,7 @@ export function ExecutiveDashboard({
 
         {/* Alerts Panel */}
         <div>
-          <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-4">
+          <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-4">
             Alertas Pendientes
           </h2>
           <div className="space-y-4">

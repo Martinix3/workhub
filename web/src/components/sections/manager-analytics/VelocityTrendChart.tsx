@@ -29,8 +29,8 @@ export function VelocityTrendChart({
 
   if (!data || data.data.length === 0) {
     return (
-      <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 p-8">
-        <div className="text-center text-stone-500 dark:text-stone-400">
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-8">
+        <div className="text-center text-neutral-500 dark:text-neutral-400">
           <Activity size={48} className="mx-auto mb-4 opacity-50" />
           <p className="font-medium">No hay datos de velocidad</p>
         </div>
@@ -94,23 +94,23 @@ export function VelocityTrendChart({
   const trendConfig = {
     up: {
       icon: <TrendingUp size={16} />,
-      color: 'text-green-600 dark:text-green-400',
-      bg: 'bg-green-50 dark:bg-green-950',
-      border: 'border-green-500',
+      color: 'text-success-dark dark:text-success',
+      bg: 'bg-success-light dark:bg-success-dark',
+      border: 'border-success-dark',
       label: 'Tendencia al alza'
     },
     down: {
       icon: <TrendingDown size={16} />,
-      color: 'text-red-600 dark:text-red-400',
-      bg: 'bg-red-50 dark:bg-red-950',
-      border: 'border-red-500',
+      color: 'text-error-dark dark:text-error',
+      bg: 'bg-error-light dark:bg-error-dark',
+      border: 'border-error-dark',
       label: 'Tendencia a la baja'
     },
     stable: {
       icon: <Minus size={16} />,
-      color: 'text-stone-500 dark:text-stone-400',
-      bg: 'bg-stone-50 dark:bg-stone-800',
-      border: 'border-stone-400',
+      color: 'text-neutral-500 dark:text-neutral-400',
+      bg: 'bg-neutral-50 dark:bg-neutral-800',
+      border: 'border-neutral-400',
       label: 'Tendencia estable'
     }
   }
@@ -118,28 +118,28 @@ export function VelocityTrendChart({
   const currentTrend = trendConfig[data.trend]
 
   return (
-    <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 p-4 lg:p-6">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-4 lg:p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+            <h3 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-2">
               Velocidad de Completado
             </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Tareas completadas a lo largo del tiempo
             </p>
           </div>
 
           {/* Period toggle */}
-          <div className="flex gap-1 border-2 border-stone-900 dark:border-stone-100 bg-stone-100 dark:bg-stone-800">
+          <div className="flex gap-1 border border-neutral-200 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800">
             <button
               onClick={() => handlePeriodToggle('daily')}
               className={`
                 px-3 py-1 text-xs font-medium transition-all duration-75
                 ${selectedPeriod === 'daily'
-                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
-                  : 'bg-transparent text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                  ? 'bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900'
+                  : 'bg-transparent text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
                 }
               `}
             >
@@ -150,8 +150,8 @@ export function VelocityTrendChart({
               className={`
                 px-3 py-1 text-xs font-medium transition-all duration-75
                 ${selectedPeriod === 'weekly'
-                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
-                  : 'bg-transparent text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                  ? 'bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900'
+                  : 'bg-transparent text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
                 }
               `}
             >
@@ -172,16 +172,16 @@ export function VelocityTrendChart({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 mb-6 pb-4 border-b border-stone-200 dark:border-stone-700">
+      <div className="flex flex-wrap gap-4 mb-6 pb-4 border-b border-neutral-200 dark:border-neutral-700">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-0.5 bg-blue-600 dark:bg-blue-400" />
-          <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
+          <div className="w-6 h-0.5 bg-turquoise-dark dark:bg-turquoise" />
+          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
             Período actual
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-0.5 border-t-2 border-dashed border-stone-400 dark:border-stone-500" />
-          <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
+          <div className="w-6 h-0.5 border-t-2 border-dashed border-neutral-400 dark:border-neutral-500" />
+          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
             Período anterior
           </span>
         </div>
@@ -189,7 +189,7 @@ export function VelocityTrendChart({
 
       {/* Chart */}
       <div className="mb-6">
-        <div className="relative bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-4">
+        <div className="relative bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 p-4">
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
             className="w-full h-auto"
@@ -207,7 +207,7 @@ export function VelocityTrendChart({
                     x2={padding.left + innerWidth}
                     y2={y}
                     stroke="currentColor"
-                    className="text-stone-200 dark:text-stone-700"
+                    className="text-neutral-200 dark:text-neutral-700"
                     strokeWidth="0.5"
                     strokeDasharray="2,2"
                   />
@@ -216,7 +216,7 @@ export function VelocityTrendChart({
                     y={y}
                     textAnchor="end"
                     dominantBaseline="middle"
-                    className="text-[8px] fill-stone-500 dark:fill-stone-400"
+                    className="text-[8px] fill-neutral-500 dark:fill-neutral-400"
                   >
                     {value}
                   </text>
@@ -229,7 +229,7 @@ export function VelocityTrendChart({
               d={previousPath}
               fill="none"
               stroke="currentColor"
-              className="text-stone-400 dark:text-stone-500"
+              className="text-neutral-400 dark:text-neutral-500"
               strokeWidth="1.5"
               strokeDasharray="3,3"
             />
@@ -239,7 +239,7 @@ export function VelocityTrendChart({
               d={currentPath}
               fill="none"
               stroke="currentColor"
-              className="text-blue-600 dark:text-blue-400"
+              className="text-turquoise-dark dark:text-turquoise"
               strokeWidth="2"
             />
 
@@ -256,7 +256,7 @@ export function VelocityTrendChart({
                     fill="white"
                     stroke="currentColor"
                     className={`
-                      text-blue-600 dark:text-blue-400
+                      text-turquoise-dark dark:text-turquoise
                       ${onDrillDown ? 'cursor-pointer hover:r-8' : 'cursor-default'}
                       transition-all duration-75
                     `}
@@ -292,7 +292,7 @@ export function VelocityTrendChart({
                   x={pos.x}
                   y={padding.top + innerHeight + 15}
                   textAnchor="middle"
-                  className="text-[8px] fill-stone-500 dark:fill-stone-400"
+                  className="text-[8px] fill-neutral-500 dark:fill-neutral-400"
                 >
                   {formatDate(dataPoint.date, data.period)}
                 </text>
@@ -303,44 +303,44 @@ export function VelocityTrendChart({
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 border-t border-stone-200 dark:border-stone-700">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 border-t border-neutral-200 dark:border-neutral-700">
         <div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-1">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
             Promedio Actual
           </div>
-          <div className="font-mono text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <div className="font-mono text-2xl font-bold text-turquoise-dark dark:text-turquoise">
             {data.avg_current.toFixed(1)}
           </div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
             tareas/{data.period === 'daily' ? 'día' : 'semana'}
           </div>
         </div>
         <div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-1">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
             Promedio Anterior
           </div>
-          <div className="font-mono text-2xl font-bold text-stone-600 dark:text-stone-400">
+          <div className="font-mono text-2xl font-bold text-neutral-600 dark:text-neutral-400">
             {data.avg_previous.toFixed(1)}
           </div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
             tareas/{data.period === 'daily' ? 'día' : 'semana'}
           </div>
         </div>
         <div className="col-span-2 sm:col-span-1">
-          <div className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-1">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
             Cambio
           </div>
           <div className={`font-mono text-2xl font-bold ${
             data.avg_current > data.avg_previous
-              ? 'text-green-600 dark:text-green-400'
+              ? 'text-success-dark dark:text-success'
               : data.avg_current < data.avg_previous
-              ? 'text-red-600 dark:text-red-400'
-              : 'text-stone-600 dark:text-stone-400'
+              ? 'text-error-dark dark:text-error'
+              : 'text-neutral-600 dark:text-neutral-400'
           }`}>
             {data.avg_current > data.avg_previous && '+'}
             {((data.avg_current - data.avg_previous) / data.avg_previous * 100).toFixed(1)}%
           </div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
             vs. período anterior
           </div>
         </div>

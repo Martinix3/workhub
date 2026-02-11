@@ -50,26 +50,26 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
   const getStatusColor = () => {
     switch (kpi.status) {
       case 'ok':
-        return 'text-green-600 dark:text-green-400'
+        return 'text-success-dark dark:text-success'
       case 'warning':
-        return 'text-amber-600 dark:text-amber-400'
+        return 'text-gold-dark dark:text-gold'
       case 'critical':
-        return 'text-red-600 dark:text-red-400'
+        return 'text-error-dark dark:text-error'
       default:
-        return 'text-stone-500 dark:text-stone-400'
+        return 'text-neutral-500 dark:text-neutral-400'
     }
   }
 
   const getStatusBorderColor = () => {
     switch (kpi.status) {
       case 'ok':
-        return 'border-green-600 dark:border-green-400'
+        return 'border-success-dark dark:border-success'
       case 'warning':
-        return 'border-amber-600 dark:border-amber-400'
+        return 'border-gold-dark dark:border-gold'
       case 'critical':
-        return 'border-red-600 dark:border-red-400'
+        return 'border-error-dark dark:border-error'
       default:
-        return 'border-stone-900 dark:border-stone-100'
+        return 'border-neutral-900 dark:border-neutral-100'
     }
   }
 
@@ -84,9 +84,9 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
     return (
       <div className={`
         flex items-center gap-1 font-mono text-sm font-medium
-        ${isPositive ? 'text-green-600 dark:text-green-400' : ''}
-        ${isNegative ? 'text-red-600 dark:text-red-400' : ''}
-        ${isNeutral ? 'text-stone-400' : ''}
+        ${isPositive ? 'text-success-dark dark:text-success' : ''}
+        ${isNegative ? 'text-error-dark dark:text-error' : ''}
+        ${isNeutral ? 'text-neutral-400' : ''}
       `}>
         {isPositive && <TrendingUp size={14} />}
         {isNegative && <TrendingDown size={14} />}
@@ -123,10 +123,10 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
       </div>
 
       {/* Separator */}
-      <div className="w-12 h-0.5 bg-stone-900 dark:bg-stone-100 mb-2" />
+      <div className="w-12 h-0.5 bg-neutral-900 dark:bg-neutral-100 mb-2" />
 
       {/* Label */}
-      <div className="font-sans text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">
+      <div className="font-sans text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">
         {kpi.title}
       </div>
 
@@ -162,7 +162,7 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
             strokeWidth="10"
             strokeDasharray={maxArc}
             strokeLinecap="round"
-            className="text-stone-200 dark:text-stone-700"
+            className="text-neutral-200 dark:text-neutral-700"
           />
           {/* Value arc */}
           <circle
@@ -184,7 +184,7 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
         </div>
 
         {/* Label */}
-        <div className="font-sans text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 text-center">
+        <div className="font-sans text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 text-center">
           {kpi.title}
         </div>
       </div>
@@ -229,7 +229,7 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
         </div>
 
         {/* Label */}
-        <div className="font-sans text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">
+        <div className="font-sans text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">
           {kpi.title}
         </div>
 
@@ -257,13 +257,13 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
         </div>
 
         {/* Label */}
-        <div className="font-sans text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-3">
+        <div className="font-sans text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-3">
           {kpi.title}
         </div>
 
         {/* Progress bar */}
         <div className="w-full mb-2">
-          <div className="w-full h-4 bg-stone-200 dark:bg-stone-700 border-2 border-stone-900 dark:border-stone-100">
+          <div className="w-full h-4 bg-neutral-200 dark:bg-neutral-700 border border-neutral-200">
             <div
               className={`h-full transition-all ${getStatusColor().replace('text-', 'bg-')}`}
               style={{ width: `${percentage}%` }}
@@ -272,7 +272,7 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
         </div>
 
         {/* Progress text */}
-        <div className="text-xs text-stone-500 dark:text-stone-400">
+        <div className="text-xs text-neutral-500 dark:text-neutral-400">
           {progressText}
           {kpi.target_value && ` (${formatValue(kpi.target_value, valueType)})`}
         </div>
@@ -315,18 +315,17 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
     return (
       <div className="
         relative
-        bg-white dark:bg-stone-900
-        border-2 border-red-600 dark:border-red-400
+        bg-white dark:bg-neutral-900
+        border-2 border-error-dark dark:border-error
         p-4 lg:p-6
-        shadow-[4px_4px_0_#dc2626] dark:shadow-[4px_4px_0_#f87171]
       ">
-        <div className="font-mono text-sm font-bold text-red-600 dark:text-red-400 mb-2">
+        <div className="font-mono text-sm font-bold text-error-dark dark:text-error mb-2">
           Error
         </div>
-        <div className="text-xs text-stone-600 dark:text-stone-400 mb-2">
+        <div className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">
           {kpi.title}
         </div>
-        <div className="text-xs text-red-600 dark:text-red-400">
+        <div className="text-xs text-error-dark dark:text-error">
           {kpi.error}
         </div>
 
@@ -335,13 +334,13 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
           <div className="flex items-center gap-2 mt-4">
             <button
               onClick={handleEdit}
-              className="text-xs text-stone-600 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+              className="text-xs text-neutral-600 dark:text-neutral-400 hover:text-gold-dark dark:hover:text-gold transition-colors"
             >
               <Edit2 size={14} />
             </button>
             <button
               onClick={handleDelete}
-              className="text-xs text-stone-600 dark:text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              className="text-xs text-neutral-600 dark:text-neutral-400 hover:text-error-dark dark:hover:text-error transition-colors"
             >
               <Trash2 size={14} />
             </button>
@@ -357,18 +356,18 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
         onClick={onClick}
         className={`
           relative
-          bg-white dark:bg-stone-900
-          ${kpi.is_owned ? `border-2 ${getStatusBorderColor()}` : 'border-2 border-dashed border-stone-400 dark:border-stone-500'}
+          bg-white dark:bg-neutral-900
+          ${kpi.is_owned ? `border-2 ${getStatusBorderColor()}` : 'border-2 border-dashed border-neutral-400 dark:border-neutral-500'}
           p-4 lg:p-6
-          shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
-          ${onClick ? 'hover:shadow-[2px_2px_0_#1c1917] dark:hover:shadow-[2px_2px_0_#fafaf9] hover:translate-x-[2px] hover:translate-y-[2px] cursor-pointer' : ''}
+          shadow-sm
+          ${onClick ? 'hover:shadow-md cursor-pointer' : ''}
           transition-all duration-75
           group
         `}
       >
         {/* Shared indicator */}
         {!kpi.is_owned && (
-          <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
+          <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
             <Users size={12} />
             <span className="hidden sm:inline">
               Shared by {kpi.owner_name || kpi.owner_user}
@@ -382,11 +381,11 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
 
         {/* Actions for owner */}
         {kpi.is_owned && (onEdit || onDelete) && (
-          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-700">
             {onEdit && (
               <button
                 onClick={handleEdit}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-stone-600 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/10 border border-stone-300 dark:border-stone-600 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-gold-dark dark:hover:text-gold hover:bg-gold-light dark:hover:bg-gold-dark/10 border border-neutral-300 dark:border-neutral-600 transition-colors"
               >
                 <Edit2 size={12} />
                 <span>Edit</span>
@@ -395,7 +394,7 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
             {onDelete && (
               <button
                 onClick={handleDelete}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-stone-600 dark:text-stone-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 border border-stone-300 dark:border-stone-600 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-error-dark dark:hover:text-error hover:bg-error-light dark:hover:bg-error-dark/10 border border-neutral-300 dark:border-neutral-600 transition-colors"
               >
                 <Trash2 size={12} />
                 <span>Delete</span>
@@ -413,19 +412,19 @@ export function CustomKPICard({ kpi, onClick, onEdit, onDelete }: CustomKPICardP
         size="sm"
       >
         <div className="p-6">
-          <p className="text-stone-700 dark:text-stone-300 mb-6">
+          <p className="text-neutral-700 dark:text-neutral-300 mb-6">
             Are you sure you want to delete <strong>{kpi.title}</strong>? This action cannot be undone.
           </p>
           <div className="flex gap-3 justify-end">
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className="px-4 py-2 text-sm border-2 border-stone-900 dark:border-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              className="px-4 py-2 text-sm border border-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={confirmDelete}
-              className="px-4 py-2 text-sm bg-red-600 text-white border-2 border-red-700 hover:bg-red-700 transition-colors shadow-[2px_2px_0_#b91c1c]"
+              className="px-4 py-2 text-sm bg-error-dark text-white border-2 border-error-dark hover:bg-error-dark transition-colors shadow-sm"
             >
               Delete
             </button>

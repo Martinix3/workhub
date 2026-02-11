@@ -126,34 +126,34 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
     <div className="space-y-4">
       {/* Title */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">
-          Título <span className="text-red-600">*</span>
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
+          Título <span className="text-error-dark">*</span>
         </label>
         <input
           type="text"
           value={parsedTask.title}
           onChange={handleTitleChange}
-          className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none"
+          className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none"
           placeholder="Título de la tarea"
         />
       </div>
 
       {/* Due Date */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
           Fecha límite
         </label>
         <input
           type="date"
           value={parsedTask.due_date || ''}
           onChange={handleDueDateChange}
-          className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none"
+          className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none"
         />
       </div>
 
       {/* Priority */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-2">
+        <label className="block text-sm font-medium text-neutral-700 mb-2">
           Prioridad
         </label>
         <div className="flex gap-2">
@@ -165,8 +165,8 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
               className={`
                 flex-1 px-4 py-2 border-2 font-medium uppercase tracking-wide text-sm transition-all
                 ${parsedTask.priority === priority
-                  ? 'bg-amber-400 border-stone-900 shadow-[2px_2px_0_#1c1917]'
-                  : 'bg-white border-stone-300 hover:border-stone-400'
+                  ? 'bg-gold border-neutral-900 shadow-sm'
+                  : 'bg-white border-neutral-300 hover:border-neutral-400'
                 }
               `}
             >
@@ -178,7 +178,7 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
 
       {/* Assignee */}
       <div ref={userContainerRef}>
-        <label className="block text-sm font-medium text-stone-700 mb-1">
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
           Asignado a
         </label>
         <button
@@ -186,17 +186,17 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
           onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
           className={`
             w-full px-3 py-2 text-left
-            border-2 border-stone-300
+            border-2 border-neutral-300
             bg-white
             flex items-center gap-2
             transition-colors
-            hover:border-stone-400
-            ${isUserDropdownOpen ? 'border-stone-900' : ''}
+            hover:border-neutral-400
+            ${isUserDropdownOpen ? 'border-neutral-900' : ''}
           `}
         >
           {parsedTask.assignee.matched && parsedTask.assignee.user ? (
             <>
-              <div className="w-6 h-6 bg-stone-200 border border-stone-400 flex items-center justify-center flex-shrink-0">
+              <div className="w-6 h-6 bg-neutral-200 border border-neutral-400 flex items-center justify-center flex-shrink-0">
                 {parsedTask.assignee.user.user_image ? (
                   <img
                     src={parsedTask.assignee.user.user_image}
@@ -204,10 +204,10 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <User size={14} className="text-stone-500" />
+                  <User size={14} className="text-neutral-500" />
                 )}
               </div>
-              <span className="flex-1 truncate text-sm text-stone-900">
+              <span className="flex-1 truncate text-sm text-neutral-900">
                 {parsedTask.assignee.user.full_name}
               </span>
               <button
@@ -216,39 +216,39 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
                   e.stopPropagation()
                   handleUserSelect(null)
                 }}
-                className="p-0.5 hover:bg-stone-100"
+                className="p-0.5 hover:bg-neutral-100"
               >
-                <X size={14} className="text-stone-400" />
+                <X size={14} className="text-neutral-400" />
               </button>
             </>
           ) : (
             <>
-              <User size={16} className="text-stone-400 flex-shrink-0" />
-              <span className="flex-1 text-sm text-stone-400">
+              <User size={16} className="text-neutral-400 flex-shrink-0" />
+              <span className="flex-1 text-sm text-neutral-400">
                 {parsedTask.assignee.name ? `"${parsedTask.assignee.name}" (no encontrado)` : 'Seleccionar usuario'}
               </span>
             </>
           )}
           <ChevronDown
             size={16}
-            className={`text-stone-400 flex-shrink-0 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`}
+            className={`text-neutral-400 flex-shrink-0 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`}
           />
         </button>
 
         {/* User Dropdown */}
         {isUserDropdownOpen && (
-          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] max-h-64 overflow-hidden">
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 shadow-sm max-h-64 overflow-hidden">
             {/* Search Input */}
-            <div className="p-2 border-b border-stone-200">
-              <div className="flex items-center gap-2 px-2 py-1.5 bg-stone-50 border border-stone-300">
-                <Search size={14} className="text-stone-400" />
+            <div className="p-2 border-b border-neutral-200">
+              <div className="flex items-center gap-2 px-2 py-1.5 bg-neutral-50 border border-neutral-300">
+                <Search size={14} className="text-neutral-400" />
                 <input
                   ref={userInputRef}
                   type="text"
                   value={userSearchTerm}
                   onChange={(e) => setUserSearchTerm(e.target.value)}
                   placeholder="Buscar usuario..."
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400"
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400"
                 />
               </div>
             </div>
@@ -256,18 +256,18 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
             {/* Options */}
             <div className="max-h-48 overflow-y-auto">
               {usersLoading ? (
-                <div className="p-4 text-center text-sm text-stone-500">
+                <div className="p-4 text-center text-sm text-neutral-500">
                   Cargando...
                 </div>
               ) : users.length === 0 ? (
-                <div className="p-4 text-center text-sm text-stone-500">
+                <div className="p-4 text-center text-sm text-neutral-500">
                   {userSearchTerm ? 'No se encontraron usuarios' : 'Escribe para buscar'}
                 </div>
               ) : (
                 <>
                   {parsedTask.assignee.suggestions.length > 0 && !userSearchTerm && (
                     <>
-                      <div className="px-3 py-1.5 bg-stone-100 text-xs font-medium text-stone-600 uppercase tracking-wide">
+                      <div className="px-3 py-1.5 bg-neutral-100 text-xs font-medium text-neutral-600 uppercase tracking-wide">
                         Sugerencias
                       </div>
                       {parsedTask.assignee.suggestions.map((user) => (
@@ -275,26 +275,26 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
                           key={user.id}
                           type="button"
                           onClick={() => handleUserSelect(user)}
-                          className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-amber-50 transition-colors"
+                          className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-gold-light transition-colors"
                         >
-                          <div className="w-7 h-7 bg-stone-200 border border-stone-400 flex items-center justify-center flex-shrink-0">
+                          <div className="w-7 h-7 bg-neutral-200 border border-neutral-400 flex items-center justify-center flex-shrink-0">
                             {user.user_image ? (
                               <img src={user.user_image} alt="" className="w-full h-full object-cover" />
                             ) : (
-                              <User size={14} className="text-stone-500" />
+                              <User size={14} className="text-neutral-500" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-stone-900 truncate">
+                            <p className="text-sm font-medium text-neutral-900 truncate">
                               {user.full_name}
                             </p>
-                            <p className="text-xs text-stone-500 truncate">
+                            <p className="text-xs text-neutral-500 truncate">
                               {user.email}
                             </p>
                           </div>
                         </button>
                       ))}
-                      <div className="border-t border-stone-200 my-1" />
+                      <div className="border-t border-neutral-200 my-1" />
                     </>
                   )}
                   {users.map((user) => (
@@ -302,20 +302,20 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
                       key={user.id}
                       type="button"
                       onClick={() => handleUserSelect(user)}
-                      className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-amber-50 transition-colors"
+                      className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-gold-light transition-colors"
                     >
-                      <div className="w-7 h-7 bg-stone-200 border border-stone-400 flex items-center justify-center flex-shrink-0">
+                      <div className="w-7 h-7 bg-neutral-200 border border-neutral-400 flex items-center justify-center flex-shrink-0">
                         {user.user_image ? (
                           <img src={user.user_image} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <User size={14} className="text-stone-500" />
+                          <User size={14} className="text-neutral-500" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-stone-900 truncate">
+                        <p className="text-sm font-medium text-neutral-900 truncate">
                           {user.full_name}
                         </p>
-                        <p className="text-xs text-stone-500 truncate">
+                        <p className="text-xs text-neutral-500 truncate">
                           {user.email}
                         </p>
                       </div>
@@ -330,7 +330,7 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
 
       {/* Project */}
       <div ref={projectContainerRef}>
-        <label className="block text-sm font-medium text-stone-700 mb-1">
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
           Proyecto
         </label>
         <button
@@ -338,18 +338,18 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
           onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
           className={`
             w-full px-3 py-2 text-left
-            border-2 border-stone-300
+            border-2 border-neutral-300
             bg-white
             flex items-center gap-2
             transition-colors
-            hover:border-stone-400
-            ${isProjectDropdownOpen ? 'border-stone-900' : ''}
+            hover:border-neutral-400
+            ${isProjectDropdownOpen ? 'border-neutral-900' : ''}
           `}
         >
           {parsedTask.project.matched && parsedTask.project.project ? (
             <>
-              <FolderOpen size={16} className="text-stone-600 flex-shrink-0" />
-              <span className="flex-1 truncate text-sm text-stone-900">
+              <FolderOpen size={16} className="text-neutral-600 flex-shrink-0" />
+              <span className="flex-1 truncate text-sm text-neutral-900">
                 {parsedTask.project.project.title}
               </span>
               <button
@@ -358,39 +358,39 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
                   e.stopPropagation()
                   handleProjectSelect(null)
                 }}
-                className="p-0.5 hover:bg-stone-100"
+                className="p-0.5 hover:bg-neutral-100"
               >
-                <X size={14} className="text-stone-400" />
+                <X size={14} className="text-neutral-400" />
               </button>
             </>
           ) : (
             <>
-              <FolderOpen size={16} className="text-stone-400 flex-shrink-0" />
-              <span className="flex-1 text-sm text-stone-400">
+              <FolderOpen size={16} className="text-neutral-400 flex-shrink-0" />
+              <span className="flex-1 text-sm text-neutral-400">
                 {parsedTask.project.name ? `"${parsedTask.project.name}" (no encontrado)` : 'Seleccionar proyecto'}
               </span>
             </>
           )}
           <ChevronDown
             size={16}
-            className={`text-stone-400 flex-shrink-0 transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`}
+            className={`text-neutral-400 flex-shrink-0 transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`}
           />
         </button>
 
         {/* Project Dropdown */}
         {isProjectDropdownOpen && (
-          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] max-h-64 overflow-hidden">
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 shadow-sm max-h-64 overflow-hidden">
             {/* Search Input */}
-            <div className="p-2 border-b border-stone-200">
-              <div className="flex items-center gap-2 px-2 py-1.5 bg-stone-50 border border-stone-300">
-                <Search size={14} className="text-stone-400" />
+            <div className="p-2 border-b border-neutral-200">
+              <div className="flex items-center gap-2 px-2 py-1.5 bg-neutral-50 border border-neutral-300">
+                <Search size={14} className="text-neutral-400" />
                 <input
                   ref={projectInputRef}
                   type="text"
                   value={projectSearchTerm}
                   onChange={(e) => setProjectSearchTerm(e.target.value)}
                   placeholder="Buscar proyecto..."
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400"
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400"
                 />
               </div>
             </div>
@@ -398,18 +398,18 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
             {/* Options */}
             <div className="max-h-48 overflow-y-auto">
               {projectsLoading ? (
-                <div className="p-4 text-center text-sm text-stone-500">
+                <div className="p-4 text-center text-sm text-neutral-500">
                   Cargando...
                 </div>
               ) : projects.length === 0 ? (
-                <div className="p-4 text-center text-sm text-stone-500">
+                <div className="p-4 text-center text-sm text-neutral-500">
                   {projectSearchTerm ? 'No se encontraron proyectos' : 'Escribe para buscar'}
                 </div>
               ) : (
                 <>
                   {parsedTask.project.suggestions.length > 0 && !projectSearchTerm && (
                     <>
-                      <div className="px-3 py-1.5 bg-stone-100 text-xs font-medium text-stone-600 uppercase tracking-wide">
+                      <div className="px-3 py-1.5 bg-neutral-100 text-xs font-medium text-neutral-600 uppercase tracking-wide">
                         Sugerencias
                       </div>
                       {parsedTask.project.suggestions.map((project) => (
@@ -417,17 +417,17 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
                           key={project.id}
                           type="button"
                           onClick={() => handleProjectSelect(project)}
-                          className="w-full px-3 py-2 text-left hover:bg-amber-50 transition-colors border-b border-stone-100 last:border-0"
+                          className="w-full px-3 py-2 text-left hover:bg-gold-light transition-colors border-b border-neutral-100 last:border-0"
                         >
-                          <p className="text-sm font-medium text-stone-900 truncate">
+                          <p className="text-sm font-medium text-neutral-900 truncate">
                             {project.title}
                           </p>
-                          <p className="text-xs text-stone-500 truncate">
+                          <p className="text-xs text-neutral-500 truncate">
                             {project.department} · {project.status}
                           </p>
                         </button>
                       ))}
-                      <div className="border-t border-stone-200 my-1" />
+                      <div className="border-t border-neutral-200 my-1" />
                     </>
                   )}
                   {projects.map((project) => (
@@ -435,12 +435,12 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
                       key={project.id}
                       type="button"
                       onClick={() => handleProjectSelect(project)}
-                      className="w-full px-3 py-2 text-left hover:bg-amber-50 transition-colors border-b border-stone-100 last:border-0"
+                      className="w-full px-3 py-2 text-left hover:bg-gold-light transition-colors border-b border-neutral-100 last:border-0"
                     >
-                      <p className="text-sm font-medium text-stone-900 truncate">
+                      <p className="text-sm font-medium text-neutral-900 truncate">
                         {project.title}
                       </p>
-                      <p className="text-xs text-stone-500 truncate">
+                      <p className="text-xs text-neutral-500 truncate">
                         {project.department} · {project.status}
                       </p>
                     </button>
@@ -454,14 +454,14 @@ export function TaskConfirmationForm({ parsedTask, onChange }: TaskConfirmationF
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
           Descripción
         </label>
         <textarea
           value={parsedTask.description || ''}
           onChange={handleDescriptionChange}
           rows={3}
-          className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none resize-none"
+          className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none resize-none"
           placeholder="Descripción adicional (opcional)"
         />
       </div>

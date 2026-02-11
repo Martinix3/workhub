@@ -174,7 +174,7 @@ export function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100 dark:bg-stone-900">
+    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -183,8 +183,8 @@ export function TemplatesPage() {
             onClick={() => navigate('/tareas/proyectos')}
             className="
               inline-flex items-center gap-2 mb-4
-              text-stone-600 dark:text-stone-400
-              hover:text-stone-900 dark:hover:text-stone-100
+              text-neutral-600 dark:text-neutral-400
+              hover:text-neutral-900 dark:hover:text-neutral-100
               transition-colors
             "
           >
@@ -196,29 +196,28 @@ export function TemplatesPage() {
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 bg-amber-400 border-2 border-stone-900 dark:border-stone-100 flex items-center justify-center">
-                  <Layers size={24} className="text-stone-900" />
+                <div className="w-12 h-12 bg-gold border border-neutral-200 dark:border-neutral-100 flex items-center justify-center">
+                  <Layers size={24} className="text-neutral-900" />
                 </div>
-                <h1 className="font-serif text-3xl lg:text-4xl font-bold text-stone-900 dark:text-stone-100">
+                <h1 className="font-heading text-3xl lg:text-4xl font-bold text-neutral-900 dark:text-neutral-100">
                   Plantillas de Proyecto
                 </h1>
               </div>
-              <p className="text-stone-500 dark:text-stone-400 uppercase tracking-wider text-sm mt-2">
+              <p className="text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-sm mt-2">
                 Plantillas prediseñadas para iniciar proyectos rápidamente
               </p>
             </div>
 
             {/* Stats Badge */}
             <div className="
-              bg-white dark:bg-stone-800
-              border-2 border-stone-900 dark:border-stone-100
+              bg-white dark:bg-neutral-800
+              border border-neutral-200 dark:border-neutral-100
               px-6 py-3
-              shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
             ">
-              <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-medium mb-1">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider font-medium mb-1">
                 Total Disponible
               </p>
-              <p className="font-mono text-3xl font-bold text-stone-900 dark:text-stone-100">
+              <p className="font-mono text-3xl font-bold text-neutral-900 dark:text-neutral-100">
                 {templates.length}
               </p>
             </div>
@@ -226,7 +225,7 @@ export function TemplatesPage() {
         </div>
 
         {/* Separator */}
-        <div className="w-full h-0.5 bg-stone-900 dark:bg-stone-100 mb-8" />
+        <div className="w-full h-0.5 bg-neutral-900 dark:bg-neutral-100 mb-8" />
 
         {/* Template Gallery */}
         <TemplateGallery

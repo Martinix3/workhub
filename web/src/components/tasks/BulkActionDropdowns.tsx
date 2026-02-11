@@ -16,11 +16,11 @@ interface StatusDropdownProps {
 }
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string }[] = [
-  { value: 'BACKLOG', label: 'Backlog', color: 'bg-stone-600' },
+  { value: 'BACKLOG', label: 'Backlog', color: 'bg-neutral-600' },
   { value: 'NEXT', label: 'Next', color: 'bg-cyan-400' },
-  { value: 'DOING', label: 'Doing', color: 'bg-amber-400' },
-  { value: 'BLOCKED', label: 'Blocked', color: 'bg-red-500' },
-  { value: 'DONE', label: 'Done', color: 'bg-green-500' }
+  { value: 'DOING', label: 'Doing', color: 'bg-gold' },
+  { value: 'BLOCKED', label: 'Blocked', color: 'bg-error' },
+  { value: 'DONE', label: 'Done', color: 'bg-success' }
 ]
 
 export function StatusDropdown({
@@ -60,35 +60,35 @@ export function StatusDropdown({
         disabled={disabled}
         className={`
           w-full px-3 py-2 text-left
-          border-2 border-stone-900
+          border border-neutral-200
           bg-white
           flex items-center gap-2
           transition-all
-          shadow-[2px_2px_0_#1c1917]
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[1px_1px_0_#1c1917] hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer'}
-          ${isOpen ? 'translate-x-[1px] translate-y-[1px] shadow-[1px_1px_0_#1c1917]' : ''}
+          shadow-sm
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${isOpen ? '' : ''}
         `}
       >
-        <Edit size={16} className="text-stone-600 flex-shrink-0" />
+        <Edit size={16} className="text-neutral-600 flex-shrink-0" />
         {selectedOption ? (
           <>
-            <div className={`w-3 h-3 ${selectedOption.color} border border-stone-900 flex-shrink-0`} />
-            <span className="flex-1 truncate text-sm font-medium text-stone-900">
+            <div className={`w-3 h-3 ${selectedOption.color} border border-neutral-900 flex-shrink-0`} />
+            <span className="flex-1 truncate text-sm font-medium text-neutral-900">
               {selectedOption.label}
             </span>
           </>
         ) : (
-          <span className="flex-1 text-sm text-stone-400">{placeholder}</span>
+          <span className="flex-1 text-sm text-neutral-400">{placeholder}</span>
         )}
         <ChevronDown
           size={16}
-          className={`text-stone-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`text-neutral-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] overflow-hidden">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 overflow-hidden">
           <div className="max-h-64 overflow-y-auto">
             {STATUS_OPTIONS.map((option) => (
               <button
@@ -97,16 +97,16 @@ export function StatusDropdown({
                 onClick={() => handleSelect(option.value)}
                 className={`
                   w-full px-3 py-2 flex items-center gap-2 text-left
-                  hover:bg-amber-50 transition-colors
-                  ${option.value === value ? 'bg-amber-100' : ''}
+                  hover:bg-gold-light transition-colors
+                  ${option.value === value ? 'bg-gold-light' : ''}
                 `}
               >
-                <div className={`w-4 h-4 ${option.color} border border-stone-900 flex-shrink-0`} />
-                <span className="flex-1 text-sm font-medium text-stone-900">
+                <div className={`w-4 h-4 ${option.color} border border-neutral-900 flex-shrink-0`} />
+                <span className="flex-1 text-sm font-medium text-neutral-900">
                   {option.label}
                 </span>
                 {option.value === value && (
-                  <Check size={16} className="text-stone-900 flex-shrink-0" />
+                  <Check size={16} className="text-neutral-900 flex-shrink-0" />
                 )}
               </button>
             ))}
@@ -128,9 +128,9 @@ interface PriorityDropdownProps {
 }
 
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string; color: string }[] = [
-  { value: 'P0', label: 'P0 - Crítica', color: 'bg-red-500' },
-  { value: 'P1', label: 'P1 - Alta', color: 'bg-amber-400' },
-  { value: 'P2', label: 'P2 - Normal', color: 'bg-stone-400' }
+  { value: 'P0', label: 'P0 - Crítica', color: 'bg-error' },
+  { value: 'P1', label: 'P1 - Alta', color: 'bg-gold' },
+  { value: 'P2', label: 'P2 - Normal', color: 'bg-neutral-400' }
 ]
 
 export function PriorityDropdown({
@@ -170,35 +170,35 @@ export function PriorityDropdown({
         disabled={disabled}
         className={`
           w-full px-3 py-2 text-left
-          border-2 border-stone-900
+          border border-neutral-200
           bg-white
           flex items-center gap-2
           transition-all
-          shadow-[2px_2px_0_#1c1917]
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[1px_1px_0_#1c1917] hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer'}
-          ${isOpen ? 'translate-x-[1px] translate-y-[1px] shadow-[1px_1px_0_#1c1917]' : ''}
+          shadow-sm
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${isOpen ? '' : ''}
         `}
       >
-        <Flag size={16} className="text-stone-600 flex-shrink-0" />
+        <Flag size={16} className="text-neutral-600 flex-shrink-0" />
         {selectedOption ? (
           <>
-            <div className={`w-3 h-3 ${selectedOption.color} border border-stone-900 flex-shrink-0`} />
-            <span className="flex-1 truncate text-sm font-medium text-stone-900">
+            <div className={`w-3 h-3 ${selectedOption.color} border border-neutral-900 flex-shrink-0`} />
+            <span className="flex-1 truncate text-sm font-medium text-neutral-900">
               {selectedOption.label}
             </span>
           </>
         ) : (
-          <span className="flex-1 text-sm text-stone-400">{placeholder}</span>
+          <span className="flex-1 text-sm text-neutral-400">{placeholder}</span>
         )}
         <ChevronDown
           size={16}
-          className={`text-stone-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`text-neutral-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] overflow-hidden">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 overflow-hidden">
           <div className="max-h-64 overflow-y-auto">
             {PRIORITY_OPTIONS.map((option) => (
               <button
@@ -207,16 +207,16 @@ export function PriorityDropdown({
                 onClick={() => handleSelect(option.value)}
                 className={`
                   w-full px-3 py-2 flex items-center gap-2 text-left
-                  hover:bg-amber-50 transition-colors
-                  ${option.value === value ? 'bg-amber-100' : ''}
+                  hover:bg-gold-light transition-colors
+                  ${option.value === value ? 'bg-gold-light' : ''}
                 `}
               >
-                <div className={`w-4 h-4 ${option.color} border border-stone-900 flex-shrink-0`} />
-                <span className="flex-1 text-sm font-medium text-stone-900">
+                <div className={`w-4 h-4 ${option.color} border border-neutral-900 flex-shrink-0`} />
+                <span className="flex-1 text-sm font-medium text-neutral-900">
                   {option.label}
                 </span>
                 {option.value === value && (
-                  <Check size={16} className="text-stone-900 flex-shrink-0" />
+                  <Check size={16} className="text-neutral-900 flex-shrink-0" />
                 )}
               </button>
             ))}
@@ -278,39 +278,39 @@ export function ProjectDropdown({
         disabled={disabled}
         className={`
           w-full px-3 py-2 text-left
-          border-2 border-stone-900
+          border border-neutral-200
           bg-white
           flex items-center gap-2
           transition-all
-          shadow-[2px_2px_0_#1c1917]
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[1px_1px_0_#1c1917] hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer'}
-          ${isOpen ? 'translate-x-[1px] translate-y-[1px] shadow-[1px_1px_0_#1c1917]' : ''}
+          shadow-sm
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${isOpen ? '' : ''}
         `}
       >
-        <FolderOpen size={16} className="text-stone-600 flex-shrink-0" />
+        <FolderOpen size={16} className="text-neutral-600 flex-shrink-0" />
         {selectedProject ? (
-          <span className="flex-1 truncate text-sm font-medium text-stone-900">
+          <span className="flex-1 truncate text-sm font-medium text-neutral-900">
             {selectedProject.title}
           </span>
         ) : (
-          <span className="flex-1 text-sm text-stone-400">{placeholder}</span>
+          <span className="flex-1 text-sm text-neutral-400">{placeholder}</span>
         )}
         <ChevronDown
           size={16}
-          className={`text-stone-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`text-neutral-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] overflow-hidden">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 overflow-hidden">
           <div className="max-h-64 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-sm text-stone-500">
+              <div className="p-4 text-center text-sm text-neutral-500">
                 Cargando...
               </div>
             ) : projects.length === 0 ? (
-              <div className="p-4 text-center text-sm text-stone-500">
+              <div className="p-4 text-center text-sm text-neutral-500">
                 No se encontraron proyectos activos
               </div>
             ) : (
@@ -321,15 +321,15 @@ export function ProjectDropdown({
                   onClick={() => handleSelect(null)}
                   className={`
                     w-full px-3 py-2 flex items-center gap-2 text-left
-                    hover:bg-amber-50 transition-colors border-b border-stone-200
-                    ${value === null ? 'bg-amber-100' : ''}
+                    hover:bg-gold-light transition-colors border-b border-neutral-200
+                    ${value === null ? 'bg-gold-light' : ''}
                   `}
                 >
-                  <span className="flex-1 text-sm font-medium text-stone-600 italic">
+                  <span className="flex-1 text-sm font-medium text-neutral-600 italic">
                     Sin proyecto (Inbox)
                   </span>
                   {value === null && (
-                    <Check size={16} className="text-stone-900 flex-shrink-0" />
+                    <Check size={16} className="text-neutral-900 flex-shrink-0" />
                   )}
                 </button>
 
@@ -341,20 +341,20 @@ export function ProjectDropdown({
                     onClick={() => handleSelect(project.name)}
                     className={`
                       w-full px-3 py-2 flex items-center gap-2 text-left
-                      hover:bg-amber-50 transition-colors
-                      ${project.name === value ? 'bg-amber-100' : ''}
+                      hover:bg-gold-light transition-colors
+                      ${project.name === value ? 'bg-gold-light' : ''}
                     `}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-stone-900 truncate">
+                      <p className="text-sm font-medium text-neutral-900 truncate">
                         {project.title}
                       </p>
-                      <p className="text-xs text-stone-500 truncate">
+                      <p className="text-xs text-neutral-500 truncate">
                         {project.department}
                       </p>
                     </div>
                     {project.name === value && (
-                      <Check size={16} className="text-stone-900 flex-shrink-0" />
+                      <Check size={16} className="text-neutral-900 flex-shrink-0" />
                     )}
                   </button>
                 ))}
@@ -418,39 +418,39 @@ export function UserDropdown({
         disabled={disabled}
         className={`
           w-full px-3 py-2 text-left
-          border-2 border-stone-900
+          border border-neutral-200
           bg-white
           flex items-center gap-2
           transition-all
-          shadow-[2px_2px_0_#1c1917]
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[1px_1px_0_#1c1917] hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer'}
-          ${isOpen ? 'translate-x-[1px] translate-y-[1px] shadow-[1px_1px_0_#1c1917]' : ''}
+          shadow-sm
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${isOpen ? '' : ''}
         `}
       >
-        <User size={16} className="text-stone-600 flex-shrink-0" />
+        <User size={16} className="text-neutral-600 flex-shrink-0" />
         {selectedUser ? (
-          <span className="flex-1 truncate text-sm font-medium text-stone-900">
+          <span className="flex-1 truncate text-sm font-medium text-neutral-900">
             {selectedUser.full_name || selectedUser.email}
           </span>
         ) : (
-          <span className="flex-1 text-sm text-stone-400">{placeholder}</span>
+          <span className="flex-1 text-sm text-neutral-400">{placeholder}</span>
         )}
         <ChevronDown
           size={16}
-          className={`text-stone-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`text-neutral-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] overflow-hidden">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 overflow-hidden">
           <div className="max-h-64 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-sm text-stone-500">
+              <div className="p-4 text-center text-sm text-neutral-500">
                 Cargando...
               </div>
             ) : users.length === 0 ? (
-              <div className="p-4 text-center text-sm text-stone-500">
+              <div className="p-4 text-center text-sm text-neutral-500">
                 No se encontraron usuarios
               </div>
             ) : (
@@ -461,15 +461,15 @@ export function UserDropdown({
                   onClick={() => handleSelect(null)}
                   className={`
                     w-full px-3 py-2 flex items-center gap-2 text-left
-                    hover:bg-amber-50 transition-colors border-b border-stone-200
-                    ${value === null ? 'bg-amber-100' : ''}
+                    hover:bg-gold-light transition-colors border-b border-neutral-200
+                    ${value === null ? 'bg-gold-light' : ''}
                   `}
                 >
-                  <span className="flex-1 text-sm font-medium text-stone-600 italic">
+                  <span className="flex-1 text-sm font-medium text-neutral-600 italic">
                     Sin asignar
                   </span>
                   {value === null && (
-                    <Check size={16} className="text-stone-900 flex-shrink-0" />
+                    <Check size={16} className="text-neutral-900 flex-shrink-0" />
                   )}
                 </button>
 
@@ -481,11 +481,11 @@ export function UserDropdown({
                     onClick={() => handleSelect(user.email)}
                     className={`
                       w-full px-3 py-2 flex items-center gap-2 text-left
-                      hover:bg-amber-50 transition-colors
-                      ${user.email === value ? 'bg-amber-100' : ''}
+                      hover:bg-gold-light transition-colors
+                      ${user.email === value ? 'bg-gold-light' : ''}
                     `}
                   >
-                    <div className="w-7 h-7 bg-stone-200 border border-stone-400 flex items-center justify-center flex-shrink-0">
+                    <div className="w-7 h-7 bg-neutral-200 border border-neutral-400 flex items-center justify-center flex-shrink-0">
                       {user.user_image ? (
                         <img
                           src={user.user_image}
@@ -493,21 +493,21 @@ export function UserDropdown({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <User size={14} className="text-stone-500" />
+                        <User size={14} className="text-neutral-500" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-stone-900 truncate">
+                      <p className="text-sm font-medium text-neutral-900 truncate">
                         {user.full_name || user.email}
                       </p>
                       {user.full_name && (
-                        <p className="text-xs text-stone-500 truncate">
+                        <p className="text-xs text-neutral-500 truncate">
                           {user.email}
                         </p>
                       )}
                     </div>
                     {user.email === value && (
-                      <Check size={16} className="text-stone-900 flex-shrink-0" />
+                      <Check size={16} className="text-neutral-900 flex-shrink-0" />
                     )}
                   </button>
                 ))}

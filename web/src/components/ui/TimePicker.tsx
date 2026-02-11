@@ -43,17 +43,17 @@ export function TimePicker({ value, onChange, label, className = '' }: TimePicke
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-medium text-stone-700 mb-2">
+        <label className="block text-sm font-medium text-neutral-700 mb-2">
           {label}
         </label>
       )}
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1 flex-1">
-          <Clock size={16} className="text-stone-400 flex-shrink-0" />
+          <Clock size={16} className="text-neutral-400 flex-shrink-0" />
           <select
             value={hours}
             onChange={(e) => handleHoursChange(e.target.value)}
-            className="flex-1 px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none bg-white text-center font-mono"
+            className="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-gold-dark focus:border-transparent appearance-none bg-white text-center font-mono"
             aria-label="Horas"
           >
             {hourOptions.map((h) => (
@@ -62,11 +62,11 @@ export function TimePicker({ value, onChange, label, className = '' }: TimePicke
               </option>
             ))}
           </select>
-          <span className="text-stone-500 font-medium">:</span>
+          <span className="text-neutral-500 font-medium">:</span>
           <select
             value={minutes}
             onChange={(e) => handleMinutesChange(e.target.value)}
-            className="flex-1 px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none bg-white text-center font-mono"
+            className="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-gold-dark focus:border-transparent appearance-none bg-white text-center font-mono"
             aria-label="Minutos"
           >
             {minuteOptions.map((m) => (

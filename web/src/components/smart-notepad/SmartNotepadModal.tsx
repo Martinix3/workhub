@@ -109,10 +109,10 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative bg-white border-2 border-stone-900 shadow-[8px_8px_0_#1c1917] w-full max-w-lg max-h-[90vh] overflow-auto">
+      <div className="relative bg-white border border-neutral-200 shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-stone-200">
-          <h2 className="font-serif text-lg font-bold">
+        <div className="flex items-center justify-between p-4 border-b-2 border-neutral-200">
+          <h2 className="font-heading text-lg font-bold">
             {step === 'input' && 'Smart Notepad'}
             {step === 'confirm' && 'Confirmar Registro'}
             {step === 'success' && 'Registro Exitoso'}
@@ -120,7 +120,7 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
           </h2>
           <button
             onClick={handleClose}
-            className="p-1 hover:bg-stone-100 transition-colors"
+            className="p-1 hover:bg-neutral-100 transition-colors"
           >
             <X size={20} />
           </button>
@@ -131,7 +131,7 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
           {/* Step: Input */}
           {step === 'input' && (
             <div className="space-y-4">
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-neutral-500">
                 Escribe o dicta tu nota. Ejemplo: "Visite a Bar El Sol, el dueno no tiene interes por ahora"
               </p>
 
@@ -142,13 +142,13 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Escribe tu nota aqui..."
                   rows={5}
-                  className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none resize-none"
+                  className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none resize-none"
                   disabled={parsing}
                 />
 
                 {/* Voice transcript indicator */}
                 {isListening && transcript && (
-                  <div className="absolute bottom-2 left-2 right-2 bg-amber-50 border border-amber-200 p-2 text-sm text-amber-700">
+                  <div className="absolute bottom-2 left-2 right-2 bg-gold-light border border-gold p-2 text-sm text-gold-dark">
                     {transcript}...
                   </div>
                 )}
@@ -156,12 +156,12 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
 
               {/* Voice Error */}
               {voiceError && (
-                <p className="text-sm text-red-600">{voiceError}</p>
+                <p className="text-sm text-error-dark">{voiceError}</p>
               )}
 
               {/* Parse Error */}
               {parseError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm">
+                <div className="p-3 bg-error-light border border-error text-error-text text-sm">
                   {parseError.message}
                 </div>
               )}
@@ -175,8 +175,8 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
                     disabled={parsing}
                     className={`flex items-center gap-2 px-4 py-2 border-2 transition-all ${
                       isListening
-                        ? 'bg-red-500 border-red-600 text-white'
-                        : 'border-stone-300 hover:border-stone-400'
+                        ? 'bg-error border-error-dark text-white'
+                        : 'border-neutral-300 hover:border-neutral-400'
                     } disabled:opacity-50`}
                   >
                     {isListening ? <MicOff size={18} /> : <Mic size={18} />}
@@ -188,7 +188,7 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
                 <button
                   onClick={handleAnalyze}
                   disabled={!text.trim() || parsing}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-gold hover:bg-gold-dark text-neutral-900 font-medium uppercase tracking-wider border border-neutral-200 shadow-sm transition-all disabled:opacity-50"
                 >
                   {parsing ? (
                     <>
@@ -220,11 +220,11 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
           {/* Step: Success */}
           {step === 'success' && (
             <div className="text-center py-6 space-y-4">
-              <CheckCircle size={48} className="mx-auto text-green-600" />
+              <CheckCircle size={48} className="mx-auto text-success-dark" />
               <p className="text-lg font-medium">{resultMessage}</p>
               <button
                 onClick={handleClose}
-                className="px-6 py-2 bg-stone-900 text-white font-medium uppercase tracking-wider hover:bg-stone-800 transition-colors"
+                className="px-6 py-2 bg-neutral-900 text-white font-medium uppercase tracking-wider hover:bg-neutral-800 transition-colors"
               >
                 Cerrar
               </button>
@@ -234,21 +234,21 @@ export function SmartNotepadModal({ isOpen, onClose }: SmartNotepadModalProps) {
           {/* Step: Error */}
           {step === 'error' && (
             <div className="text-center py-6 space-y-4">
-              <AlertCircle size={48} className="mx-auto text-red-600" />
-              <p className="text-lg font-medium text-red-700">{resultMessage}</p>
+              <AlertCircle size={48} className="mx-auto text-error-dark" />
+              <p className="text-lg font-medium text-error-text">{resultMessage}</p>
               {executeError && (
-                <p className="text-sm text-stone-500">{executeError.message}</p>
+                <p className="text-sm text-neutral-500">{executeError.message}</p>
               )}
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={handleBack}
-                  className="px-6 py-2 border-2 border-stone-300 hover:border-stone-400 font-medium uppercase tracking-wider transition-colors"
+                  className="px-6 py-2 border-2 border-neutral-300 hover:border-neutral-400 font-medium uppercase tracking-wider transition-colors"
                 >
                   Volver
                 </button>
                 <button
                   onClick={handleClose}
-                  className="px-6 py-2 bg-stone-900 text-white font-medium uppercase tracking-wider hover:bg-stone-800 transition-colors"
+                  className="px-6 py-2 bg-neutral-900 text-white font-medium uppercase tracking-wider hover:bg-neutral-800 transition-colors"
                 >
                   Cerrar
                 </button>

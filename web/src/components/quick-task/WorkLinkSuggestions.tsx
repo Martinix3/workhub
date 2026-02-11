@@ -15,7 +15,7 @@ export function WorkLinkSuggestions({
   // Loading state
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-stone-500">
+      <div className="flex items-center gap-2 text-sm text-neutral-500">
         <Loader2 size={16} className="animate-spin" />
         <span>Cargando sugerencias...</span>
       </div>
@@ -25,7 +25,7 @@ export function WorkLinkSuggestions({
   // Error state
   if (error) {
     return (
-      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 text-sm">
+      <div className="flex items-center gap-2 p-3 bg-error-light border border-error text-error-text text-sm">
         <AlertCircle size={16} />
         <span>Error al cargar sugerencias</span>
       </div>
@@ -35,7 +35,7 @@ export function WorkLinkSuggestions({
   // Empty state
   if (suggestions.length === 0) {
     return (
-      <div className="p-3 bg-stone-50 border border-stone-200 text-stone-500 text-sm">
+      <div className="p-3 bg-neutral-50 border border-neutral-200 text-neutral-500 text-sm">
         No hay documentos ERP recientes para vincular
       </div>
     )
@@ -44,7 +44,7 @@ export function WorkLinkSuggestions({
   // Suggestions list
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-sm font-medium text-stone-700">
+      <div className="flex items-center gap-2 text-sm font-medium text-neutral-700">
         <Link2 size={16} />
         <span>Vincular con documento ERP:</span>
       </div>
@@ -64,17 +64,16 @@ export function WorkLinkSuggestions({
                 relative px-3 py-2 text-sm font-medium border-2 transition-all
                 ${
                   isSelected
-                    ? 'bg-blue-100 border-blue-500 text-blue-700'
-                    : 'bg-white border-stone-300 hover:border-stone-400 text-stone-700'
+                    ? 'bg-turquoise-light border-turquoise-dark text-turquoise-dark'
+                    : 'bg-white border-neutral-300 hover:border-neutral-400 text-neutral-700'
                 }
-                hover:shadow-[2px_2px_0_#1c1917]
-                active:translate-x-[1px] active:translate-y-[1px]
+                hover:shadow-sm
                 disabled:opacity-50 disabled:cursor-not-allowed
               `}
             >
               {/* Document info */}
               <div className="flex flex-col items-start gap-0.5">
-                <span className="font-mono text-xs text-stone-500">
+                <span className="font-mono text-xs text-neutral-500">
                   {suggestion.source_doctype}
                 </span>
                 <span>{suggestion.display_name}</span>
@@ -82,7 +81,7 @@ export function WorkLinkSuggestions({
 
               {/* Already has WorkLink badge */}
               {suggestion.has_worklink && (
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 border border-stone-900 rounded-full" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-gold border border-neutral-900 rounded-full" />
               )}
             </button>
           )
@@ -91,8 +90,8 @@ export function WorkLinkSuggestions({
 
       {/* Legend for badge */}
       {suggestions.some((s) => s.has_worklink) && (
-        <p className="text-xs text-stone-500 mt-2">
-          <span className="inline-block w-2 h-2 bg-amber-400 border border-stone-900 rounded-full mr-1" />
+        <p className="text-xs text-neutral-500 mt-2">
+          <span className="inline-block w-2 h-2 bg-gold border border-neutral-900 rounded-full mr-1" />
           Ya tiene tareas vinculadas
         </p>
       )}

@@ -68,13 +68,13 @@ export function AssigneeAvatarGroup({
                 data-testid={`avatar-${assignee.user}`}
                 className={`
                   ${config.avatar}
-                  bg-white border-2 border-stone-400
+                  bg-white border-2 border-neutral-400
                   flex items-center justify-center
                   relative
                   transition-transform hover:scale-110 hover:z-50
                 `}
               >
-                <User size={config.icon} className="text-stone-500" />
+                <User size={config.icon} className="text-neutral-500" />
 
                 {/* Owner badge */}
                 {isOwner && (
@@ -83,11 +83,11 @@ export function AssigneeAvatarGroup({
                     className={`
                       absolute -top-1 -right-1
                       ${config.badge}
-                      bg-amber-400 border border-stone-900
+                      bg-gold border border-neutral-900
                       flex items-center justify-center
                     `}
                   >
-                    <Crown size={config.badgeIcon} className="text-stone-900" />
+                    <Crown size={config.badgeIcon} className="text-neutral-900" />
                   </div>
                 )}
               </div>
@@ -97,7 +97,7 @@ export function AssigneeAvatarGroup({
                 className="
                   absolute bottom-full left-1/2 -translate-x-1/2 mb-2
                   px-2 py-1
-                  bg-stone-900 text-white text-xs
+                  bg-neutral-900 text-white text-xs
                   whitespace-nowrap
                   opacity-0 pointer-events-none
                   group-hover:opacity-100
@@ -107,7 +107,7 @@ export function AssigneeAvatarGroup({
               >
                 {displayName}
                 {isOwner && (
-                  <span className="ml-1 text-amber-400 font-medium">(Owner)</span>
+                  <span className="ml-1 text-gold font-medium">(Owner)</span>
                 )}
                 {/* Tooltip arrow */}
                 <div
@@ -116,7 +116,7 @@ export function AssigneeAvatarGroup({
                     w-0 h-0
                     border-l-4 border-l-transparent
                     border-r-4 border-r-transparent
-                    border-t-4 border-t-stone-900
+                    border-t-4 border-t-neutral-900
                   "
                 />
               </div>
@@ -130,12 +130,12 @@ export function AssigneeAvatarGroup({
             <div
               className={`
                 ${config.avatar}
-                bg-stone-200 border-2 border-stone-400
+                bg-neutral-200 border-2 border-neutral-400
                 flex items-center justify-center
                 transition-transform hover:scale-110 hover:z-50
               `}
             >
-              <span className={`${config.overflow} font-medium text-stone-600`}>
+              <span className={`${config.overflow} font-medium text-neutral-600`}>
                 +{remainingCount}
               </span>
             </div>
@@ -145,7 +145,7 @@ export function AssigneeAvatarGroup({
               className="
                 absolute bottom-full left-1/2 -translate-x-1/2 mb-2
                 px-2 py-1
-                bg-stone-900 text-white text-xs
+                bg-neutral-900 text-white text-xs
                 opacity-0 pointer-events-none
                 group-hover:opacity-100
                 transition-opacity
@@ -161,7 +161,7 @@ export function AssigneeAvatarGroup({
                     <div key={assignee.user} className={index > 0 ? 'mt-1' : ''}>
                       {displayName}
                       {isOwner && (
-                        <span className="ml-1 text-amber-400 font-medium">(Owner)</span>
+                        <span className="ml-1 text-gold font-medium">(Owner)</span>
                       )}
                     </div>
                   )
@@ -174,7 +174,7 @@ export function AssigneeAvatarGroup({
                   w-0 h-0
                   border-l-4 border-l-transparent
                   border-r-4 border-r-transparent
-                  border-t-4 border-t-stone-900
+                  border-t-4 border-t-neutral-900
                 "
               />
             </div>
@@ -188,7 +188,7 @@ export function AssigneeAvatarGroup({
           className="
             absolute bottom-full left-0 mb-2
             px-3 py-2
-            bg-stone-900 text-white text-xs
+            bg-neutral-900 text-white text-xs
             opacity-0 pointer-events-none
             hover:opacity-100
             transition-opacity
@@ -197,13 +197,13 @@ export function AssigneeAvatarGroup({
             hidden group-hover:block
           "
         >
-          <div className="font-medium mb-1 text-amber-400">
+          <div className="font-medium mb-1 text-gold">
             {assignees.length} Assignee{assignees.length !== 1 ? 's' : ''}
           </div>
           {owner && (
-            <div className="mb-2 pb-2 border-b border-stone-700">
+            <div className="mb-2 pb-2 border-b border-neutral-700">
               <div className="flex items-center gap-1">
-                <Crown size={10} className="text-amber-400" />
+                <Crown size={10} className="text-gold" />
                 <span className="font-medium">Owner:</span>
               </div>
               <div className="ml-4 mt-0.5">
@@ -230,7 +230,7 @@ export function AssigneeAvatarGroup({
               w-0 h-0
               border-l-4 border-l-transparent
               border-r-4 border-r-transparent
-              border-t-4 border-t-stone-900
+              border-t-4 border-t-neutral-900
             "
           />
         </div>

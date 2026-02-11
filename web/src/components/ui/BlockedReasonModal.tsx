@@ -79,36 +79,36 @@ export function BlockedReasonModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[8px_8px_0_#1c1917] dark:shadow-[8px_8px_0_#f5f5f4] w-full max-w-md">
+      <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 w-full max-w-md">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-stone-200 dark:border-stone-700">
+        <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-2">
-            <AlertCircle size={20} className="text-amber-500" />
-            <h2 data-testid="modal-title" className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            <AlertCircle size={20} className="text-gold-dark" />
+            <h2 data-testid="modal-title" className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100">
               Task Blocked
             </h2>
           </div>
           <button
             data-testid="close-button"
             onClick={handleCancel}
-            className="p-1 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+            className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           >
-            <X size={20} className="text-stone-500" />
+            <X size={20} className="text-neutral-500" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-4 space-y-4">
           {taskName && (
-            <p data-testid="task-name" className="text-sm text-stone-600 dark:text-stone-400">
-              You're blocking: <span className="font-medium text-stone-900 dark:text-stone-100">{taskName}</span>
+            <p data-testid="task-name" className="text-sm text-neutral-600 dark:text-neutral-400">
+              You're blocking: <span className="font-medium text-neutral-900 dark:text-neutral-100">{taskName}</span>
             </p>
           )}
 
           <div className="space-y-2">
             <label
               htmlFor="blocked-reason"
-              className="block text-sm font-medium text-stone-700 dark:text-stone-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
               Why is this task blocked?
             </label>
@@ -122,17 +122,17 @@ export function BlockedReasonModal({
               }}
               placeholder="E.g., Waiting for client feedback, missing dependencies, technical blocker..."
               rows={4}
-              className="w-full px-3 py-2 border-2 border-stone-300 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 focus:border-stone-900 dark:focus:border-stone-100 outline-none resize-none transition-colors"
+              className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 focus:border-neutral-900 dark:focus:border-neutral-100 outline-none resize-none transition-colors"
               autoFocus
             />
-            <p className="text-xs text-stone-500 dark:text-stone-400">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Minimum 10 characters. Be specific to help your team understand the blocker.
             </p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div data-testid="error-message" className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+            <div data-testid="error-message" className="p-3 bg-error-light dark:bg-error-dark/20 border border-error dark:border-error-dark text-error-text dark:text-error text-sm">
               {error}
             </div>
           )}
@@ -142,7 +142,7 @@ export function BlockedReasonModal({
             <button
               data-testid="cancel-button"
               onClick={handleCancel}
-              className="flex-1 px-4 py-2 border-2 border-stone-300 dark:border-stone-600 hover:border-stone-400 dark:hover:border-stone-500 text-stone-700 dark:text-stone-300 font-medium uppercase tracking-wider transition-colors"
+              className="flex-1 px-4 py-2 border border-neutral-200 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 text-neutral-700 dark:text-neutral-300 font-medium transition-colors"
             >
               Cancel
             </button>
@@ -150,7 +150,7 @@ export function BlockedReasonModal({
               data-testid="confirm-button"
               onClick={handleConfirm}
               disabled={!reason.trim()}
-              className="flex-1 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+              className="flex-1 px-4 py-2 bg-gold hover:bg-gold-dark text-neutral-900 font-medium border border-neutral-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Block Task
             </button>

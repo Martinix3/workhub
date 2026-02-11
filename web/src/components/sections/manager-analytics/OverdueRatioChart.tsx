@@ -21,8 +21,8 @@ function formatWeekRange(weekStart: string, weekEnd: string): string {
 // Department color mapping
 const departmentColors = {
   SALES: {
-    fill: 'rgba(59, 130, 246, 0.3)', // blue-500 with opacity
-    stroke: 'rgb(59, 130, 246)',
+    fill: 'rgba(91, 191, 191, 0.3)', // turquoise with opacity
+    stroke: 'rgb(91, 191, 191)',
     label: 'Ventas'
   },
   OPS: {
@@ -54,8 +54,8 @@ export function OverdueRatioChart({
 
   if (!data || data.weeks.length === 0) {
     return (
-      <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 p-8">
-        <div className="text-center text-stone-500 dark:text-stone-400">
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-8">
+        <div className="text-center text-neutral-500 dark:text-neutral-400">
           <Calendar size={48} className="mx-auto mb-4 opacity-50" />
           <p className="font-medium">No hay datos de vencimiento</p>
         </div>
@@ -152,23 +152,23 @@ export function OverdueRatioChart({
   const trendConfig = {
     improving: {
       icon: <TrendingDown size={16} />, // Down is good for overdue ratio
-      color: 'text-green-600 dark:text-green-400',
-      bg: 'bg-green-50 dark:bg-green-950',
-      border: 'border-green-500',
+      color: 'text-success-dark dark:text-success',
+      bg: 'bg-success-light dark:bg-success-dark',
+      border: 'border-success-dark',
       label: 'Mejorando'
     },
     worsening: {
       icon: <TrendingUp size={16} />, // Up is bad for overdue ratio
-      color: 'text-red-600 dark:text-red-400',
-      bg: 'bg-red-50 dark:bg-red-950',
-      border: 'border-red-500',
+      color: 'text-error-dark dark:text-error',
+      bg: 'bg-error-light dark:bg-error-dark',
+      border: 'border-error-dark',
       label: 'Empeorando'
     },
     stable: {
       icon: <Minus size={16} />,
-      color: 'text-stone-500 dark:text-stone-400',
-      bg: 'bg-stone-50 dark:bg-stone-800',
-      border: 'border-stone-400',
+      color: 'text-neutral-500 dark:text-neutral-400',
+      bg: 'bg-neutral-50 dark:bg-neutral-800',
+      border: 'border-neutral-400',
       label: 'Estable'
     }
   }
@@ -182,15 +182,15 @@ export function OverdueRatioChart({
   const latestRatio = data.weeks[data.weeks.length - 1]?.overdue_ratio || 0
 
   return (
-    <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 p-4 lg:p-6">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-4 lg:p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+            <h3 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-2">
               Ratio de Vencimientos
             </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Porcentaje de tareas vencidas en las últimas 8 semanas
             </p>
           </div>
@@ -200,11 +200,11 @@ export function OverdueRatioChart({
             onClick={handleToggleDepartments}
             className={`
               px-3 py-1.5 text-xs font-medium
-              border-2 border-stone-900 dark:border-stone-100
+              border border-neutral-200 dark:border-neutral-100
               transition-all duration-75
               ${showDepartments
-                ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
-                : 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-700'
+                ? 'bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900'
+                : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-700'
               }
             `}
           >
@@ -225,14 +225,14 @@ export function OverdueRatioChart({
 
       {/* Legend */}
       {showDepartments && (
-        <div className="flex flex-wrap gap-4 mb-6 pb-4 border-b border-stone-200 dark:border-stone-700">
+        <div className="flex flex-wrap gap-4 mb-6 pb-4 border-b border-neutral-200 dark:border-neutral-700">
           {(Object.keys(departmentColors) as DepartmentKey[]).map((dept) => (
             <div key={dept} className="flex items-center gap-2">
               <div
-                className="w-4 h-3 border border-stone-900 dark:border-stone-100"
+                className="w-4 h-3 border border-neutral-900 dark:border-neutral-100"
                 style={{ backgroundColor: departmentColors[dept].fill }}
               />
-              <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
                 {departmentColors[dept].label}
               </span>
             </div>
@@ -242,7 +242,7 @@ export function OverdueRatioChart({
 
       {/* Chart */}
       <div className="mb-6">
-        <div className="relative bg-stone-50 dark:bg-stone-800 border border-stone-300 dark:border-stone-700 p-4">
+        <div className="relative bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 p-4">
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
             className="w-full h-auto"
@@ -260,7 +260,7 @@ export function OverdueRatioChart({
                     x2={padding.left + innerWidth}
                     y2={y}
                     stroke="currentColor"
-                    className="text-stone-200 dark:text-stone-700"
+                    className="text-neutral-200 dark:text-neutral-700"
                     strokeWidth="0.5"
                     strokeDasharray="2,2"
                   />
@@ -269,7 +269,7 @@ export function OverdueRatioChart({
                     y={y}
                     textAnchor="end"
                     dominantBaseline="middle"
-                    className="text-[8px] fill-stone-500 dark:fill-stone-400"
+                    className="text-[8px] fill-neutral-500 dark:fill-neutral-400"
                   >
                     {value}%
                   </text>
@@ -302,8 +302,8 @@ export function OverdueRatioChart({
               // Overall area
               <path
                 d={generateAreaPath(data.weeks.map(w => w.overdue_ratio))}
-                fill="rgba(239, 68, 68, 0.3)" // red-500 with opacity
-                stroke="rgb(239, 68, 68)"
+                fill="rgba(224, 122, 76, 0.3)" // error token with opacity
+                stroke="rgb(224, 122, 76)"
                 strokeWidth="2"
               />
             )}
@@ -362,7 +362,7 @@ export function OverdueRatioChart({
                       fill="white"
                       stroke="currentColor"
                       className={`
-                        text-red-500
+                        text-error
                         ${onDrillDown ? 'cursor-pointer hover:r-7' : 'cursor-default'}
                         transition-all duration-75
                       `}
@@ -399,7 +399,7 @@ export function OverdueRatioChart({
                   x={pos.x}
                   y={padding.top + innerHeight + 15}
                   textAnchor="middle"
-                  className="text-[7px] fill-stone-500 dark:fill-stone-400"
+                  className="text-[7px] fill-neutral-500 dark:fill-neutral-400"
                 >
                   {formatWeekRange(weekData.week_start, weekData.week_end)}
                 </text>
@@ -410,40 +410,40 @@ export function OverdueRatioChart({
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 border-t border-stone-200 dark:border-stone-700">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 border-t border-neutral-200 dark:border-neutral-700">
         <div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-1">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
             Ratio Actual
           </div>
           <div className="flex items-baseline gap-2">
-            <div className="font-mono text-2xl font-bold text-red-600 dark:text-red-400">
+            <div className="font-mono text-2xl font-bold text-error-dark dark:text-error">
               {(latestRatio * 100).toFixed(1)}%
             </div>
-            <AlertTriangle size={16} className="text-red-500 mb-1" />
+            <AlertTriangle size={16} className="text-error mb-1" />
           </div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
             última semana
           </div>
         </div>
         <div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-1">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
             Promedio
           </div>
-          <div className="font-mono text-2xl font-bold text-stone-600 dark:text-stone-400">
+          <div className="font-mono text-2xl font-bold text-neutral-600 dark:text-neutral-400">
             {(avgOverdueRatio * 100).toFixed(1)}%
           </div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
             últimas 8 semanas
           </div>
         </div>
         <div className="col-span-2 sm:col-span-1">
-          <div className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-1">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">
             Total Vencidas
           </div>
-          <div className="font-mono text-2xl font-bold text-red-600 dark:text-red-400">
+          <div className="font-mono text-2xl font-bold text-error-dark dark:text-error">
             {data.weeks[data.weeks.length - 1]?.overdue_tasks || 0}
           </div>
-          <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
             de {data.weeks[data.weeks.length - 1]?.total_tasks || 0} totales
           </div>
         </div>

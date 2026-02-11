@@ -191,19 +191,19 @@ export function RecordReadingModal({
         {/* CCP Information */}
         <div className="space-y-2">
           <div>
-            <h3 className="font-medium text-stone-900 dark:text-stone-100">
+            <h3 className="font-medium text-neutral-900 dark:text-neutral-100">
               {ccp.name}
             </h3>
-            <p className="text-sm text-stone-500 dark:text-stone-400 capitalize">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 capitalize">
               Peligro: {ccp.hazardType}
             </p>
           </div>
 
-          <div className="bg-stone-50 dark:bg-stone-800 p-3 border border-stone-200 dark:border-stone-700">
-            <div className="text-xs uppercase tracking-wider text-stone-400 mb-1">
+          <div className="bg-neutral-50 dark:bg-neutral-800 p-3 border border-neutral-200 dark:border-neutral-700">
+            <div className="text-xs uppercase tracking-wider text-neutral-400 mb-1">
               Límite Crítico
             </div>
-            <div className="font-mono text-sm text-stone-700 dark:text-stone-300">
+            <div className="font-mono text-sm text-neutral-700 dark:text-neutral-300">
               {ccp.criticalLimit}
             </div>
           </div>
@@ -213,7 +213,7 @@ export function RecordReadingModal({
         <div>
           <label
             htmlFor="reading-value"
-            className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2"
+            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
           >
             Valor de Lectura *
           </label>
@@ -228,16 +228,16 @@ export function RecordReadingModal({
               border-2
               ${
                 !value
-                  ? 'border-stone-300 dark:border-stone-600'
+                  ? 'border-neutral-300 dark:border-neutral-600'
                   : validationStatus === 'normal'
-                  ? 'border-green-500 dark:border-green-400'
+                  ? 'border-success-dark dark:border-success'
                   : validationStatus === 'critical'
-                  ? 'border-red-500 dark:border-red-400'
-                  : 'border-stone-300 dark:border-stone-600'
+                  ? 'border-error-dark dark:border-error'
+                  : 'border-neutral-300 dark:border-neutral-600'
               }
-              focus:border-stone-900 dark:focus:border-stone-100
-              bg-white dark:bg-stone-900
-              text-stone-900 dark:text-stone-100
+              focus:border-neutral-900 dark:focus:border-neutral-100
+              bg-white dark:bg-neutral-900
+              text-neutral-900 dark:text-neutral-100
               outline-none
             `}
             disabled={submitting}
@@ -248,12 +248,12 @@ export function RecordReadingModal({
           {value && parsedLimit && (
             <div className="mt-2">
               {validationStatus === 'normal' ? (
-                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                <div className="flex items-center gap-2 text-sm text-success-text dark:text-success">
                   <span className="font-bold">✓</span>
                   <span>Dentro del límite crítico</span>
                 </div>
               ) : validationStatus === 'critical' ? (
-                <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-400">
+                <div className="flex items-center gap-2 text-sm text-error-text dark:text-error">
                   <span className="font-bold">⚠</span>
                   <span>Fuera del límite crítico - Se requiere acción correctiva</span>
                 </div>
@@ -263,12 +263,12 @@ export function RecordReadingModal({
 
           {/* Help text showing expected range */}
           {parsedLimit && parsedLimit.type === 'range' && (
-            <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               Rango aceptable: {parsedLimit.min} - {parsedLimit.max} {parsedLimit.unit}
             </p>
           )}
           {parsedLimit && parsedLimit.type === 'threshold' && (
-            <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               Límite: {parsedLimit.operator} {parsedLimit.value} {parsedLimit.unit}
             </p>
           )}
@@ -278,7 +278,7 @@ export function RecordReadingModal({
         <div>
           <label
             htmlFor="lot-number"
-            className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2"
+            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
           >
             Número de Lote (opcional)
           </label>
@@ -290,10 +290,10 @@ export function RecordReadingModal({
             placeholder="Ej: LOT-2026-001"
             className="
               w-full px-3 py-2
-              border-2 border-stone-300 dark:border-stone-600
-              focus:border-stone-900 dark:focus:border-stone-100
-              bg-white dark:bg-stone-900
-              text-stone-900 dark:text-stone-100
+              border-2 border-neutral-300 dark:border-neutral-600
+              focus:border-neutral-900 dark:focus:border-neutral-100
+              bg-white dark:bg-neutral-900
+              text-neutral-900 dark:text-neutral-100
               outline-none
             "
             disabled={submitting}
@@ -302,21 +302,21 @@ export function RecordReadingModal({
 
         {/* Corrective Action (Required for out-of-range readings) */}
         {validationStatus === 'critical' && (
-          <div className="bg-red-50 dark:bg-red-900/20 p-4 border-2 border-red-300 dark:border-red-700">
+          <div className="bg-error-light dark:bg-error-dark/20 p-4 border-2 border-error dark:border-error-dark">
             <label
               htmlFor="corrective-action"
-              className="block text-sm font-medium text-red-900 dark:text-red-200 mb-2"
+              className="block text-sm font-medium text-error-text dark:text-error mb-2"
             >
               Acción Correctiva * <span className="text-xs">(Obligatoria)</span>
             </label>
 
             {/* Show predefined corrective action as reference */}
             {ccp.correctiveAction && (
-              <div className="mb-3 p-3 bg-white dark:bg-stone-800 border border-red-200 dark:border-red-800">
-                <div className="text-xs uppercase tracking-wider text-red-600 dark:text-red-400 mb-1">
+              <div className="mb-3 p-3 bg-white dark:bg-neutral-800 border border-error dark:border-error-dark">
+                <div className="text-xs uppercase tracking-wider text-error-dark dark:text-error mb-1">
                   Acción Correctiva Definida
                 </div>
-                <div className="text-sm text-stone-700 dark:text-stone-300 italic">
+                <div className="text-sm text-neutral-700 dark:text-neutral-300 italic">
                   {ccp.correctiveAction}
                 </div>
               </div>
@@ -330,33 +330,33 @@ export function RecordReadingModal({
               rows={4}
               className="
                 w-full px-3 py-2
-                border-2 border-red-300 dark:border-red-700
-                focus:border-red-500 dark:focus:border-red-500
-                bg-white dark:bg-stone-900
-                text-stone-900 dark:text-stone-100
+                border-2 border-error dark:border-error-dark
+                focus:border-error-dark dark:focus:border-error-dark
+                bg-white dark:bg-neutral-900
+                text-neutral-900 dark:text-neutral-100
                 outline-none
                 resize-vertical
               "
               disabled={submitting}
               required
             />
-            <p className="mt-2 text-xs text-red-700 dark:text-red-400">
+            <p className="mt-2 text-xs text-error-text dark:text-error">
               Este campo es obligatorio porque la lectura está fuera del límite crítico.
             </p>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t border-stone-200 dark:border-stone-700">
+        <div className="flex gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
             className="
               flex-1 px-4 py-2
-              border-2 border-stone-300 dark:border-stone-600
-              text-stone-700 dark:text-stone-300
-              hover:bg-stone-100 dark:hover:bg-stone-800
+              border-2 border-neutral-300 dark:border-neutral-600
+              text-neutral-700 dark:text-neutral-300
+              hover:bg-neutral-100 dark:hover:bg-neutral-800
               transition-colors
               disabled:opacity-50
             "
@@ -372,16 +372,14 @@ export function RecordReadingModal({
             }
             className="
               flex-1 px-4 py-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900
+              bg-gold hover:bg-gold-dark
+              text-neutral-900
               font-medium uppercase tracking-wider
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:shadow-[2px_2px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
+              border border-neutral-200
+              shadow-sm
+              hover:shadow-sm
               transition-all
-              disabled:opacity-50 disabled:hover:shadow-[4px_4px_0_#1c1917]
-              disabled:hover:translate-x-0 disabled:hover:translate-y-0
+              disabled:opacity-50
             "
           >
             {submitting ? 'Guardando...' : 'Guardar Lectura'}

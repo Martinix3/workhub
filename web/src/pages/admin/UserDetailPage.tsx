@@ -94,7 +94,7 @@ export function UserDetailPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate('/admin/users')}
-          className="flex items-center gap-2 text-stone-500 hover:text-stone-700 transition-colors"
+          className="flex items-center gap-2 text-neutral-500 hover:text-neutral-700 transition-colors"
         >
           <ArrowLeft size={18} />
           <span className="text-sm">Volver a usuarios</span>
@@ -102,7 +102,7 @@ export function UserDetailPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 text-error-dark border border-error rounded-lg hover:bg-error-light transition-colors text-sm font-medium"
           >
             <Trash2 size={16} />
             Eliminar
@@ -113,8 +113,8 @@ export function UserDetailPage() {
             className={`
               flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
               ${hasChanges
-                ? 'bg-amber-500 text-white hover:bg-amber-600'
-                : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                ? 'bg-gold-dark text-white hover:bg-gold-dark'
+                : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
               }
             `}
           >
@@ -125,26 +125,26 @@ export function UserDetailPage() {
       </div>
 
       {/* User Info */}
-      <div className="flex items-center gap-6 pb-6 border-b border-stone-200">
-        <div className="w-20 h-20 rounded-full bg-stone-200 flex items-center justify-center overflow-hidden">
+      <div className="flex items-center gap-6 pb-6 border-b border-neutral-200">
+        <div className="w-20 h-20 rounded-full bg-neutral-200 flex items-center justify-center overflow-hidden">
           {user.user_image ? (
             <img src={user.user_image} alt={user.full_name} className="w-full h-full object-cover" />
           ) : (
-            <User size={32} className="text-stone-500" />
+            <User size={32} className="text-neutral-500" />
           )}
         </div>
         <div>
-          <h2 className="text-xl font-medium text-stone-900">{user.full_name || 'Sin nombre'}</h2>
-          <p className="text-stone-500">{user.email}</p>
+          <h2 className="text-xl font-medium text-neutral-900">{user.full_name || 'Sin nombre'}</h2>
+          <p className="text-neutral-500">{user.email}</p>
           <div className="flex items-center gap-2 mt-2">
             <span className={`
               px-2 py-0.5 text-xs rounded-full
-              ${user.enabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}
+              ${user.enabled ? 'bg-success-light text-success-text' : 'bg-error-light text-error-text'}
             `}>
               {user.enabled ? 'Activo' : 'Inactivo'}
             </span>
             {user.last_login && (
-              <span className="text-xs text-stone-400">
+              <span className="text-xs text-neutral-400">
                 Ultimo acceso: {new Date(user.last_login).toLocaleDateString()}
               </span>
             )}
@@ -155,7 +155,7 @@ export function UserDetailPage() {
       {/* Edit Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">Nombre</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Nombre</label>
           <input
             type="text"
             value={firstName}
@@ -163,11 +163,11 @@ export function UserDetailPage() {
               setFirstName(e.target.value)
               setHasChanges(true)
             }}
-            className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-gold-dark focus:border-gold-dark transition-colors"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1">Apellido</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Apellido</label>
           <input
             type="text"
             value={lastName}
@@ -175,18 +175,18 @@ export function UserDetailPage() {
               setLastName(e.target.value)
               setHasChanges(true)
             }}
-            className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-gold-dark focus:border-gold-dark transition-colors"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">Email</label>
+        <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
         <input
           type="email"
           value={user.email}
           disabled
-          className="w-full px-3 py-2 border border-stone-200 rounded-lg bg-stone-50 text-stone-500 cursor-not-allowed"
+          className="w-full px-3 py-2 border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-500 cursor-not-allowed"
         />
       </div>
 
@@ -199,19 +199,19 @@ export function UserDetailPage() {
               setEnabled(e.target.checked)
               setHasChanges(true)
             }}
-            className="w-4 h-4 rounded border-stone-300 text-amber-500 focus:ring-amber-500"
+            className="w-4 h-4 rounded border-neutral-300 text-gold-dark focus:ring-gold-dark"
           />
-          <span className="text-sm text-stone-700">Usuario activo</span>
+          <span className="text-sm text-neutral-700">Usuario activo</span>
         </label>
       </div>
 
       {/* Roles Section */}
-      <div className="pt-4 border-t border-stone-200">
+      <div className="pt-4 border-t border-neutral-200">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium text-stone-900">Roles</h3>
+          <h3 className="font-medium text-neutral-900">Roles</h3>
           <button
             onClick={() => setShowRoleModal(true)}
-            className="flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700"
+            className="flex items-center gap-1 text-sm text-gold-dark hover:text-gold-dark"
           >
             <Plus size={16} />
             Agregar rol
@@ -221,19 +221,19 @@ export function UserDetailPage() {
           {user.roles.map((role) => (
             <div
               key={role}
-              className="flex items-center gap-2 px-3 py-1.5 bg-stone-100 rounded-full"
+              className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 rounded-full"
             >
-              <span className="text-sm text-stone-700">{role}</span>
+              <span className="text-sm text-neutral-700">{role}</span>
               <button
                 onClick={() => handleRemoveRole(role)}
-                className="text-stone-400 hover:text-red-500 transition-colors"
+                className="text-neutral-400 hover:text-error transition-colors"
               >
                 <X size={14} />
               </button>
             </div>
           ))}
           {user.roles.length === 0 && (
-            <p className="text-sm text-stone-500">Sin roles asignados</p>
+            <p className="text-sm text-neutral-500">Sin roles asignados</p>
           )}
         </div>
       </div>
@@ -242,29 +242,29 @@ export function UserDetailPage() {
       {showRoleModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-medium text-stone-900 mb-4">Agregar Rol</h3>
+            <h3 className="text-lg font-medium text-neutral-900 mb-4">Agregar Rol</h3>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {availableRoles.map((role) => (
                 <button
                   key={role.name}
                   onClick={() => handleAddRole(role.name)}
-                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-stone-50 transition-colors"
+                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-neutral-50 transition-colors"
                 >
-                  <div className="font-medium text-stone-900">{role.name}</div>
+                  <div className="font-medium text-neutral-900">{role.name}</div>
                   {role.description && (
-                    <div className="text-sm text-stone-500">{role.description}</div>
+                    <div className="text-sm text-neutral-500">{role.description}</div>
                   )}
                 </button>
               ))}
               {availableRoles.length === 0 && (
-                <p className="text-center text-stone-500 py-4">
+                <p className="text-center text-neutral-500 py-4">
                   No hay roles disponibles para agregar
                 </p>
               )}
             </div>
             <button
               onClick={() => setShowRoleModal(false)}
-              className="mt-4 w-full py-2 text-stone-600 hover:text-stone-900 transition-colors"
+              className="mt-4 w-full py-2 text-neutral-600 hover:text-neutral-900 transition-colors"
             >
               Cancelar
             </button>
@@ -276,22 +276,22 @@ export function UserDetailPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-medium text-stone-900 mb-2">Eliminar Usuario</h3>
-            <p className="text-stone-600 mb-6">
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">Eliminar Usuario</h3>
+            <p className="text-neutral-600 mb-6">
               ¿Estas seguro de que quieres eliminar a <strong>{user.full_name}</strong>?
               Esta accion desactivara la cuenta pero no borrara los datos permanentemente.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 py-2 border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-50 transition-colors"
+                className="flex-1 py-2 border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleDelete}
                 disabled={mutating}
-                className="flex-1 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-2 bg-error text-white rounded-lg hover:bg-error-dark transition-colors flex items-center justify-center gap-2"
               >
                 {mutating && <Loader2 size={16} className="animate-spin" />}
                 Eliminar

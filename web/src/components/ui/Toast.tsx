@@ -16,7 +16,7 @@ interface ToastProps {
 }
 
 /**
- * Toast notification component with brutalist design
+ * Toast notification component - Santa Brisa style
  * Displays temporary notifications at the bottom-right of the screen
  */
 export function ToastNotification({ toast, onDismiss }: ToastProps) {
@@ -35,35 +35,35 @@ export function ToastNotification({ toast, onDismiss }: ToastProps) {
       case 'success':
         return {
           icon: CheckCircle2,
-          bgColor: 'bg-green-50 dark:bg-green-900/20',
-          borderColor: 'border-green-600 dark:border-green-400',
-          textColor: 'text-green-800 dark:text-green-300',
-          iconColor: 'text-green-600 dark:text-green-400'
+          bgColor: 'bg-success-light dark:bg-success-dark/20',
+          borderColor: 'border-success-dark dark:border-success',
+          textColor: 'text-success-text dark:text-success',
+          iconColor: 'text-success-dark dark:text-success'
         }
       case 'error':
         return {
           icon: AlertCircle,
-          bgColor: 'bg-red-50 dark:bg-red-900/20',
-          borderColor: 'border-red-600 dark:border-red-400',
-          textColor: 'text-red-800 dark:text-red-300',
-          iconColor: 'text-red-600 dark:text-red-400'
+          bgColor: 'bg-error-light dark:bg-error-dark/20',
+          borderColor: 'border-error-dark dark:border-error',
+          textColor: 'text-error-text dark:text-error',
+          iconColor: 'text-error-dark dark:text-error'
         }
       case 'warning':
         return {
           icon: AlertTriangle,
-          bgColor: 'bg-amber-50 dark:bg-amber-900/20',
-          borderColor: 'border-amber-600 dark:border-amber-400',
-          textColor: 'text-amber-800 dark:text-amber-300',
-          iconColor: 'text-amber-600 dark:text-amber-400'
+          bgColor: 'bg-gold-light dark:bg-gold-dark/20',
+          borderColor: 'border-gold-dark dark:border-gold',
+          textColor: 'text-warning-text dark:text-gold',
+          iconColor: 'text-warning-text dark:text-gold'
         }
       case 'info':
       default:
         return {
           icon: Info,
-          bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-          borderColor: 'border-blue-600 dark:border-blue-400',
-          textColor: 'text-blue-800 dark:text-blue-300',
-          iconColor: 'text-blue-600 dark:text-blue-400'
+          bgColor: 'bg-turquoise-light dark:bg-turquoise-dark/20',
+          borderColor: 'border-turquoise-dark dark:border-turquoise',
+          textColor: 'text-turquoise-dark dark:text-turquoise',
+          iconColor: 'text-turquoise-dark dark:text-turquoise'
         }
     }
   }
@@ -77,7 +77,7 @@ export function ToastNotification({ toast, onDismiss }: ToastProps) {
         ${config.bgColor}
         border-2 ${config.borderColor}
         p-4 pr-12
-        shadow-[4px_4px_0_rgba(0,0,0,0.8)]
+
         min-w-[300px] max-w-md
         animate-slide-in-right
       `}

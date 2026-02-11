@@ -259,22 +259,22 @@ export function NewProjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100">
+    <div className="min-h-screen bg-neutral-100">
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => navigate('/tareas/proyectos')}
-            className="p-2 hover:bg-white border-2 border-transparent hover:border-stone-900 transition-all"
+            className="p-2 hover:bg-white border-2 border-transparent hover:border-neutral-900 transition-all"
           >
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900">
+            <h1 className="font-heading text-2xl lg:text-3xl font-bold text-neutral-900">
               Nuevo Proyecto
             </h1>
             {templateInfo && (
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-neutral-500 text-sm mt-1">
                 Basado en plantilla: <span className="font-medium">{templateInfo.title}</span>
               </p>
             )}
@@ -283,18 +283,18 @@ export function NewProjectPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917]">
+          <div className="bg-white border border-neutral-200">
             <div className="p-6 space-y-6">
               {/* Error Message */}
               {error && (
-                <div className="p-4 bg-red-50 border-2 border-red-500 text-red-700">
+                <div className="p-4 bg-error-light border border-error-dark text-error-text">
                   {error}
                 </div>
               )}
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-2">
+                <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-2">
                   Nombre del Proyecto *
                 </label>
                 <input
@@ -302,14 +302,14 @@ export function NewProjectPage() {
                   value={formData.title}
                   onChange={handleChange('title')}
                   placeholder="Ej: Campaña Q1 2024"
-                  className="w-full px-4 py-3 border-2 border-stone-300 focus:border-stone-900 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 border-2 border-neutral-300 focus:border-neutral-900 focus:outline-none transition-colors"
                   autoFocus
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-2">
+                <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-2">
                   Descripcion
                 </label>
                 <textarea
@@ -317,13 +317,13 @@ export function NewProjectPage() {
                   onChange={handleChange('description')}
                   placeholder="Describe los objetivos del proyecto..."
                   rows={3}
-                  className="w-full px-4 py-3 border-2 border-stone-300 focus:border-stone-900 focus:outline-none transition-colors resize-none"
+                  className="w-full px-4 py-3 border-2 border-neutral-300 focus:border-neutral-900 focus:outline-none transition-colors resize-none"
                 />
               </div>
 
               {/* Department */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-2">
+                <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-2">
                   Departamento *
                 </label>
                 <div className="flex gap-3">
@@ -334,12 +334,12 @@ export function NewProjectPage() {
                       onClick={() => setFormData(prev => ({ ...prev, department: dept }))}
                       className={`
                         flex-1 py-3 px-4
-                        border-2 border-stone-900
+                        border border-neutral-200
                         font-medium text-sm uppercase tracking-wider
                         transition-all duration-75
                         ${formData.department === dept
-                          ? `${departmentConfig[dept].bg} ${departmentConfig[dept].text} shadow-[2px_2px_0_#1c1917]`
-                          : 'bg-white text-stone-600 hover:bg-stone-50'
+                          ? `${departmentConfig[dept].bg} ${departmentConfig[dept].text} shadow-sm`
+                          : 'bg-white text-neutral-600 hover:bg-neutral-50'
                         }
                       `}
                     >
@@ -352,18 +352,18 @@ export function NewProjectPage() {
               {/* Dates Row */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-2">
                     Fecha Inicio *
                   </label>
                   <input
                     type="date"
                     value={formData.start_date}
                     onChange={handleChange('start_date')}
-                    className="w-full px-4 py-3 border-2 border-stone-300 focus:border-stone-900 focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 border-2 border-neutral-300 focus:border-neutral-900 focus:outline-none transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-2">
                     Fecha Objetivo
                   </label>
                   <input
@@ -371,20 +371,20 @@ export function NewProjectPage() {
                     value={formData.target_date}
                     onChange={handleChange('target_date')}
                     min={formData.start_date}
-                    className="w-full px-4 py-3 border-2 border-stone-300 focus:border-stone-900 focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 border-2 border-neutral-300 focus:border-neutral-900 focus:outline-none transition-colors"
                   />
                 </div>
               </div>
             </div>
 
             {/* Tasks Section */}
-            <div className="border-t-2 border-stone-200">
+            <div className="border-t-2 border-neutral-200">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <label className="text-sm font-medium text-stone-700 uppercase tracking-wider">
+                  <label className="text-sm font-medium text-neutral-700 uppercase tracking-wider">
                     Tareas Iniciales
                   </label>
-                  <span className="text-xs text-stone-500">
+                  <span className="text-xs text-neutral-500">
                     {tasks.length} tarea{tasks.length !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -394,7 +394,7 @@ export function NewProjectPage() {
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className="border-2 border-stone-300 bg-stone-50"
+                      className="border-2 border-neutral-300 bg-neutral-50"
                     >
                       {/* Task Row */}
                       <div className="p-3 space-y-3">
@@ -402,7 +402,7 @@ export function NewProjectPage() {
                           <button
                             type="button"
                             onClick={() => toggleTaskExpanded(task.id)}
-                            className="text-stone-400 hover:text-stone-600"
+                            className="text-neutral-400 hover:text-neutral-600"
                           >
                             {task.expanded ? (
                               <ChevronDown size={18} />
@@ -416,13 +416,13 @@ export function NewProjectPage() {
                             value={task.title}
                             onChange={(e) => updateTask(task.id, { title: e.target.value })}
                             placeholder="Nombre de la tarea"
-                            className="flex-1 px-3 py-2 border-2 border-stone-300 bg-white focus:border-stone-900 focus:outline-none text-sm"
+                            className="flex-1 px-3 py-2 border-2 border-neutral-300 bg-white focus:border-neutral-900 focus:outline-none text-sm"
                           />
 
                           <button
                             type="button"
                             onClick={() => removeTask(task.id)}
-                            className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            className="p-2 text-neutral-400 hover:text-error hover:bg-error-light transition-colors"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -437,15 +437,15 @@ export function NewProjectPage() {
 
                       {/* Subtasks */}
                       {task.expanded && (
-                        <div className="border-t border-stone-300 bg-white">
+                        <div className="border-t border-neutral-300 bg-white">
                           {task.subtasks.map((subtask) => (
                             <div
                               key={subtask.id}
-                              className="px-3 py-3 space-y-3 border-b border-stone-200 last:border-b-0"
+                              className="px-3 py-3 space-y-3 border-b border-neutral-200 last:border-b-0"
                             >
                               <div className="flex items-center gap-3">
                                 <div className="w-6 flex justify-center">
-                                  <span className="text-stone-300">└</span>
+                                  <span className="text-neutral-300">└</span>
                                 </div>
 
                                 <input
@@ -453,13 +453,13 @@ export function NewProjectPage() {
                                   value={subtask.title}
                                   onChange={(e) => updateSubtask(task.id, subtask.id, { title: e.target.value })}
                                   placeholder="Nombre de la subtarea"
-                                  className="flex-1 px-3 py-1.5 border border-stone-300 focus:border-stone-900 focus:outline-none text-sm"
+                                  className="flex-1 px-3 py-1.5 border border-neutral-300 focus:border-neutral-900 focus:outline-none text-sm"
                                 />
 
                                 <button
                                   type="button"
                                   onClick={() => removeSubtask(task.id, subtask.id)}
-                                  className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                  className="p-1.5 text-neutral-400 hover:text-error hover:bg-error-light transition-colors"
                                 >
                                   <Trash2 size={14} />
                                 </button>
@@ -479,7 +479,7 @@ export function NewProjectPage() {
                           <button
                             type="button"
                             onClick={() => addSubtask(task.id)}
-                            className="w-full px-3 py-2 flex items-center gap-2 text-stone-500 hover:text-stone-700 hover:bg-stone-50 transition-colors text-sm"
+                            className="w-full px-3 py-2 flex items-center gap-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 transition-colors text-sm"
                           >
                             <Plus size={14} />
                             Agregar subtarea
@@ -497,8 +497,8 @@ export function NewProjectPage() {
                   className="
                     mt-4 w-full py-3
                     flex items-center justify-center gap-2
-                    border-2 border-dashed border-stone-300
-                    text-stone-500 hover:text-stone-700 hover:border-stone-400 hover:bg-stone-50
+                    border-2 border-dashed border-neutral-300
+                    text-neutral-500 hover:text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50
                     transition-colors
                     text-sm font-medium uppercase tracking-wider
                   "
@@ -510,19 +510,16 @@ export function NewProjectPage() {
             </div>
 
             {/* Actions */}
-            <div className="p-4 border-t-2 border-stone-200 bg-stone-50 flex gap-3">
+            <div className="p-4 border-t-2 border-neutral-200 bg-neutral-50 flex gap-3">
               <button
                 type="submit"
                 disabled={loading}
                 className={`
                   flex-1 py-3 px-6
                   inline-flex items-center justify-center gap-2
-                  bg-amber-400 hover:bg-amber-500
-                  text-stone-900 font-medium uppercase tracking-wider
-                  border-2 border-stone-900
-                  shadow-[4px_4px_0_#1c1917]
-                  hover:shadow-[2px_2px_0_#1c1917]
-                  hover:translate-x-[2px] hover:translate-y-[2px]
+                  bg-gold hover:bg-gold-dark
+                  text-neutral-900 font-medium uppercase tracking-wider
+                  border border-neutral-200
                   transition-all duration-75
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
@@ -533,7 +530,7 @@ export function NewProjectPage() {
               <button
                 type="button"
                 onClick={() => navigate('/tareas/proyectos')}
-                className="px-6 py-3 text-stone-600 hover:text-stone-900 font-medium uppercase tracking-wider transition-colors"
+                className="px-6 py-3 text-neutral-600 hover:text-neutral-900 font-medium uppercase tracking-wider transition-colors"
               >
                 <X size={18} className="inline mr-2" />
                 Cancelar

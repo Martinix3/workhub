@@ -46,12 +46,12 @@ export function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-stone-900">Configuracion</h1>
-        <p className="text-stone-500 mt-1">Administra tu perfil y preferencias</p>
+        <h1 className="text-2xl font-semibold text-neutral-900">Configuracion</h1>
+        <p className="text-neutral-500 mt-1">Administra tu perfil y preferencias</p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-stone-200 mb-6">
+      <div className="border-b border-neutral-200 mb-6">
         <nav className="flex gap-1" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
@@ -60,8 +60,8 @@ export function SettingsPage() {
               className={`
                 flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors
                 ${activeTab === tab.id
-                  ? 'border-amber-500 text-amber-600'
-                  : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
+                  ? 'border-gold-dark text-gold-dark'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
                 }
               `}
             >
@@ -73,7 +73,7 @@ export function SettingsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-xl border border-stone-200 p-6">
+      <div className="bg-white rounded-xl border border-neutral-200 p-6">
         {renderTabContent()}
       </div>
     </div>

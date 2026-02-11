@@ -151,10 +151,10 @@ export function ManagerAnalyticsPage() {
           }
 
           /* Remove dark mode styles */
-          .dark\\:bg-stone-900,
-          .dark\\:bg-stone-950,
-          .dark\\:border-stone-100,
-          .dark\\:text-stone-100 {
+          .dark\\:bg-neutral-900,
+          .dark\\:bg-neutral-900,
+          .dark\\:border-neutral-100,
+          .dark\\:text-neutral-100 {
             background: white !important;
             border-color: black !important;
             color: black !important;
@@ -198,16 +198,16 @@ export function ManagerAnalyticsPage() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
+      <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900">
         {/* Header */}
-        <div className="border-b-2 border-stone-900 dark:border-stone-100 bg-white dark:bg-stone-900 px-8 py-6 print-header">
+        <div className="border-b border-neutral-200 dark:border-neutral-100 bg-white dark:bg-neutral-900 px-8 py-6 print-header">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">
+              <h1 className="font-heading text-3xl font-bold text-neutral-900 dark:text-neutral-100">
                 Manager Analytics
               </h1>
-              <p className="text-stone-500 dark:text-stone-400 mt-1 font-mono text-sm uppercase tracking-wider flex items-center gap-2">
+              <p className="text-neutral-500 dark:text-neutral-400 mt-1 font-mono text-sm uppercase tracking-wider flex items-center gap-2">
                 <Calendar size={14} />
                 {new Date().toLocaleDateString('es-ES', {
                   weekday: 'long',
@@ -228,13 +228,11 @@ export function ManagerAnalyticsPage() {
                   className="
                     appearance-none
                     px-4 py-2 pr-10
-                    bg-white dark:bg-stone-800
-                    border-2 border-stone-900 dark:border-stone-100
-                    text-stone-900 dark:text-stone-100
+                    bg-white dark:bg-neutral-800
+                    border border-neutral-200 dark:border-neutral-100
+                    text-neutral-900 dark:text-neutral-100
                     font-medium text-sm
-                    shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#fafaf9]
-                    hover:translate-x-[1px] hover:translate-y-[1px]
-                    hover:shadow-[1px_1px_0_#1c1917] dark:hover:shadow-[1px_1px_0_#fafaf9]
+                    shadow-sm
                     transition-all duration-75
                     cursor-pointer
                   "
@@ -246,7 +244,7 @@ export function ManagerAnalyticsPage() {
                   ))}
                 </select>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown size={16} className="text-stone-500 dark:text-stone-400" />
+                  <ChevronDown size={16} className="text-neutral-500 dark:text-neutral-400" />
                 </div>
               </div>
 
@@ -259,12 +257,10 @@ export function ManagerAnalyticsPage() {
                     flex items-center gap-2
                     px-4 py-2
                     bg-cyan-500 dark:bg-cyan-600
-                    border-2 border-stone-900 dark:border-stone-100
-                    text-stone-900 dark:text-stone-100
+                    border border-neutral-200 dark:border-neutral-100
+                    text-neutral-900 dark:text-neutral-100
                     font-medium text-sm
-                    shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#fafaf9]
-                    hover:translate-x-[1px] hover:translate-y-[1px]
-                    hover:shadow-[1px_1px_0_#1c1917] dark:hover:shadow-[1px_1px_0_#fafaf9]
+                    shadow-sm
                     disabled:opacity-50 disabled:cursor-not-allowed
                     transition-all duration-75
                   "
@@ -279,9 +275,8 @@ export function ManagerAnalyticsPage() {
                   <div className="
                     absolute top-full right-0 mt-2
                     w-48
-                    bg-white dark:bg-stone-800
-                    border-2 border-stone-900 dark:border-stone-100
-                    shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
+                    bg-white dark:bg-neutral-800
+                    border border-neutral-200 dark:border-neutral-100
                     z-50
                   ">
                     <button
@@ -290,10 +285,10 @@ export function ManagerAnalyticsPage() {
                         w-full flex items-center gap-3
                         px-4 py-3
                         text-left text-sm font-medium
-                        text-stone-900 dark:text-stone-100
-                        hover:bg-stone-100 dark:hover:bg-stone-700
+                        text-neutral-900 dark:text-neutral-100
+                        hover:bg-neutral-100 dark:hover:bg-neutral-700
                         transition-colors
-                        border-b border-stone-200 dark:border-stone-700
+                        border-b border-neutral-200 dark:border-neutral-700
                       "
                     >
                       <Download size={16} />
@@ -305,8 +300,8 @@ export function ManagerAnalyticsPage() {
                         w-full flex items-center gap-3
                         px-4 py-3
                         text-left text-sm font-medium
-                        text-stone-900 dark:text-stone-100
-                        hover:bg-stone-100 dark:hover:bg-stone-700
+                        text-neutral-900 dark:text-neutral-100
+                        hover:bg-neutral-100 dark:hover:bg-neutral-700
                         transition-colors
                       "
                     >
@@ -321,9 +316,9 @@ export function ManagerAnalyticsPage() {
               <div className="
                 flex items-center gap-2
                 px-4 py-2
-                bg-amber-50 dark:bg-amber-950
-                border-2 border-amber-500
-                text-amber-900 dark:text-amber-100
+                bg-gold-light dark:bg-gold-dark/20
+                border border-gold-dark
+                text-gold-dark dark:text-gold-light
                 font-medium text-sm
               ">
                 <Users size={16} />
@@ -340,8 +335,8 @@ export function ManagerAnalyticsPage() {
           {/* Left Column */}
           <div className="space-y-6">
             {/* Workload Distribution */}
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6 print-section">
-              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-6 print-section">
+              <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
                 <span className="w-4 h-4 bg-cyan-400" />
                 Distribución de Carga
               </h2>
@@ -352,9 +347,9 @@ export function ManagerAnalyticsPage() {
             </div>
 
             {/* Blocker Analysis */}
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6 print-section">
-              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
-                <span className="w-4 h-4 bg-red-500" />
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-6 print-section">
+              <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
+                <span className="w-4 h-4 bg-error" />
                 Análisis de Bloqueos
               </h2>
               <BlockerAnalysisPanel
@@ -368,9 +363,9 @@ export function ManagerAnalyticsPage() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Velocity Trends */}
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6 print-section">
-              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
-                <span className="w-4 h-4 bg-green-500" />
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-6 print-section">
+              <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
+                <span className="w-4 h-4 bg-success" />
                 Tendencia de Velocidad
               </h2>
               <VelocityTrendChart
@@ -381,9 +376,9 @@ export function ManagerAnalyticsPage() {
             </div>
 
             {/* Overdue Ratio */}
-            <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9] p-6 print-section">
-              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
-                <span className="w-4 h-4 bg-amber-500" />
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-6 print-section">
+              <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
+                <span className="w-4 h-4 bg-gold-dark" />
                 Tendencia de Vencimientos
               </h2>
               <OverdueRatioChart

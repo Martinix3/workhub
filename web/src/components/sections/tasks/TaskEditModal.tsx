@@ -16,9 +16,9 @@ interface TaskEditModalProps {
 }
 
 const priorityConfig: Record<TaskPriority, { bg: string; text: string; softBg: string }> = {
-  P0: { bg: 'bg-red-500', text: 'text-red-700', softBg: 'bg-red-100' },
-  P1: { bg: 'bg-amber-400', text: 'text-amber-700', softBg: 'bg-amber-100' },
-  P2: { bg: 'bg-green-500', text: 'text-green-700', softBg: 'bg-green-100' },
+  P0: { bg: 'bg-error', text: 'text-error-text', softBg: 'bg-error-light' },
+  P1: { bg: 'bg-gold', text: 'text-gold-dark', softBg: 'bg-gold-light' },
+  P2: { bg: 'bg-success', text: 'text-success-text', softBg: 'bg-success-light' },
 }
 
 const statusOptions: { value: TaskStatus; label: string }[] = [
@@ -164,21 +164,21 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-stone-900/50 flex items-start justify-center pt-12 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-neutral-900/50 flex items-start justify-center pt-12 overflow-y-auto"
       onClick={onClose}
     >
       <form
         onSubmit={handleSubmit}
         onClick={e => e.stopPropagation()}
-        className="bg-white border-2 border-stone-900 shadow-[8px_8px_0_#1c1917] w-full max-w-2xl mx-4 my-8"
+        className="bg-white border border-neutral-200 w-full max-w-2xl mx-4 my-8"
       >
         {/* Header */}
-        <div className="p-4 border-b-2 border-stone-900 flex items-center justify-between">
-          <h3 className="font-serif text-lg font-bold text-stone-900">Editar Tarea</h3>
+        <div className="p-4 border-b border-neutral-200 flex items-center justify-between">
+          <h3 className="font-heading text-lg font-bold text-neutral-900">Editar Tarea</h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-stone-500 hover:text-stone-900"
+            className="p-1 text-neutral-500 hover:text-neutral-900"
             title="Cerrar"
           >
             <X size={20} />
@@ -189,7 +189,7 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
         <div className="p-6 space-y-6">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
               Título
             </label>
             <input
@@ -200,10 +200,10 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
               autoFocus
               className="
                 w-full px-4 py-3 text-lg
-                border-2 border-stone-300
-                focus:border-stone-900
+                border-2 border-neutral-300
+                focus:border-neutral-900
                 bg-white
-                text-stone-900
+                text-neutral-900
                 outline-none
               "
             />
@@ -211,7 +211,7 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
               Descripción
             </label>
             <textarea
@@ -221,10 +221,10 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
               rows={4}
               className="
                 w-full px-4 py-3
-                border-2 border-stone-300
-                focus:border-stone-900
+                border-2 border-neutral-300
+                focus:border-neutral-900
                 bg-white
-                text-stone-900
+                text-neutral-900
                 outline-none
                 resize-none
               "
@@ -234,7 +234,7 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
           {/* Priority and Status */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Prioridad
               </label>
               <div className="flex gap-2">
@@ -247,8 +247,8 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
                       onClick={() => setPriority(p)}
                       className={`
                         flex-1 px-3 py-2 text-sm font-medium
-                        border-2 border-stone-900
-                        ${priority === p ? `${cfg.softBg} ${cfg.text}` : 'bg-white text-stone-500'}
+                        border border-neutral-200
+                        ${priority === p ? `${cfg.softBg} ${cfg.text}` : 'bg-white text-neutral-500'}
                       `}
                     >
                       {p}
@@ -259,7 +259,7 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Estado
               </label>
               <select
@@ -267,9 +267,9 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
                 onChange={e => setStatus(e.target.value as TaskStatus)}
                 className="
                   w-full px-4 py-2
-                  border-2 border-stone-900
+                  border border-neutral-200
                   bg-white
-                  text-stone-900
+                  text-neutral-900
                   outline-none
                   cursor-pointer
                 "
@@ -286,7 +286,7 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
           {/* Blocked Reason - only show if status is BLOCKED */}
           {status === 'BLOCKED' && (
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Razón de Bloqueo
               </label>
               <input
@@ -296,10 +296,10 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
                 placeholder="¿Por qué está bloqueada?"
                 className="
                   w-full px-4 py-3
-                  border-2 border-red-300
-                  focus:border-red-500
-                  bg-red-50
-                  text-stone-900
+                  border-2 border-error
+                  focus:border-error-dark
+                  bg-error-light
+                  text-neutral-900
                   outline-none
                 "
               />
@@ -308,15 +308,15 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
 
           {/* Existing WorkLink Display */}
           {selectedWorkLink && (
-            <div className="p-4 bg-green-50 border-2 border-green-500">
+            <div className="p-4 bg-success-light border-2 border-success-dark">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Link2 size={16} className="text-green-600" />
+                  <Link2 size={16} className="text-success-dark" />
                   <div>
-                    <p className="text-xs font-medium text-green-700 uppercase tracking-wider">
+                    <p className="text-xs font-medium text-success-text uppercase tracking-wider">
                       {DOCTYPE_CONFIG[selectedWorkLink.doctype as WorkLinkDocType]?.label || selectedWorkLink.doctype}
                     </p>
-                    <p className="text-sm font-medium text-green-900">
+                    <p className="text-sm font-medium text-success-text">
                       {selectedWorkLink.docName}
                     </p>
                   </div>
@@ -325,9 +325,9 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
                   type="button"
                   onClick={handleRemoveWorkLink}
                   className="
-                    p-2 text-green-600 hover:text-red-600
-                    hover:bg-red-50
-                    border-2 border-transparent hover:border-red-300
+                    p-2 text-success-dark hover:text-error-dark
+                    hover:bg-error-light
+                    border-2 border-transparent hover:border-error
                     transition-colors
                   "
                   title="Quitar WorkLink"
@@ -346,9 +346,9 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
                 onClick={() => setShowSuggestions(!showSuggestions)}
                 className="
                   w-full flex items-center justify-between px-3 py-2
-                  bg-stone-100 hover:bg-stone-200
-                  border-2 border-stone-300
-                  text-stone-700 font-medium text-sm
+                  bg-neutral-100 hover:bg-neutral-200
+                  border-2 border-neutral-300
+                  text-neutral-700 font-medium text-sm
                   transition-colors
                 "
               >
@@ -388,9 +388,9 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
                 onClick={onManualSearch}
                 className="
                   inline-flex items-center gap-2 px-4 py-2
-                  text-stone-600 hover:text-stone-900
+                  text-neutral-600 hover:text-neutral-900
                   text-sm font-medium
-                  border-2 border-stone-300 hover:border-stone-900
+                  border-2 border-neutral-300 hover:border-neutral-900
                   bg-white
                   transition-colors
                 "
@@ -403,14 +403,14 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t-2 border-stone-900 flex justify-end gap-3">
+        <div className="p-4 border-t border-neutral-200 flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
             className="
               px-4 py-2
-              text-stone-500 hover:text-stone-900
+              text-neutral-500 hover:text-neutral-900
               font-medium
               disabled:opacity-50
             "
@@ -422,15 +422,10 @@ export function TaskEditModal({ task, onClose, onSave, onManualSearch }: TaskEdi
             disabled={isSubmitting || !title.trim()}
             className="
               inline-flex items-center gap-2 px-4 py-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium uppercase tracking-wider text-sm
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:shadow-[2px_2px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
+              bg-gold hover:bg-gold-dark
+              text-neutral-900 font-medium uppercase tracking-wider text-sm
+              border border-neutral-200
               disabled:opacity-50 disabled:cursor-not-allowed
-              disabled:hover:shadow-[4px_4px_0_#1c1917]
-              disabled:hover:translate-x-0 disabled:hover:translate-y-0
               transition-all duration-75
             "
           >

@@ -67,28 +67,28 @@ export function BulkOperationResultDialog({
         <div className={`
           flex items-start gap-4 p-4
           border-2 ${isFullSuccess
-            ? 'bg-green-50 dark:bg-green-950/20 border-green-500 dark:border-green-700'
+            ? 'bg-success-light dark:bg-success-dark/20 border-success-dark dark:border-success-dark'
             : hasFailures
-              ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-500 dark:border-amber-700'
-              : 'bg-blue-50 dark:bg-blue-950/20 border-blue-500 dark:border-blue-700'
+              ? 'bg-gold-light dark:bg-gold-dark/20 border-gold-dark dark:border-gold-dark'
+              : 'bg-turquoise-light dark:bg-turquoise-dark/20 border-turquoise-dark dark:border-turquoise-dark'
           }
         `}>
           <div className="flex-shrink-0">
             {isFullSuccess ? (
-              <CheckCircle size={24} className="text-green-600 dark:text-green-400" />
+              <CheckCircle size={24} className="text-success-dark dark:text-success" />
             ) : (
-              <XCircle size={24} className="text-amber-600 dark:text-amber-400" />
+              <XCircle size={24} className="text-gold-dark dark:text-gold" />
             )}
           </div>
           <div className="flex-1">
-            <p className="font-bold text-stone-900 dark:text-stone-100">
+            <p className="font-bold text-neutral-900 dark:text-neutral-100">
               {isFullSuccess
                 ? '¡Operación completada con éxito!'
                 : hasFailures
                   ? 'Operación completada con errores'
                   : 'Operación completada'}
             </p>
-            <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
               {result.success_count} de {result.total} {result.total === 1 ? 'tarea procesada' : 'tareas procesadas'} correctamente
             </p>
           </div>
@@ -96,27 +96,27 @@ export function BulkOperationResultDialog({
 
         {/* Statistics Grid */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-stone-100 dark:bg-stone-800 border-2 border-stone-900 dark:border-stone-100 p-4">
-            <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+          <div className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-100 p-4">
+            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               {result.total}
             </div>
-            <div className="text-xs text-stone-600 dark:text-stone-400 uppercase tracking-wider mt-1">
+            <div className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mt-1">
               Total
             </div>
           </div>
-          <div className="bg-green-100 dark:bg-green-950/30 border-2 border-green-600 dark:border-green-500 p-4">
-            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+          <div className="bg-success-light dark:bg-success-dark/30 border-2 border-success-dark dark:border-success-dark p-4">
+            <div className="text-2xl font-bold text-success-text dark:text-success">
               {result.success_count}
             </div>
-            <div className="text-xs text-green-700 dark:text-green-400 uppercase tracking-wider mt-1">
+            <div className="text-xs text-success-text dark:text-success uppercase tracking-wider mt-1">
               Exitosas
             </div>
           </div>
-          <div className="bg-red-100 dark:bg-red-950/30 border-2 border-red-600 dark:border-red-500 p-4">
-            <div className="text-2xl font-bold text-red-700 dark:text-red-400">
+          <div className="bg-error-light dark:bg-error-dark/30 border-2 border-error-dark dark:border-error-dark p-4">
+            <div className="text-2xl font-bold text-error-text dark:text-error">
               {result.failure_count}
             </div>
-            <div className="text-xs text-red-700 dark:text-red-400 uppercase tracking-wider mt-1">
+            <div className="text-xs text-error-text dark:text-error uppercase tracking-wider mt-1">
               Fallidas
             </div>
           </div>
@@ -125,7 +125,7 @@ export function BulkOperationResultDialog({
         {/* Failures List */}
         {hasFailures && (
           <div className="space-y-3">
-            <h3 className="font-bold text-stone-900 dark:text-stone-100 text-sm uppercase tracking-wider">
+            <h3 className="font-bold text-neutral-900 dark:text-neutral-100 text-sm uppercase tracking-wider">
               Tareas con errores:
             </h3>
             <div className="max-h-48 overflow-y-auto space-y-2">
@@ -133,18 +133,18 @@ export function BulkOperationResultDialog({
                 <div
                   key={index}
                   className="
-                    bg-red-50 dark:bg-red-950/20
-                    border-2 border-red-200 dark:border-red-800
+                    bg-error-light dark:bg-error-dark/20
+                    border-2 border-error dark:border-error-dark
                     p-3
                   "
                 >
                   <div className="flex items-start gap-3">
-                    <XCircle size={16} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <XCircle size={16} className="text-error-dark dark:text-error flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-mono text-xs text-stone-900 dark:text-stone-100 font-bold truncate">
+                      <div className="font-mono text-xs text-neutral-900 dark:text-neutral-100 font-bold truncate">
                         {failure.task_id}
                       </div>
-                      <div className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      <div className="text-sm text-error-text dark:text-error mt-1">
                         {failure.error}
                       </div>
                     </div>
@@ -158,16 +158,16 @@ export function BulkOperationResultDialog({
         {/* Undo Section */}
         {result.undo_id && (
           <div className="
-            bg-amber-50 dark:bg-amber-950/20
-            border-2 border-amber-300 dark:border-amber-700
+            bg-gold-light dark:bg-gold-dark/20
+            border-2 border-gold dark:border-gold-dark
             p-4
             space-y-3
           ">
-            <div className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
-              <Clock size={16} className="text-amber-600" />
+            <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+              <Clock size={16} className="text-gold-dark" />
               <span className="font-medium">
                 Tiempo restante para deshacer:{' '}
-                <span className="font-bold text-amber-700 dark:text-amber-400">
+                <span className="font-bold text-gold-dark dark:text-gold">
                   {timeRemaining}s
                 </span>
               </span>
@@ -177,23 +177,19 @@ export function BulkOperationResultDialog({
               disabled={!undoAvailable}
               className={`
                 w-full px-6 py-2.5
-                border-2 border-stone-900 dark:border-stone-100
+                border border-neutral-200 dark:border-neutral-100
                 font-medium text-sm uppercase tracking-wider
                 transition-all
-                shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#f5f5f4]
+                shadow-sm
                 flex items-center justify-center gap-2
                 ${undoAvailable
                   ? `
-                    bg-amber-400 text-stone-900
-                    hover:bg-amber-500
-                    hover:shadow-[1px_1px_0_#1c1917] dark:hover:shadow-[1px_1px_0_#f5f5f4]
-                    hover:translate-x-[1px] hover:translate-y-[1px]
-                    active:shadow-none
-                    active:translate-x-[2px] active:translate-y-[2px]
+                    bg-gold text-neutral-900
+                    hover:bg-gold-dark
                   `
                   : `
-                    bg-stone-200 dark:bg-stone-700
-                    text-stone-400 dark:text-stone-500
+                    bg-neutral-200 dark:bg-neutral-700
+                    text-neutral-400 dark:text-neutral-500
                     cursor-not-allowed
                     shadow-none
                   `
@@ -212,17 +208,13 @@ export function BulkOperationResultDialog({
             onClick={onClose}
             className="
               px-6 py-2.5
-              bg-white dark:bg-stone-800
-              border-2 border-stone-900 dark:border-stone-100
-              font-medium text-sm text-stone-900 dark:text-stone-100
+              bg-white dark:bg-neutral-800
+              border border-neutral-200 dark:border-neutral-100
+              font-medium text-sm text-neutral-900 dark:text-neutral-100
               uppercase tracking-wider
-              hover:bg-stone-50 dark:hover:bg-stone-700
+              hover:bg-neutral-50 dark:hover:bg-neutral-700
               transition-all
-              shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#f5f5f4]
-              hover:shadow-[1px_1px_0_#1c1917] dark:hover:shadow-[1px_1px_0_#f5f5f4]
-              hover:translate-x-[1px] hover:translate-y-[1px]
-              active:shadow-none
-              active:translate-x-[2px] active:translate-y-[2px]
+              shadow-sm
             "
           >
             Cerrar

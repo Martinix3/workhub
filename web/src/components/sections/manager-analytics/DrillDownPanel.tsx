@@ -14,17 +14,17 @@ interface DrillDownPanelProps {
 }
 
 const priorityConfig: Record<TaskPriority, { bg: string; text: string; border: string }> = {
-  P0: { bg: 'bg-red-100 dark:bg-red-950', text: 'text-red-700 dark:text-red-300', border: 'border-red-500' },
-  P1: { bg: 'bg-amber-100 dark:bg-amber-950', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-500' },
-  P2: { bg: 'bg-green-100 dark:bg-green-950', text: 'text-green-700 dark:text-green-300', border: 'border-green-500' },
+  P0: { bg: 'bg-error-light dark:bg-error-dark', text: 'text-error-text dark:text-error', border: 'border-error-dark' },
+  P1: { bg: 'bg-gold-light dark:bg-gold-dark/20', text: 'text-gold-dark dark:text-gold', border: 'border-gold-dark' },
+  P2: { bg: 'bg-success-light dark:bg-success-dark', text: 'text-success-text dark:text-success', border: 'border-success-dark' },
 }
 
 const statusConfig: Record<TaskStatus, { icon: any; color: string; label: string; border: string }> = {
-  BACKLOG: { icon: Circle, color: 'text-stone-400', label: 'Backlog', border: 'border-t-stone-400' },
+  BACKLOG: { icon: Circle, color: 'text-neutral-400', label: 'Backlog', border: 'border-t-neutral-400' },
   NEXT: { icon: ArrowRight, color: 'text-cyan-500', label: 'Siguiente', border: 'border-t-cyan-400' },
-  DOING: { icon: Clock, color: 'text-amber-500', label: 'En Progreso', border: 'border-t-amber-400' },
-  BLOCKED: { icon: AlertTriangle, color: 'text-red-500', label: 'Bloqueada', border: 'border-t-red-500' },
-  DONE: { icon: CheckCircle2, color: 'text-green-500', label: 'Completada', border: 'border-t-green-500' },
+  DOING: { icon: Clock, color: 'text-gold-dark', label: 'En Progreso', border: 'border-t-gold' },
+  BLOCKED: { icon: AlertTriangle, color: 'text-error', label: 'Bloqueada', border: 'border-t-error-dark' },
+  DONE: { icon: CheckCircle2, color: 'text-success', label: 'Completada', border: 'border-t-success-dark' },
 }
 
 export function DrillDownPanel({ context, onClose, onTaskClick }: DrillDownPanelProps) {
@@ -53,8 +53,8 @@ export function DrillDownPanel({ context, onClose, onTaskClick }: DrillDownPanel
       <div className="p-6">
         {/* Context Description */}
         {context.description && (
-          <div className="mb-4 p-3 bg-stone-50 dark:bg-stone-800 border-l-4 border-cyan-400">
-            <p className="text-sm text-stone-600 dark:text-stone-300">
+          <div className="mb-4 p-3 bg-neutral-50 dark:bg-neutral-800 border-l-4 border-cyan-400">
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
               {context.description}
             </p>
           </div>
@@ -69,16 +69,16 @@ export function DrillDownPanel({ context, onClose, onTaskClick }: DrillDownPanel
 
         {/* Error State */}
         {error && !loading && (
-          <div className="p-4 bg-red-50 dark:bg-red-950 border-2 border-red-500">
-            <p className="text-red-700 dark:text-red-300 font-medium">
+          <div className="p-4 bg-error-light dark:bg-error-dark border-2 border-error-dark">
+            <p className="text-error-text dark:text-error font-medium">
               Error al cargar tareas
             </p>
-            <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+            <p className="text-sm text-error-dark dark:text-error mt-1">
               {error.message}
             </p>
             <button
               onClick={() => refetch()}
-              className="mt-3 px-3 py-1.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
+              className="mt-3 px-3 py-1.5 bg-error text-white text-sm font-medium hover:bg-error-dark transition-colors"
             >
               Reintentar
             </button>
@@ -89,7 +89,7 @@ export function DrillDownPanel({ context, onClose, onTaskClick }: DrillDownPanel
         {!loading && !error && tasks && (
           <>
             {/* Task Count */}
-            <div className="mb-4 flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+            <div className="mb-4 flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
               <span className="font-mono font-bold">{tasks.length}</span>
               <span>tarea{tasks.length !== 1 ? 's' : ''} encontrada{tasks.length !== 1 ? 's' : ''}</span>
             </div>
@@ -97,11 +97,11 @@ export function DrillDownPanel({ context, onClose, onTaskClick }: DrillDownPanel
             {/* Tasks */}
             {tasks.length === 0 ? (
               <div className="py-12 text-center">
-                <Circle size={48} className="mx-auto mb-4 text-stone-300 dark:text-stone-600" />
-                <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+                <Circle size={48} className="mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
+                <h3 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-2">
                   No se encontraron tareas
                 </h3>
-                <p className="text-stone-500 dark:text-stone-400">
+                <p className="text-neutral-500 dark:text-neutral-400">
                   No hay tareas que coincidan con los criterios seleccionados
                 </p>
               </div>
@@ -176,12 +176,10 @@ function TaskCard({ task, onClick }: TaskCardProps) {
     <div
       onClick={onClick}
       className={`
-        bg-white dark:bg-stone-800
-        border-2 border-stone-900 dark:border-stone-100
+        bg-white dark:bg-neutral-800
+        border border-neutral-200 dark:border-neutral-100
         border-t-4 ${status.border}
-        shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#fafaf9]
-        hover:shadow-[4px_4px_0_#1c1917] dark:hover:shadow-[4px_4px_0_#fafaf9]
-        hover:translate-x-[-2px] hover:translate-y-[-2px]
+        shadow-sm
         transition-all duration-75
         cursor-pointer
       `}
@@ -195,14 +193,14 @@ function TaskCard({ task, onClick }: TaskCardProps) {
           </span>
 
           {/* Status Badge */}
-          <span className="inline-flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
+          <span className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
             <StatusIcon size={12} className={status.color} />
             {status.label}
           </span>
 
           {/* Project */}
           {task.project_title && (
-            <span className="inline-flex items-center gap-1 text-xs text-stone-400 dark:text-stone-500">
+            <span className="inline-flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-500">
               <Folder size={12} />
               {task.project_title}
             </span>
@@ -210,35 +208,35 @@ function TaskCard({ task, onClick }: TaskCardProps) {
 
           {/* Overdue Indicator */}
           {isOverdue && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-500">
+            <span className="px-2 py-0.5 text-xs font-medium bg-error-light dark:bg-error-dark text-error-text dark:text-error border border-error-dark">
               VENCIDA
             </span>
           )}
         </div>
 
         {/* Task Title */}
-        <h3 className="font-medium text-stone-900 dark:text-stone-100 mb-2 hover:underline">
+        <h3 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 hover:underline">
           {task.title}
         </h3>
 
         {/* Description */}
         {task.description && (
-          <p className="text-sm text-stone-600 dark:text-stone-400 mb-2 line-clamp-2">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2 line-clamp-2">
             {task.description}
           </p>
         )}
 
         {/* Blocked Reason */}
         {task.status === 'BLOCKED' && task.blocked_reason && (
-          <div className="mb-2 p-2 bg-red-50 dark:bg-red-950 border-l-2 border-red-500">
-            <p className="text-xs text-red-700 dark:text-red-300 italic">
+          <div className="mb-2 p-2 bg-error-light dark:bg-error-dark border-l-2 border-error-dark">
+            <p className="text-xs text-error-text dark:text-error italic">
               "{task.blocked_reason}"
             </p>
           </div>
         )}
 
         {/* Footer Row */}
-        <div className="flex items-center gap-4 text-xs text-stone-500 dark:text-stone-400">
+        <div className="flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
           {/* Assignee */}
           {task.assigned_to_name && (
             <span className="inline-flex items-center gap-1">
@@ -249,7 +247,7 @@ function TaskCard({ task, onClick }: TaskCardProps) {
 
           {/* Due Date */}
           {task.due_date && (
-            <span className={`inline-flex items-center gap-1 ${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}`}>
+            <span className={`inline-flex items-center gap-1 ${isOverdue ? 'text-error-dark dark:text-error font-medium' : ''}`}>
               <Clock size={12} />
               {new Date(task.due_date).toLocaleDateString('es-ES', {
                 day: 'numeric',
@@ -268,8 +266,8 @@ function TaskCard({ task, onClick }: TaskCardProps) {
         </div>
 
         {/* Task ID */}
-        <div className="mt-2 pt-2 border-t border-stone-200 dark:border-stone-700">
-          <code className="text-xs text-stone-400 dark:text-stone-500 font-mono">
+        <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
+          <code className="text-xs text-neutral-400 dark:text-neutral-500 font-mono">
             {task.name}
           </code>
         </div>

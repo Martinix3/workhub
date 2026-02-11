@@ -2,9 +2,9 @@ import type { CustomerListProps, Customer } from './types'
 import { Plus, Search, Eye, Edit, Trash2, Building2, Truck } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
-  active: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-  inactive: 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-400',
-  prospect: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+  active: 'bg-success-light text-success-text dark:bg-success-dark dark:text-success',
+  inactive: 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400',
+  prospect: 'bg-gold-light text-gold-dark dark:bg-gold-dark dark:text-gold',
 }
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -27,32 +27,32 @@ function CustomerRow({ customer, onView, onEdit, onDelete }: CustomerRowProps) {
   }
 
   return (
-    <tr className="group hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
+    <tr className="group hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
           <div className={`
             w-8 h-8 flex items-center justify-center
-            ${customer.type === 'distributor' ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300' : 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-400'}
+            ${customer.type === 'distributor' ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400'}
           `}>
             {typeIcons[customer.type]}
           </div>
           <div>
-            <p className="font-medium text-stone-900 dark:text-stone-100">
+            <p className="font-medium text-neutral-900 dark:text-neutral-100">
               {customer.name}
             </p>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               {customer.contactName}
             </p>
           </div>
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className="text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400">
+        <span className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           {customer.type === 'distributor' ? 'Distribuidor' : 'Directo'}
         </span>
       </td>
       <td className="px-4 py-3">
-        <span className="text-sm text-stone-600 dark:text-stone-400">
+        <span className="text-sm text-neutral-600 dark:text-neutral-400">
           {customer.zone}
         </span>
       </td>
@@ -65,12 +65,12 @@ function CustomerRow({ customer, onView, onEdit, onDelete }: CustomerRowProps) {
         </span>
       </td>
       <td className="px-4 py-3 text-right">
-        <span className="font-mono text-sm text-stone-700 dark:text-stone-300">
+        <span className="font-mono text-sm text-neutral-700 dark:text-neutral-300">
           {customer.totalOrders}
         </span>
       </td>
       <td className="px-4 py-3 text-right">
-        <span className="font-mono text-sm text-stone-700 dark:text-stone-300">
+        <span className="font-mono text-sm text-neutral-700 dark:text-neutral-300">
           {formatCurrency(customer.totalRevenue)}
         </span>
       </td>
@@ -78,24 +78,24 @@ function CustomerRow({ customer, onView, onEdit, onDelete }: CustomerRowProps) {
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={onView}
-            className="p-1.5 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+            className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             title="Ver"
           >
-            <Eye size={16} className="text-stone-500 dark:text-stone-400" />
+            <Eye size={16} className="text-neutral-500 dark:text-neutral-400" />
           </button>
           <button
             onClick={onEdit}
-            className="p-1.5 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+            className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             title="Editar"
           >
-            <Edit size={16} className="text-stone-500 dark:text-stone-400" />
+            <Edit size={16} className="text-neutral-500 dark:text-neutral-400" />
           </button>
           <button
             onClick={onDelete}
-            className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            className="p-1.5 hover:bg-error-light dark:hover:bg-error-dark/30 transition-colors"
             title="Eliminar"
           >
-            <Trash2 size={16} className="text-stone-500 dark:text-stone-400 hover:text-red-600 dark:hover:text-red-400" />
+            <Trash2 size={16} className="text-neutral-500 dark:text-neutral-400 hover:text-error-dark dark:hover:text-error" />
           </button>
         </div>
       </td>
@@ -116,10 +116,10 @@ export function CustomerList({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
+          <h1 className="font-heading text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
             Clientes
           </h1>
-          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             {customers.length} clientes registrados
           </p>
         </div>
@@ -128,12 +128,11 @@ export function CustomerList({
           onClick={onCreateCustomer}
           className="
             inline-flex items-center gap-2 px-4 py-2
-            bg-amber-400 hover:bg-amber-500
-            text-stone-900 font-medium text-sm uppercase tracking-wider
-            border-2 border-stone-900
-            shadow-[4px_4px_0_#1c1917]
-            hover:shadow-[2px_2px_0_#1c1917]
-            hover:translate-x-[2px] hover:translate-y-[2px]
+            bg-gold hover:bg-gold-dark
+            text-neutral-900 font-medium text-sm uppercase tracking-wider
+            border border-neutral-200
+            shadow-sm
+            hover:shadow-sm
             transition-all duration-75
           "
         >
@@ -146,17 +145,17 @@ export function CustomerList({
       <div className="flex flex-wrap items-center gap-3 mb-6">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
             type="text"
             placeholder="Buscar cliente..."
             className="
               w-full pl-9 pr-4 py-2
-              bg-white dark:bg-stone-800
-              border-2 border-stone-900 dark:border-stone-100
-              text-sm text-stone-900 dark:text-stone-100
-              placeholder:text-stone-400
-              focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-300
+              bg-white dark:bg-neutral-800
+              border border-neutral-200 dark:border-neutral-100
+              text-sm text-neutral-900 dark:text-neutral-100
+              placeholder:text-neutral-400
+              focus:outline-none focus:ring-2 focus:ring-gold dark:focus:ring-gold
             "
             onChange={(e) => onFilterChange?.({ search: e.target.value })}
           />
@@ -166,27 +165,27 @@ export function CustomerList({
         <div className="flex items-center gap-2">
           <button className="
             px-3 py-1.5 text-xs uppercase tracking-wider
-            border border-stone-300 dark:border-stone-600
-            text-stone-600 dark:text-stone-400
-            hover:bg-stone-100 dark:hover:bg-stone-800
+            border border-neutral-300 dark:border-neutral-600
+            text-neutral-600 dark:text-neutral-400
+            hover:bg-neutral-100 dark:hover:bg-neutral-800
             transition-colors
           ">
             Todos
           </button>
           <button className="
             px-3 py-1.5 text-xs uppercase tracking-wider
-            border border-stone-300 dark:border-stone-600
-            text-stone-600 dark:text-stone-400
-            hover:bg-stone-100 dark:hover:bg-stone-800
+            border border-neutral-300 dark:border-neutral-600
+            text-neutral-600 dark:text-neutral-400
+            hover:bg-neutral-100 dark:hover:bg-neutral-800
             transition-colors
           ">
             Directos
           </button>
           <button className="
             px-3 py-1.5 text-xs uppercase tracking-wider
-            border border-stone-300 dark:border-stone-600
-            text-stone-600 dark:text-stone-400
-            hover:bg-stone-100 dark:hover:bg-stone-800
+            border border-neutral-300 dark:border-neutral-600
+            text-neutral-600 dark:text-neutral-400
+            hover:bg-neutral-100 dark:hover:bg-neutral-800
             transition-colors
           ">
             Distribuidores
@@ -195,33 +194,33 @@ export function CustomerList({
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 overflow-hidden">
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b-2 border-stone-900 dark:border-stone-100">
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">
+              <tr className="border-b border-neutral-200 dark:border-neutral-100">
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">
                   Cliente
                 </th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">
                   Tipo
                 </th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">
                   Zona
                 </th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">
                   Estado
                 </th>
-                <th className="px-4 py-3 text-right text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">
+                <th className="px-4 py-3 text-right text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">
                   Pedidos
                 </th>
-                <th className="px-4 py-3 text-right text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">
+                <th className="px-4 py-3 text-right text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">
                   Ingresos
                 </th>
                 <th className="px-4 py-3 w-24"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-200 dark:divide-stone-700">
+            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
               {customers.map((customer) => (
                 <CustomerRow
                   key={customer.id}

@@ -3,10 +3,10 @@ import { Package, MapPin, Calendar, Clock, Eye, CheckCircle, AlertTriangle, Paus
 
 const statusConfig: Record<LotStatus, { bg: string; text: string; label: string; icon: React.ReactNode }> = {
   in_production: { bg: 'bg-cyan-100 dark:bg-cyan-900', text: 'text-cyan-700 dark:text-cyan-300', label: 'En Produccion', icon: <Clock size={12} /> },
-  pending_inspection: { bg: 'bg-amber-100 dark:bg-amber-900', text: 'text-amber-700 dark:text-amber-300', label: 'Pendiente Inspeccion', icon: <Clock size={12} /> },
-  released: { bg: 'bg-green-100 dark:bg-green-900', text: 'text-green-700 dark:text-green-300', label: 'Liberado', icon: <CheckCircle size={12} /> },
-  held: { bg: 'bg-red-100 dark:bg-red-900', text: 'text-red-700 dark:text-red-300', label: 'Retenido', icon: <Pause size={12} /> },
-  rejected: { bg: 'bg-stone-100 dark:bg-stone-700', text: 'text-stone-600 dark:text-stone-300', label: 'Rechazado', icon: <AlertTriangle size={12} /> },
+  pending_inspection: { bg: 'bg-gold-light dark:bg-gold-dark', text: 'text-gold-dark dark:text-gold', label: 'Pendiente Inspeccion', icon: <Clock size={12} /> },
+  released: { bg: 'bg-success-light dark:bg-success-dark', text: 'text-success-text dark:text-success', label: 'Liberado', icon: <CheckCircle size={12} /> },
+  held: { bg: 'bg-error-light dark:bg-error-dark', text: 'text-error-text dark:text-error', label: 'Retenido', icon: <Pause size={12} /> },
+  rejected: { bg: 'bg-neutral-100 dark:bg-neutral-700', text: 'text-neutral-600 dark:text-neutral-300', label: 'Rechazado', icon: <AlertTriangle size={12} /> },
 }
 
 interface LotCardProps {
@@ -22,19 +22,18 @@ function LotCard({ lot, onView, onRelease, onHold }: LotCardProps) {
 
   return (
     <div className="
-      bg-white dark:bg-stone-900
-      border-2 border-stone-900 dark:border-stone-100
-      shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
+      bg-white dark:bg-neutral-900
+      border border-neutral-200 dark:border-neutral-100
       overflow-hidden
     ">
       {/* Header */}
-      <div className="p-4 border-b border-stone-200 dark:border-stone-700">
+      <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
         <div className="flex items-start justify-between mb-2">
           <div>
-            <h3 className="font-mono text-lg font-bold text-stone-900 dark:text-stone-100">
+            <h3 className="font-mono text-lg font-bold text-neutral-900 dark:text-neutral-100">
               {lot.lotNumber}
             </h3>
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
               {lot.productName}
             </p>
           </div>
@@ -46,31 +45,31 @@ function LotCard({ lot, onView, onRelease, onHold }: LotCardProps) {
 
         <div className="grid grid-cols-3 gap-4 mt-4">
           <div className="flex items-center gap-2">
-            <Package size={14} className="text-stone-400" />
+            <Package size={14} className="text-neutral-400" />
             <div>
-              <div className="text-xs text-stone-400">Cantidad</div>
-              <div className="font-mono text-sm font-medium text-stone-900 dark:text-stone-100">
+              <div className="text-xs text-neutral-400">Cantidad</div>
+              <div className="font-mono text-sm font-medium text-neutral-900 dark:text-neutral-100">
                 {lot.qtyProduced} {lot.uom}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <MapPin size={14} className="text-stone-400" />
+            <MapPin size={14} className="text-neutral-400" />
             <div>
-              <div className="text-xs text-stone-400">Ubicacion</div>
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
+              <div className="text-xs text-neutral-400">Ubicacion</div>
+              <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
                 {lot.location}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Calendar size={14} className="text-stone-400" />
+            <Calendar size={14} className="text-neutral-400" />
             <div>
-              <div className="text-xs text-stone-400">Vence en</div>
+              <div className="text-xs text-neutral-400">Vence en</div>
               <div className={`font-mono text-sm font-medium ${
-                daysUntilExpiry < 30 ? 'text-red-600' :
-                daysUntilExpiry < 90 ? 'text-amber-600' :
-                'text-stone-900 dark:text-stone-100'
+                daysUntilExpiry < 30 ? 'text-error-dark' :
+                daysUntilExpiry < 90 ? 'text-gold-dark' :
+                'text-neutral-900 dark:text-neutral-100'
               }`}>
                 {daysUntilExpiry}d
               </div>
@@ -80,23 +79,23 @@ function LotCard({ lot, onView, onRelease, onHold }: LotCardProps) {
       </div>
 
       {/* Materials */}
-      <div className="p-4 bg-stone-50 dark:bg-stone-800/50">
-        <div className="text-xs uppercase tracking-wider text-stone-500 mb-2">
+      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50">
+        <div className="text-xs uppercase tracking-wider text-neutral-500 mb-2">
           Materias Primas ({lot.materials?.length ?? 0})
         </div>
         <div className="space-y-1">
           {(lot.materials ?? []).slice(0, 2).map((material) => (
             <div key={material.itemCode} className="flex items-center justify-between text-sm">
-              <span className="text-stone-700 dark:text-stone-300 truncate">
+              <span className="text-neutral-700 dark:text-neutral-300 truncate">
                 {material.itemName}
               </span>
-              <span className="font-mono text-stone-500 text-xs">
+              <span className="font-mono text-neutral-500 text-xs">
                 {material.lotNumber}
               </span>
             </div>
           ))}
           {(lot.materials?.length ?? 0) > 2 && (
-            <div className="text-xs text-stone-400">
+            <div className="text-xs text-neutral-400">
               +{(lot.materials?.length ?? 0) - 2} mas
             </div>
           )}
@@ -104,22 +103,22 @@ function LotCard({ lot, onView, onRelease, onHold }: LotCardProps) {
       </div>
 
       {/* Timeline Preview */}
-      <div className="p-4 border-t border-stone-200 dark:border-stone-700">
-        <div className="text-xs uppercase tracking-wider text-stone-500 mb-2">
+      <div className="p-4 border-t border-neutral-200 dark:border-neutral-700">
+        <div className="text-xs uppercase tracking-wider text-neutral-500 mb-2">
           Ultimo Evento
         </div>
         {(lot.events?.length ?? 0) > 0 && (
-          <div className="text-sm text-stone-700 dark:text-stone-300">
+          <div className="text-sm text-neutral-700 dark:text-neutral-300">
             {lot.events[lot.events.length - 1].description}
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="p-4 border-t border-stone-200 dark:border-stone-700 flex items-center gap-2">
+      <div className="p-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center gap-2">
         <button
           onClick={onView}
-          className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-xs uppercase tracking-wider font-medium text-stone-700 dark:text-stone-300 border border-stone-300 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+          className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-xs uppercase tracking-wider font-medium text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
         >
           <Eye size={14} />
           Ver Detalle
@@ -128,13 +127,13 @@ function LotCard({ lot, onView, onRelease, onHold }: LotCardProps) {
           <>
             <button
               onClick={onRelease}
-              className="px-3 py-2 text-xs uppercase tracking-wider font-medium text-green-700 dark:text-green-300 border border-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+              className="px-3 py-2 text-xs uppercase tracking-wider font-medium text-success-text dark:text-success border border-success-dark hover:bg-success-light dark:hover:bg-success-dark/30 transition-colors"
             >
               Liberar
             </button>
             <button
               onClick={onHold}
-              className="px-3 py-2 text-xs uppercase tracking-wider font-medium text-red-700 dark:text-red-300 border border-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+              className="px-3 py-2 text-xs uppercase tracking-wider font-medium text-error-text dark:text-error border border-error-dark hover:bg-error-light dark:hover:bg-error-dark/30 transition-colors"
             >
               Retener
             </button>
@@ -155,10 +154,10 @@ export function LotManagement({ lots, onViewLot, onReleaseLot, onHoldLot }: LotM
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
+        <h1 className="font-heading text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
           Gestion de Lotes
         </h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
           Trazabilidad completa desde materias primas hasta producto terminado
         </p>
       </div>

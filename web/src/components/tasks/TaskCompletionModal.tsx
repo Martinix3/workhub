@@ -64,19 +64,19 @@ export function TaskCompletionModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-white border-2 border-stone-900 shadow-[8px_8px_0_#1c1917] w-full max-w-md">
+      <div className="relative bg-white border border-neutral-200 w-full max-w-md">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-stone-200">
+        <div className="flex items-center justify-between p-4 border-b-2 border-neutral-200">
           <div className="flex items-center gap-2">
-            <CheckCircle size={20} className="text-green-600" />
-            <h2 className="font-serif text-lg font-bold">
+            <CheckCircle size={20} className="text-success-dark" />
+            <h2 className="font-heading text-lg font-bold">
               Completar Tarea
             </h2>
           </div>
           <button
             onClick={onClose}
             disabled={submitting}
-            className="p-1 hover:bg-stone-100 transition-colors disabled:opacity-50"
+            className="p-1 hover:bg-neutral-100 transition-colors disabled:opacity-50"
           >
             <X size={20} />
           </button>
@@ -86,17 +86,17 @@ export function TaskCompletionModal({
         <div className="p-4 space-y-4">
           {/* Task Title */}
           <div>
-            <label className="block text-sm font-medium text-stone-600 mb-1">
+            <label className="block text-sm font-medium text-neutral-600 mb-1">
               Tarea
             </label>
-            <p className="text-base font-medium text-stone-900">
+            <p className="text-base font-medium text-neutral-900">
               {task.title}
             </p>
           </div>
 
           {/* Completion Notes */}
           <div>
-            <label className="block text-sm font-medium text-stone-600 mb-1">
+            <label className="block text-sm font-medium text-neutral-600 mb-1">
               Notas de Cierre
             </label>
             <textarea
@@ -106,9 +106,9 @@ export function TaskCompletionModal({
               placeholder="Notas de cierre (opcional)"
               rows={4}
               disabled={submitting}
-              className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none resize-none disabled:opacity-50 disabled:bg-stone-50"
+              className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none resize-none disabled:opacity-50 disabled:bg-neutral-50"
             />
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-xs text-neutral-500 mt-1">
               Cmd/Ctrl + Enter para completar
             </p>
           </div>
@@ -119,7 +119,7 @@ export function TaskCompletionModal({
             <button
               onClick={onClose}
               disabled={submitting}
-              className="flex-1 py-2 border-2 border-stone-300 hover:border-stone-400 font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
+              className="flex-1 py-2 border-2 border-neutral-300 hover:border-neutral-400 font-medium uppercase tracking-wider transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -128,7 +128,7 @@ export function TaskCompletionModal({
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 flex items-center justify-center gap-2 py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+              className="flex-1 flex items-center justify-center gap-2 py-2 bg-gold hover:bg-gold-dark text-neutral-900 font-medium uppercase tracking-wider border border-neutral-200 transition-all disabled:opacity-50"
             >
               {submitting ? (
                 <>

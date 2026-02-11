@@ -20,10 +20,10 @@ function Modal({ isOpen, onClose, title, children }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white border-2 border-stone-900 shadow-[8px_8px_0_#1c1917] max-w-md w-full mx-4">
-        <div className="flex items-center justify-between p-4 border-b-2 border-stone-200">
-          <h2 className="font-serif text-lg font-bold">{title}</h2>
-          <button onClick={onClose} className="p-1 hover:bg-stone-100">
+      <div className="relative bg-white border border-neutral-200 max-w-md w-full mx-4">
+        <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+          <h2 className="font-heading text-lg font-bold">{title}</h2>
+          <button onClick={onClose} className="p-1 hover:bg-neutral-100">
             <X size={20} />
           </button>
         </div>
@@ -135,7 +135,7 @@ export function MarketingDashboardPage() {
       <Modal isOpen={showCampaignModal} onClose={() => setShowCampaignModal(false)} title="Nueva Campana">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-1">
+            <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-1">
               Nombre *
             </label>
             <input
@@ -143,11 +143,11 @@ export function MarketingDashboardPage() {
               value={campaignForm.name}
               onChange={(e) => setCampaignForm(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Nombre de la campana"
-              className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none"
+              className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-1">
+            <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-1">
               Presupuesto
             </label>
             <input
@@ -155,11 +155,11 @@ export function MarketingDashboardPage() {
               value={campaignForm.budget}
               onChange={(e) => setCampaignForm(prev => ({ ...prev, budget: e.target.value }))}
               placeholder="0.00"
-              className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none"
+              className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-1">
+            <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-1">
               Descripcion
             </label>
             <textarea
@@ -167,13 +167,13 @@ export function MarketingDashboardPage() {
               onChange={(e) => setCampaignForm(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Describe la campana..."
               rows={3}
-              className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none resize-none"
+              className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none resize-none"
             />
           </div>
           <button
             onClick={handleCreateCampaign}
             disabled={saving || !campaignForm.name.trim()}
-            className="w-full py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-2 bg-gold hover:bg-gold-dark text-neutral-900 font-medium uppercase tracking-wider border border-neutral-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Save size={16} />
             {saving ? 'Guardando...' : 'Crear Campana'}
@@ -185,13 +185,13 @@ export function MarketingDashboardPage() {
       <Modal isOpen={showPostModal} onClose={() => setShowPostModal(false)} title="Nuevo Post">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-1">
+            <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-1">
               Plataforma
             </label>
             <select
               value={postForm.platform}
               onChange={(e) => setPostForm(prev => ({ ...prev, platform: e.target.value }))}
-              className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none"
+              className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none"
             >
               <option value="Instagram">Instagram</option>
               <option value="Facebook">Facebook</option>
@@ -200,7 +200,7 @@ export function MarketingDashboardPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-stone-700 uppercase tracking-wider mb-1">
+            <label className="block text-sm font-medium text-neutral-700 uppercase tracking-wider mb-1">
               Contenido *
             </label>
             <textarea
@@ -208,13 +208,13 @@ export function MarketingDashboardPage() {
               onChange={(e) => setPostForm(prev => ({ ...prev, content: e.target.value }))}
               placeholder="Escribe el contenido del post..."
               rows={4}
-              className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none resize-none"
+              className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none resize-none"
             />
           </div>
           <button
             onClick={handleCreatePost}
             disabled={saving || !postForm.content.trim()}
-            className="w-full py-2 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-2 bg-gold hover:bg-gold-dark text-neutral-900 font-medium uppercase tracking-wider border border-neutral-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Save size={16} />
             {saving ? 'Guardando...' : 'Crear Post'}
@@ -228,29 +228,29 @@ export function MarketingDashboardPage() {
           <div className="space-y-4">
             <div>
               <h3 className="font-bold text-lg">{selectedCampaign.name}</h3>
-              <p className="text-sm text-stone-500">{selectedCampaign.objective}</p>
+              <p className="text-sm text-neutral-500">{selectedCampaign.objective}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-stone-50 border border-stone-200">
-                <div className="text-xs uppercase text-stone-500">Presupuesto</div>
+              <div className="p-3 bg-neutral-50 border border-neutral-200">
+                <div className="text-xs uppercase text-neutral-500">Presupuesto</div>
                 <div className="font-mono font-bold">${selectedCampaign.budget.toLocaleString()}</div>
               </div>
-              <div className="p-3 bg-stone-50 border border-stone-200">
-                <div className="text-xs uppercase text-stone-500">Gastado</div>
+              <div className="p-3 bg-neutral-50 border border-neutral-200">
+                <div className="text-xs uppercase text-neutral-500">Gastado</div>
                 <div className="font-mono font-bold">${selectedCampaign.spent.toLocaleString()}</div>
               </div>
-              <div className="p-3 bg-stone-50 border border-stone-200">
-                <div className="text-xs uppercase text-stone-500">Leads</div>
+              <div className="p-3 bg-neutral-50 border border-neutral-200">
+                <div className="text-xs uppercase text-neutral-500">Leads</div>
                 <div className="font-mono font-bold">{selectedCampaign.metrics.leads}</div>
               </div>
-              <div className="p-3 bg-stone-50 border border-stone-200">
-                <div className="text-xs uppercase text-stone-500">Estado</div>
+              <div className="p-3 bg-neutral-50 border border-neutral-200">
+                <div className="text-xs uppercase text-neutral-500">Estado</div>
                 <div className="font-medium capitalize">{selectedCampaign.status}</div>
               </div>
             </div>
             <button
               onClick={() => setShowDetailModal(null)}
-              className="w-full py-2 text-stone-600 hover:text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-300 hover:border-stone-400 transition-colors"
+              className="w-full py-2 text-neutral-600 hover:text-neutral-900 font-medium uppercase tracking-wider border-2 border-neutral-300 hover:border-neutral-400 transition-colors"
             >
               Cerrar
             </button>

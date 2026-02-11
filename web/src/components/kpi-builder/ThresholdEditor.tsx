@@ -151,15 +151,15 @@ export function ThresholdEditor({
   return (
     <div className="space-y-4">
       {/* Label */}
-      <div className="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+      <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
         <Target size={16} />
         <span className="text-xs uppercase tracking-wider font-semibold">Thresholds</span>
       </div>
 
       {/* Info message */}
-      <div className="flex items-start gap-2 p-3 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
-        <Info size={14} className="text-stone-400 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-stone-600 dark:text-stone-400">
+      <div className="flex items-start gap-2 p-3 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+        <Info size={14} className="text-neutral-400 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-neutral-600 dark:text-neutral-400">
           {higherIsBetter ? (
             <>Define thresholds where <strong>higher values are better</strong>. Target should be the goal, with warning and critical levels below it.</>
           ) : (
@@ -172,13 +172,13 @@ export function ThresholdEditor({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Target Value */}
         <div className="space-y-2">
-          <label className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium text-stone-700 dark:text-stone-300">
-            <Target size={12} className="text-green-600 dark:text-green-400" />
+          <label className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium text-neutral-700 dark:text-neutral-300">
+            <Target size={12} className="text-success-dark dark:text-success" />
             Target
           </label>
           <div className="relative">
             {getInputPrefix() && (
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono text-sm">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
                 {getInputPrefix()}
               </span>
             )}
@@ -192,16 +192,16 @@ export function ThresholdEditor({
                 w-full py-2 font-mono text-sm
                 ${getInputPrefix() ? 'pl-7 pr-3' : 'px-3'}
                 ${getInputSuffix() ? 'pr-8' : ''}
-                bg-white dark:bg-stone-800
-                border-2 border-stone-900 dark:border-stone-100
-                text-stone-900 dark:text-stone-100
-                placeholder:text-stone-400
+                bg-white dark:bg-neutral-800
+                border border-neutral-200
+                text-neutral-900 dark:text-neutral-100
+                placeholder:text-neutral-400
                 focus:outline-none focus:ring-0
-                focus:border-green-600 dark:focus:border-green-400
+                focus:border-success-dark dark:focus:border-success
               `}
             />
             {getInputSuffix() && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono text-sm">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
                 {getInputSuffix()}
               </span>
             )}
@@ -210,13 +210,13 @@ export function ThresholdEditor({
 
         {/* Warning Threshold */}
         <div className="space-y-2">
-          <label className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium text-stone-700 dark:text-stone-300">
-            <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400" />
+          <label className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium text-neutral-700 dark:text-neutral-300">
+            <AlertTriangle size={12} className="text-gold-dark dark:text-gold" />
             Warning
           </label>
           <div className="relative">
             {getInputPrefix() && (
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono text-sm">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
                 {getInputPrefix()}
               </span>
             )}
@@ -230,16 +230,16 @@ export function ThresholdEditor({
                 w-full py-2 font-mono text-sm
                 ${getInputPrefix() ? 'pl-7 pr-3' : 'px-3'}
                 ${getInputSuffix() ? 'pr-8' : ''}
-                bg-white dark:bg-stone-800
-                border-2 border-stone-900 dark:border-stone-100
-                text-stone-900 dark:text-stone-100
-                placeholder:text-stone-400
+                bg-white dark:bg-neutral-800
+                border border-neutral-200
+                text-neutral-900 dark:text-neutral-100
+                placeholder:text-neutral-400
                 focus:outline-none focus:ring-0
-                focus:border-amber-600 dark:focus:border-amber-400
+                focus:border-gold-dark dark:focus:border-gold
               `}
             />
             {getInputSuffix() && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono text-sm">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
                 {getInputSuffix()}
               </span>
             )}
@@ -248,13 +248,13 @@ export function ThresholdEditor({
 
         {/* Critical Threshold */}
         <div className="space-y-2">
-          <label className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium text-stone-700 dark:text-stone-300">
-            <AlertCircle size={12} className="text-red-600 dark:text-red-400" />
+          <label className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium text-neutral-700 dark:text-neutral-300">
+            <AlertCircle size={12} className="text-error-dark dark:text-error" />
             Critical
           </label>
           <div className="relative">
             {getInputPrefix() && (
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono text-sm">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
                 {getInputPrefix()}
               </span>
             )}
@@ -268,16 +268,16 @@ export function ThresholdEditor({
                 w-full py-2 font-mono text-sm
                 ${getInputPrefix() ? 'pl-7 pr-3' : 'px-3'}
                 ${getInputSuffix() ? 'pr-8' : ''}
-                bg-white dark:bg-stone-800
-                border-2 border-stone-900 dark:border-stone-100
-                text-stone-900 dark:text-stone-100
-                placeholder:text-stone-400
+                bg-white dark:bg-neutral-800
+                border border-neutral-200
+                text-neutral-900 dark:text-neutral-100
+                placeholder:text-neutral-400
                 focus:outline-none focus:ring-0
-                focus:border-red-600 dark:focus:border-red-400
+                focus:border-error-dark dark:focus:border-error
               `}
             />
             {getInputSuffix() && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono text-sm">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
                 {getInputSuffix()}
               </span>
             )}
@@ -287,9 +287,9 @@ export function ThresholdEditor({
 
       {/* Validation error */}
       {validationError && (
-        <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border-2 border-red-600 dark:border-red-400">
-          <AlertCircle size={14} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-red-700 dark:text-red-300 font-medium">
+        <div className="flex items-start gap-2 p-3 bg-error-light dark:bg-error-dark/20 border-2 border-error-dark dark:border-error">
+          <AlertCircle size={14} className="text-error-dark dark:text-error flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-error-text dark:text-error font-medium">
             {validationError}
           </p>
         </div>
@@ -298,16 +298,16 @@ export function ThresholdEditor({
       {/* Visual preview */}
       {positions && !validationError && (
         <div className="space-y-3 pt-2">
-          <div className="text-xs uppercase tracking-wider font-medium text-stone-600 dark:text-stone-400">
+          <div className="text-xs uppercase tracking-wider font-medium text-neutral-600 dark:text-neutral-400">
             Visual Preview
           </div>
 
           {/* Bar with threshold markers */}
-          <div className="relative h-12 bg-stone-100 dark:bg-stone-800 border-2 border-stone-900 dark:border-stone-100">
+          <div className="relative h-12 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200">
             {/* Critical zone (left for higher-is-better, right for lower-is-better) */}
             {positions.critical !== null && (
               <div
-                className="absolute top-0 bottom-0 bg-red-200 dark:bg-red-900/30"
+                className="absolute top-0 bottom-0 bg-error-light dark:bg-error-dark/30"
                 style={
                   higherIsBetter
                     ? { left: 0, width: `${positions.critical}%` }
@@ -319,7 +319,7 @@ export function ThresholdEditor({
             {/* Warning zone */}
             {positions.warning !== null && positions.critical !== null && (
               <div
-                className="absolute top-0 bottom-0 bg-amber-200 dark:bg-amber-900/30"
+                className="absolute top-0 bottom-0 bg-gold-light dark:bg-gold-dark/30"
                 style={
                   higherIsBetter
                     ? { left: `${positions.critical}%`, width: `${positions.warning - positions.critical}%` }
@@ -331,11 +331,11 @@ export function ThresholdEditor({
             {/* Target marker */}
             {positions.target !== null && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-green-600 dark:bg-green-400 z-10"
+                className="absolute top-0 bottom-0 w-0.5 bg-success-dark dark:bg-success z-10"
                 style={{ left: `${positions.target}%` }}
               >
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2">
-                  <Target size={12} className="text-green-600 dark:text-green-400" />
+                  <Target size={12} className="text-success-dark dark:text-success" />
                 </div>
               </div>
             )}
@@ -343,11 +343,11 @@ export function ThresholdEditor({
             {/* Warning marker */}
             {positions.warning !== null && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-amber-600 dark:bg-amber-400 z-10"
+                className="absolute top-0 bottom-0 w-0.5 bg-gold-dark dark:bg-gold z-10"
                 style={{ left: `${positions.warning}%` }}
               >
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2">
-                  <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400" />
+                  <AlertTriangle size={12} className="text-gold-dark dark:text-gold" />
                 </div>
               </div>
             )}
@@ -355,11 +355,11 @@ export function ThresholdEditor({
             {/* Critical marker */}
             {positions.critical !== null && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-600 dark:bg-red-400 z-10"
+                className="absolute top-0 bottom-0 w-0.5 bg-error-dark dark:bg-error z-10"
                 style={{ left: `${positions.critical}%` }}
               >
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2">
-                  <AlertCircle size={12} className="text-red-600 dark:text-red-400" />
+                  <AlertCircle size={12} className="text-error-dark dark:text-error" />
                 </div>
               </div>
             )}
@@ -367,10 +367,10 @@ export function ThresholdEditor({
             {/* Current value marker (if provided) */}
             {positions.current !== null && (
               <div
-                className="absolute top-0 bottom-0 w-1 bg-stone-900 dark:bg-stone-100 z-20"
+                className="absolute top-0 bottom-0 w-1 bg-neutral-900 dark:bg-neutral-100 z-20"
                 style={{ left: `${positions.current}%` }}
               >
-                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-stone-900 dark:text-stone-100 whitespace-nowrap">
+                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-neutral-900 dark:text-neutral-100 whitespace-nowrap">
                   Current
                 </div>
               </div>
@@ -381,25 +381,25 @@ export function ThresholdEditor({
           <div className="flex flex-wrap items-center gap-4 text-xs">
             {positions.target !== null && (
               <div className="flex items-center gap-1.5">
-                <Target size={10} className="text-green-600 dark:text-green-400" />
-                <span className="text-stone-600 dark:text-stone-400">
-                  Target: <span className="font-mono font-medium text-stone-900 dark:text-stone-100">{target}</span>
+                <Target size={10} className="text-success-dark dark:text-success" />
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  Target: <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">{target}</span>
                 </span>
               </div>
             )}
             {positions.warning !== null && (
               <div className="flex items-center gap-1.5">
-                <AlertTriangle size={10} className="text-amber-600 dark:text-amber-400" />
-                <span className="text-stone-600 dark:text-stone-400">
-                  Warning: <span className="font-mono font-medium text-stone-900 dark:text-stone-100">{warning}</span>
+                <AlertTriangle size={10} className="text-gold-dark dark:text-gold" />
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  Warning: <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">{warning}</span>
                 </span>
               </div>
             )}
             {positions.critical !== null && (
               <div className="flex items-center gap-1.5">
-                <AlertCircle size={10} className="text-red-600 dark:text-red-400" />
-                <span className="text-stone-600 dark:text-stone-400">
-                  Critical: <span className="font-mono font-medium text-stone-900 dark:text-stone-100">{critical}</span>
+                <AlertCircle size={10} className="text-error-dark dark:text-error" />
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  Critical: <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">{critical}</span>
                 </span>
               </div>
             )}

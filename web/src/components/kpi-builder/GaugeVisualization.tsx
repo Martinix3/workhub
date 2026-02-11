@@ -77,13 +77,13 @@ export function GaugeVisualization({
   const getStatusColor = () => {
     switch (gaugeStatus) {
       case 'ok':
-        return 'text-green-600 dark:text-green-400'
+        return 'text-success-dark dark:text-success'
       case 'warning':
-        return 'text-amber-600 dark:text-amber-400'
+        return 'text-gold-dark dark:text-gold'
       case 'critical':
-        return 'text-red-600 dark:text-red-400'
+        return 'text-error-dark dark:text-error'
       default:
-        return 'text-stone-500 dark:text-stone-400'
+        return 'text-neutral-500 dark:text-neutral-400'
     }
   }
 
@@ -115,7 +115,7 @@ export function GaugeVisualization({
           strokeWidth="10"
           strokeDasharray={maxArc}
           strokeLinecap="round"
-          className="text-stone-200 dark:text-stone-700"
+          className="text-neutral-200 dark:text-neutral-700"
         />
 
         {/* Color zones (optional background) */}
@@ -145,14 +145,14 @@ export function GaugeVisualization({
 
       {/* Label */}
       {label && (
-        <div className="font-sans text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 text-center">
+        <div className="font-sans text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 text-center">
           {label}
         </div>
       )}
 
       {/* Percentage to target */}
       {targetValue && (
-        <div className="text-xs text-stone-400 dark:text-stone-500 mt-1">
+        <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
           {percentage.toFixed(0)}% of target
         </div>
       )}

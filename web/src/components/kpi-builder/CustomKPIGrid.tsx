@@ -150,26 +150,25 @@ export function CustomKPIGrid({
   if (error) {
     return (
       <div className="
-        bg-white dark:bg-stone-900
-        border-2 border-red-600 dark:border-red-400
+        bg-white dark:bg-neutral-900
+        border-2 border-error-dark dark:border-error
         p-6
-        shadow-[4px_4px_0_#dc2626] dark:shadow-[4px_4px_0_#f87171]
       ">
-        <h3 className="font-mono text-lg font-bold text-red-600 dark:text-red-400 mb-2">
+        <h3 className="font-mono text-lg font-bold text-error-dark dark:text-error mb-2">
           Error Loading KPIs
         </h3>
-        <p className="text-sm text-stone-600 dark:text-stone-400 mb-4">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
           {error.message}
         </p>
         <button
           onClick={() => refetch()}
           className="
             px-4 py-2 text-sm
-            bg-red-600 text-white
-            border-2 border-red-700
-            hover:bg-red-700
+            bg-error-dark text-white
+            border-2 border-error-dark
+            hover:bg-error-dark
             transition-colors
-            shadow-[2px_2px_0_#b91c1c]
+            shadow-sm
           "
         >
           Retry
@@ -182,29 +181,28 @@ export function CustomKPIGrid({
   if (!displayKPIs || displayKPIs.length === 0) {
     return (
       <div className="
-        bg-white dark:bg-stone-900
-        border-2 border-stone-900 dark:border-stone-100
+        bg-white dark:bg-neutral-900
+        border border-neutral-200
         p-8 lg:p-12
-        shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
+        shadow-sm
         text-center
       ">
         <div className="max-w-md mx-auto">
-          <h3 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100 mb-2">
+          <h3 className="font-heading text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
             No Custom KPIs Yet
           </h3>
-          <p className="text-sm text-stone-500 dark:text-stone-400 mb-6">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
             Create your first custom KPI to start tracking metrics that matter to your team.
           </p>
           <button
             onClick={handleAddKPI}
             className="
               inline-flex items-center gap-2 px-6 py-3
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium text-sm uppercase tracking-wider
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:shadow-[2px_2px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
+              bg-gold hover:bg-gold-dark
+              text-neutral-900 font-medium text-sm uppercase tracking-wider
+              border border-neutral-200
+              shadow-sm
+              hover:shadow-md
               transition-all duration-75
             "
           >
@@ -258,11 +256,11 @@ export function CustomKPIGrid({
           onClick={handleAddKPI}
           className="
             min-h-[200px]
-            bg-white dark:bg-stone-900
-            border-2 border-dashed border-stone-400 dark:border-stone-600
+            bg-white dark:bg-neutral-900
+            border-2 border-dashed border-neutral-400 dark:border-neutral-600
             p-6
-            hover:border-amber-600 dark:hover:border-amber-400
-            hover:bg-amber-50 dark:hover:bg-amber-900/10
+            hover:border-gold-dark dark:hover:border-gold
+            hover:bg-gold-light dark:hover:bg-gold-dark/10
             transition-all duration-150
             flex flex-col items-center justify-center
             group
@@ -270,20 +268,20 @@ export function CustomKPIGrid({
         >
           <div className="
             w-12 h-12 mb-3
-            border-2 border-stone-400 dark:border-stone-600
-            group-hover:border-amber-600 dark:group-hover:border-amber-400
+            border-2 border-neutral-400 dark:border-neutral-600
+            group-hover:border-gold-dark dark:group-hover:border-gold
             flex items-center justify-center
             transition-colors
           ">
             <Plus
               size={24}
-              className="text-stone-400 dark:text-stone-600 group-hover:text-amber-600 dark:group-hover:text-amber-400"
+              className="text-neutral-400 dark:text-neutral-600 group-hover:text-gold-dark dark:group-hover:text-gold"
             />
           </div>
           <span className="
             text-sm font-medium uppercase tracking-wider
-            text-stone-500 dark:text-stone-400
-            group-hover:text-amber-600 dark:group-hover:text-amber-400
+            text-neutral-500 dark:text-neutral-400
+            group-hover:text-gold-dark dark:group-hover:text-gold
             transition-colors
           ">
             Add KPI

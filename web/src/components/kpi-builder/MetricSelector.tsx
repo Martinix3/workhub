@@ -106,7 +106,7 @@ export function MetricSelector({
   return (
     <div className="space-y-2">
       {/* Label */}
-      <div className="flex items-center gap-2 text-stone-600 dark:text-stone-400">
+      <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
         <TrendingUp size={16} />
         <span className="text-xs uppercase tracking-wider font-semibold">Metric</span>
       </div>
@@ -119,38 +119,38 @@ export function MetricSelector({
             onClick={() => setShowDropdown(true)}
             className="
               w-full text-left p-4
-              bg-white dark:bg-stone-800
-              border-2 border-stone-900 dark:border-stone-100
-              hover:bg-stone-50 dark:hover:bg-stone-700
+              bg-white dark:bg-neutral-800
+              border border-neutral-200
+              hover:bg-neutral-50 dark:hover:bg-neutral-700
               transition-colors
             "
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-stone-900 dark:text-stone-100 mb-1">
+                <p className="font-medium text-neutral-900 dark:text-neutral-100 mb-1">
                   {selectedMetric.label}
                 </p>
                 {selectedMetric.description && (
-                  <p className="text-sm text-stone-500 dark:text-stone-400 line-clamp-2">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2">
                     {selectedMetric.description}
                   </p>
                 )}
                 <div className="flex items-center gap-3 mt-2">
-                  <span className="text-xs text-stone-500 uppercase tracking-wider">
+                  <span className="text-xs text-neutral-500 uppercase tracking-wider">
                     {getDepartmentLabel(selectedMetric.department)}
                   </span>
-                  <span className="text-xs text-stone-500">•</span>
-                  <span className="text-xs text-stone-500">
+                  <span className="text-xs text-neutral-500">•</span>
+                  <span className="text-xs text-neutral-500">
                     {formatValueType(selectedMetric.value_type)}
                   </span>
                 </div>
               </div>
-              <Info size={16} className="text-stone-400 flex-shrink-0 mt-1" />
+              <Info size={16} className="text-neutral-400 flex-shrink-0 mt-1" />
             </div>
           </button>
         ) : (
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
               placeholder="Search metrics..."
@@ -163,10 +163,10 @@ export function MetricSelector({
               disabled={loading}
               className="
                 w-full pl-9 pr-4 py-3
-                bg-white dark:bg-stone-800
-                border-2 border-stone-900 dark:border-stone-100
-                text-sm text-stone-900 dark:text-stone-100
-                placeholder:text-stone-400
+                bg-white dark:bg-neutral-800
+                border border-neutral-200
+                text-sm text-neutral-900 dark:text-neutral-100
+                placeholder:text-neutral-400
                 focus:outline-none focus:ring-0
                 disabled:opacity-50 disabled:cursor-not-allowed
               "
@@ -178,13 +178,13 @@ export function MetricSelector({
         {showDropdown && !loading && metrics && metrics.length > 0 && (
           <div className="
             absolute top-full left-0 right-0 z-10 mt-2
-            bg-white dark:bg-stone-800
-            border-2 border-stone-900 dark:border-stone-100
-            shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#f5f5f4]
+            bg-white dark:bg-neutral-800
+            border border-neutral-200
+            shadow-sm
             max-h-96 overflow-y-auto
           ">
             {filteredMetrics.length === 0 ? (
-              <div className="p-4 text-center text-sm text-stone-500">
+              <div className="p-4 text-center text-sm text-neutral-500">
                 No metrics found matching "{searchTerm}"
               </div>
             ) : (
@@ -193,10 +193,10 @@ export function MetricSelector({
                 if (deptMetrics.length === 0) return null
 
                 return (
-                  <div key={dept} className="border-b-2 border-stone-900 dark:border-stone-100 last:border-0">
+                  <div key={dept} className="border-b border-neutral-200 last:border-0">
                     {/* Department header */}
-                    <div className="px-4 py-2 bg-stone-100 dark:bg-stone-700">
-                      <p className="text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-300">
+                    <div className="px-4 py-2 bg-neutral-100 dark:bg-neutral-700">
+                      <p className="text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-300">
                         {getDepartmentLabel(dept)}
                       </p>
                     </div>
@@ -209,39 +209,39 @@ export function MetricSelector({
                         onClick={() => handleSelectMetric(metric)}
                         className={`
                           w-full px-4 py-3 text-left
-                          hover:bg-stone-50 dark:hover:bg-stone-700
-                          border-b border-stone-200 dark:border-stone-600 last:border-0
+                          hover:bg-neutral-50 dark:hover:bg-neutral-700
+                          border-b border-neutral-200 dark:border-neutral-600 last:border-0
                           transition-colors
-                          ${value === metric.metric_code ? 'bg-amber-50 dark:bg-amber-900/20' : ''}
+                          ${value === metric.metric_code ? 'bg-gold-light dark:bg-gold-dark/20' : ''}
                         `}
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-stone-900 dark:text-stone-100 mb-0.5">
+                            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-0.5">
                               {metric.label}
                             </p>
                             {metric.description && (
-                              <p className="text-xs text-stone-500 dark:text-stone-400 mb-1 line-clamp-2">
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1 line-clamp-2">
                                 {metric.description}
                               </p>
                             )}
                             <div className="flex items-center gap-2">
                               <span className="
                                 inline-block px-1.5 py-0.5 text-[10px] uppercase tracking-wider
-                                bg-stone-200 dark:bg-stone-600
-                                text-stone-700 dark:text-stone-300
+                                bg-neutral-200 dark:bg-neutral-600
+                                text-neutral-700 dark:text-neutral-300
                                 font-medium
                               ">
                                 {formatValueType(metric.value_type)}
                               </span>
-                              <span className="text-[10px] text-stone-400">
+                              <span className="text-[10px] text-neutral-400">
                                 {metric.aggregation.toUpperCase()}
                               </span>
                             </div>
                           </div>
                           {value === metric.metric_code && (
                             <div className="flex-shrink-0 mt-1">
-                              <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                              <div className="w-2 h-2 bg-gold-dark rounded-full" />
                             </div>
                           )}
                         </div>
@@ -258,12 +258,12 @@ export function MetricSelector({
         {showDropdown && loading && (
           <div className="
             absolute top-full left-0 right-0 z-10 mt-2
-            bg-white dark:bg-stone-800
-            border-2 border-stone-900 dark:border-stone-100
-            shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#f5f5f4]
+            bg-white dark:bg-neutral-800
+            border border-neutral-200
+            shadow-sm
             p-4
           ">
-            <div className="text-sm text-stone-500 text-center">
+            <div className="text-sm text-neutral-500 text-center">
               Loading metrics...
             </div>
           </div>
@@ -273,12 +273,12 @@ export function MetricSelector({
         {showDropdown && !loading && (!metrics || metrics.length === 0) && (
           <div className="
             absolute top-full left-0 right-0 z-10 mt-2
-            bg-white dark:bg-stone-800
-            border-2 border-stone-900 dark:border-stone-100
-            shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#f5f5f4]
+            bg-white dark:bg-neutral-800
+            border border-neutral-200
+            shadow-sm
             p-4
           ">
-            <div className="text-sm text-stone-500 text-center">
+            <div className="text-sm text-neutral-500 text-center">
               No metrics available
             </div>
           </div>
@@ -287,7 +287,7 @@ export function MetricSelector({
 
       {/* Helper text */}
       {selectedMetric && !showDropdown && (
-        <p className="text-xs text-stone-500 dark:text-stone-400">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Click to change metric
         </p>
       )}

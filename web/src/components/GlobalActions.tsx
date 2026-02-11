@@ -100,13 +100,13 @@ export function GlobalActions() {
       <div ref={menuRef} className="fixed bottom-6 right-6 z-40">
         {/* Menu (appears above FAB) */}
         {menuOpen && (
-          <div className="absolute bottom-16 right-0 w-56 bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] mb-2">
+          <div className="absolute bottom-16 right-0 w-56 bg-white border border-neutral-200 shadow-sm mb-2">
             {/* Menu Header */}
-            <div className="flex items-center justify-between p-3 border-b-2 border-stone-200">
-              <span className="text-sm font-medium text-stone-700">Acciones Rápidas</span>
+            <div className="flex items-center justify-between p-3 border-b-2 border-neutral-200">
+              <span className="text-sm font-medium text-neutral-700">Acciones Rápidas</span>
               <button
                 onClick={() => setMenuOpen(false)}
-                className="p-0.5 hover:bg-stone-100 transition-colors"
+                className="p-0.5 hover:bg-neutral-100 transition-colors"
                 aria-label="Cerrar menú"
               >
                 <X size={16} />
@@ -118,29 +118,29 @@ export function GlobalActions() {
               {/* Smart Notepad Option */}
               <button
                 onClick={handleSmartNotepad}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-amber-50 transition-colors text-left border-2 border-transparent hover:border-amber-200"
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gold-light transition-colors text-left border-2 border-transparent hover:border-gold"
               >
-                <div className="w-8 h-8 bg-amber-400 border border-stone-900 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-gold border border-neutral-900 flex items-center justify-center flex-shrink-0">
                   <PenLine size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-stone-900">Smart Notepad</div>
-                  <div className="text-xs text-stone-500">Registrar actividad</div>
+                  <div className="font-medium text-neutral-900">Smart Notepad</div>
+                  <div className="text-xs text-neutral-500">Registrar actividad</div>
                 </div>
               </button>
 
               {/* Quick Task Option */}
               <button
                 onClick={handleQuickTask}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-amber-50 transition-colors text-left border-2 border-transparent hover:border-amber-200 mt-1"
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gold-light transition-colors text-left border-2 border-transparent hover:border-gold mt-1"
               >
-                <div className="w-8 h-8 bg-amber-400 border border-stone-900 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-gold border border-neutral-900 flex items-center justify-center flex-shrink-0">
                   <Zap size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-stone-900">Quick Task</div>
-                  <div className="text-xs text-stone-500">
-                    <kbd className="px-1 py-0.5 bg-stone-200 border border-stone-300 text-[10px] font-mono">
+                  <div className="font-medium text-neutral-900">Quick Task</div>
+                  <div className="text-xs text-neutral-500">
+                    <kbd className="px-1 py-0.5 bg-neutral-200 border border-neutral-300 text-[10px] font-mono">
                       ⌘K
                     </kbd>
                   </div>
@@ -153,7 +153,7 @@ export function GlobalActions() {
         {/* FAB Button */}
         <button
           onClick={handleFABClick}
-          className={`w-14 h-14 bg-amber-400 hover:bg-amber-500 text-stone-900 border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-center group ${
+          className={`w-14 h-14 bg-gold hover:bg-gold-dark text-neutral-900 border border-neutral-200 shadow-sm transition-all flex items-center justify-center group ${
             menuOpen ? 'rotate-45' : ''
           }`}
           aria-label="Acciones rápidas"

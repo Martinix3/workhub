@@ -16,22 +16,22 @@ interface WorkLinkSuggestionsProps {
 
 // Map DocTypes to icons and Spanish labels
 export const DOCTYPE_CONFIG: Record<WorkLinkDocType, WorkLinkDocTypeConfig> = {
-  'Sales Order': { icon: <DollarSign size={16} />, label: 'Pedido', color: 'text-green-600' },
-  'Delivery Note': { icon: <Package size={16} />, label: 'Entrega', color: 'text-blue-600' },
+  'Sales Order': { icon: <DollarSign size={16} />, label: 'Pedido', color: 'text-success-dark' },
+  'Delivery Note': { icon: <Package size={16} />, label: 'Entrega', color: 'text-turquoise-dark' },
   'Sales Invoice': { icon: <FileText size={16} />, label: 'Factura', color: 'text-purple-600' },
-  'Payment Entry': { icon: <DollarSign size={16} />, label: 'Pago', color: 'text-green-600' },
-  'Purchase Order': { icon: <Briefcase size={16} />, label: 'Compra', color: 'text-orange-600' },
-  'Purchase Receipt': { icon: <Package size={16} />, label: 'Recepción', color: 'text-blue-600' },
+  'Payment Entry': { icon: <DollarSign size={16} />, label: 'Pago', color: 'text-success-dark' },
+  'Purchase Order': { icon: <Briefcase size={16} />, label: 'Compra', color: 'text-error-dark' },
+  'Purchase Receipt': { icon: <Package size={16} />, label: 'Recepción', color: 'text-turquoise-dark' },
   'Purchase Invoice': { icon: <FileText size={16} />, label: 'Factura Compra', color: 'text-purple-600' },
-  'Work Order': { icon: <Briefcase size={16} />, label: 'Orden Producción', color: 'text-amber-600' },
+  'Work Order': { icon: <Briefcase size={16} />, label: 'Orden Producción', color: 'text-gold-dark' },
   'Stock Entry': { icon: <Package size={16} />, label: 'Movimiento', color: 'text-cyan-600' },
   'Batch': { icon: <Package size={16} />, label: 'Lote', color: 'text-teal-600' },
-  'Quality Inspection': { icon: <AlertCircle size={16} />, label: 'Inspección', color: 'text-red-600' },
+  'Quality Inspection': { icon: <AlertCircle size={16} />, label: 'Inspección', color: 'text-error-dark' },
   'Opportunity': { icon: <TrendingUp size={16} />, label: 'Oportunidad', color: 'text-indigo-600' },
   'Campaign': { icon: <TrendingUp size={16} />, label: 'Campaña', color: 'text-pink-600' },
-  'OpsCase': { icon: <AlertCircle size={16} />, label: 'Caso Ops', color: 'text-red-600' },
-  'CalendarEvent': { icon: <Calendar size={16} />, label: 'Evento', color: 'text-blue-600' },
-  'Account': { icon: <DollarSign size={16} />, label: 'Cuenta', color: 'text-green-600' },
+  'OpsCase': { icon: <AlertCircle size={16} />, label: 'Caso Ops', color: 'text-error-dark' },
+  'CalendarEvent': { icon: <Calendar size={16} />, label: 'Evento', color: 'text-turquoise-dark' },
+  'Account': { icon: <DollarSign size={16} />, label: 'Cuenta', color: 'text-success-dark' },
 }
 
 // Get config for a DocType with fallback
@@ -39,15 +39,15 @@ function getDocTypeConfig(doctype: string): WorkLinkDocTypeConfig {
   return DOCTYPE_CONFIG[doctype as WorkLinkDocType] || {
     icon: <FileText size={16} />,
     label: doctype,
-    color: 'text-stone-600'
+    color: 'text-neutral-600'
   }
 }
 
 // Get confidence color class
 function getConfidenceColor(confidence: number): string {
-  if (confidence >= 0.8) return 'bg-green-500'
-  if (confidence >= 0.6) return 'bg-amber-400'
-  return 'bg-orange-400'
+  if (confidence >= 0.8) return 'bg-success'
+  if (confidence >= 0.6) return 'bg-gold'
+  return 'bg-error'
 }
 
 // Get confidence label
@@ -72,11 +72,11 @@ export function WorkLinkSuggestions({
   }
 
   return (
-    <div className={`bg-white border-2 border-stone-900 shadow-[2px_2px_0_#1c1917] ${className}`}>
+    <div className={`bg-white border border-neutral-200 shadow-sm ${className}`}>
       {/* Header */}
-      <div className="px-4 py-3 border-b-2 border-stone-900 bg-cyan-50">
+      <div className="px-4 py-3 border-b border-neutral-200 bg-cyan-50">
         <div className="flex items-center justify-between">
-          <h3 className="font-serif text-sm font-bold text-stone-900 uppercase tracking-wider">
+          <h3 className="font-heading text-sm font-bold text-neutral-900 uppercase tracking-wider">
             Sugerencias de WorkLink
           </h3>
           {onManualSearch && (
@@ -102,20 +102,20 @@ export function WorkLinkSuggestions({
         {loading && (
           <div className="flex items-center justify-center py-4">
             <div className="relative">
-              <div className="w-8 h-8 border-3 border-stone-200 border-t-cyan-500 rounded-full animate-spin" />
+              <div className="w-8 h-8 border-3 border-neutral-200 border-t-cyan-500 rounded-full animate-spin" />
             </div>
-            <p className="ml-3 text-sm text-stone-600">Buscando documentos...</p>
+            <p className="ml-3 text-sm text-neutral-600">Buscando documentos...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && !loading && (
-          <div className="p-3 bg-red-50 border-2 border-red-500">
+          <div className="p-3 bg-error-light border-2 border-error-dark">
             <div className="flex items-start gap-2">
-              <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle size={16} className="text-error-dark flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-red-700">Error al cargar sugerencias</p>
-                <p className="text-xs text-red-600 mt-1">{error.message}</p>
+                <p className="text-sm font-medium text-error-text">Error al cargar sugerencias</p>
+                <p className="text-xs text-error-dark mt-1">{error.message}</p>
               </div>
             </div>
           </div>
@@ -133,8 +133,8 @@ export function WorkLinkSuggestions({
                 <div
                   key={`${suggestion.doctype}-${suggestion.doc_id}-${index}`}
                   className="
-                    border-2 border-stone-900
-                    bg-white hover:bg-stone-50
+                    border border-neutral-200
+                    bg-white hover:bg-neutral-50
                     transition-colors
                   "
                 >
@@ -147,30 +147,30 @@ export function WorkLinkSuggestions({
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+                        <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
                           {config.label}
                         </span>
                         {suggestion.boosted && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 uppercase tracking-wider">
+                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gold-light text-gold-dark uppercase tracking-wider">
                             Frecuente
                           </span>
                         )}
                       </div>
-                      <h4 className="font-medium text-stone-900 text-sm">
+                      <h4 className="font-medium text-neutral-900 text-sm">
                         {suggestion.doc_name || suggestion.doc_id}
                       </h4>
                       {suggestion.display_name && suggestion.display_name !== suggestion.doc_name && (
-                        <p className="text-xs text-stone-500 mt-0.5">{suggestion.display_name}</p>
+                        <p className="text-xs text-neutral-500 mt-0.5">{suggestion.display_name}</p>
                       )}
                       {suggestion.description && (
-                        <p className="text-xs text-stone-500 mt-1 truncate">
+                        <p className="text-xs text-neutral-500 mt-1 truncate">
                           {suggestion.description}
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-2">
                         <div className="flex items-center gap-1">
                           <div className={`w-2 h-2 ${confidenceColor}`} />
-                          <span className="text-[10px] text-stone-500 uppercase tracking-wider">
+                          <span className="text-[10px] text-neutral-500 uppercase tracking-wider">
                             Confianza: {confidenceLabel} ({Math.round(suggestion.confidence * 100)}%)
                           </span>
                         </div>
@@ -183,8 +183,8 @@ export function WorkLinkSuggestions({
                         onClick={() => onAccept(suggestion.doctype, suggestion.doc_id, suggestion.confidence)}
                         className="
                           p-2
-                          bg-green-500 hover:bg-green-600
-                          border-2 border-stone-900
+                          bg-success hover:bg-success-dark
+                          border border-neutral-200
                           text-white
                           transition-colors
                           group
@@ -197,9 +197,9 @@ export function WorkLinkSuggestions({
                         onClick={() => onDismiss(suggestion.doctype, suggestion.doc_id, suggestion.confidence)}
                         className="
                           p-2
-                          bg-stone-200 hover:bg-stone-300
-                          border-2 border-stone-900
-                          text-stone-700
+                          bg-neutral-200 hover:bg-neutral-300
+                          border border-neutral-200
+                          text-neutral-700
                           transition-colors
                         "
                         title="Descartar sugerencia"
@@ -217,8 +217,8 @@ export function WorkLinkSuggestions({
         {/* Empty State (after loading, no suggestions) */}
         {!loading && !error && suggestions.length === 0 && (
           <div className="text-center py-4">
-            <FileText size={32} className="mx-auto mb-2 text-stone-300" />
-            <p className="text-sm text-stone-500">No se encontraron sugerencias</p>
+            <FileText size={32} className="mx-auto mb-2 text-neutral-300" />
+            <p className="text-sm text-neutral-500">No se encontraron sugerencias</p>
             {onManualSearch && (
               <button
                 onClick={onManualSearch}

@@ -51,8 +51,8 @@ export function NewTemplatePage() {
           onClick={() => navigate('/admin/templates')}
           className="
             flex items-center gap-2 mb-4
-            text-stone-500 dark:text-stone-400
-            hover:text-stone-900 dark:hover:text-stone-100
+            text-neutral-500 dark:text-neutral-400
+            hover:text-neutral-900 dark:hover:text-neutral-100
             transition-colors
           "
         >
@@ -61,21 +61,21 @@ export function NewTemplatePage() {
         </button>
 
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-stone-100 dark:bg-stone-800 border-2 border-stone-900 dark:border-stone-100">
-            <PlusCircle size={24} className="text-stone-900 dark:text-stone-100" />
+          <div className="p-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-100">
+            <PlusCircle size={24} className="text-neutral-900 dark:text-neutral-100" />
           </div>
-          <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">
+          <h2 className="font-heading text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             Nueva Plantilla
           </h2>
         </div>
-        <p className="text-sm text-stone-600 dark:text-stone-400">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
           Crea una nueva plantilla de workflow desde cero con tareas personalizadas
         </p>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-500 text-red-700 dark:text-red-300">
+        <div className="p-4 bg-error-light dark:bg-error-dark/20 border border-error-dark text-error-text dark:text-error">
           {error}
         </div>
       )}

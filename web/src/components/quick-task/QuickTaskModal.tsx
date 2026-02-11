@@ -123,12 +123,12 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
       />
 
       {/* Modal */}
-      <div className="relative bg-white border-2 border-stone-900 shadow-[8px_8px_0_#1c1917] w-full max-w-lg max-h-[90vh] overflow-auto">
+      <div className="relative bg-white border border-neutral-200 shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-stone-200">
+        <div className="flex items-center justify-between p-4 border-b-2 border-neutral-200">
           <div className="flex items-center gap-2">
-            <Zap size={20} className="text-amber-500" />
-            <h2 data-testid="modal-title" className="font-serif text-lg font-bold">
+            <Zap size={20} className="text-gold-dark" />
+            <h2 data-testid="modal-title" className="font-heading text-lg font-bold">
               {step === 'input' && 'Crear Tarea Rápida'}
               {step === 'success' && 'Tarea Creada'}
               {step === 'error' && 'Error'}
@@ -137,7 +137,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
           <button
             data-testid="close-button"
             onClick={handleClose}
-            className="p-1 hover:bg-stone-100 transition-colors"
+            className="p-1 hover:bg-neutral-100 transition-colors"
           >
             <X size={20} />
           </button>
@@ -150,8 +150,8 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
             <form data-testid="task-form" onSubmit={handleSubmit} className="space-y-4">
               {/* Title Field */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
-                  Título <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Título <span className="text-error">*</span>
                 </label>
                 <input
                   data-testid="task-title-input"
@@ -159,7 +159,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ej: Revisar pedido con cliente..."
-                  className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none"
+                  className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none"
                   disabled={creating}
                   autoFocus
                   required
@@ -168,7 +168,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
 
               {/* Priority Field */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Prioridad
                 </label>
                 <div data-testid="priority-buttons" className="flex gap-2">
@@ -179,8 +179,8 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                     disabled={creating}
                     className={`flex-1 px-3 py-2 border-2 font-medium text-sm transition-all ${
                       priority === 'P0'
-                        ? 'bg-red-100 border-red-500 text-red-700'
-                        : 'border-stone-300 hover:border-stone-400'
+                        ? 'bg-error-light border-error-dark text-error-text'
+                        : 'border-neutral-300 hover:border-neutral-400'
                     } disabled:opacity-50`}
                   >
                     P0 - Crítica
@@ -192,8 +192,8 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                     disabled={creating}
                     className={`flex-1 px-3 py-2 border-2 font-medium text-sm transition-all ${
                       priority === 'P1'
-                        ? 'bg-orange-100 border-orange-500 text-orange-700'
-                        : 'border-stone-300 hover:border-stone-400'
+                        ? 'bg-error-light border-error-dark text-error-dark'
+                        : 'border-neutral-300 hover:border-neutral-400'
                     } disabled:opacity-50`}
                   >
                     P1 - Alta
@@ -205,8 +205,8 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                     disabled={creating}
                     className={`flex-1 px-3 py-2 border-2 font-medium text-sm transition-all ${
                       priority === 'P2'
-                        ? 'bg-blue-100 border-blue-500 text-blue-700'
-                        : 'border-stone-300 hover:border-stone-400'
+                        ? 'bg-turquoise-light border-turquoise-dark text-turquoise-dark'
+                        : 'border-neutral-300 hover:border-neutral-400'
                     } disabled:opacity-50`}
                   >
                     P2 - Normal
@@ -216,17 +216,17 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
 
               {/* Due Date Field */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Fecha de Vencimiento
                 </label>
                 <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                   <input
                     data-testid="due-date-input"
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none"
+                    className="w-full pl-10 pr-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none"
                     disabled={creating}
                   />
                 </div>
@@ -234,14 +234,14 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
 
               {/* Project Field */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Proyecto
                 </label>
                 <select
                   data-testid="project-select"
                   value={project}
                   onChange={(e) => setProject(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none bg-white"
+                  className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none bg-white"
                   disabled={creating || optionsLoading}
                 >
                   <option value="">Seleccionar proyecto...</option>
@@ -252,20 +252,20 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                   ))}
                 </select>
                 {optionsLoading && (
-                  <p className="text-xs text-stone-500 mt-1">Cargando proyectos...</p>
+                  <p className="text-xs text-neutral-500 mt-1">Cargando proyectos...</p>
                 )}
               </div>
 
               {/* Assignee Field */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Asignar a
                 </label>
                 <select
                   data-testid="assignee-select"
                   value={assignee}
                   onChange={(e) => setAssignee(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none bg-white"
+                  className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none bg-white"
                   disabled={creating || optionsLoading}
                 >
                   <option value="">Seleccionar usuario...</option>
@@ -276,20 +276,20 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                   ))}
                 </select>
                 {optionsLoading && (
-                  <p className="text-xs text-stone-500 mt-1">Cargando usuarios...</p>
+                  <p className="text-xs text-neutral-500 mt-1">Cargando usuarios...</p>
                 )}
               </div>
 
               {/* Department Field */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Departamento
                 </label>
                 <select
                   data-testid="department-select"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value as Department)}
-                  className="w-full px-3 py-2 border-2 border-stone-300 focus:border-stone-900 outline-none bg-white"
+                  className="w-full px-3 py-2 border-2 border-neutral-300 focus:border-neutral-900 outline-none bg-white"
                   disabled={creating}
                 >
                   <option value="">Seleccionar departamento...</option>
@@ -315,7 +315,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
 
               {/* Error Display */}
               {createError && (
-                <div data-testid="error-message" className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm">
+                <div data-testid="error-message" className="p-3 bg-error-light border border-error text-error-text text-sm">
                   {createError.message}
                 </div>
               )}
@@ -325,7 +325,7 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
                 data-testid="submit-button"
                 type="submit"
                 disabled={!title.trim() || creating}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-amber-400 hover:bg-amber-500 text-stone-900 font-medium uppercase tracking-wider border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] hover:shadow-[2px_2px_0_#1c1917] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:hover:shadow-[4px_4px_0_#1c1917] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-gold hover:bg-gold-dark text-neutral-900 font-medium uppercase tracking-wider border border-neutral-200 shadow-sm transition-all disabled:opacity-50"
               >
                 {creating ? (
                   <>
@@ -345,9 +345,9 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
           {/* Step: Success */}
           {step === 'success' && (
             <div data-testid="success-state" className="text-center py-6 space-y-4">
-              <CheckCircle size={48} className="mx-auto text-green-600" />
+              <CheckCircle size={48} className="mx-auto text-success-dark" />
               <p className="text-lg font-medium">{resultMessage}</p>
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-neutral-500">
                 Cerrando automáticamente...
               </p>
             </div>
@@ -356,23 +356,23 @@ export function QuickTaskModal({ isOpen, onClose, initialContext }: QuickTaskMod
           {/* Step: Error */}
           {step === 'error' && (
             <div data-testid="error-state" className="text-center py-6 space-y-4">
-              <AlertCircle size={48} className="mx-auto text-red-600" />
-              <p className="text-lg font-medium text-red-700">{resultMessage}</p>
+              <AlertCircle size={48} className="mx-auto text-error-dark" />
+              <p className="text-lg font-medium text-error-text">{resultMessage}</p>
               {createError && (
-                <p className="text-sm text-stone-500">{createError.message}</p>
+                <p className="text-sm text-neutral-500">{createError.message}</p>
               )}
               <div className="flex gap-3 justify-center">
                 <button
                   data-testid="back-button"
                   onClick={handleBack}
-                  className="px-6 py-2 border-2 border-stone-300 hover:border-stone-400 font-medium uppercase tracking-wider transition-colors"
+                  className="px-6 py-2 border-2 border-neutral-300 hover:border-neutral-400 font-medium uppercase tracking-wider transition-colors"
                 >
                   Volver
                 </button>
                 <button
                   data-testid="close-error-button"
                   onClick={handleClose}
-                  className="px-6 py-2 bg-stone-900 text-white font-medium uppercase tracking-wider hover:bg-stone-800 transition-colors"
+                  className="px-6 py-2 bg-neutral-900 text-white font-medium uppercase tracking-wider hover:bg-neutral-800 transition-colors"
                 >
                   Cerrar
                 </button>

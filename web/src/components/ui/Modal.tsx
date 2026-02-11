@@ -66,18 +66,18 @@ export function Modal({
         aria-labelledby={titleId}
         className={`
         relative w-full ${sizeClasses[size]}
-        bg-white dark:bg-stone-900
-        border-2 border-stone-900 dark:border-stone-100
-        shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#f5f5f4]
+        bg-white dark:bg-neutral-800
+        border border-neutral-200 dark:border-neutral-100
+
         max-h-[calc(100vh-6rem)] flex flex-col
       `}>
         {/* Header with progress bar */}
-        <div className="border-b-2 border-stone-900 dark:border-stone-100">
+        <div className="border-b border-neutral-200 dark:border-neutral-100">
           {/* Progress bar */}
           {progress !== undefined && (
-            <div className="h-1.5 bg-stone-200 dark:bg-stone-700">
+            <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700">
               <div
-                className="h-full bg-amber-400 transition-all duration-300"
+                className="h-full bg-gold transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -87,16 +87,16 @@ export function Modal({
           <div className="flex items-center justify-between p-4">
             <h2
               id={titleId}
-              className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100"
+              className="font-heading text-lg font-bold text-neutral-800 dark:text-neutral-100"
             >
               {title}
             </h2>
             <button
               onClick={onClose}
               aria-label="Close modal"
-              className="p-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
-              <X size={20} className="text-stone-500" />
+              <X size={20} className="text-neutral-500" />
             </button>
           </div>
         </div>
