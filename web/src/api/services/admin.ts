@@ -16,6 +16,7 @@ export interface User {
 }
 
 export interface UserDetail extends User {
+  last_login?: string | null
   user_type: string
   language: string
   time_zone: string
@@ -32,6 +33,9 @@ export interface Role {
   name: string
   desk_access: number
   is_custom: number
+  description?: string
+  user_count?: number
+  disabled?: boolean | number
 }
 
 export interface CreateUserData {

@@ -87,10 +87,13 @@ export function useUserMutations() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
-  const createUser = useCallback(async (data: CreateUserData): Promise<UserDetail> => {
+  const createUser = useCallback(async (dataOrEmail: CreateUserData | string, firstName?: string, lastName?: string, roles?: string[]): Promise<UserDetail> => {
     setLoading(true)
     setError(null)
     try {
+      const data = typeof dataOrEmail === 'string'
+        ? { email: dataOrEmail, first_name: firstName || '', last_name: lastName, roles }
+        : dataOrEmail
       const user = await adminApi.createUser(data)
       return user
     } catch (err) {
@@ -161,11 +164,11 @@ export function useUserMutations() {
     }
   }, [])
 
-  const sendInvitation = useCallback(async (email: string, firstName?: string, roles?: string[]): Promise<void> => {
+  const sendInvitation = useCallback(async (email: string, firstNameOrRoles?: string | string[], roles?: string[]): Promise<void> => {
     setLoading(true)
     setError(null)
     try {
-      await adminApi.sendInvitation(email, firstName, roles)
+      await adminApi.sendInvitation(email, Array.isArray(firstNameOrRoles) ? undefined : firstNameOrRoles, Array.isArray(firstNameOrRoles) ? firstNameOrRoles : roles)
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to send invitation')
       setError(error)

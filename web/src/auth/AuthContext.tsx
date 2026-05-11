@@ -6,6 +6,7 @@ import frappe from '../api/frappe-client'
 export interface AuthUser {
   email: string
   name: string
+  full_name?: string
   avatarUrl?: string
   roles?: string[]
 }

@@ -28,11 +28,7 @@ export function TaskSelectionProvider({ children }: TaskSelectionProviderProps) 
       } else {
         // Enforce maximum selection limit
         if (next.size >= MAX_SELECTION) {
-          frappe.msgprint({
-            title: 'Límite de Selección Alcanzado',
-            message: `No puedes seleccionar más de ${MAX_SELECTION} tareas a la vez por razones de rendimiento.`,
-            indicator: 'orange'
-          })
+          window.alert(`Límite de Selección Alcanzado\n\nNo puedes seleccionar más de ${MAX_SELECTION} tareas a la vez por razones de rendimiento.`)
           return prev
         }
         next.add(taskId)
@@ -44,11 +40,7 @@ export function TaskSelectionProvider({ children }: TaskSelectionProviderProps) 
   const selectAll = useCallback((taskIds: string[]) => {
     // Enforce maximum selection limit
     if (taskIds.length > MAX_SELECTION) {
-      frappe.msgprint({
-        title: 'Límite de Selección Alcanzado',
-        message: `Solo se seleccionarán las primeras ${MAX_SELECTION} tareas de ${taskIds.length} tareas disponibles por razones de rendimiento.`,
-        indicator: 'orange'
-      })
+      window.alert(`Límite de Selección Alcanzado\n\nSolo se seleccionarán las primeras ${MAX_SELECTION} tareas de ${taskIds.length} tareas disponibles por razones de rendimiento.`)
       setSelectedTasks(new Set(taskIds.slice(0, MAX_SELECTION)))
     } else {
       setSelectedTasks(new Set(taskIds))

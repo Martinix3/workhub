@@ -30,7 +30,7 @@ export function UserKPIWidget() {
   }
 
   // Get status breakdown entries
-  const statusEntries = Object.entries(data.current)
+const statusEntries = Object.entries(data.status_breakdown || {}) as [string, number][]
   const hasStatusData = statusEntries.length > 0
 
   return (

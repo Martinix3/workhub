@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { BarChart3, Activity, TrendingUp, Gauge } from 'lucide-react'
 import type { VisualizationType, ValueType } from '../../types/custom-kpi'
 
@@ -38,7 +39,7 @@ export function VisualizationPicker({
     label: string
     description: string
     icon: typeof BarChart3
-    preview: () => JSX.Element
+    preview: () => ReactElement
   }> = [
     {
       type: 'number',

@@ -111,3 +111,20 @@ export {
   useAvailableMetrics,
   useCustomKPIMutations
 } from './hooks/useCustomKPIs'
+
+
+// Compatibility exports for in-progress task/admin modules
+export { useManagerAnalyticsDashboard } from './hooks/useManagerAnalytics'
+export { default as managerAnalyticsApi } from './services/manager-analytics'
+export { useUserKPIs } from './hooks/useSettings'
+export {
+  useSavedFilters,
+  useSavedFilter,
+  useFilterCounts,
+  useSavedFilterMutations
+} from './hooks/useSavedFilters'
+export {
+  useTemplates,
+  useTemplatePreview,
+  useTemplateMutations
+} from './hooks/useTemplates'

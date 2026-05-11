@@ -1,4 +1,5 @@
 // Quick Task Component Types
+import type { WorkLinkSuggestion } from '../../api/services/tasks'
 
 // Re-export API types for convenience
 export type {

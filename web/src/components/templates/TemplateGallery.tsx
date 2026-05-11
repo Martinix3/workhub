@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Search, LayoutGrid, List } from 'lucide-react'
-import { TemplateCard, TemplateCardData } from './TemplateCard'
+import { TemplateCard } from './TemplateCard'
+import type { TemplateCardData } from './TemplateCard'
 import type { Department } from '../sections/tasks/types'
 
 type ViewMode = 'grid' | 'list'

@@ -50,8 +50,8 @@ export function BulkActionsBar({
   `
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div className="bg-gold border border-neutral-200 p-4 flex items-center gap-4">
+    <div className="w-full">
+      <div className="bg-gold border border-neutral-200 p-3 flex flex-wrap items-center gap-3">
         {/* Selected Count */}
         <div className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200">
           {loading && <Loader2 size={16} className="animate-spin text-gold-dark" />}
