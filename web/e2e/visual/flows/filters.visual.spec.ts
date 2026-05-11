@@ -1,3 +1,4 @@
+import { test, expect } from '@playwright/test'
 import { test as authTest } from '../../fixtures/auth.fixture'
 import { prepareForVisualTest } from '../../utils/visual-test-helpers'
 import { VISUAL_CONFIG } from '../../config/visual-regression.config'
