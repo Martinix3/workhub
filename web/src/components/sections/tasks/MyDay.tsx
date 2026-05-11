@@ -16,20 +16,33 @@ interface MyDayProps {
   onTaskClick?: (id: string) => void
   onQuickAdd?: (title: string, priority: TaskPriority) => void
   onChangeStatus?: (id: string, status: TaskStatus) => void
+  selectionMode?: boolean
+  selectedTaskIds?: string[]
+  onToggleSelection?: (id: string) => void
+  onBulkComplete?: () => void
+  onBulkChangeStatus?: (status: TaskStatus) => void
+  onBulkAssign?: () => void
+  onBulkAddWorkLink?: () => void
 }
 
 const priorityConfig: Record<TaskPriority, { bg: string; text: string; softBg: string }> = {
-  P0: { bg: 'bg-red-500', text: 'text-red-700', softBg: 'bg-red-100' },
-  P1: { bg: 'bg-amber-400', text: 'text-amber-700', softBg: 'bg-amber-100' },
-  P2: { bg: 'bg-green-500', text: 'text-green-700', softBg: 'bg-green-100' },
+  P0: { bg: 'bg-danger', text: 'text-danger', softBg: 'bg-danger-soft' },
+  P1: { bg: 'bg-gold-400', text: 'text-gold-700', softBg: 'bg-gold-200' },
+  P2: { bg: 'bg-success', text: 'text-success', softBg: 'bg-success-soft' },
 }
 
 const statusBorderTop: Record<TaskStatus, string> = {
-  BACKLOG: 'border-t-stone-400',
-  NEXT: 'border-t-cyan-400',
-  DOING: 'border-t-amber-400',
-  BLOCKED: 'border-t-red-500',
-  DONE: 'border-t-green-500',
+  BACKLOG: 'border-t-warm-400',
+  NEXT: 'border-t-turquoise-400',
+  DOING: 'border-t-gold-400',
+  BLOCKED: 'border-t-danger',
+  DONE: 'border-t-success',
+}
+
+const priorityLabels: Record<TaskPriority, string> = {
+  P0: 'P0 Alta',
+  P1: 'P1 Media',
+  P2: 'P2 Baja',
 }
 
 export function MyDay({
@@ -145,9 +158,9 @@ export function MyDay({
   if (focusedTask) {
     const config = priorityConfig[focusedTask.priority]
     return (
-      <div className="fixed inset-0 z-50 bg-stone-900/95 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-warm-800/95 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
-          <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917]">
+          <div className="bg-surface-card border border-warm-700 shadow-card">
             <div className={`h-1.5 ${config.bg}`} />
 
             <div className="p-6 lg:p-8">
@@ -156,21 +169,21 @@ export function MyDay({
                   {focusedTask.priority}
                 </span>
                 {focusedTask.project_title && (
-                  <span className="text-sm text-stone-500">{focusedTask.project_title}</span>
+                  <span className="text-sm text-warm-500">{focusedTask.project_title}</span>
                 )}
               </div>
 
-              <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 mb-4">
+              <h1 className="font-display text-2xl lg:text-3xl font-bold text-warm-800 mb-4">
                 {focusedTask.title}
               </h1>
 
               {focusedTask.description && (
-                <p className="text-stone-600 mb-4">{focusedTask.description}</p>
+                <p className="text-warm-600 mb-4">{focusedTask.description}</p>
               )}
 
               <div className="flex justify-center mb-8">
-                <div className="w-32 h-32 border-2 border-stone-900 bg-stone-50 flex items-center justify-center">
-                  <span className="font-mono text-3xl font-bold text-stone-900">25:00</span>
+                <div className="w-32 h-32 border border-warm-700 bg-warm-50 flex items-center justify-center">
+                  <span className="font-mono text-3xl font-bold text-warm-800">25:00</span>
                 </div>
               </div>
 
@@ -179,13 +192,13 @@ export function MyDay({
                   onClick={() => handleComplete(focusedTask.name)}
                   className="
                     flex-1 py-3 px-6
-                    bg-green-500 hover:bg-green-600
+                    bg-success hover:bg-success
                     text-white font-medium uppercase tracking-wider text-sm
-                    border-2 border-stone-900
-                    shadow-[4px_4px_0_#1c1917]
-                    hover:shadow-[2px_2px_0_#1c1917]
-                    hover:translate-x-[2px] hover:translate-y-[2px]
-                    transition-all duration-75
+                    border border-warm-700
+                    shadow-card
+                    hover:shadow-sm
+                    hover:translate-x-[1px] hover:translate-y-[1px]
+                    transition-all
                   "
                 >
                   Completar
@@ -197,9 +210,9 @@ export function MyDay({
                   }}
                   className="
                     py-3 px-6
-                    bg-red-100 hover:bg-red-200
-                    text-red-700 font-medium uppercase tracking-wider text-sm
-                    border-2 border-stone-900
+                    bg-danger-soft hover:bg-danger-soft
+                    text-danger font-medium uppercase tracking-wider text-sm
+                    border border-warm-700
                     transition-colors
                   "
                 >
@@ -211,7 +224,7 @@ export function MyDay({
 
           <button
             onClick={handleExitFocus}
-            className="mt-4 w-full py-3 text-stone-400 hover:text-white text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+            className="mt-4 w-full py-3 text-warm-400 hover:text-white text-sm uppercase tracking-wider flex items-center justify-center gap-2"
           >
             <X size={16} />
             Salir del Focus Mode
@@ -223,15 +236,15 @@ export function MyDay({
 
   // Normal View
   return (
-    <div className="min-h-screen bg-stone-100">
+    <div className="min-h-screen bg-warm-100">
       <div className="max-w-6xl mx-auto p-4 lg:p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900">
+            <h1 className="font-display text-2xl lg:text-3xl font-bold text-warm-800">
               Mi Dia
             </h1>
-            <p className="text-sm text-stone-500 mt-1">
+            <p className="text-sm text-warm-500 mt-1">
               {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
@@ -240,17 +253,17 @@ export function MyDay({
             onClick={() => setShowQuickAdd(true)}
             className="
               inline-flex items-center gap-2 px-4 py-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium text-sm uppercase tracking-wider
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:shadow-[2px_2px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
-              transition-all duration-75
+              bg-gold-400 hover:bg-gold-500
+              text-warm-800 font-medium text-sm uppercase tracking-wider
+              border border-warm-700
+              shadow-card
+              hover:shadow-sm
+              hover:translate-x-[1px] hover:translate-y-[1px]
+              transition-all
             "
           >
             <Plus size={18} />
-            Agregar
+            Nueva tarea
           </button>
         </div>
 
@@ -268,17 +281,26 @@ export function MyDay({
 
             {/* Overdue Alert */}
             {data.overdue.length > 0 && (
-              <div className="mb-6 p-4 bg-red-50 border-2 border-red-500">
-                <div className="flex items-center gap-2 text-red-700 font-medium mb-1">
-                  <AlertTriangle size={18} />
-                  {data.overdue.length} tarea{data.overdue.length > 1 ? 's' : ''} vencida{data.overdue.length > 1 ? 's' : ''}
+              <div className="mb-6 p-4 bg-danger-soft border border-danger">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-danger font-medium">
+                    <AlertTriangle size={18} />
+                    Tienes {data.overdue.length} tarea{data.overdue.length > 1 ? 's' : ''} vencida{data.overdue.length > 1 ? 's' : ''}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => data.overdue[0] && onTaskClick?.(data.overdue[0].name)}
+                    className="text-sm font-medium text-danger underline-offset-2 hover:underline"
+                  >
+                    Ver vencidas
+                  </button>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 mt-3 border-t border-danger/20 pt-3">
                   {data.overdue.slice(0, 3).map(task => (
                     <p
                       key={task.name}
                       onClick={() => onTaskClick?.(task.name)}
-                      className="text-sm text-red-600 cursor-pointer hover:underline"
+                      className="text-sm text-danger cursor-pointer hover:underline"
                     >
                       {task.title}
                     </p>
@@ -290,8 +312,8 @@ export function MyDay({
             {/* En Progreso */}
             {doingTasks.length > 0 && (
               <section className="mb-8">
-                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-stone-500 mb-3">
-                  <span className="w-2 h-2 bg-amber-400 animate-pulse" />
+                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-warm-500 mb-3">
+                  <span className="w-2 h-2 bg-gold-400 animate-pulse" />
                   En Progreso
                 </h2>
                 <div className="space-y-3">
@@ -312,7 +334,7 @@ export function MyDay({
             {/* Siguiente */}
             {nextTasks.length > 0 && (
               <section className="mb-8">
-                <h2 className="text-xs font-medium uppercase tracking-wider text-stone-500 mb-3">
+                <h2 className="text-xs font-medium uppercase tracking-wider text-warm-500 mb-3">
                   Siguiente
                 </h2>
                 <div className="space-y-3">
@@ -333,7 +355,7 @@ export function MyDay({
             {/* Blocked */}
             {data.blocked.length > 0 && (
               <section className="mb-8">
-                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-red-500 mb-3">
+                <h2 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-danger mb-3">
                   <AlertTriangle size={14} />
                   Bloqueadas
                 </h2>
@@ -351,12 +373,12 @@ export function MyDay({
 
             {/* Empty State */}
             {data.today.length === 0 && data.overdue.length === 0 && (
-              <div className="text-center py-12 bg-white border-2 border-stone-900">
-                <Check size={48} className="mx-auto mb-4 text-green-400" />
-                <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">
+              <div className="text-center py-12 bg-surface-card border border-warm-700">
+                <Check size={48} className="mx-auto mb-4 text-success" />
+                <h3 className="font-display text-xl font-bold text-warm-800 mb-2">
                   Dia Despejado
                 </h3>
-                <p className="text-stone-500">
+                <p className="text-warm-500">
                   No tienes tareas pendientes para hoy
                 </p>
               </div>
@@ -372,21 +394,36 @@ export function MyDay({
         {/* Quick Add Modal */}
         {showQuickAdd && (
           <div
-            className="fixed inset-0 z-50 bg-stone-900/50 flex items-start justify-center pt-24"
+            className="fixed inset-0 z-50 bg-warm-800/40 flex items-start justify-center pt-24"
             onClick={() => setShowQuickAdd(false)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setShowQuickAdd(false)
+                setQuickAddTitle('')
+                setSelectedWorkLink(null)
+                setShowSuggestions(false)
+              }
+            }}
           >
             <form
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="quick-add-title"
               onSubmit={handleQuickAddSubmit}
               onClick={e => e.stopPropagation()}
-              className="bg-white border-2 border-stone-900 shadow-[8px_8px_0_#1c1917] w-full max-w-md mx-4"
+              className="bg-surface-card border border-warm-700 shadow-card w-full max-w-md mx-4"
             >
-              <div className="p-4 border-b border-stone-200">
-                <h3 className="font-serif text-lg font-bold text-stone-900">
+              <div className="p-4 border-b border-warm-200">
+                <h3 id="quick-add-title" className="font-display text-lg font-bold text-warm-800">
                   Nueva Tarea
                 </h3>
               </div>
               <div className="p-4">
+                <label htmlFor="quick-add-task-title" className="block text-sm font-medium text-warm-700 mb-2">
+                  Nombre de la tarea
+                </label>
                 <input
+                  id="quick-add-task-title"
                   type="text"
                   value={quickAddTitle}
                   onChange={e => setQuickAddTitle(e.target.value)}
@@ -394,10 +431,10 @@ export function MyDay({
                   autoFocus
                   className="
                     w-full px-4 py-3 text-lg
-                    border-2 border-stone-300
-                    focus:border-stone-900
-                    bg-white
-                    text-stone-900
+                    border border-warm-300
+                    focus:border-warm-700
+                    bg-surface-card
+                    text-warm-800
                     outline-none
                   "
                 />
@@ -412,11 +449,11 @@ export function MyDay({
                         onClick={() => setQuickAddPriority(p)}
                         className={`
                           px-3 py-1.5 text-sm font-medium
-                          border-2 border-stone-900
-                          ${quickAddPriority === p ? `${cfg.softBg} ${cfg.text}` : 'bg-white text-stone-500'}
+                          border border-warm-700
+                          ${quickAddPriority === p ? `${cfg.softBg} ${cfg.text}` : 'bg-surface-card text-warm-500'}
                         `}
                       >
-                        {p}
+                        {priorityLabels[p]}
                       </button>
                     )
                   })}
@@ -424,15 +461,15 @@ export function MyDay({
 
                 {/* Selected WorkLink Display */}
                 {selectedWorkLink && (
-                  <div className="mt-4 p-3 bg-green-50 border-2 border-green-500">
+                  <div className="mt-4 p-3 bg-success-soft border border-success">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Link2 size={16} className="text-green-600" />
+                        <Link2 size={16} className="text-success" />
                         <div>
-                          <p className="text-xs font-medium text-green-700 uppercase tracking-wider">
+                          <p className="text-xs font-medium text-success uppercase tracking-wider">
                             {DOCTYPE_CONFIG[selectedWorkLink.doctype as WorkLinkDocType]?.label || selectedWorkLink.doctype}
                           </p>
-                          <p className="text-sm font-medium text-green-900">
+                          <p className="text-sm font-medium text-success">
                             {selectedWorkLink.docName}
                           </p>
                         </div>
@@ -440,7 +477,7 @@ export function MyDay({
                       <button
                         type="button"
                         onClick={() => setSelectedWorkLink(null)}
-                        className="p-1 text-green-600 hover:text-green-800"
+                        className="p-1 text-success hover:text-success"
                         title="Quitar WorkLink"
                       >
                         <X size={16} />
@@ -457,9 +494,9 @@ export function MyDay({
                       onClick={() => setShowSuggestions(!showSuggestions)}
                       className="
                         w-full flex items-center justify-between px-3 py-2
-                        bg-stone-100 hover:bg-stone-200
-                        border-2 border-stone-300
-                        text-stone-700 font-medium text-sm
+                        bg-warm-100 hover:bg-warm-200
+                        border border-warm-300
+                        text-warm-700 font-medium text-sm
                         transition-colors
                       "
                     >
@@ -467,7 +504,7 @@ export function MyDay({
                         <Link2 size={14} />
                         Sugerencias de WorkLink
                         {suggestions.length > 0 && (
-                          <span className="px-1.5 py-0.5 bg-cyan-500 text-white text-xs font-bold rounded-full">
+                          <span className="px-1.5 py-0.5 bg-turquoise-500 text-white text-xs font-bold rounded-full">
                             {suggestions.length}
                           </span>
                         )}
@@ -490,7 +527,7 @@ export function MyDay({
                   </div>
                 )}
               </div>
-              <div className="p-4 border-t border-stone-200 flex justify-end gap-3">
+              <div className="p-4 border-t border-warm-200 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -500,7 +537,7 @@ export function MyDay({
                     setShowSuggestions(false)
                   }}
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-stone-500 font-medium disabled:opacity-50"
+                  className="px-4 py-2 text-warm-500 font-medium disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -509,9 +546,9 @@ export function MyDay({
                   disabled={isSubmitting || !quickAddTitle.trim()}
                   className="
                     px-4 py-2
-                    bg-amber-400 hover:bg-amber-500
-                    text-stone-900 font-medium uppercase tracking-wider text-sm
-                    border-2 border-stone-900
+                    bg-gold-400 hover:bg-gold-500
+                    text-warm-800 font-medium uppercase tracking-wider text-sm
+                    border border-warm-700
                     disabled:opacity-50 disabled:cursor-not-allowed
                     transition-colors
                   "
@@ -530,16 +567,16 @@ export function MyDay({
 // Stat Card
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   const colorClasses: Record<string, string> = {
-    amber: 'border-t-amber-400',
-    red: 'border-t-red-500',
-    orange: 'border-t-orange-400',
-    green: 'border-t-green-500',
+    amber: 'border-t-gold-400',
+    red: 'border-t-danger',
+    orange: 'border-t-warning',
+    green: 'border-t-success',
   }
 
   return (
-    <div className={`bg-white border-2 border-stone-900 border-t-4 ${colorClasses[color]} p-3`}>
-      <p className="font-mono text-2xl font-bold text-stone-900">{value}</p>
-      <p className="text-xs text-stone-500 uppercase tracking-wider">{label}</p>
+    <div className={`bg-surface-card border border-warm-700 border-t-4 ${colorClasses[color]} p-3`}>
+      <p className="font-mono text-2xl font-bold text-warm-800">{value}</p>
+      <p className="text-xs text-warm-500 uppercase tracking-wider">{label}</p>
     </div>
   )
 }
@@ -561,21 +598,21 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
   return (
     <div
       className={`
-        bg-white
-        border-2 border-stone-900
+        bg-surface-card
+        border border-warm-700
         border-t-4 ${statusBorderTop[task.status]}
-        ${isBlockedByDependencies ? 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-white' : ''}
+        ${isBlockedByDependencies ? 'border-l-4 border-l-danger bg-gradient-to-r from-danger-soft to-surface-card' : ''}
         ${highlighted
-          ? 'shadow-[4px_4px_0_#1c1917]'
-          : 'shadow-[2px_2px_0_#1c1917] hover:shadow-[4px_4px_0_#1c1917]'
+          ? 'shadow-card'
+          : 'shadow-sm hover:shadow-card'
         }
-        transition-all duration-75
+        transition-all
         relative
       `}
     >
       {/* Blocked warning indicator */}
       {isBlockedByDependencies && (
-        <div className="absolute top-2 right-2 text-red-500 opacity-60">
+        <div className="absolute top-2 right-2 text-danger opacity-60">
           <AlertTriangle size={14} />
         </div>
       )}
@@ -589,13 +626,13 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
             }}
             className="
               w-6 h-6 flex-shrink-0 mt-0.5
-              border-2 border-stone-900
-              hover:bg-green-100
+              border border-warm-700
+              hover:bg-success-soft
               flex items-center justify-center
               transition-colors group/check
             "
           >
-            <Check size={14} className="text-green-600 opacity-0 group-hover/check:opacity-100" />
+            <Check size={14} className="text-success opacity-0 group-hover/check:opacity-100" />
           </button>
         )}
 
@@ -606,33 +643,33 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
               {task.priority}
             </span>
             {task.project_title && (
-              <span className="text-xs text-stone-400 truncate">{task.project_title}</span>
+              <span className="text-xs text-warm-400 truncate">{task.project_title}</span>
             )}
             {task.status === 'BLOCKED' && (
-              <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700">
+              <span className="px-1.5 py-0.5 text-xs font-medium bg-danger-soft text-danger">
                 BLOQUEADA
               </span>
             )}
             {isBlockedByDependencies && task.status !== 'BLOCKED' && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 border border-red-300">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-danger-soft text-danger border border-danger">
                 <AlertTriangle size={10} />
                 Bloqueada por {task.blocked_by_count}
               </span>
             )}
             {(task.blocks_count ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 border border-amber-300">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gold-200 text-gold-700 border border-gold-300">
                 Bloquea {task.blocks_count}
               </span>
             )}
           </div>
-          <h3 className="font-medium text-stone-900 hover:underline">
+          <h3 className="font-medium text-warm-800 hover:underline">
             {task.title}
           </h3>
           {task.blocked_reason && (
-            <p className="text-xs text-red-500 mt-1">{task.blocked_reason}</p>
+            <p className="text-xs text-danger mt-1">{task.blocked_reason}</p>
           )}
           {task.due_date && (
-            <p className="text-xs text-stone-500 mt-1 flex items-center gap-1">
+            <p className="text-xs text-warm-500 mt-1 flex items-center gap-1">
               <Clock size={12} />
               {new Date(task.due_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
             </p>
@@ -648,8 +685,8 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
                 onStartDoing?.()
               }}
               className="
-                p-2 text-stone-400 hover:text-cyan-500
-                hover:bg-cyan-50
+                p-2 text-warm-400 hover:text-turquoise-500
+                hover:bg-turquoise-50
                 transition-colors
               "
               title="Empezar"
@@ -664,8 +701,8 @@ function TaskCard({ task, highlighted, onFocus, onComplete, onClick, onStartDoin
                 onFocus?.()
               }}
               className="
-                p-2 text-stone-400 hover:text-amber-500
-                hover:bg-amber-50
+                p-2 text-warm-400 hover:text-gold-500
+                hover:bg-gold-50
                 transition-colors
               "
               title="Focus Mode"
@@ -718,22 +755,22 @@ function MiniCalendar({ tasks, overdueTasks = [] }: MiniCalendarProps) {
   }
 
   return (
-    <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917]">
-      <div className="p-3 border-b-2 border-stone-900 flex items-center justify-between">
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-1 hover:bg-stone-100">
+    <div className="bg-surface-card border border-warm-700 shadow-card">
+      <div className="p-3 border-b border-warm-700 flex items-center justify-between">
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-1 hover:bg-warm-100">
           <ChevronLeft size={16} />
         </button>
-        <span className="font-serif font-bold text-stone-900 capitalize">
+        <span className="font-display font-bold text-warm-800 capitalize">
           {currentMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
         </span>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-1 hover:bg-stone-100">
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-1 hover:bg-warm-100">
           <ChevronRight size={16} />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-stone-200">
+      <div className="grid grid-cols-7 border-b border-warm-200">
         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, i) => (
-          <div key={day} className={`py-2 text-center text-xs font-bold uppercase ${i >= 5 ? 'text-stone-400' : 'text-stone-500'}`}>
+          <div key={day} className={`py-2 text-center text-xs font-bold uppercase ${i >= 5 ? 'text-warm-400' : 'text-warm-500'}`}>
             {day}
           </div>
         ))}
@@ -754,22 +791,22 @@ function MiniCalendar({ tasks, overdueTasks = [] }: MiniCalendarProps) {
               className={`
                 relative aspect-square flex flex-col items-center justify-center
                 text-sm font-mono
-                border-2 transition-all
+                border transition-all
                 ${isToday
-                  ? 'bg-amber-400 border-stone-900 font-bold'
+                  ? 'bg-gold-400 border-warm-700 font-bold'
                   : isOverdue
-                    ? 'bg-red-100 border-red-400'
+                    ? 'bg-danger-soft border-danger'
                     : taskCount > 0
-                      ? 'bg-cyan-100 border-cyan-400'
+                      ? 'bg-turquoise-100 border-turquoise-400'
                       : isWeekend
-                        ? 'text-stone-400 border-transparent hover:border-stone-300'
-                        : 'text-stone-600 border-transparent hover:border-stone-300'
+                        ? 'text-warm-400 border-transparent hover:border-warm-300'
+                        : 'text-warm-600 border-transparent hover:border-warm-300'
                 }
               `}
             >
               <span>{day}</span>
               {taskCount > 0 && !isToday && (
-                <span className="absolute bottom-0.5 text-[8px] font-bold text-cyan-600">
+                <span className="absolute bottom-0.5 text-[8px] font-bold text-turquoise-600">
                   {taskCount}
                 </span>
               )}
@@ -778,18 +815,18 @@ function MiniCalendar({ tasks, overdueTasks = [] }: MiniCalendarProps) {
         })}
       </div>
 
-      <div className="p-3 border-t border-stone-200 flex flex-wrap gap-3 text-[10px] uppercase tracking-wider">
+      <div className="p-3 border-t border-warm-200 flex flex-wrap gap-3 text-[10px] uppercase tracking-wider">
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-amber-400 border border-stone-900" />
-          <span className="text-stone-500">Hoy</span>
+          <div className="w-3 h-3 bg-gold-400 border border-warm-700" />
+          <span className="text-warm-500">Hoy</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-cyan-100 border border-cyan-400" />
-          <span className="text-stone-500">Tareas</span>
+          <div className="w-3 h-3 bg-turquoise-100 border border-turquoise-400" />
+          <span className="text-warm-500">Tareas</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-red-100 border border-red-400" />
-          <span className="text-stone-500">Vencidas</span>
+          <div className="w-3 h-3 bg-danger-soft border border-danger" />
+          <span className="text-warm-500">Vencidas</span>
         </div>
       </div>
     </div>
