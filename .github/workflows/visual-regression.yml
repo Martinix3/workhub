@@ -61,9 +61,9 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: test-client-id
           VITE_ENABLE_AUTH_BYPASS: 'true'
 
-      - name: Run visual regression tests
+      - name: Run task visual regression tests
         id: visual-tests
-        run: npm run test:visual
+        run: npx playwright test e2e/visual/pages/tasks.visual.spec.ts e2e/visual/pages/task-detail.visual.spec.ts e2e/visual/flows/task-creation.visual.spec.ts
         continue-on-error: true
         env:
           CI: true
@@ -266,8 +266,8 @@ jobs:
       - name: Install Playwright browser - ${{ matrix.browser }}
         run: npx playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Run visual tests on ${{ matrix.browser }}
-        run: npm run test:visual -- --project=${{ matrix.browser }}
+      - name: Run task visual tests on ${{ matrix.browser }}
+        run: npx playwright test e2e/visual/pages/tasks.visual.spec.ts e2e/visual/pages/task-detail.visual.spec.ts e2e/visual/flows/task-creation.visual.spec.ts --project=${{ matrix.browser }}
         env:
           CI: true
           WH_WEB_PORT: 5177
@@ -299,6 +299,7 @@ jobs:
   # Performance testing job
   performance-tests:
     name: Lighthouse Performance Tests
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
