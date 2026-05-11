@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "node -e 'console.error(\"NOT CANONICAL for santa-brisa-erp.web.app. Read /Users/martinjaimesamperiz/santabrisa-workhub/docs/FIREBASE_FRONTEND_SOURCE_OF_TRUTH.md\"); process.exit(1)'",
+    "build": "node -e 'console.error(\"NOT CANONICAL for santa-brisa-erp.web.app. Read /Users/martinjaimesamperiz/santabrisa-workhub/docs/FIREBASE_FRONTEND_SOURCE_OF_TRUTH.md\"); process.exit(1)'",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "node -e 'console.error(\"NOT CANONICAL for santa-brisa-erp.web.app. Read /Users/martinjaimesamperiz/santabrisa-workhub/docs/FIREBASE_FRONTEND_SOURCE_OF_TRUTH.md\"); process.exit(1)'",
     "test": "vitest",
     "test:run": "vitest run",
     "test:unit": "vitest run",
@@ -26,7 +26,10 @@
     "review:phase3": "npx ts-node --project ../scripts/tsconfig.json ../scripts/pre-deploy-review.ts --phase=3",
     "review:phase4": "npx ts-node --project ../scripts/tsconfig.json ../scripts/pre-deploy-review.ts --phase=4",
     "review:phase5": "npx ts-node --project ../scripts/tsconfig.json ../scripts/pre-deploy-review.ts --phase=5",
-    "review:dry-run": "npx ts-node --project ../scripts/tsconfig.json ../scripts/pre-deploy-review.ts --dry-run"
+    "review:dry-run": "npx ts-node --project ../scripts/tsconfig.json ../scripts/pre-deploy-review.ts --dry-run",
+    "deprecated:dev": "vite",
+    "deprecated:build": "tsc -b && vite build",
+    "deprecated:preview": "vite preview"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
