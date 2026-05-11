@@ -5,17 +5,36 @@ import frappe
 from frappe import _
 from frappe.utils.oauth import get_oauth2_authorize_url
 from frappe.utils.password import get_decrypted_password
+from workhub_frappe_app.api.rate_limiter import rate_limit
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=20, window=60)  # Rate Limiting: 20 requests/min per IP to prevent user enumeration attacks on this public endpoint
 def get_logged_user():
-    """Get the currently logged in user (Guest if not logged in)"""
+    """
+    Get the currently logged in user (Guest if not logged in).
+
+    Rate Limiting Strategy:
+    - Limit: 20 requests/minute per IP address
+    - Rationale: This allow_guest=True endpoint could be abused for user enumeration.
+      The limit is relatively permissive as it's a common check during session validation.
+    - Protection: Prevents attackers from rapidly probing user sessions or enumerating accounts.
+    """
     return frappe.session.user
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=15, window=60)  # Rate Limiting: 15 requests/min per IP to prevent information disclosure
 def get_user_info():
-    """Get user info for the logged in user"""
+    """
+    Get user info for the logged in user.
+
+    Rate Limiting Strategy:
+    - Limit: 15 requests/minute per IP address
+    - Rationale: This endpoint returns user details and could leak information if abused.
+      Slightly stricter than get_logged_user as it exposes more sensitive data.
+    - Protection: Prevents attackers from harvesting user information through rapid requests.
+    """
     user = frappe.session.user
     if user == "Guest":
         return {
@@ -37,11 +56,20 @@ def get_user_info():
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=10, window=60)  # Rate Limiting: 10 requests/min per IP to prevent OAuth flood attacks
 def get_social_login_url(provider="google", redirect_to=None):
-    """Get the OAuth authorization URL for a provider.
+    """
+    Get the OAuth authorization URL for a provider.
 
     The OAuth flow redirects to /workhub_auth_callback which generates
     an API token and redirects to the frontend with the token.
+
+    Rate Limiting Strategy:
+    - Limit: 10 requests/minute per IP address
+    - Rationale: OAuth initiation should be rate limited to prevent flood attacks
+      and abuse of OAuth provider resources.
+    - Protection: Prevents attackers from overwhelming the OAuth flow or causing
+      service disruption through excessive authorization requests.
     """
     try:
         # Use our custom callback page that generates the API token
@@ -55,11 +83,19 @@ def get_social_login_url(provider="google", redirect_to=None):
 
 
 @frappe.whitelist()
+@rate_limit(limit=5, window=60, identifier="user")  # Rate Limiting: 5 requests/min PER USER (strictest limit) to prevent credential stuffing
 def generate_api_token():
     """
     Generate or retrieve API token for the authenticated user.
     Called after OAuth to get a token for frontend API calls.
     Returns: { api_key, api_secret, token } where token = "api_key:api_secret"
+
+    Rate Limiting Strategy:
+    - Limit: 5 requests/minute PER AUTHENTICATED USER (not per IP)
+    - Rationale: This is the most sensitive endpoint as it generates API credentials.
+      Rate limiting by user (not IP) prevents abuse from compromised accounts.
+    - Protection: Prevents credential stuffing attacks and unauthorized API token generation.
+      Even if an attacker gains access to an account, they cannot generate unlimited tokens.
     """
     user = frappe.session.user
     if user == "Guest":

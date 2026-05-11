@@ -6,6 +6,7 @@ import { AuthProvider, useAuth, LoginPage, ProtectedRoute, RoleGuard } from './a
 import { LoadingState } from './components/ui/LoadingState'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SmartNotepadFAB } from './components/smart-notepad'
+import { ToastProvider } from './hooks/useToast'
 
 // Lazy-loaded Page Components (code splitting)
 const CommandCenterPage = lazy(() => import('./pages/CommandCenterPage').then(m => ({ default: m.CommandCenterPage })))
@@ -232,7 +233,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppWithAuth />
+        <ToastProvider>
+          <AppWithAuth />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   )

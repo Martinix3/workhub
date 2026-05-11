@@ -1,0 +1,651 @@
+/**
+ * Mobile Drawer Component - Neobrutalismo Editorial
+ * Bottom sheet drawer pattern for mobile task editing
+ * Slides up from bottom with backdrop overlay
+ */
+
+/* === DRAWER BACKDROP === */
+.wh-drawer-backdrop {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(26, 26, 26, 0.75);
+	z-index: 1999;
+	opacity: 0;
+	transition: opacity var(--mobile-transition-normal);
+	pointer-events: none;
+	/* GPU acceleration */
+	-webkit-transform: translateZ(0);
+	transform: translateZ(0);
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden;
+}
+
+.wh-drawer-backdrop.active {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+/* === DRAWER CONTAINER === */
+.wh-drawer {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 2000;
+	background: var(--surface-1);
+	border: var(--border-width) solid var(--border-1);
+	border-bottom: none;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	transform: translateY(100%);
+	transition: transform var(--mobile-transition-normal);
+	/* GPU acceleration for smooth animation */
+	-webkit-transform: translateZ(0) translateY(100%);
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden;
+	/* Neobrutalismo shadow */
+	box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Add will-change during opening animation */
+.wh-drawer.opening {
+	will-change: transform;
+}
+
+/* Open state */
+.wh-drawer.open {
+	transform: translateY(0);
+	-webkit-transform: translateZ(0) translateY(0);
+	will-change: auto; /* Remove will-change when stable */
+}
+
+/* During swipe gesture - no transition */
+.wh-drawer.dragging {
+	transition: none;
+	will-change: transform;
+}
+
+/* Add will-change during closing animation */
+.wh-drawer.closing {
+	will-change: transform;
+}
+
+/* Safe area insets for notched devices */
+.wh-drawer {
+	padding-bottom: var(--safe-area-bottom);
+}
+
+/* === DRAWER HANDLE (swipe indicator) === */
+.wh-drawer-handle {
+	width: 100%;
+	padding: var(--space-3) 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	cursor: grab;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.wh-drawer-handle:active {
+	cursor: grabbing;
+}
+
+.wh-drawer-handle-bar {
+	width: 40px;
+	height: 4px;
+	background: var(--border-1);
+	border-radius: 2px;
+	transition: background var(--transition-fast);
+}
+
+.wh-drawer-handle:active .wh-drawer-handle-bar,
+.wh-drawer.dragging .wh-drawer-handle-bar {
+	background: var(--text-2);
+}
+
+/* === DRAWER HEADER === */
+.wh-drawer-header {
+	padding: var(--space-4) var(--mobile-gutter);
+	border-bottom: var(--border-width-thin) solid var(--border-2);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	flex-shrink: 0;
+	background: var(--surface-1);
+}
+
+.wh-drawer-title {
+	font-family: var(--font-display);
+	font-size: var(--mobile-text-lg);
+	font-weight: var(--weight-bold);
+	color: var(--text-1);
+	line-height: var(--leading-tight);
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wh-drawer-close {
+	min-width: var(--touch-target-min);
+	min-height: var(--touch-target-min);
+	padding: var(--space-2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: var(--border-width) solid var(--border-1);
+	cursor: pointer;
+	transition: background var(--transition-fast), transform var(--transition-fast);
+	flex-shrink: 0;
+}
+
+.wh-drawer-close:hover {
+	background: var(--surface-2);
+}
+
+.wh-drawer-close:active {
+	transform: scale(0.95);
+}
+
+.wh-drawer-close-icon {
+	width: 20px;
+	height: 20px;
+	color: var(--text-2);
+}
+
+/* === DRAWER CONTENT === */
+.wh-drawer-content {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: var(--space-5) var(--mobile-gutter);
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	/* Smooth scrolling on iOS */
+	scroll-behavior: smooth;
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+.wh-drawer-content::-webkit-scrollbar {
+	width: 4px;
+}
+
+.wh-drawer-content::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.wh-drawer-content::-webkit-scrollbar-thumb {
+	background: var(--border-2);
+	border-radius: 2px;
+}
+
+/* === DRAWER FOOTER (for actions) === */
+.wh-drawer-footer {
+	padding: var(--space-4) var(--mobile-gutter);
+	border-top: var(--border-width-thin) solid var(--border-2);
+	background: var(--surface-1);
+	flex-shrink: 0;
+}
+
+/* === DRAWER SIZES === */
+
+/* Default drawer - auto height based on content */
+.wh-drawer {
+	max-height: 90vh;
+}
+
+/* Small drawer - for quick actions */
+.wh-drawer-sm {
+	max-height: 40vh;
+}
+
+/* Medium drawer - for forms */
+.wh-drawer-md {
+	max-height: 65vh;
+}
+
+/* Large drawer - almost full screen */
+.wh-drawer-lg {
+	max-height: 90vh;
+}
+
+/* Full height drawer */
+.wh-drawer-full {
+	max-height: 100vh;
+	border-top: var(--border-width) solid var(--border-1);
+}
+
+/* === DRAWER STATES === */
+
+/* Loading state */
+.wh-drawer-loading .wh-drawer-content {
+	position: relative;
+	pointer-events: none;
+}
+
+.wh-drawer-loading .wh-drawer-content::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 32px;
+	height: 32px;
+	border: 3px solid var(--border-2);
+	border-top-color: var(--primary);
+	border-radius: 50%;
+	animation: drawer-spin 0.6s linear infinite;
+}
+
+@keyframes drawer-spin {
+	to {
+		transform: translate(-50%, -50%) rotate(360deg);
+	}
+}
+
+/* Error state */
+.wh-drawer.error .wh-drawer-header {
+	border-bottom-color: var(--danger);
+	background: var(--danger-soft);
+}
+
+.wh-drawer.error .wh-drawer-title {
+	color: var(--danger);
+}
+
+/* Success state */
+.wh-drawer.success .wh-drawer-header {
+	border-bottom-color: var(--success);
+	background: var(--success-soft);
+}
+
+/* === DRAWER CONTENT SECTIONS === */
+.wh-drawer-section {
+	margin-bottom: var(--space-5);
+	padding-bottom: var(--space-5);
+	border-bottom: var(--border-width-thin) solid var(--border-2);
+}
+
+.wh-drawer-section:last-child {
+	border-bottom: none;
+	margin-bottom: 0;
+	padding-bottom: 0;
+}
+
+.wh-drawer-section-title {
+	font-family: var(--font-ui);
+	font-size: var(--mobile-text-sm);
+	font-weight: var(--weight-semibold);
+	color: var(--text-2);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+	margin-bottom: var(--space-3);
+}
+
+/* === DRAWER ACTIONS === */
+.wh-drawer-actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+/* Horizontal layout for wider screens */
+@media (min-width: 375px) {
+	.wh-drawer-actions-horizontal {
+		flex-direction: row;
+		justify-content: flex-end;
+	}
+
+	.wh-drawer-actions-horizontal .btn {
+		flex: 0 1 auto;
+		min-width: 120px;
+	}
+
+	/* Primary action takes precedence */
+	.wh-drawer-actions-horizontal .btn-primary {
+		order: 2;
+	}
+
+	.wh-drawer-actions-horizontal .btn:not(.btn-primary) {
+		order: 1;
+	}
+}
+
+/* === MOBILE-SPECIFIC STYLES === */
+@media (max-width: 767px) {
+	/* Show backdrop on mobile */
+	.wh-drawer-backdrop {
+		display: block;
+	}
+
+	/* More padding on mobile */
+	.wh-drawer-header,
+	.wh-drawer-footer {
+		padding-left: var(--mobile-gutter);
+		padding-right: var(--mobile-gutter);
+	}
+
+	.wh-drawer-content {
+		padding-left: var(--mobile-gutter);
+		padding-right: var(--mobile-gutter);
+	}
+
+	/* Larger close button on mobile */
+	.wh-drawer-close {
+		min-width: var(--touch-target-comfortable);
+		min-height: var(--touch-target-comfortable);
+	}
+
+	.wh-drawer-close-icon {
+		width: 24px;
+		height: 24px;
+	}
+
+	/* Better spacing for drawer sections */
+	.wh-drawer-section {
+		margin-bottom: var(--space-6);
+		padding-bottom: var(--space-5);
+	}
+
+	/* Touch-friendly actions */
+	.wh-drawer-actions {
+		gap: var(--space-4);
+	}
+
+	/* Ensure drawers don't cover too much screen */
+	.wh-drawer {
+		max-height: 85vh;
+	}
+
+	.wh-drawer-lg {
+		max-height: 90vh;
+	}
+}
+
+/* === LANDSCAPE ORIENTATION === */
+@media (max-width: 767px) and (orientation: landscape) {
+	/* Reduce max height in landscape */
+	.wh-drawer {
+		max-height: 75vh;
+	}
+
+	.wh-drawer-lg {
+		max-height: 85vh;
+	}
+
+	/* Reduce padding in landscape */
+	.wh-drawer-header,
+	.wh-drawer-footer {
+		padding-top: var(--space-3);
+		padding-bottom: var(--space-3);
+	}
+
+	.wh-drawer-content {
+		padding-top: var(--space-4);
+		padding-bottom: var(--space-4);
+	}
+
+	.wh-drawer-section {
+		margin-bottom: var(--space-4);
+		padding-bottom: var(--space-4);
+	}
+}
+
+/* === TABLET AND UP (convert to modal) === */
+@media (min-width: 768px) {
+	/* Hide mobile backdrop */
+	.wh-drawer-backdrop {
+		display: none;
+	}
+
+	/* Convert to centered modal on tablet+ */
+	.wh-drawer {
+		left: 50%;
+		top: 50%;
+		bottom: auto;
+		right: auto;
+		transform: translate(-50%, -50%) scale(0.95);
+		width: 90%;
+		max-width: 600px;
+		max-height: 85vh;
+		border: var(--border-width) solid var(--border-1);
+		border-radius: 0;
+		box-shadow: var(--shadow-lg);
+	}
+
+	.wh-drawer.open {
+		transform: translate(-50%, -50%) scale(1);
+	}
+
+	.wh-drawer.dragging {
+		transform: translate(-50%, -50%) scale(1);
+	}
+
+	/* Hide swipe handle on desktop */
+	.wh-drawer-handle {
+		display: none;
+	}
+
+	/* Show backdrop on desktop */
+	.wh-drawer-backdrop {
+		display: block;
+		background: rgba(26, 26, 26, 0.85);
+	}
+
+	/* Desktop sizes */
+	.wh-drawer-sm {
+		max-width: 400px;
+		max-height: 50vh;
+	}
+
+	.wh-drawer-md {
+		max-width: 600px;
+		max-height: 75vh;
+	}
+
+	.wh-drawer-lg {
+		max-width: 800px;
+		max-height: 85vh;
+	}
+
+	.wh-drawer-full {
+		max-width: 90vw;
+		max-height: 90vh;
+	}
+
+	/* Better scrolling on desktop */
+	.wh-drawer-content::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.wh-drawer-content::-webkit-scrollbar-thumb {
+		background: var(--border-1);
+	}
+
+	.wh-drawer-content::-webkit-scrollbar-thumb:hover {
+		background: var(--text-3);
+	}
+}
+
+/* === ACCESSIBILITY === */
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+	.wh-drawer {
+		border-width: 3px !important;
+	}
+
+	.wh-drawer-header,
+	.wh-drawer-footer,
+	.wh-drawer-section {
+		border-width: 2px !important;
+	}
+
+	.wh-drawer-close {
+		border-width: 3px !important;
+	}
+
+	/* More visible backdrop */
+	.wh-drawer-backdrop.active {
+		background: rgba(0, 0, 0, 0.9);
+	}
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	.wh-drawer,
+	.wh-drawer-backdrop,
+	.wh-drawer-close,
+	.wh-drawer-handle-bar {
+		transition: none !important;
+		animation: none !important;
+	}
+
+	/* Instant show/hide */
+	.wh-drawer {
+		transform: translateY(100%);
+	}
+
+	.wh-drawer.open {
+		transform: translateY(0);
+	}
+
+	@media (min-width: 768px) {
+		.wh-drawer {
+			transform: translate(-50%, -50%);
+		}
+
+		.wh-drawer.open {
+			transform: translate(-50%, -50%);
+		}
+	}
+
+	/* No loading animation */
+	.wh-drawer-loading .wh-drawer-content::after {
+		animation: none !important;
+		border-top-color: var(--border-2);
+	}
+}
+
+/* === FOCUS MANAGEMENT === */
+
+/* Trap focus within drawer when open */
+.wh-drawer.open {
+	/* Focus will be managed by JavaScript */
+}
+
+/* Focus visible states */
+.wh-drawer-close:focus-visible {
+	outline: 3px solid var(--primary);
+	outline-offset: 2px;
+}
+
+/* === NESTED DRAWER SUPPORT === */
+
+/* Stack multiple drawers with increasing z-index */
+.wh-drawer-backdrop.nested {
+	z-index: 2099;
+	background: rgba(26, 26, 26, 0.85);
+}
+
+.wh-drawer.nested {
+	z-index: 2100;
+}
+
+/* === DRAWER ANIMATIONS === */
+
+/* Subtle bounce effect when opening */
+@media (prefers-reduced-motion: no-preference) {
+	.wh-drawer.open {
+		animation: drawer-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	@keyframes drawer-slide-up {
+		0% {
+			transform: translateY(100%);
+		}
+		100% {
+			transform: translateY(0);
+		}
+	}
+
+	/* Desktop modal version */
+	@media (min-width: 768px) {
+		.wh-drawer.open {
+			animation: drawer-modal-in 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+		}
+
+		@keyframes drawer-modal-in {
+			0% {
+				transform: translate(-50%, -50%) scale(0.9);
+				opacity: 0;
+			}
+			100% {
+				transform: translate(-50%, -50%) scale(1);
+				opacity: 1;
+			}
+		}
+	}
+}
+
+/* === DRAWER CONTENT HELPERS === */
+
+/* Empty state */
+.wh-drawer-empty {
+	padding: var(--space-8) var(--space-4);
+	text-align: center;
+	color: var(--text-3);
+}
+
+.wh-drawer-empty-icon {
+	width: 64px;
+	height: 64px;
+	margin: 0 auto var(--space-4);
+	opacity: 0.5;
+}
+
+.wh-drawer-empty-title {
+	font-family: var(--font-display);
+	font-size: var(--mobile-text-lg);
+	font-weight: var(--weight-bold);
+	color: var(--text-2);
+	margin-bottom: var(--space-2);
+}
+
+.wh-drawer-empty-text {
+	font-size: var(--mobile-text-sm);
+	color: var(--text-3);
+	line-height: var(--leading-relaxed);
+}
+
+/* === UTILITY CLASSES === */
+
+/* Hide drawer (display: none) */
+.wh-drawer-hidden {
+	display: none !important;
+}
+
+/* Prevent body scroll when drawer is open */
+body.drawer-open {
+	overflow: hidden;
+	/* Prevent iOS bounce scroll */
+	position: fixed;
+	width: 100%;
+}
+
+/* Prevent background content interaction */
+body.drawer-open .main-section,
+body.drawer-open .wh-header,
+body.drawer-open .wh-sidebar {
+	filter: blur(2px);
+	pointer-events: none;
+}

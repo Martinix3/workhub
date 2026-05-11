@@ -3,7 +3,7 @@ import { LoginPage } from '../pages/login.page'
 import { ShellPage } from '../pages/shell.page'
 
 test.describe('Authentication', () => {
-  test.describe('Happy Path', () => {
+  test.describe('Happy Path - Bypass Mode', () => {
     test('login con bypass exitoso', async ({ page }) => {
       const loginPage = new LoginPage(page)
       await loginPage.goto('/login')
@@ -35,7 +35,7 @@ test.describe('Authentication', () => {
       await loginPage.bypassLogin()
       await expect(page).toHaveURL('/')
 
-      // Refresh - bypass mode uses client-side state, may need to re-login
+      // Refresh - bypass mode uses client-side state
       await page.reload()
 
       // Wait for page to load (may redirect to login if session not persisted)
@@ -51,6 +51,74 @@ test.describe('Authentication', () => {
       } else {
         // Session not persisted - this is expected for bypass mode
         await expect(page).toHaveURL(/\/login/)
+      }
+    })
+  })
+
+  test.describe('Cookie-Based Authentication Security', () => {
+    test('OAuth callback URL no contiene token en parametros', async ({ page }) => {
+      // Simulate OAuth callback with auth_success parameter
+      // In real flow, backend sets HTTP-only cookie and redirects to ?auth_success=true
+      await page.goto('/?auth_success=true')
+      await page.waitForLoadState('domcontentloaded')
+
+      // Get current URL
+      const currentUrl = page.url()
+      const urlParams = new URLSearchParams(new URL(currentUrl).search)
+
+      // Verify no token parameter in URL
+      expect(urlParams.has('token')).toBe(false)
+      expect(currentUrl).not.toContain('token=')
+      expect(currentUrl).not.toContain('api_key')
+      expect(currentUrl).not.toContain('api_secret')
+
+      // Verify only auth_success parameter (or no params after redirect)
+      // The frontend cleans up the URL after handling auth_success
+      const hasOnlyAuthSuccess = urlParams.get('auth_success') === 'true' && urlParams.size === 1
+      const hasNoParams = urlParams.size === 0
+      expect(hasOnlyAuthSuccess || hasNoParams).toBe(true)
+    })
+
+    test('URL no contiene token tras autenticacion completa', async ({ page }) => {
+      // Simulate complete OAuth flow
+      await page.goto('/?auth_success=true')
+      await page.waitForLoadState('networkidle')
+
+      // Wait a bit for auth verification to complete and URL cleanup
+      await page.waitForTimeout(1000)
+
+      // Get final URL after auth verification
+      const currentUrl = page.url()
+
+      // Verify URL is clean (no auth parameters, no tokens)
+      expect(currentUrl).not.toContain('token')
+      expect(currentUrl).not.toContain('api_key')
+      expect(currentUrl).not.toContain('api_secret')
+      expect(currentUrl).not.toContain('auth_success')
+
+      // URL should be just the base path
+      const urlPath = new URL(currentUrl).pathname
+      expect(urlPath).toBe('/')
+    })
+
+    test('cookies HTTP-only no son accesibles via JavaScript', async ({ page, context }) => {
+      // Navigate to app
+      await page.goto('/')
+      await page.waitForLoadState('domcontentloaded')
+
+      // Try to access document.cookie
+      const cookies = await page.evaluate(() => document.cookie)
+
+      // The workhub_auth cookie should NOT be accessible via JavaScript
+      expect(cookies).not.toContain('workhub_auth')
+
+      // Get all cookies from context (including HTTP-only)
+      const allCookies = await context.cookies()
+      const authCookie = allCookies.find(c => c.name === 'workhub_auth')
+
+      // If auth cookie exists, verify it's HTTP-only
+      if (authCookie) {
+        expect(authCookie.httpOnly).toBe(true)
       }
     })
   })

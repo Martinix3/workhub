@@ -9,6 +9,7 @@ from frappe.utils import cstr
 import json
 
 from workhub_frappe_app.api.utils import require_auth, validate_json_input
+from workhub_frappe_app.api.notifications import get_user_notification_preferences
 
 
 # Department to Role mapping
@@ -31,7 +32,14 @@ def get_user_settings():
         dict: {
             theme: 'light' | 'dark' | 'system',
             language: 'es' | 'en',
-            notifications: { email: bool, push: bool, digest: 'daily'|'weekly'|'none' },
+            notifications: {
+                frequency: 'realtime' | 'daily' | 'weekly' | 'off',
+                quiet_hours_enabled: bool,
+                quiet_hours_start: str (HH:MM:SS),
+                quiet_hours_end: str (HH:MM:SS),
+                priority_bypass_enabled: bool,
+                email_enabled: bool
+            },
             department_access: ['SALES', 'OPS', 'MKT']
         }
     """
@@ -46,15 +54,10 @@ def get_user_settings():
     theme = getattr(user_doc, 'workhub_theme', None) or 'system'
     language = user_doc.language or 'es'
 
-    # Notification settings (stored as JSON in custom field or defaults)
-    notifications_json = getattr(user_doc, 'workhub_notifications', None)
-    if notifications_json:
-        try:
-            notifications = json.loads(notifications_json)
-        except (json.JSONDecodeError, TypeError):
-            notifications = {"email": True, "push": False, "digest": "daily"}
-    else:
-        notifications = {"email": True, "push": False, "digest": "daily"}
+    # Get notification preferences from WH Notification Preferences DocType
+    # This returns: frequency, quiet_hours_enabled, quiet_hours_start, quiet_hours_end,
+    # priority_bypass_enabled, email_enabled
+    notifications = get_user_notification_preferences(user)
 
     # Department access based on user roles
     department_access = get_user_departments(user)
@@ -67,6 +70,82 @@ def get_user_settings():
     }
 
 
+def _update_notification_preferences(user, notif_settings):
+    """
+    Update notification preferences in WH Notification Preferences DocType.
+    Creates the record if it doesn't exist.
+
+    Args:
+        user: User email/name
+        notif_settings: dict with notification preference fields
+
+    Raises:
+        frappe.ValidationError: If validation fails
+    """
+    prefs_name = user  # autoname is by user field
+
+    # Get or create notification preferences
+    try:
+        prefs = frappe.get_doc("WH Notification Preferences", prefs_name)
+    except frappe.DoesNotExistError:
+        # Create new preferences
+        prefs = frappe.new_doc("WH Notification Preferences")
+        prefs.user = user
+
+    # Update frequency if provided
+    if "frequency" in notif_settings:
+        frequency = notif_settings["frequency"]
+        if frequency not in ["realtime", "daily", "weekly", "off"]:
+            frappe.throw(_("Invalid frequency. Must be one of: realtime, daily, weekly, off"))
+        prefs.frequency = frequency
+
+    # Update email_enabled if provided
+    if "email_enabled" in notif_settings:
+        prefs.email_enabled = int(notif_settings["email_enabled"])
+
+    # Update priority_bypass_enabled if provided
+    if "priority_bypass_enabled" in notif_settings:
+        prefs.priority_bypass_enabled = int(notif_settings["priority_bypass_enabled"])
+
+    # Update quiet hours if provided
+    if "quiet_hours_enabled" in notif_settings:
+        quiet_hours_enabled = int(notif_settings["quiet_hours_enabled"])
+        prefs.quiet_hours_enabled = quiet_hours_enabled
+
+        # If quiet hours are enabled, validate start and end times
+        if quiet_hours_enabled:
+            quiet_start = notif_settings.get("quiet_hours_start", prefs.quiet_hours_start)
+            quiet_end = notif_settings.get("quiet_hours_end", prefs.quiet_hours_end)
+
+            # Ensure both times are provided when enabling
+            if not quiet_start or not quiet_end:
+                frappe.throw(_("Quiet hours start and end times are required when quiet hours are enabled"))
+
+            # Note: We allow start > end for overnight quiet hours (e.g., 22:00 - 08:00)
+            # The should_notify_immediately() function in notifications.py handles this case
+            prefs.quiet_hours_start = quiet_start
+            prefs.quiet_hours_end = quiet_end
+
+    # Update individual quiet hours fields if provided (even when disabled)
+    if "quiet_hours_start" in notif_settings and not prefs.quiet_hours_enabled:
+        prefs.quiet_hours_start = notif_settings["quiet_hours_start"]
+
+    if "quiet_hours_end" in notif_settings and not prefs.quiet_hours_enabled:
+        prefs.quiet_hours_end = notif_settings["quiet_hours_end"]
+
+    # Save preferences
+    if prefs.is_new():
+        prefs.insert(ignore_permissions=True)
+    else:
+        prefs.save(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    # Clear cache so next get_user_notification_preferences() call fetches fresh data
+    cache_key = f"notification_preferences:{user}"
+    frappe.cache().delete_value(cache_key)
+
+
 @frappe.whitelist()
 def update_user_settings(settings):
     """
@@ -76,7 +155,14 @@ def update_user_settings(settings):
         settings: JSON string or dict with keys:
             - theme: 'light' | 'dark' | 'system'
             - language: 'es' | 'en'
-            - notifications: { email: bool, push: bool, digest: str }
+            - notifications: {
+                frequency: 'realtime' | 'daily' | 'weekly' | 'off',
+                quiet_hours_enabled: bool,
+                quiet_hours_start: str (HH:MM:SS),
+                quiet_hours_end: str (HH:MM:SS),
+                priority_bypass_enabled: bool,
+                email_enabled: bool
+            }
 
     Returns:
         dict: Updated settings
@@ -103,14 +189,12 @@ def update_user_settings(settings):
         if lang in ["es", "en"]:
             user_doc.language = lang
 
-    # Update notifications if provided
-    if "notifications" in settings:
-        notif = settings["notifications"]
-        if hasattr(user_doc, 'workhub_notifications'):
-            user_doc.workhub_notifications = json.dumps(notif)
-
     user_doc.save(ignore_permissions=True)
     frappe.db.commit()
+
+    # Update notification preferences in WH Notification Preferences DocType
+    if "notifications" in settings:
+        _update_notification_preferences(user, settings["notifications"])
 
     return get_user_settings()
 

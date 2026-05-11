@@ -1,0 +1,856 @@
+<!-- Page: WorkHub Alertas - Neobrutalismo Editorial -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Alertas") }}{% endblock %}
+{% block breadcrumb %}Alertas{% endblock %}
+
+{% block page_content %}
+<div class="wh-container">
+	<!-- Page Header -->
+	<div class="wh-page-header">
+		<h1 class="wh-page-title">Alertas</h1>
+		<p class="wh-page-subtitle">Centro de Notificaciones en Tiempo Real</p>
+	</div>
+
+	<!-- Quick Actions Bar -->
+	<div class="wh-quick-actions">
+		<span class="wh-quick-actions__title">Acciones</span>
+		<button id="mark-all-read-btn" class="btn btn-primary">Marcar Todas como Leídas</button>
+		<button id="refresh-alerts-btn" class="btn btn-secondary">Actualizar</button>
+	</div>
+
+	<!-- KPIs Grid -->
+	<div class="kpi-grid mb-6">
+		<div class="kpi-card">
+			<div class="kpi-card__value" id="total-count">{{ total_count or 0 }}</div>
+			<div class="kpi-card__separator"></div>
+			<div class="kpi-card__label">Total Notificaciones</div>
+			<div class="kpi-card__change kpi-card__change--neutral">
+				últimos 30 días
+			</div>
+		</div>
+
+		<div class="kpi-card">
+			<div class="kpi-card__value" id="unread-count">{{ unread_count or 0 }}</div>
+			<div class="kpi-card__separator"></div>
+			<div class="kpi-card__label">Sin Leer</div>
+			<div class="kpi-card__change kpi-card__change--warning">
+				pendientes
+			</div>
+		</div>
+
+		<div class="kpi-card kpi-card--danger">
+			<div class="kpi-card__value" id="high-priority-count">{{ high_priority_count or 0 }}</div>
+			<div class="kpi-card__separator"></div>
+			<div class="kpi-card__label">Alta Prioridad</div>
+			<div class="kpi-card__change kpi-card__change--negative">
+				P0/P1 urgente
+			</div>
+		</div>
+	</div>
+
+	<!-- Filter Tabs -->
+	<div class="wh-section">
+		<div class="wh-alerts-tabs">
+			<button class="wh-alerts-tab active" data-filter="all">
+				Todas
+				<span class="wh-alerts-tab-count" id="tab-count-all">{{ total_count or 0 }}</span>
+			</button>
+			<button class="wh-alerts-tab" data-filter="unread">
+				Sin Leer
+				<span class="wh-alerts-tab-count" id="tab-count-unread">{{ unread_count or 0 }}</span>
+			</button>
+			<button class="wh-alerts-tab" data-filter="high-priority">
+				Alta Prioridad
+				<span class="wh-alerts-tab-count" id="tab-count-high">{{ high_priority_count or 0 }}</span>
+			</button>
+		</div>
+	</div>
+
+	<!-- Notifications List -->
+	<div class="wh-section">
+		<div class="wh-section-header">
+			<h2 class="wh-section-title">Notificaciones</h2>
+			<span class="text-muted text-sm" id="filter-status">Mostrando todas</span>
+		</div>
+
+		<div id="alerts-list" class="wh-alerts-list">
+			{% if notifications %}
+				{% for notification in notifications %}
+				<div class="wh-alert-item {% if not notification.is_read %}unread{% endif %} {% if notification.priority == 'HIGH' %}high-priority{% endif %}"
+					 data-notification-id="{{ notification.name }}"
+					 data-priority="{{ notification.priority }}"
+					 data-read="{{ notification.is_read }}">
+
+					<!-- Priority Indicator -->
+					<div class="wh-notification-priority {{ notification.priority|lower }}">
+						{% if notification.priority == 'HIGH' %}
+						<svg fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+						</svg>
+						{% elif notification.priority == 'MEDIUM' %}
+						<svg fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+						</svg>
+						{% else %}
+						<svg fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-7.536 5.879a1 1 0 001.415 0 3 3 0 014.242 0 1 1 0 001.415-1.415 5 5 0 00-7.072 0 1 1 0 000 1.415z" clip-rule="evenodd"/>
+						</svg>
+						{% endif %}
+					</div>
+
+					<!-- Notification Content -->
+					<div class="wh-alert-content">
+						<div class="wh-alert-header">
+							<div class="wh-alert-title">{{ notification.title }}</div>
+							<div class="wh-alert-time">{{ notification.formatted_time or notification.creation.strftime('%d/%m/%Y %H:%M') if notification.creation else '-' }}</div>
+						</div>
+						<div class="wh-alert-message">{{ notification.message }}</div>
+
+						{% if notification.reference_doctype and notification.reference_name %}
+						<div class="wh-alert-link">
+							<a href="/app/{{ notification.reference_doctype|lower|replace(' ', '-') }}/{{ notification.reference_name }}" target="_blank">
+								Ver {{ notification.reference_doctype }}
+								<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px;">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+								</svg>
+							</a>
+						</div>
+						{% endif %}
+					</div>
+
+					<!-- Actions -->
+					<div class="wh-alert-actions">
+						{% if not notification.is_read %}
+						<button class="wh-alert-action" data-action="mark-read" title="Marcar como leída">
+							<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+							</svg>
+						</button>
+						{% endif %}
+						<button class="wh-alert-action wh-alert-action--delete" data-action="delete" title="Eliminar">
+							<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+							</svg>
+						</button>
+					</div>
+				</div>
+				{% endfor %}
+			{% else %}
+			<div class="wh-alerts-empty">
+				<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px; height: 48px; margin-bottom: 16px; color: #94a3b8;">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+				</svg>
+				<div class="wh-alerts-empty__title">Sin notificaciones</div>
+				<div class="wh-alerts-empty__text">No hay notificaciones para mostrar</div>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+<style>
+/* Alerts Page Styles - Neobrutalismo Editorial */
+
+/* Filter Tabs */
+.wh-alerts-tabs {
+	display: flex;
+	gap: var(--space-2);
+	margin-bottom: var(--space-6);
+	border-bottom: 2px solid var(--border-1);
+	padding-bottom: 2px;
+}
+
+.wh-alerts-tab {
+	padding: var(--space-3) var(--space-4);
+	background: var(--surface-1);
+	border: 2px solid var(--border-1);
+	border-bottom: none;
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	color: var(--text-2);
+	cursor: pointer;
+	transition: all var(--transition);
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	position: relative;
+	top: 2px;
+}
+
+.wh-alerts-tab:hover {
+	background: var(--bg);
+	color: var(--text-1);
+}
+
+.wh-alerts-tab.active {
+	background: var(--primary);
+	color: var(--text-1);
+	border-color: var(--border-1);
+}
+
+.wh-alerts-tab-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 24px;
+	height: 24px;
+	padding: 0 var(--space-2);
+	background: var(--text-1);
+	color: var(--surface-1);
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	font-weight: 700;
+	border: 2px solid var(--border-1);
+}
+
+.wh-alerts-tab.active .wh-alerts-tab-count {
+	background: var(--surface-1);
+	color: var(--text-1);
+}
+
+/* Alerts List */
+.wh-alerts-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.wh-alert-item {
+	background: var(--surface-1);
+	border: 2px solid var(--border-1);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: var(--space-4);
+	display: flex;
+	gap: var(--space-4);
+	transition: transform var(--transition), box-shadow var(--transition);
+	position: relative;
+}
+
+.wh-alert-item:hover {
+	transform: translate(2px, 2px);
+	box-shadow: var(--shadow-hover);
+}
+
+.wh-alert-item.unread {
+	background: #fffce8;
+	border-left: 6px solid var(--primary);
+}
+
+.wh-alert-item.high-priority {
+	background: #fef2f2;
+	border-left: 6px solid #ef4444;
+}
+
+.wh-alert-item.high-priority.unread {
+	background: #fef2f2;
+	border-left: 6px solid #ef4444;
+}
+
+/* Priority Indicator */
+.wh-notification-priority {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 2px solid var(--border-1);
+	border-radius: var(--radius-sm);
+}
+
+.wh-notification-priority.high {
+	background: #ef4444;
+	color: #ffffff;
+}
+
+.wh-notification-priority.medium {
+	background: var(--primary);
+	color: var(--text-1);
+}
+
+.wh-notification-priority.low {
+	background: #e5e7eb;
+	color: #64748b;
+}
+
+.wh-notification-priority svg {
+	width: 18px;
+	height: 18px;
+}
+
+/* Alert Content */
+.wh-alert-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.wh-alert-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--space-4);
+	margin-bottom: var(--space-2);
+}
+
+.wh-alert-title {
+	font-family: var(--font-ui);
+	font-size: var(--text-base);
+	font-weight: 600;
+	color: var(--text-1);
+}
+
+.wh-alert-time {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	color: var(--text-3);
+	white-space: nowrap;
+}
+
+.wh-alert-message {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	color: var(--text-2);
+	line-height: 1.5;
+	margin-bottom: var(--space-3);
+}
+
+.wh-alert-link a {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--accent);
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	transition: color var(--transition);
+}
+
+.wh-alert-link a:hover {
+	color: var(--accent-hover);
+	text-decoration: underline;
+}
+
+/* Alert Actions */
+.wh-alert-actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+
+.wh-alert-action {
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--surface-1);
+	border: 2px solid var(--border-1);
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+	transition: all var(--transition);
+	color: var(--text-2);
+}
+
+.wh-alert-action:hover {
+	background: var(--success);
+	color: var(--surface-1);
+	transform: translate(1px, 1px);
+}
+
+.wh-alert-action--delete:hover {
+	background: var(--danger);
+}
+
+.wh-alert-action svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Empty State */
+.wh-alerts-empty {
+	padding: var(--space-12) var(--space-4);
+	text-align: center;
+	background: var(--surface-1);
+	border: 2px solid var(--border-2);
+	border-radius: var(--radius);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.wh-alerts-empty__title {
+	font-family: var(--font-ui);
+	font-size: var(--text-lg);
+	font-weight: 600;
+	color: var(--text-2);
+	margin-bottom: var(--space-2);
+}
+
+.wh-alerts-empty__text {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	color: var(--text-3);
+}
+
+/* Hide filtered items */
+.wh-alert-item.hidden {
+	display: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+	.kpi-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.wh-alerts-tabs {
+		flex-wrap: wrap;
+	}
+
+	.wh-alert-item {
+		flex-direction: column;
+	}
+
+	.wh-alert-actions {
+		flex-direction: row;
+		justify-content: flex-end;
+	}
+
+	.wh-alert-header {
+		flex-direction: column;
+	}
+
+	.wh-alert-time {
+		align-self: flex-start;
+	}
+}
+</style>
+
+{% endblock %}
+
+{% block script %}
+<script>
+// Alerts Page JavaScript
+(function() {
+	'use strict';
+
+	let currentFilter = 'all';
+	let notifications = [];
+
+	// Initialize on DOM ready
+	document.addEventListener('DOMContentLoaded', function() {
+		initializeFilters();
+		initializeActions();
+		setupRealtimeListener();
+		loadNotifications();
+	});
+
+	// Initialize filter tabs
+	function initializeFilters() {
+		const tabs = document.querySelectorAll('.wh-alerts-tab');
+		tabs.forEach(tab => {
+			tab.addEventListener('click', function() {
+				const filter = this.dataset.filter;
+				setActiveFilter(filter);
+			});
+		});
+	}
+
+	// Set active filter and update UI
+	function setActiveFilter(filter) {
+		currentFilter = filter;
+
+		// Update active tab
+		document.querySelectorAll('.wh-alerts-tab').forEach(tab => {
+			tab.classList.toggle('active', tab.dataset.filter === filter);
+		});
+
+		// Update filter status text
+		const statusTexts = {
+			'all': 'Mostrando todas',
+			'unread': 'Mostrando sin leer',
+			'high-priority': 'Mostrando alta prioridad'
+		};
+		document.getElementById('filter-status').textContent = statusTexts[filter] || 'Mostrando todas';
+
+		// Filter notifications
+		filterNotifications();
+	}
+
+	// Filter notifications based on current filter
+	function filterNotifications() {
+		const items = document.querySelectorAll('.wh-alert-item');
+
+		items.forEach(item => {
+			const isRead = item.dataset.read === 'True';
+			const isHighPriority = item.dataset.priority === 'HIGH';
+
+			let shouldShow = false;
+
+			switch(currentFilter) {
+				case 'all':
+					shouldShow = true;
+					break;
+				case 'unread':
+					shouldShow = !isRead;
+					break;
+				case 'high-priority':
+					shouldShow = isHighPriority;
+					break;
+			}
+
+			item.classList.toggle('hidden', !shouldShow);
+		});
+
+		// Check if all items are hidden and show empty state
+		const visibleItems = document.querySelectorAll('.wh-alert-item:not(.hidden)');
+		const emptyState = document.querySelector('.wh-alerts-empty');
+
+		if (visibleItems.length === 0 && !emptyState) {
+			showEmptyState();
+		} else if (visibleItems.length > 0 && emptyState) {
+			emptyState.remove();
+		}
+	}
+
+	// Show empty state
+	function showEmptyState() {
+		const alertsList = document.getElementById('alerts-list');
+		const emptyHTML = `
+			<div class="wh-alerts-empty">
+				<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px; height: 48px; margin-bottom: 16px; color: #94a3b8;">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+				</svg>
+				<div class="wh-alerts-empty__title">Sin notificaciones</div>
+				<div class="wh-alerts-empty__text">No hay notificaciones que coincidan con el filtro</div>
+			</div>
+		`;
+		alertsList.insertAdjacentHTML('beforeend', emptyHTML);
+	}
+
+	// Initialize action buttons
+	function initializeActions() {
+		// Mark all as read
+		const markAllBtn = document.getElementById('mark-all-read-btn');
+		if (markAllBtn) {
+			markAllBtn.addEventListener('click', markAllAsRead);
+		}
+
+		// Refresh button
+		const refreshBtn = document.getElementById('refresh-alerts-btn');
+		if (refreshBtn) {
+			refreshBtn.addEventListener('click', loadNotifications);
+		}
+
+		// Individual item actions
+		document.addEventListener('click', function(e) {
+			const action = e.target.closest('[data-action]');
+			if (!action) return;
+
+			const item = action.closest('.wh-alert-item');
+			const notificationId = item.dataset.notificationId;
+
+			switch(action.dataset.action) {
+				case 'mark-read':
+					markAsRead(notificationId, item);
+					break;
+				case 'delete':
+					deleteNotification(notificationId, item);
+					break;
+			}
+		});
+	}
+
+	// Mark single notification as read
+	function markAsRead(notificationId, itemElement) {
+		frappe.call({
+			method: 'workhub_frappe_app.api.notifications.mark_read',
+			args: { notification_id: notificationId },
+			callback: function(r) {
+				if (r.message && r.message.success) {
+					// Obtener prioridad antes de actualizar
+					const isHighPriority = itemElement.dataset.priority === 'HIGH';
+
+					// Update UI
+					itemElement.classList.remove('unread');
+					itemElement.classList.remove('high-priority');
+					itemElement.dataset.read = 'True';
+
+					// Remove mark as read button
+					const markReadBtn = itemElement.querySelector('[data-action="mark-read"]');
+					if (markReadBtn) {
+						markReadBtn.remove();
+					}
+
+					// Update counts
+					updateCounts();
+
+					// Re-apply filter to hide if needed
+					filterNotifications();
+				}
+			}
+		});
+	}
+
+	// Mark all notifications as read
+	function markAllAsRead() {
+		frappe.call({
+			method: 'workhub_frappe_app.api.notifications.mark_all_read',
+			callback: function(r) {
+				if (r.message && r.message.success) {
+					// Update all items in UI
+					document.querySelectorAll('.wh-alert-item.unread').forEach(item => {
+						item.classList.remove('unread');
+						item.dataset.read = 'True';
+
+						const markReadBtn = item.querySelector('[data-action="mark-read"]');
+						if (markReadBtn) {
+							markReadBtn.remove();
+						}
+					});
+
+					// Update counts
+					updateCounts();
+
+					// Show success message
+					frappe.show_alert({
+						message: 'Todas las notificaciones marcadas como leídas',
+						indicator: 'green'
+					}, 3);
+				}
+			}
+		});
+	}
+
+	// Delete notification
+	function deleteNotification(notificationId, itemElement) {
+		if (!confirm('¿Eliminar esta notificación?')) return;
+
+		frappe.call({
+			method: 'frappe.client.delete',
+			args: {
+				doctype: 'WH Notification',
+				name: notificationId
+			},
+			callback: function(r) {
+				// Remove from UI
+				itemElement.style.opacity = '0';
+				setTimeout(() => {
+					itemElement.remove();
+					updateCounts();
+
+					// Check if list is empty
+					const remainingItems = document.querySelectorAll('.wh-alert-item');
+					if (remainingItems.length === 0) {
+						showEmptyState();
+					}
+				}, 300);
+
+				frappe.show_alert({
+					message: 'Notificación eliminada',
+					indicator: 'red'
+				}, 2);
+			}
+		});
+	}
+
+	// Update KPI counts
+	function updateCounts() {
+		frappe.call({
+			method: 'workhub_frappe_app.api.notifications.get_unread_count',
+			callback: function(r) {
+				if (r.message) {
+					// Update KPI cards
+					const unreadEl = document.getElementById('unread-count');
+					const highPriorityEl = document.getElementById('high-priority-count');
+
+					if (unreadEl) unreadEl.textContent = r.message.unread_count;
+					if (highPriorityEl) highPriorityEl.textContent = r.message.high_priority_count;
+
+					// Update tab counts
+					const tabUnread = document.getElementById('tab-count-unread');
+					const tabHigh = document.getElementById('tab-count-high');
+
+					if (tabUnread) tabUnread.textContent = r.message.unread_count;
+					if (tabHigh) tabHigh.textContent = r.message.high_priority_count;
+
+					// Update total count
+					const totalItems = document.querySelectorAll('.wh-alert-item').length;
+					const totalEl = document.getElementById('total-count');
+					const tabAll = document.getElementById('tab-count-all');
+
+					if (totalEl) totalEl.textContent = totalItems;
+					if (tabAll) tabAll.textContent = totalItems;
+				}
+			}
+		});
+	}
+
+	// Load notifications from API
+	function loadNotifications() {
+		frappe.call({
+			method: 'workhub_frappe_app.api.notifications.get_notifications',
+			callback: function(r) {
+				if (r.message) {
+					notifications = r.message;
+					updateCounts();
+				}
+			}
+		});
+	}
+
+	// Setup real-time listener for new notifications
+	function setupRealtimeListener() {
+		if (!frappe.realtime) return;
+
+		frappe.realtime.on('wh_notification', function(data) {
+			try {
+				// Validar datos
+				if (!data || !data.name) {
+					console.warn('Notificación en tiempo real sin datos válidos', data);
+					return;
+				}
+
+				// Agregar notificación a la lista de forma dinámica
+				addNotificationToPage(data);
+
+				// Actualizar contadores
+				updateCounts();
+
+				// Mostrar alerta toast para notificaciones de alta prioridad
+				if (data.priority === 'HIGH') {
+					frappe.show_alert({
+						message: `<strong>Alta Prioridad:</strong> ${data.title}`,
+						indicator: 'red'
+					}, 5);
+				}
+			} catch (error) {
+				console.error('Error procesando notificación en tiempo real:', error);
+			}
+		});
+	}
+
+	// Add new notification to page dynamically
+	function addNotificationToPage(notification) {
+		const alertsList = document.getElementById('alerts-list');
+		if (!alertsList) return;
+
+		// Remove empty state if present
+		const emptyState = alertsList.querySelector('.wh-alerts-empty');
+		if (emptyState) {
+			emptyState.remove();
+		}
+
+		// Crear elemento HTML de notificación
+		const notificationHTML = createNotificationHTML(notification);
+
+		// Insertar al principio de la lista
+		alertsList.insertAdjacentHTML('afterbegin', notificationHTML);
+
+		// Aplicar filtro actual
+		filterNotifications();
+
+		// Animación de entrada
+		const newItem = alertsList.querySelector('.wh-alert-item');
+		if (newItem) {
+			newItem.style.opacity = '0';
+			newItem.style.transform = 'translateY(-20px)';
+			setTimeout(() => {
+				newItem.style.transition = 'all 0.3s ease';
+				newItem.style.opacity = '1';
+				newItem.style.transform = 'translateY(0)';
+			}, 10);
+		}
+	}
+
+	// Create notification HTML from data
+	function createNotificationHTML(notification) {
+		const isUnread = !notification.is_read && !notification.read;
+		const isHighPriority = notification.priority === 'HIGH';
+
+		// Formatear fecha
+		let formattedTime = notification.formatted_time;
+		if (!formattedTime && notification.creation) {
+			const date = new Date(notification.creation);
+			formattedTime = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+		}
+
+		// Determinar icono según prioridad
+		let priorityIcon = '';
+		if (notification.priority === 'HIGH') {
+			priorityIcon = `<svg fill="currentColor" viewBox="0 0 20 20">
+				<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+			</svg>`;
+		} else if (notification.priority === 'MEDIUM') {
+			priorityIcon = `<svg fill="currentColor" viewBox="0 0 20 20">
+				<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+			</svg>`;
+		} else {
+			priorityIcon = `<svg fill="currentColor" viewBox="0 0 20 20">
+				<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-7.536 5.879a1 1 0 001.415 0 3 3 0 014.242 0 1 1 0 001.415-1.415 5 5 0 00-7.072 0 1 1 0 000 1.415z" clip-rule="evenodd"/>
+			</svg>`;
+		}
+
+		// Construir link si hay referencia
+		let linkHTML = '';
+		if (notification.reference_doctype && notification.reference_name) {
+			const doctype = notification.reference_doctype.toLowerCase().replace(' ', '-');
+			linkHTML = `
+				<div class="wh-alert-link">
+					<a href="/app/${doctype}/${notification.reference_name}" target="_blank">
+						Ver ${notification.reference_doctype}
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+						</svg>
+					</a>
+				</div>
+			`;
+		}
+
+		// Construir botón "marcar como leída" si es no leída
+		let markReadBtn = '';
+		if (isUnread) {
+			markReadBtn = `
+				<button class="wh-alert-action" data-action="mark-read" title="Marcar como leída">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+					</svg>
+				</button>
+			`;
+		}
+
+		return `
+			<div class="wh-alert-item ${isUnread ? 'unread' : ''} ${isHighPriority ? 'high-priority' : ''}"
+				 data-notification-id="${notification.name}"
+				 data-priority="${notification.priority}"
+				 data-read="${!isUnread}">
+				<div class="wh-notification-priority ${notification.priority.toLowerCase()}">
+					${priorityIcon}
+				</div>
+				<div class="wh-alert-content">
+					<div class="wh-alert-header">
+						<div class="wh-alert-title">${notification.title || 'Notificación'}</div>
+						<div class="wh-alert-time">${formattedTime || '-'}</div>
+					</div>
+					<div class="wh-alert-message">${notification.message || ''}</div>
+					${linkHTML}
+				</div>
+				<div class="wh-alert-actions">
+					${markReadBtn}
+					<button class="wh-alert-action wh-alert-action--delete" data-action="delete" title="Eliminar">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+						</svg>
+					</button>
+				</div>
+			</div>
+		`;
+	}
+
+})();
+</script>
+{% endblock %}

@@ -138,8 +138,7 @@ def get_active_campaigns(limit=50, offset=0):
         fields=["name", "campaign_name", "creation"],
         limit_page_length=int(limit),
         limit_start=int(offset),
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     # Add default values for fields that may not exist
@@ -180,8 +179,7 @@ def get_recent_posts(limit=20):
             fields=["name", "platform", "content", "post_date", "status",
                     "likes", "shares", "comments", "reach"],
             limit_page_length=int(limit),
-            order_by="post_date desc",
-            ignore_permissions=True
+            order_by="post_date desc"
         )
         return posts
     except Exception:
@@ -313,7 +311,7 @@ def get_campaign_performance(campaign_name):
     if not campaign_name:
         frappe.throw(_("Campaign name is required"))
 
-    campaign = frappe.get_doc("Campaign", campaign_name, ignore_permissions=True)
+    campaign = frappe.get_doc("Campaign", campaign_name)
 
     # Get leads
     leads = []
@@ -321,8 +319,7 @@ def get_campaign_performance(campaign_name):
         leads = frappe.get_list("Lead",
             filters={"campaign_name": campaign_name},
             fields=["name", "lead_name", "status", "source", "creation"],
-            order_by="creation desc",
-            ignore_permissions=True
+            order_by="creation desc"
         )
     except Exception:
         pass
@@ -334,8 +331,7 @@ def get_campaign_performance(campaign_name):
             filters={"ref_type": "Campaign", "ref_name": campaign_name},
             fields=["name", "subject", "event_type", "starts_on"],
             order_by="starts_on desc",
-            limit_page_length=10,
-            ignore_permissions=True
+            limit_page_length=10
         )
     except Exception:
         pass

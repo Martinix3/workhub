@@ -1,0 +1,399 @@
+[
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Customer Onboarding",
+    "description": "Complete workflow for onboarding new customers, from initial contact through successful first order and follow-up",
+    "department": "SALES",
+    "default_duration_days": 30,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Initial contact and needs assessment",
+        "description": "First meeting with customer to understand their needs, budget, and timeline",
+        "offset_days": 0,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Executive",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Prepare customized proposal",
+        "description": "Create proposal tailored to customer needs including pricing, timeline, and deliverables",
+        "offset_days": 2,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 1,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 3,
+        "title": "Send proposal and follow up",
+        "description": "Send proposal via email and schedule follow-up call to address questions",
+        "offset_days": 5,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Negotiate terms and close deal",
+        "description": "Address objections, negotiate pricing if needed, and close the sale",
+        "offset_days": 7,
+        "duration_days": 5,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 3,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 5,
+        "title": "Create customer record in ERPNext",
+        "description": "Set up customer in system with all contact details, billing info, and credit terms",
+        "offset_days": 12,
+        "duration_days": 1,
+        "default_assignee_role": "Sales Admin",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Process first order",
+        "description": "Create and submit first sales order, coordinate with operations for fulfillment",
+        "offset_days": 13,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Admin",
+        "depends_on_sequence": 5,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 7,
+        "title": "Coordinate delivery with operations",
+        "description": "Work with operations team to ensure smooth first delivery",
+        "offset_days": 15,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 6,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Post-delivery follow-up call",
+        "description": "Call customer to ensure satisfaction with first order and address any issues",
+        "offset_days": 18,
+        "duration_days": 1,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 7,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Set up recurring order schedule (if applicable)",
+        "description": "Establish regular ordering cadence and automated reminders",
+        "offset_days": 19,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Admin",
+        "depends_on_sequence": 8,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 10,
+        "title": "30-day relationship review",
+        "description": "Review customer performance, identify upsell opportunities, address any concerns",
+        "offset_days": 28,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 9,
+        "is_milestone": 1
+      }
+    ]
+  },
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Sales Campaign",
+    "description": "End-to-end workflow for planning, executing, and analyzing a sales campaign targeting specific customer segments",
+    "department": "SALES",
+    "default_duration_days": 45,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Define campaign objectives and targets",
+        "description": "Set clear goals for revenue, new customers, and product mix. Identify target customer segments",
+        "offset_days": 0,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Manager",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Develop campaign messaging and offers",
+        "description": "Create compelling offers, discounts, and promotional messaging aligned with objectives",
+        "offset_days": 3,
+        "duration_days": 4,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 1,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 3,
+        "title": "Prepare customer prospect list",
+        "description": "Segment database, clean data, create targeted lists with contact information",
+        "offset_days": 7,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Admin",
+        "depends_on_sequence": 1,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Coordinate with marketing team",
+        "description": "Align on campaign materials, email templates, social media assets, and timing",
+        "offset_days": 10,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 2,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 5,
+        "title": "Train sales team on campaign",
+        "description": "Brief team on objectives, messaging, offers, objection handling, and tracking procedures",
+        "offset_days": 12,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Launch campaign - Week 1 outreach",
+        "description": "Initial contact wave via email, calls, and social media to first segment",
+        "offset_days": 14,
+        "duration_days": 5,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 5,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 7,
+        "title": "Follow-up with engaged prospects - Week 1",
+        "description": "Call and meet with prospects who showed interest in initial outreach",
+        "offset_days": 19,
+        "duration_days": 5,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 6,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Week 1 performance review",
+        "description": "Analyze response rates, pipeline created, and adjust tactics for Week 2",
+        "offset_days": 21,
+        "duration_days": 1,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 7,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Launch campaign - Week 2 outreach",
+        "description": "Second contact wave to remaining segments plus re-engagement of Week 1 non-responders",
+        "offset_days": 22,
+        "duration_days": 5,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 8,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 10,
+        "title": "Follow-up with engaged prospects - Week 2",
+        "description": "Continue pipeline development with interested prospects",
+        "offset_days": 27,
+        "duration_days": 5,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 9,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Close deals from campaign pipeline",
+        "description": "Focus on converting qualified leads to closed deals before campaign end",
+        "offset_days": 32,
+        "duration_days": 10,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 10,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 12,
+        "title": "Final campaign analysis and report",
+        "description": "Compile results vs targets, ROI analysis, lessons learned, recommendations for future campaigns",
+        "offset_days": 42,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 11,
+        "is_milestone": 1
+      }
+    ]
+  },
+  {
+    "doctype": "WH Project Template",
+    "template_name": "Deal Pipeline Workflow",
+    "description": "Standard workflow for managing a sales opportunity from lead qualification through deal closure and handoff",
+    "department": "SALES",
+    "default_duration_days": 60,
+    "is_active": 1,
+    "tasks": [
+      {
+        "sequence": 1,
+        "title": "Lead qualification and discovery",
+        "description": "Qualify lead using BANT criteria (Budget, Authority, Need, Timeline). Schedule discovery call",
+        "offset_days": 0,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Executive",
+        "is_milestone": 0
+      },
+      {
+        "sequence": 2,
+        "title": "Conduct needs assessment meeting",
+        "description": "Deep-dive call/meeting to understand pain points, requirements, decision criteria, and stakeholders",
+        "offset_days": 3,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 1,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 3,
+        "title": "Document opportunity in CRM",
+        "description": "Create opportunity record with estimated value, timeline, probability, and next steps",
+        "offset_days": 5,
+        "duration_days": 1,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 2,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 4,
+        "title": "Develop solution and pricing",
+        "description": "Design solution that meets customer needs, calculate pricing with appropriate margins",
+        "offset_days": 6,
+        "duration_days": 5,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 3,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 5,
+        "title": "Internal proposal review",
+        "description": "Review solution and pricing with sales manager, get approval for special terms if needed",
+        "offset_days": 11,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 4,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 6,
+        "title": "Prepare and send formal proposal",
+        "description": "Create professional proposal document with solution details, pricing, timeline, and terms",
+        "offset_days": 13,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 5,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 7,
+        "title": "Schedule proposal presentation",
+        "description": "Present proposal to decision-makers, walk through solution, address questions",
+        "offset_days": 16,
+        "duration_days": 5,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 6,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 8,
+        "title": "Handle objections and concerns",
+        "description": "Address any concerns raised during presentation, provide additional information as needed",
+        "offset_days": 21,
+        "duration_days": 7,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 7,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 9,
+        "title": "Negotiate final terms",
+        "description": "Work through pricing, payment terms, delivery schedule, and contractual details",
+        "offset_days": 28,
+        "duration_days": 10,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 8,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 10,
+        "title": "Obtain internal deal approval",
+        "description": "Get final sign-off from management for negotiated terms and special conditions",
+        "offset_days": 38,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 9,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 11,
+        "title": "Prepare and send contract",
+        "description": "Draft contract or sales agreement incorporating all agreed terms, send for customer signature",
+        "offset_days": 41,
+        "duration_days": 3,
+        "default_assignee_role": "Sales Admin",
+        "depends_on_sequence": 10,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 12,
+        "title": "Close deal - obtain signed contract",
+        "description": "Secure signed contract from customer, celebrate the win!",
+        "offset_days": 44,
+        "duration_days": 10,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 11,
+        "is_milestone": 1
+      },
+      {
+        "sequence": 13,
+        "title": "Create customer and order in ERPNext",
+        "description": "Set up customer master data and create initial sales order",
+        "offset_days": 54,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Admin",
+        "depends_on_sequence": 12,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 14,
+        "title": "Handoff to operations/delivery team",
+        "description": "Brief operations team on customer requirements, timeline, and special considerations",
+        "offset_days": 56,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Executive",
+        "depends_on_sequence": 13,
+        "is_milestone": 0
+      },
+      {
+        "sequence": 15,
+        "title": "Kick-off meeting with customer",
+        "description": "Introductions between customer and delivery team, confirm timeline and expectations",
+        "offset_days": 58,
+        "duration_days": 2,
+        "default_assignee_role": "Sales Manager",
+        "depends_on_sequence": 14,
+        "is_milestone": 1
+      }
+    ]
+  }
+]

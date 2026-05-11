@@ -11,6 +11,10 @@ def _pick_first_name(doctype: str) -> str | None:
 
 
 def _ensure_customer(*, customer_name: str = "SB Test Customer") -> str:
+	"""
+	SECURITY: Bootstrap utility - creates test customer for development setup.
+	Not exposed as API endpoint. Called by ensure_erpnext_bootstrap() which runs as Administrator.
+	"""
 	if frappe.db.exists("Customer", {"customer_name": customer_name}):
 		name = frappe.db.get_value("Customer", {"customer_name": customer_name}, "name")
 		return str(name or customer_name)
@@ -31,11 +35,15 @@ def _ensure_customer(*, customer_name: str = "SB Test Customer") -> str:
 			"customer_type": "Company",
 		}
 	)
-	doc.insert(ignore_permissions=True)
+	doc.insert(ignore_permissions=True)  # SECURITY: Safe - bootstrap utility running as Administrator
 	return str(doc.name)
 
 
 def _ensure_supplier(*, supplier_name: str = "SB Test Supplier") -> str:
+	"""
+	SECURITY: Bootstrap utility - creates test supplier for development setup.
+	Not exposed as API endpoint. Called by ensure_erpnext_bootstrap() which runs as Administrator.
+	"""
 	if frappe.db.exists("Supplier", {"supplier_name": supplier_name}):
 		name = frappe.db.get_value("Supplier", {"supplier_name": supplier_name}, "name")
 		return str(name or supplier_name)
@@ -52,11 +60,15 @@ def _ensure_supplier(*, supplier_name: str = "SB Test Supplier") -> str:
 			"supplier_type": "Company",
 		}
 	)
-	doc.insert(ignore_permissions=True)
+	doc.insert(ignore_permissions=True)  # SECURITY: Safe - bootstrap utility running as Administrator
 	return str(doc.name)
 
 
 def _ensure_item(*, item_code: str = "SB-TEST-ITEM", item_name: str = "SB Test Item") -> str:
+	"""
+	SECURITY: Bootstrap utility - creates test items for development setup.
+	Not exposed as API endpoint. Called by ensure_erpnext_bootstrap() which runs as Administrator.
+	"""
 	if frappe.db.exists("Item", item_code):
 		if item_code == "SB-TEST-ITEM":
 			# Enable batch tracking (required to create Batch in Production flow).
@@ -97,10 +109,14 @@ def _ensure_item(*, item_code: str = "SB-TEST-ITEM", item_name: str = "SB Test I
 			"batch_number_series": "BATCH-.#####" if item_code == "SB-TEST-ITEM" else None,
 		}
 	)
-	doc.insert(ignore_permissions=True)
+	doc.insert(ignore_permissions=True)  # SECURITY: Safe - bootstrap utility running as Administrator
 	return str(doc.name)
 
 def _ensure_bom(*, company: str, production_item: str, raw_item: str) -> str:
+	"""
+	SECURITY: Bootstrap utility - creates test BOM for development setup.
+	Not exposed as API endpoint. Called by ensure_erpnext_bootstrap() which runs as Administrator.
+	"""
 	if not company:
 		raise RuntimeError("No se pudo determinar company para BOM seed")
 	if not production_item or not raw_item:
@@ -134,7 +150,7 @@ def _ensure_bom(*, company: str, production_item: str, raw_item: str) -> str:
 			],
 		}
 	)
-	doc.insert(ignore_permissions=True)
+	doc.insert(ignore_permissions=True)  # SECURITY: Safe - bootstrap utility running as Administrator
 	doc.submit()
 	return str(doc.name)
 
@@ -158,6 +174,10 @@ def _pick_warehouse(*, company: str, keywords: list[str]) -> str | None:
 
 
 def _ensure_company_warehouse_defaults(*, company_name: str) -> dict[str, str | None]:
+	"""
+	SECURITY: Bootstrap utility - sets default warehouses for company development setup.
+	Not exposed as API endpoint. Called by ensure_erpnext_bootstrap() which runs as Administrator.
+	"""
 	if not company_name:
 		raise RuntimeError("company_name vacío")
 	if not frappe.db.exists("Company", company_name):
@@ -177,7 +197,7 @@ def _ensure_company_warehouse_defaults(*, company_name: str) -> dict[str, str | 
 		changed = True
 
 	if changed:
-		company.save(ignore_permissions=True)
+		company.save(ignore_permissions=True)  # SECURITY: Safe - bootstrap utility running as Administrator
 
 	return {
 		"default_wip_warehouse": str(getattr(company, "default_wip_warehouse", "") or "").strip() or None,
@@ -190,6 +210,9 @@ def _ensure_test_stock(*, company: str, item_code: str, min_qty: float = 5.0) ->
 	Añade stock para poder submit de Delivery Note en pruebas locales.
 
 	Esto evita el error típico de NegativeStockError en el flujo Ventas.
+
+	SECURITY: Bootstrap utility - creates test stock for development setup.
+	Not exposed as API endpoint. Called by ensure_erpnext_bootstrap() which runs as Administrator.
 	"""
 
 	if not company:
@@ -236,7 +259,7 @@ def _ensure_test_stock(*, company: str, item_code: str, min_qty: float = 5.0) ->
 			],
 		}
 	)
-	doc.insert(ignore_permissions=True)
+	doc.insert(ignore_permissions=True)  # SECURITY: Safe - bootstrap utility running as Administrator
 	doc.submit()
 	return {"ok": True, "warehouse": warehouse, "actual_qty": actual, "created": True, "stock_entry": str(doc.name)}
 
@@ -260,6 +283,10 @@ def ensure_erpnext_bootstrap(
 	- UOM base (incl. "Nos")
 	- Warehouses básicos, price lists, stock settings, etc.
 	- Company + Chart of Accounts (standard template)
+
+	SECURITY: Bootstrap/setup utility function - not exposed as API endpoint.
+	Runs as Administrator (frappe.set_user("Administrator")) for initial development setup.
+	Used for local development environment initialization only.
 	"""
 
 	frappe.set_user("Administrator")

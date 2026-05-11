@@ -2,9 +2,9 @@ import type { HACCPMonitorProps, CriticalControlPoint, CCPReading, CCPStatus } f
 import { AlertTriangle, CheckCircle, Clock, Shield, Eye, Plus } from 'lucide-react'
 
 const statusConfig: Record<CCPStatus, { bg: string; border: string; text: string; icon: React.ReactNode }> = {
-  normal: { bg: 'bg-green-50 dark:bg-green-950', border: 'border-green-500', text: 'text-green-700 dark:text-green-300', icon: <CheckCircle size={16} /> },
-  warning: { bg: 'bg-amber-50 dark:bg-amber-950', border: 'border-amber-500', text: 'text-amber-700 dark:text-amber-300', icon: <AlertTriangle size={16} /> },
-  critical: { bg: 'bg-red-50 dark:bg-red-950', border: 'border-red-500', text: 'text-red-700 dark:text-red-300', icon: <AlertTriangle size={16} /> },
+  normal: { bg: 'bg-success-light dark:bg-success-dark', border: 'border-success-dark', text: 'text-success-text dark:text-success', icon: <CheckCircle size={16} /> },
+  warning: { bg: 'bg-gold-light dark:bg-gold-dark/20', border: 'border-gold-dark', text: 'text-gold-dark dark:text-gold', icon: <AlertTriangle size={16} /> },
+  critical: { bg: 'bg-error-light dark:bg-error-dark', border: 'border-error-dark', text: 'text-error-text dark:text-error', icon: <AlertTriangle size={16} /> },
 }
 
 const hazardIcons: Record<string, React.ReactNode> = {
@@ -23,11 +23,10 @@ function CCPCard({ ccp, onRecord }: CCPCardProps) {
 
   return (
     <div className={`
-      bg-white dark:bg-stone-900
-      border-2 border-stone-900 dark:border-stone-100
+      bg-white dark:bg-neutral-900
+      border border-neutral-200 dark:border-neutral-100
       border-l-4 ${status.border}
       p-4
-      shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
     `}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -35,8 +34,8 @@ function CCPCard({ ccp, onRecord }: CCPCardProps) {
             {status.icon}
           </div>
           <div>
-            <h3 className="font-medium text-stone-900 dark:text-stone-100">{ccp.name}</h3>
-            <div className="flex items-center gap-1 text-xs text-stone-500">
+            <h3 className="font-medium text-neutral-900 dark:text-neutral-100">{ccp.name}</h3>
+            <div className="flex items-center gap-1 text-xs text-neutral-500">
               {hazardIcons[ccp.hazardType]}
               <span className="capitalize">{ccp.hazardType}</span>
             </div>
@@ -46,29 +45,29 @@ function CCPCard({ ccp, onRecord }: CCPCardProps) {
 
       <div className="space-y-3">
         <div>
-          <div className="text-xs uppercase tracking-wider text-stone-400 mb-1">Limite Critico</div>
-          <div className="font-mono text-sm text-stone-700 dark:text-stone-300">{ccp.criticalLimit}</div>
+          <div className="text-xs uppercase tracking-wider text-neutral-400 mb-1">Limite Critico</div>
+          <div className="font-mono text-sm text-neutral-700 dark:text-neutral-300">{ccp.criticalLimit}</div>
         </div>
 
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wider text-stone-400 mb-1">Valor Actual</div>
+            <div className="text-xs uppercase tracking-wider text-neutral-400 mb-1">Valor Actual</div>
             <div className={`font-mono text-2xl font-bold ${status.text}`}>
               {ccp.currentValue || '--'}
             </div>
           </div>
           {ccp.lastReading && (
             <div className="text-right">
-              <div className="text-xs uppercase tracking-wider text-stone-400 mb-1">Ultima Lectura</div>
-              <div className="text-xs text-stone-500">
+              <div className="text-xs uppercase tracking-wider text-neutral-400 mb-1">Ultima Lectura</div>
+              <div className="text-xs text-neutral-500">
                 {new Date(ccp.lastReading).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           )}
         </div>
 
-        <div className="text-xs text-stone-500">
-          <span className="text-stone-400">Frecuencia:</span> {ccp.frequency}
+        <div className="text-xs text-neutral-500">
+          <span className="text-neutral-400">Frecuencia:</span> {ccp.frequency}
         </div>
       </div>
 
@@ -77,9 +76,9 @@ function CCPCard({ ccp, onRecord }: CCPCardProps) {
         className="
           mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2
           text-xs uppercase tracking-wider font-medium
-          text-stone-700 dark:text-stone-300
-          border border-stone-300 dark:border-stone-600
-          hover:bg-stone-100 dark:hover:bg-stone-800
+          text-neutral-700 dark:text-neutral-300
+          border border-neutral-300 dark:border-neutral-600
+          hover:bg-neutral-100 dark:hover:bg-neutral-800
           transition-colors
         "
       >
@@ -106,13 +105,13 @@ function AlertRow({ reading, onAcknowledge }: AlertRowProps) {
       <div className="flex items-start gap-3">
         <div className={status.text}>{status.icon}</div>
         <div>
-          <div className="font-medium text-stone-900 dark:text-stone-100">
+          <div className="font-medium text-neutral-900 dark:text-neutral-100">
             {reading.ccpName}: {reading.value}
           </div>
-          <div className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+          <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             {reading.correctiveActionTaken || 'Accion correctiva pendiente'}
           </div>
-          <div className="flex items-center gap-2 mt-2 text-xs text-stone-400">
+          <div className="flex items-center gap-2 mt-2 text-xs text-neutral-400">
             <Clock size={12} />
             {new Date(reading.timestamp).toLocaleString('es-MX')}
             {reading.lotNumber && (
@@ -127,7 +126,7 @@ function AlertRow({ reading, onAcknowledge }: AlertRowProps) {
       {onAcknowledge && (
         <button
           onClick={onAcknowledge}
-          className="px-3 py-1.5 text-xs uppercase tracking-wider font-medium text-stone-700 dark:text-stone-300 border border-stone-300 dark:border-stone-600 hover:bg-white dark:hover:bg-stone-800 transition-colors"
+          className="px-3 py-1.5 text-xs uppercase tracking-wider font-medium text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 hover:bg-white dark:hover:bg-neutral-800 transition-colors"
         >
           Atender
         </button>
@@ -154,24 +153,24 @@ export function HACCPMonitor({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
+          <h1 className="font-heading text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
             Monitor HACCP
           </h1>
-          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             Puntos Criticos de Control en tiempo real
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {criticalCount > 0 && (
-            <div className="inline-flex items-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300">
+            <div className="inline-flex items-center gap-2 px-3 py-2 bg-error-light dark:bg-error-dark text-error-text dark:text-error">
               <AlertTriangle size={16} />
               <span className="font-mono font-bold">{criticalCount}</span>
               <span className="text-xs uppercase">Critico</span>
             </div>
           )}
           {warningCount > 0 && (
-            <div className="inline-flex items-center gap-2 px-3 py-2 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300">
+            <div className="inline-flex items-center gap-2 px-3 py-2 bg-gold-light dark:bg-gold-dark text-gold-dark dark:text-gold">
               <AlertTriangle size={16} />
               <span className="font-mono font-bold">{warningCount}</span>
               <span className="text-xs uppercase">Alerta</span>
@@ -183,11 +182,11 @@ export function HACCPMonitor({
       {/* Active Alerts */}
       {activeAlerts.length > 0 && (
         <div className="mb-8">
-          <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
-            <AlertTriangle size={20} className="text-red-500" />
+          <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+            <AlertTriangle size={20} className="text-error" />
             Alertas Activas
           </h2>
-          <div className="space-y-2 bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100">
+          <div className="space-y-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100">
             {activeAlerts.map((reading) => (
               <AlertRow
                 key={reading.id}
@@ -204,16 +203,16 @@ export function HACCPMonitor({
         <div key={plan.id} className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+              <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100">
                 {plan.productName}
               </h2>
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-neutral-500">
                 Plan HACCP v{plan.version} | Vigente desde {plan.effectiveDate}
               </p>
             </div>
             <button
               onClick={() => onViewPlan?.(plan.id)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs uppercase tracking-wider font-medium text-stone-700 dark:text-stone-300 border border-stone-300 dark:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs uppercase tracking-wider font-medium text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <Eye size={14} />
               Ver Plan

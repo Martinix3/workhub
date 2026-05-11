@@ -7,6 +7,11 @@
   "date",
   "column_break_1",
   "user",
+  "section_break_time",
+  "hours",
+  "minutes",
+  "column_break_time",
+  "duration_hours",
   "section_break_2",
   "notes"
  ],
@@ -29,6 +34,34 @@
    "label": "Usuario",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_time",
+   "fieldtype": "Section Break",
+   "label": "Tiempo"
+  },
+  {
+   "fieldname": "hours",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Horas"
+  },
+  {
+   "fieldname": "minutes",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Minutos"
+  },
+  {
+   "fieldname": "column_break_time",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "duration_hours",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Duración (Horas)",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_2",

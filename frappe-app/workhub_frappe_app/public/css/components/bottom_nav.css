@@ -1,5 +1,6 @@
 /**
  * Bottom Navigation - Mobile Only
+ * Touch-optimized with safe area insets for notched devices
  */
 
 /* === Bottom Nav Container === */
@@ -9,11 +10,17 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: var(--mobile-bottom-nav-height); /* 64px + safe-area-bottom */
     background: #ffffff;
     border-top: 2px solid #0f172a;
     z-index: 1000;
-    padding: 0 8px;
+    padding: 0 var(--space-2); /* 8px using design system */
+    padding-bottom: var(--safe-area-bottom); /* Safe area for home indicator */
+
+    /* GPU acceleration for smooth performance */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
 }
 
 /* === Nav Items Container === */
@@ -21,9 +28,10 @@
     display: flex;
     align-items: center;
     justify-content: space-around;
-    height: 100%;
+    height: 64px; /* Fixed height, padding handles safe area */
     max-width: 600px;
     margin: 0 auto;
+    gap: var(--space-1); /* 4px gap between items */
 }
 
 /* === Nav Item === */
@@ -33,51 +41,102 @@
     align-items: center;
     justify-content: center;
     flex: 1;
-    padding: 8px;
+    min-height: var(--touch-target-min); /* 44px minimum touch target */
+    min-width: var(--touch-target-min);
+    padding: var(--space-1) var(--space-2); /* 4px 8px */
     cursor: pointer;
-    transition: all 0.1s ease;
-    color: #64748b;
+    transition: all var(--mobile-transition-fast); /* 200ms smooth transition */
+    color: #64748b; /* Slate 400 - inactive */
     text-decoration: none;
     position: relative;
+    border-radius: 0; /* Neobrutalismo - no rounded corners */
+
+    /* Better touch feedback */
+    -webkit-tap-highlight-color: rgba(245, 206, 62, 0.2);
 }
 
+/* Touch feedback - active press state */
 .wh-bottom-nav-item:active {
     transform: scale(0.95);
+    background: rgba(245, 206, 62, 0.1); /* Subtle primary background */
 }
 
+/* Active/Current page state */
 .wh-bottom-nav-item.active {
-    color: #f5ce3e;
+    color: #f5ce3e; /* Primary yellow */
+    font-weight: 600; /* Bolder for emphasis */
+    background: rgba(245, 206, 62, 0.15); /* Stronger background for active */
+}
+
+/* Active state with visual indicator */
+.wh-bottom-nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 3px;
+    background: #f5ce3e; /* Primary indicator line */
+    border-radius: 0; /* Sharp corners */
+}
+
+/* Hover state for devices that support it (tablets with mouse) */
+@media (hover: hover) {
+    .wh-bottom-nav-item:hover {
+        color: #0a0a0a; /* Dark hover */
+        background: rgba(245, 206, 62, 0.1);
+    }
+
+    .wh-bottom-nav-item.active:hover {
+        color: #f5ce3e;
+        background: rgba(245, 206, 62, 0.2);
+    }
 }
 
 /* === Nav Item Icon === */
 .wh-bottom-nav-item-icon {
     width: 24px;
     height: 24px;
-    margin-bottom: 4px;
+    margin-bottom: var(--space-0); /* 2px spacing */
+    transition: transform var(--mobile-transition-fast);
+}
+
+/* Icon scale on active */
+.wh-bottom-nav-item.active .wh-bottom-nav-item-icon {
+    transform: scale(1.1); /* Slightly larger when active */
 }
 
 /* === Nav Item Label === */
 .wh-bottom-nav-item-label {
-    font-size: 11px;
+    font-size: var(--mobile-text-xs); /* 13px - readable minimum */
     font-weight: 500;
     text-align: center;
+    line-height: 1.2;
+    transition: font-weight var(--mobile-transition-fast);
+}
+
+.wh-bottom-nav-item.active .wh-bottom-nav-item-label {
+    font-weight: 600; /* Bolder label when active */
 }
 
 /* === Nav Item Badge === */
 .wh-bottom-nav-item-badge {
     position: absolute;
-    top: 4px;
+    top: 2px;
     right: 50%;
-    transform: translateX(12px);
-    background: #df6a2e;
-    color: white;
+    transform: translateX(16px); /* Adjusted for larger touch targets */
+    background: #df6a2e; /* Santa Brisa secondary orange */
+    color: #ffffff;
     font-size: 10px;
     font-weight: 600;
     padding: 2px 5px;
-    border-radius: 0;
+    border-radius: 0; /* Neobrutalismo - sharp corners */
     min-width: 16px;
     text-align: center;
-    border: 1px solid #0f172a;
+    border: 1px solid #0f172a; /* Neobrutalismo border */
+    line-height: 1.2;
+    z-index: 1;
 }
 
 /* === Mobile Overlay === */
@@ -132,7 +191,7 @@
     /* Hide sidebar on mobile by default */
     .wh-sidebar {
         transform: translateX(-100%);
-        transition: transform 0.3s ease;
+        transition: transform var(--mobile-transition-normal); /* Smooth 300ms */
     }
 
     /* Show sidebar when mobile-open class is added */
@@ -144,7 +203,7 @@
     /* Adjust main content for mobile */
     .main-section {
         margin-left: 0 !important;
-        padding-bottom: 80px; /* Space for bottom nav */
+        padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--space-3)); /* Bottom nav + 16px buffer */
     }
 
     /* Adjust header for mobile */
@@ -164,11 +223,62 @@
 
     /* Make breadcrumbs more compact on mobile */
     .wh-breadcrumbs {
-        font-size: 13px;
+        font-size: var(--mobile-text-xs); /* 13px consistent with mobile.css */
     }
 
     .wh-breadcrumb-separator {
-        margin: 0 4px;
+        margin: 0 var(--space-1); /* 4px consistent spacing */
+    }
+}
+
+/* === Small Mobile Adjustments (<375px) === */
+@media (max-width: 374px) {
+    /* Slightly smaller touch targets on very small screens */
+    .wh-bottom-nav-item {
+        min-height: 40px;
+        min-width: 40px;
+        padding: var(--space-0) var(--space-1); /* 2px 4px - more compact */
+    }
+
+    /* Smaller icon on very small screens */
+    .wh-bottom-nav-item-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Smaller label text */
+    .wh-bottom-nav-item-label {
+        font-size: 11px; /* Even smaller on very small screens */
+    }
+
+    /* Adjust badge position */
+    .wh-bottom-nav-item-badge {
+        transform: translateX(12px);
+    }
+}
+
+/* === Landscape Orientation Adjustments === */
+@media (max-width: 767px) and (orientation: landscape) {
+    /* More compact bottom nav in landscape */
+    .wh-bottom-nav-items {
+        height: 56px; /* Reduced from 64px */
+    }
+
+    /* Smaller spacing in landscape */
+    .wh-bottom-nav-item {
+        padding: var(--space-0) var(--space-1); /* More compact */
+    }
+
+    /* Smaller icon in landscape */
+    .wh-bottom-nav-item-icon {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 1px;
+    }
+
+    /* Slightly smaller label */
+    .wh-bottom-nav-item-label {
+        font-size: 11px;
     }
 }
 

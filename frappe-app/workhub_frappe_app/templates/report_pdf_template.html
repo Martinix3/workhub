@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Cover Page Styles */
+        .cover-page {
+            page-break-after: always;
+            text-align: center;
+            padding-top: 150px;
+        }
+
+        .cover-title {
+            font-size: 42px;
+            font-weight: 700;
+            color: #1a4d8f;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #5a6c7d;
+            margin-bottom: 60px;
+            font-style: italic;
+        }
+
+        .cover-metadata {
+            margin-top: 80px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: left;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cover-metadata-item {
+            display: flex;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .cover-metadata-label {
+            font-weight: 600;
+            color: #1a4d8f;
+            min-width: 140px;
+        }
+
+        .cover-metadata-value {
+            color: #2c3e50;
+        }
+
+        .cover-footer {
+            position: fixed;
+            bottom: 50px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #95a5a6;
+            font-size: 12px;
+        }
+
+        /* Section Styles */
+        .section {
+            page-break-inside: avoid;
+            margin-bottom: 40px;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #1a4d8f 0%, #2e6db4 100%);
+            color: white;
+            padding: 15px 20px;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .section-title-header {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a4d8f;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #1a4d8f;
+        }
+
+        .section-text {
+            font-size: 14px;
+            color: #2c3e50;
+            line-height: 1.8;
+            margin: 15px 0;
+            text-align: justify;
+        }
+
+        /* KPI Styles */
+        .kpi-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .kpi-card {
+            flex: 1;
+            min-width: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            page-break-inside: avoid;
+        }
+
+        .kpi-card.primary {
+            background: linear-gradient(135deg, #1a4d8f 0%, #2e6db4 100%);
+        }
+
+        .kpi-card.success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+
+        .kpi-card.warning {
+            background: linear-gradient(135deg, #f79d00 0%, #fc913a 100%);
+        }
+
+        .kpi-card.danger {
+            background: linear-gradient(135deg, #cb2d3e 0%, #ef473a 100%);
+        }
+
+        .kpi-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .kpi-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .kpi-subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Table Styles */
+        .table-container {
+            margin: 20px 0;
+            page-break-inside: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        thead {
+            background: linear-gradient(135deg, #1a4d8f 0%, #2e6db4 100%);
+            color: white;
+        }
+
+        thead th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            page-break-inside: avoid;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e9ecef;
+        }
+
+        tbody td {
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        /* Chart Section Styles */
+        .chart-placeholder {
+            background: #f8f9fa;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+            margin: 20px 0;
+        }
+
+        /* Utility Classes */
+        .page-break {
+            page-break-after: always;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .header-bar {
+            background: #1a4d8f;
+            height: 5px;
+            margin-bottom: 30px;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            .cover-footer {
+                position: absolute;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cover Page -->
+    <div class="cover-page">
+        <div class="cover-title">{{ metadata.title }}</div>
+
+        {% if metadata.description %}
+        <div class="cover-subtitle">{{ metadata.description }}</div>
+        {% endif %}
+
+        <div class="cover-metadata">
+            <div class="cover-metadata-item">
+                <span class="cover-metadata-label">Report Type:</span>
+                <span class="cover-metadata-value">{{ metadata.report_type or 'N/A' }}</span>
+            </div>
+            <div class="cover-metadata-item">
+                <span class="cover-metadata-label">Category:</span>
+                <span class="cover-metadata-value">{{ metadata.category or 'N/A' }}</span>
+            </div>
+            <div class="cover-metadata-item">
+                <span class="cover-metadata-label">Generated On:</span>
+                <span class="cover-metadata-value">{{ format_date(metadata.generated_at, True) }}</span>
+            </div>
+            <div class="cover-metadata-item">
+                <span class="cover-metadata-label">Generated By:</span>
+                <span class="cover-metadata-value">{{ metadata.generated_by_info.full_name or 'N/A' }}</span>
+            </div>
+            {% if metadata.created_by_info %}
+            <div class="cover-metadata-item">
+                <span class="cover-metadata-label">Report Author:</span>
+                <span class="cover-metadata-value">{{ metadata.created_by_info.full_name or 'N/A' }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="cover-footer">
+            <p>Generated by WorkHub - Advanced Reporting System</p>
+            <p>Confidential - For Internal Use Only</p>
+        </div>
+    </div>
+
+    <!-- Report Content -->
+    <div class="header-bar"></div>
+
+    {% for section in sections %}
+    <div class="section">
+        {% set section_type = section.section_type %}
+
+        <!-- Header Section -->
+        {% if section_type == 'Header' %}
+        <div class="section-title-header">{{ section.title }}</div>
+
+        <!-- Text/Commentary Section -->
+        {% elif section_type == 'Text' %}
+        <div class="section-header">{{ section.title }}</div>
+        <div class="section-text">
+            {% if section.config and section.config.text %}
+                {{ section.config.text | safe }}
+            {% else %}
+                <p class="no-data">No content available</p>
+            {% endif %}
+        </div>
+
+        <!-- KPI Section -->
+        {% elif section_type == 'KPI' %}
+        <div class="section-header">{{ section.title }}</div>
+        <div class="kpi-container">
+            {% if section.data and section.data | length > 0 %}
+                {% for kpi in section.data %}
+                <div class="kpi-card {% if loop.index0 % 4 == 0 %}primary{% elif loop.index0 % 4 == 1 %}success{% elif loop.index0 % 4 == 2 %}warning{% else %}danger{% endif %}">
+                    <div class="kpi-label">{{ kpi.label or 'Metric' }}</div>
+                    <div class="kpi-value">
+                        {% if kpi.value is number %}
+                            {{ format_number(kpi.value, 2) }}
+                        {% else %}
+                            {{ kpi.value or 'N/A' }}
+                        {% endif %}
+                    </div>
+                    {% if kpi.subtitle %}
+                    <div class="kpi-subtitle">{{ kpi.subtitle }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">No KPI data available</div>
+            {% endif %}
+        </div>
+
+        <!-- Chart Section -->
+        {% elif section_type == 'Chart' %}
+        <div class="section-header">{{ section.title }}</div>
+        <div class="chart-placeholder">
+            <p><strong>Chart: {{ section.title }}</strong></p>
+            {% if section.config %}
+                {% set config = section.config if section.config is mapping else json.loads(section.config) %}
+                <p>Type: {{ config.chart_type or 'Chart' | title }}</p>
+            {% endif %}
+            <p><em>Chart visualization available in interactive report viewer</em></p>
+        </div>
+
+        <!-- Table Section -->
+        {% elif section_type == 'Table' %}
+        <div class="section-header">{{ section.title }}</div>
+        <div class="table-container">
+            {% set columns, rows = extract_table_data(section) %}
+            {% if columns and rows and rows | length > 0 %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for col in columns %}
+                        <th>{{ col.label or col.field | replace('_', ' ') | title }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        {% for col in columns %}
+                        <td>
+                            {% set cell_value = row.get(col.field) %}
+                            {{ format_table_cell_value(cell_value, col) }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <div class="no-data">No table data available</div>
+            {% endif %}
+        </div>
+
+        {% endif %}
+    </div>
+
+    <!-- Add page break after every 3 sections for better pagination -->
+    {% if loop.index % 3 == 0 and not loop.last %}
+    <div class="page-break"></div>
+    <div class="header-bar"></div>
+    {% endif %}
+    {% endfor %}
+
+</body>
+</html>

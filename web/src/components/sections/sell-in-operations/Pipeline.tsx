@@ -2,12 +2,12 @@ import type { PipelineProps, Opportunity, OpportunityStage } from './types'
 import { Plus, Clock, DollarSign } from 'lucide-react'
 
 const stageConfig: Record<OpportunityStage, { label: string; color: string }> = {
-  new: { label: 'Nuevo', color: 'border-t-stone-400' },
+  new: { label: 'Nuevo', color: 'border-t-neutral-400' },
   contacted: { label: 'Contactado', color: 'border-t-cyan-400' },
-  proposal: { label: 'Propuesta', color: 'border-t-amber-400' },
-  negotiation: { label: 'Negociacion', color: 'border-t-orange-400' },
-  won: { label: 'Ganado', color: 'border-t-green-500' },
-  lost: { label: 'Perdido', color: 'border-t-red-500' },
+  proposal: { label: 'Propuesta', color: 'border-t-gold' },
+  negotiation: { label: 'Negociacion', color: 'border-t-error' },
+  won: { label: 'Ganado', color: 'border-t-success-dark' },
+  lost: { label: 'Perdido', color: 'border-t-error-dark' },
 }
 
 const stages: OpportunityStage[] = ['new', 'contacted', 'proposal', 'negotiation', 'won', 'lost']
@@ -31,41 +31,40 @@ function OpportunityCard({ opportunity, onView, onEdit: _onEdit }: OpportunityCa
     <div
       onClick={onView}
       className={`
-        bg-white dark:bg-stone-800 p-3
-        border-2 border-stone-900 dark:border-stone-100
-        ${isUrgent ? 'border-l-4 border-l-orange-500' : ''}
-        shadow-[2px_2px_0_#1c1917] dark:shadow-[2px_2px_0_#fafaf9]
-        hover:shadow-[1px_1px_0_#1c1917] dark:hover:shadow-[1px_1px_0_#fafaf9]
-        hover:translate-x-[1px] hover:translate-y-[1px]
+        bg-white dark:bg-neutral-800 p-3
+        border border-neutral-200 dark:border-neutral-100
+        ${isUrgent ? 'border-l-4 border-l-error-dark' : ''}
+        shadow-sm
+        hover:shadow-sm
         transition-all duration-75 cursor-pointer
       `}
     >
       {/* Title */}
-      <h4 className="font-medium text-sm text-stone-900 dark:text-stone-100 mb-2 line-clamp-2">
+      <h4 className="font-medium text-sm text-neutral-900 dark:text-neutral-100 mb-2 line-clamp-2">
         {opportunity.title}
       </h4>
 
       {/* Customer */}
-      <p className="text-xs text-stone-500 dark:text-stone-400 mb-3 truncate">
+      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3 truncate">
         {opportunity.customerName}
       </p>
 
       {/* Meta */}
       <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1 text-stone-500 dark:text-stone-400">
+        <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
           <DollarSign size={12} />
           <span className="font-mono">{formatCurrency(opportunity.value)}</span>
         </div>
 
         <div className="flex items-center gap-2">
           {isUrgent && (
-            <div className="flex items-center gap-1 text-orange-500">
+            <div className="flex items-center gap-1 text-error">
               <Clock size={12} />
               <span>{opportunity.daysInStage}d</span>
             </div>
           )}
-          <div className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-600 flex items-center justify-center">
-            <span className="text-[10px] font-medium text-stone-600 dark:text-stone-300">
+          <div className="w-5 h-5 rounded-full bg-neutral-200 dark:bg-neutral-600 flex items-center justify-center">
+            <span className="text-[10px] font-medium text-neutral-600 dark:text-neutral-300">
               {opportunity.assignee.split(' ').map(n => n[0]).join('')}
             </span>
           </div>
@@ -102,10 +101,10 @@ export function Pipeline({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
+          <h1 className="font-heading text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
             Pipeline
           </h1>
-          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             Oportunidades comerciales
           </p>
         </div>
@@ -114,12 +113,11 @@ export function Pipeline({
           onClick={onCreateOpportunity}
           className="
             inline-flex items-center gap-2 px-4 py-2
-            bg-amber-400 hover:bg-amber-500
-            text-stone-900 font-medium text-sm uppercase tracking-wider
-            border-2 border-stone-900
-            shadow-[4px_4px_0_#1c1917]
-            hover:shadow-[2px_2px_0_#1c1917]
-            hover:translate-x-[2px] hover:translate-y-[2px]
+            bg-gold hover:bg-gold-dark
+            text-neutral-900 font-medium text-sm uppercase tracking-wider
+            border border-neutral-200
+            shadow-sm
+            hover:shadow-sm
             transition-all duration-75
           "
         >
@@ -135,21 +133,21 @@ export function Pipeline({
             key={stage}
             className={`
               flex-shrink-0 w-72
-              bg-stone-100 dark:bg-stone-800/50
+              bg-neutral-100 dark:bg-neutral-800/50
               border-t-4 ${stageConfig[stage].color}
             `}
           >
             {/* Column Header */}
-            <div className="p-3 border-b border-stone-200 dark:border-stone-700">
+            <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium text-sm uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                <h3 className="font-medium text-sm uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
                   {stageConfig[stage].label}
                 </h3>
-                <span className="font-mono text-xs text-stone-500 dark:text-stone-400 bg-stone-200 dark:bg-stone-700 px-2 py-0.5">
+                <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-200 dark:bg-neutral-700 px-2 py-0.5">
                   {opportunitiesByStage[stage].length}
                 </span>
               </div>
-              <p className="font-mono text-xs text-stone-500 dark:text-stone-400 mt-1">
+              <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                 {formatCurrency(getStageTotal(stage))}
               </p>
             </div>

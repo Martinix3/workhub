@@ -76,8 +76,8 @@ export function PreferencesTab() {
     <div className="space-y-8">
       {/* Theme Selection */}
       <div>
-        <h3 className="text-lg font-medium text-stone-900 mb-1">Tema</h3>
-        <p className="text-sm text-stone-500 mb-4">Selecciona como quieres ver la interfaz</p>
+        <h3 className="text-lg font-medium text-neutral-900 mb-1">Tema</h3>
+        <p className="text-sm text-neutral-500 mb-4">Selecciona como quieres ver la interfaz</p>
         <div className="grid grid-cols-3 gap-3">
           {themeOptions.map((option) => (
             <button
@@ -86,8 +86,8 @@ export function PreferencesTab() {
               className={`
                 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
                 ${theme === option.value
-                  ? 'border-amber-500 bg-amber-50 text-amber-700'
-                  : 'border-stone-200 hover:border-stone-300 text-stone-600'
+                  ? 'border-gold-dark bg-gold-light text-gold-dark'
+                  : 'border-neutral-200 hover:border-neutral-300 text-neutral-600'
                 }
               `}
             >
@@ -100,8 +100,8 @@ export function PreferencesTab() {
 
       {/* Language Selection */}
       <div>
-        <h3 className="text-lg font-medium text-stone-900 mb-1">Idioma</h3>
-        <p className="text-sm text-stone-500 mb-4">Selecciona el idioma de la interfaz</p>
+        <h3 className="text-lg font-medium text-neutral-900 mb-1">Idioma</h3>
+        <p className="text-sm text-neutral-500 mb-4">Selecciona el idioma de la interfaz</p>
         <div className="grid grid-cols-2 gap-3 max-w-md">
           {languageOptions.map((option) => (
             <button
@@ -110,8 +110,8 @@ export function PreferencesTab() {
               className={`
                 flex items-center gap-3 p-4 rounded-xl border-2 transition-all
                 ${language === option.value
-                  ? 'border-amber-500 bg-amber-50 text-amber-700'
-                  : 'border-stone-200 hover:border-stone-300 text-stone-600'
+                  ? 'border-gold-dark bg-gold-light text-gold-dark'
+                  : 'border-neutral-200 hover:border-neutral-300 text-neutral-600'
                 }
               `}
             >
@@ -123,15 +123,15 @@ export function PreferencesTab() {
       </div>
 
       {/* Save Button */}
-      <div className="flex items-center gap-4 pt-4 border-t border-stone-200">
+      <div className="flex items-center gap-4 pt-4 border-t border-neutral-200">
         <button
           onClick={handleSave}
           disabled={!hasChanges || updating}
           className={`
             flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors
             ${hasChanges
-              ? 'bg-amber-500 text-white hover:bg-amber-600'
-              : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+              ? 'bg-gold-dark text-white hover:bg-gold-dark'
+              : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
             }
           `}
         >
@@ -143,7 +143,7 @@ export function PreferencesTab() {
           Guardar cambios
         </button>
         {saveSuccess && (
-          <span className="text-sm text-green-600">Preferencias guardadas</span>
+          <span className="text-sm text-success-dark">Preferencias guardadas</span>
         )}
       </div>
     </div>

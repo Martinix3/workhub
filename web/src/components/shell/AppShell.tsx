@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { MainNav } from './MainNav'
 import { UserMenu } from './UserMenu'
+import { NotificationCenter } from './NotificationCenter'
 import type { NavigationSection, User } from './types'
 import { Menu, Search, X } from 'lucide-react'
 
@@ -22,6 +23,30 @@ export function AppShell({
 }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  // Detect platform for keyboard shortcut hint
+  const isMac = typeof window !== 'undefined' &&
+    /Mac|iPhone|iPad|iPod/.test(window.navigator.platform)
+
+  // Handle keyboard shortcuts for command palette
+  const handleKeyboardShortcut = useCallback((e: KeyboardEvent) => {
+    // Cmd/Ctrl+K to toggle command palette
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault()
+      setSearchOpen(prev => !prev)
+    }
+    // ESC to close command palette
+    if (e.key === 'Escape') {
+      setSearchOpen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyboardShortcut)
+    return () => {
+      document.removeEventListener('keydown', handleKeyboardShortcut)
+    }
+  }, [handleKeyboardShortcut])
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -53,10 +78,34 @@ export function AppShell({
           </button>
         </div>
 
+        {/* Desktop Search Button */}
+        <div className="hidden lg:block px-4 py-3 border-b border-slate-700">
+          <button
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-300 bg-slate-700/50 hover:bg-slate-700 rounded transition-colors"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search size={16} />
+            <span className="flex-1 text-left">Buscar...</span>
+            <kbd className="px-2 py-1 text-xs font-mono bg-slate-800 border border-slate-600 rounded">
+              {isMac ? '⌘K' : 'Ctrl+K'}
+            </kbd>
+          </button>
+        </div>
+
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-4">
           <MainNav
             sections={navigationSections}
+            onNavigate={(href) => {
+              onNavigate?.(href)
+              setSidebarOpen(false)
+            }}
+          />
+        </div>
+
+        {/* Notification Center */}
+        <div className="border-t border-slate-700 p-4">
+          <NotificationCenter
             onNavigate={(href) => {
               onNavigate?.(href)
               setSidebarOpen(false)
@@ -92,12 +141,17 @@ export function AppShell({
           <span className="font-['Playfair_Display'] text-lg font-bold ml-2">
             WorkHub
           </span>
-          <button
-            className="ml-auto p-2 hover:bg-stone-100"
-            onClick={() => setSearchOpen(true)}
-          >
-            <Search size={20} />
-          </button>
+          <div className="ml-auto flex items-center gap-1">
+            <div className="[&_button]:hover:bg-stone-100 [&_button]:text-[#1e293b]">
+              <NotificationCenter onNavigate={onNavigate} />
+            </div>
+            <button
+              className="p-2 hover:bg-stone-100"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search size={20} />
+            </button>
+          </div>
         </header>
 
         {/* Content area */}
@@ -118,9 +172,14 @@ export function AppShell({
                 className="flex-1 outline-none font-['Inter'] text-base"
                 autoFocus
               />
-              <kbd className="hidden sm:inline-block px-2 py-1 text-xs font-mono bg-stone-100 border border-stone-300">
-                ESC
-              </kbd>
+              <div className="hidden sm:flex items-center gap-2">
+                <kbd className="px-2 py-1 text-xs font-mono bg-stone-100 border border-stone-300">
+                  {isMac ? '⌘K' : 'Ctrl+K'}
+                </kbd>
+                <kbd className="px-2 py-1 text-xs font-mono bg-stone-100 border border-stone-300">
+                  ESC
+                </kbd>
+              </div>
             </div>
             <div className="p-4 text-sm text-stone-500">
               Escribe para buscar paginas, clientes, pedidos...

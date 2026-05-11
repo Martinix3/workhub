@@ -1,7 +1,7 @@
 // React hooks for Settings
 import { useState, useEffect, useCallback } from 'react'
 import settingsApi from '../services/settings'
-import type { UserSettings, UserProfile, Department, UpdateSettingsData, UpdateProfileData } from '../services/settings'
+import type { UserSettings, UserProfile, Department, UpdateSettingsData, UpdateProfileData, UserKPIs } from '../services/settings'
 
 interface UseDataState<T> {
   data: T | null
@@ -112,6 +112,30 @@ export function useDepartments(): UseDataState<Department[]> {
       setLoading(false)
     }
   }, [])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  return { data, loading, error, refetch: fetch }
+}
+
+// Hook for user KPIs
+export function useUserKPIs(period: 'week' | 'month' = 'week'): UseDataState<UserKPIs> {
+  const [data, setData] = useState<UserKPIs | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const kpis = await settingsApi.getUserKPIs({ period })
+      setData(kpis)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch user KPIs'))
+    } finally {
+      setLoading(false)
+    }
+  }, [period])
 
   useEffect(() => { fetch() }, [fetch])
 

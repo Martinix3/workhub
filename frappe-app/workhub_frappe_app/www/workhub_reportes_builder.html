@@ -1,0 +1,861 @@
+<!-- Page: Report Builder -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Constructor de Reportes") }}{% endblock %}
+{% block breadcrumb %}{{ "Nuevo Reporte" if is_new else "Editar Reporte" }}{% endblock %}
+
+{% block page_content %}
+<div class="report-builder-container">
+	<!-- Header -->
+	<div class="report-builder-header">
+		<div class="d-flex justify-content-between align-items-center">
+			<div>
+				<h1>🎨 {{ "Crear Reporte" if is_new else "Editar Reporte" }}</h1>
+				<p class="text-muted">Arrastra secciones al canvas para construir tu reporte</p>
+			</div>
+			<div class="header-actions">
+				<a href="/workhub_reportes" class="btn btn-outline-secondary">
+					Cancelar
+				</a>
+				<button class="btn btn-outline-primary ml-2" onclick="frappe.workhub.reportBuilder.showPreview()">
+					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+					</svg>
+					Vista Previa
+				</button>
+				<button class="btn btn-primary ml-2" onclick="saveReport()">
+					<svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+					</svg>
+					Guardar Reporte
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Builder Layout: 3 columns -->
+	<div class="builder-layout">
+		<!-- LEFT SIDEBAR: Available Sections -->
+		<div class="builder-sidebar">
+			<div class="sidebar-header">
+				<h5>📦 Componentes</h5>
+				<p class="text-muted small">Arrastra al canvas</p>
+			</div>
+			<div class="components-list">
+				{% for section_type in section_types %}
+				<div class="component-item"
+					 draggable="true"
+					 data-type="{{ section_type.id }}"
+					 data-label="{{ section_type.label }}">
+					<div class="component-icon" style="background: {{ section_type.color }}20; color: {{ section_type.color }};">
+						{{ section_type.icon }}
+					</div>
+					<div class="component-info">
+						<div class="component-label">{{ section_type.label }}</div>
+						<div class="component-description">{{ section_type.description }}</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+
+			<div class="sidebar-help mt-4">
+				<h6>💡 Ayuda</h6>
+				<ul class="small text-muted">
+					<li>Arrastra componentes al canvas</li>
+					<li>Haz clic para configurar</li>
+					<li>Reordena arrastrando en el canvas</li>
+					<li>Elimina con el botón 🗑️</li>
+				</ul>
+			</div>
+		</div>
+
+		<!-- MAIN CANVAS: Report Builder -->
+		<div class="builder-canvas">
+			<!-- Report Metadata -->
+			<div class="report-metadata-panel">
+				<div class="form-group">
+					<label>Título del Reporte *</label>
+					<input type="text"
+						   class="form-control"
+						   id="report-title"
+						   placeholder="Ej: Reporte de Productividad del Equipo"
+						   value="{{ report.title }}">
+				</div>
+				<div class="form-group">
+					<label>Descripción</label>
+					<textarea class="form-control"
+							  id="report-description"
+							  rows="2"
+							  placeholder="Describe el propósito del reporte...">{{ report.description }}</textarea>
+				</div>
+				<div class="row">
+					<div class="col-md-4">
+						<div class="form-group">
+							<label>Tipo</label>
+							<select class="form-control" id="report-type">
+								{% for type in report_types %}
+								<option value="{{ type }}" {% if report.report_type == type %}selected{% endif %}>{{ type }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<label>Categoría</label>
+							<select class="form-control" id="report-category">
+								{% for cat in categories %}
+								<option value="{{ cat }}" {% if report.category == cat %}selected{% endif %}>{{ cat }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<label>Estado</label>
+							<select class="form-control" id="report-active">
+								<option value="1" {% if report.is_active %}selected{% endif %}>Activo</option>
+								<option value="0" {% if not report.is_active %}selected{% endif %}>Inactivo</option>
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Canvas Drop Zone -->
+			<div class="canvas-drop-zone" id="canvas-drop-zone">
+				<div class="canvas-placeholder" id="canvas-placeholder">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 64px; height: 64px; margin: 0 auto; color: #ccc;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+					</svg>
+					<h4 class="mt-3">Arrastra componentes aquí</h4>
+					<p class="text-muted">Comienza construyendo tu reporte arrastrando secciones desde el panel izquierdo</p>
+				</div>
+
+				<!-- Sections will be rendered here -->
+				<div id="sections-container"></div>
+			</div>
+		</div>
+
+		<!-- RIGHT PANEL: Properties -->
+		<div class="builder-properties">
+			<div class="properties-header">
+				<h5>⚙️ Propiedades</h5>
+			</div>
+			<div class="properties-content" id="properties-content">
+				<div class="no-selection">
+					<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px; height: 48px; margin: 0 auto; color: #ccc; display: block;">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+					</svg>
+					<p class="text-muted mt-3 text-center">Selecciona una sección del canvas para configurar sus propiedades</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Preview Modal -->
+	<div id="preview-modal" class="preview-modal" style="display: none;">
+		<div class="preview-modal-overlay" onclick="frappe.workhub.reportBuilder.closePreview()"></div>
+		<div class="preview-modal-content" id="preview-modal-content">
+			<!-- Header -->
+			<div class="preview-header">
+				<div class="preview-title">
+					<h4>📊 Vista Previa del Reporte</h4>
+					<p class="text-muted mb-0">Vista en tiempo real del reporte</p>
+				</div>
+				<div class="preview-actions">
+					<button class="btn btn-sm btn-outline-secondary" onclick="frappe.workhub.reportBuilder.refreshPreview()">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+						</svg>
+						Actualizar
+					</button>
+					<button class="btn btn-sm btn-outline-primary ml-2" onclick="frappe.workhub.reportBuilder.toggleFullscreen()">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+						</svg>
+						Pantalla Completa
+					</button>
+					<button class="btn btn-sm btn-outline-success ml-2" onclick="frappe.workhub.reportBuilder.exportFromPreview()">
+						<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-right: 4px;">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+						</svg>
+						Exportar
+					</button>
+					<button class="btn btn-sm btn-outline-secondary ml-2" onclick="frappe.workhub.reportBuilder.closePreview()">✕</button>
+				</div>
+			</div>
+
+			<!-- Preview Body -->
+			<div class="preview-body" id="preview-body">
+				<div class="preview-loading">
+					<div class="spinner-border text-primary" role="status">
+						<span class="sr-only">Cargando...</span>
+					</div>
+					<p class="mt-3 text-muted">Generando vista previa...</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.report-builder-container {
+	padding: 20px;
+	max-width: 100%;
+	height: calc(100vh - 100px);
+	display: flex;
+	flex-direction: column;
+}
+
+.report-builder-header {
+	margin-bottom: 20px;
+	flex-shrink: 0;
+}
+
+.report-builder-header h1 {
+	font-size: 28px;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.header-actions {
+	display: flex;
+	gap: 8px;
+}
+
+/* Builder Layout: 3-column */
+.builder-layout {
+	display: grid;
+	grid-template-columns: 280px 1fr 320px;
+	gap: 20px;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+/* LEFT SIDEBAR */
+.builder-sidebar {
+	background: white;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+}
+
+.sidebar-header h5 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.sidebar-header p {
+	margin: 4px 0 0 0;
+}
+
+.components-list {
+	margin-top: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.component-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px;
+	background: #f8f9fa;
+	border: 2px solid #e0e0e0;
+	border-radius: 6px;
+	cursor: grab;
+	transition: all 0.2s;
+}
+
+.component-item:hover {
+	background: #e9ecef;
+	border-color: #007bff;
+	transform: translateX(2px);
+}
+
+.component-item:active {
+	cursor: grabbing;
+}
+
+.component-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 20px;
+	flex-shrink: 0;
+}
+
+.component-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.component-label {
+	font-weight: 600;
+	font-size: 14px;
+	margin-bottom: 2px;
+}
+
+.component-description {
+	font-size: 12px;
+	color: #6c757d;
+	line-height: 1.3;
+}
+
+.sidebar-help {
+	margin-top: auto;
+	padding-top: 16px;
+	border-top: 1px solid #e0e0e0;
+}
+
+.sidebar-help h6 {
+	font-size: 14px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.sidebar-help ul {
+	margin: 0;
+	padding-left: 20px;
+	line-height: 1.6;
+}
+
+/* MAIN CANVAS */
+.builder-canvas {
+	background: white;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+}
+
+.report-metadata-panel {
+	margin-bottom: 24px;
+	padding-bottom: 24px;
+	border-bottom: 2px solid #e0e0e0;
+}
+
+.canvas-drop-zone {
+	flex: 1;
+	min-height: 300px;
+	position: relative;
+}
+
+.canvas-drop-zone.drag-over {
+	background: #e3f2fd;
+	border: 2px dashed #007bff;
+	border-radius: 8px;
+}
+
+.canvas-placeholder {
+	text-align: center;
+	padding: 60px 20px;
+	color: #6c757d;
+}
+
+.canvas-placeholder h4 {
+	color: #6c757d;
+	font-weight: 500;
+}
+
+#sections-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Section Card */
+.section-card {
+	background: #f8f9fa;
+	border: 2px solid #dee2e6;
+	border-radius: 6px;
+	padding: 16px;
+	cursor: pointer;
+	transition: all 0.2s;
+	position: relative;
+}
+
+.section-card:hover {
+	border-color: #007bff;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section-card.selected {
+	border-color: #007bff;
+	background: #e3f2fd;
+	box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.section-card.dragging {
+	opacity: 0.5;
+	cursor: grabbing;
+}
+
+.section-card.drop-above {
+	border-top: 3px solid #007bff;
+	margin-top: -3px;
+}
+
+.section-card.drop-below {
+	border-bottom: 3px solid #007bff;
+	margin-bottom: -3px;
+}
+
+.section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.section-type-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 12px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.section-title {
+	font-weight: 600;
+	font-size: 14px;
+	color: #333;
+}
+
+.section-actions {
+	display: flex;
+	gap: 4px;
+}
+
+.section-actions button {
+	padding: 4px 8px;
+	border: none;
+	background: white;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 14px;
+	transition: all 0.2s;
+}
+
+.section-actions button:hover {
+	background: #e9ecef;
+}
+
+.section-meta {
+	font-size: 12px;
+	color: #6c757d;
+	margin-top: 4px;
+}
+
+/* RIGHT PANEL: Properties */
+.builder-properties {
+	background: white;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+}
+
+.properties-header h5 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	margin-bottom: 16px;
+}
+
+.properties-content {
+	flex: 1;
+}
+
+.no-selection {
+	text-align: center;
+	padding: 40px 20px;
+}
+
+.no-selection p {
+	font-size: 13px;
+}
+
+/* Form Styling */
+.form-group {
+	margin-bottom: 16px;
+}
+
+.form-group label {
+	display: block;
+	font-weight: 600;
+	font-size: 13px;
+	margin-bottom: 6px;
+	color: #333;
+}
+
+.form-control {
+	border-radius: 4px;
+	border: 1px solid #ced4da;
+	padding: 8px 12px;
+	font-size: 14px;
+}
+
+.form-control:focus {
+	border-color: #007bff;
+	box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+	outline: none;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+	.builder-layout {
+		grid-template-columns: 240px 1fr 280px;
+	}
+}
+
+@media (max-width: 992px) {
+	.builder-layout {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto 1fr auto;
+	}
+
+	.builder-sidebar,
+	.builder-properties {
+		max-height: 300px;
+	}
+}
+
+/* Preview Modal */
+.preview-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.preview-modal-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(4px);
+}
+
+.preview-modal-content {
+	position: relative;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+	width: 90%;
+	height: 85%;
+	max-width: 1400px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	transition: all 0.3s ease;
+}
+
+.preview-modal-content.fullscreen {
+	width: 100%;
+	height: 100%;
+	max-width: 100%;
+	border-radius: 0;
+}
+
+.preview-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20px;
+	border-bottom: 1px solid #e0e0e0;
+	background: #f8f9fa;
+	flex-shrink: 0;
+}
+
+.preview-title h4 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.preview-title p {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+}
+
+.preview-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.preview-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 24px;
+	background: #fff;
+}
+
+.preview-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	min-height: 300px;
+}
+
+.preview-report-header {
+	text-align: center;
+	padding: 40px 20px;
+	border-bottom: 2px solid #007bff;
+	margin-bottom: 32px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	border-radius: 8px;
+}
+
+.preview-report-header h1 {
+	margin: 0 0 12px 0;
+	font-size: 32px;
+	font-weight: 700;
+}
+
+.preview-report-header .metadata {
+	display: flex;
+	justify-content: center;
+	gap: 24px;
+	flex-wrap: wrap;
+	font-size: 14px;
+	opacity: 0.9;
+}
+
+.preview-section {
+	margin-bottom: 32px;
+	padding: 24px;
+	background: white;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.preview-section-header {
+	font-size: 20px;
+	font-weight: 600;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 2px solid #007bff;
+	color: #333;
+}
+
+.preview-section-text {
+	font-size: 14px;
+	line-height: 1.6;
+	color: #555;
+	white-space: pre-wrap;
+}
+
+.preview-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 16px;
+}
+
+.preview-kpi-card {
+	padding: 20px;
+	border-radius: 8px;
+	color: white;
+	text-align: center;
+}
+
+.preview-kpi-card .kpi-value {
+	font-size: 32px;
+	font-weight: 700;
+	margin: 8px 0;
+}
+
+.preview-kpi-card .kpi-label {
+	font-size: 14px;
+	opacity: 0.9;
+	font-weight: 500;
+}
+
+.preview-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+}
+
+.preview-table th {
+	background: #007bff;
+	color: white;
+	padding: 12px;
+	text-align: left;
+	font-weight: 600;
+	border: 1px solid #0056b3;
+}
+
+.preview-table td {
+	padding: 10px 12px;
+	border: 1px solid #e0e0e0;
+}
+
+.preview-table tbody tr:nth-child(even) {
+	background: #f8f9fa;
+}
+
+.preview-table tbody tr:hover {
+	background: #e9ecef;
+}
+
+.preview-chart-placeholder {
+	background: #f8f9fa;
+	border: 2px dashed #ccc;
+	border-radius: 8px;
+	padding: 60px 20px;
+	text-align: center;
+	color: #6c757d;
+}
+
+.preview-chart-placeholder svg {
+	width: 64px;
+	height: 64px;
+	margin: 0 auto 16px;
+	display: block;
+	color: #adb5bd;
+}
+
+.preview-no-data {
+	text-align: center;
+	padding: 40px;
+	color: #6c757d;
+	font-style: italic;
+}
+
+/* Export Modal */
+.export-format-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 10000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.export-format-modal .modal-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.export-format-modal .modal-dialog {
+	position: relative;
+	background: white;
+	border-radius: 8px;
+	padding: 24px;
+	max-width: 400px;
+	width: 90%;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.export-format-modal .modal-header {
+	margin-bottom: 20px;
+}
+
+.export-format-modal h5 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.export-format-options {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.export-format-option {
+	padding: 16px;
+	border: 2px solid #e0e0e0;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.export-format-option:hover {
+	border-color: #007bff;
+	background: #f8f9fa;
+}
+
+.export-format-option input[type="radio"] {
+	width: 20px;
+	height: 20px;
+}
+
+.export-format-option label {
+	margin: 0;
+	cursor: pointer;
+	flex: 1;
+	font-weight: 500;
+}
+</style>
+
+{% endblock %}
+
+{% block script %}
+<!-- Load external report builder JavaScript -->
+<script src="/assets/workhub_frappe_app/js/report_builder.js"></script>
+
+<script>
+// Initialize report builder context for external module
+window.reportBuilderContext = {
+	sectionTypes: {{ section_types | tojson }},
+	chartTypes: {{ chart_types | tojson }},
+	reportData: {{ report | tojson }},
+	dataSources: {{ data_sources | tojson }},
+	isNew: {{ 'true' if is_new else 'false' }}
+};
+
+// Initialize report builder when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+	// Initialize the report builder module
+	frappe.workhub.reportBuilder.init(
+		window.reportBuilderContext.reportData,
+		window.reportBuilderContext.dataSources
+	);
+});
+
+// Global function for save button (used by onclick in template)
+function saveReport() {
+	frappe.workhub.reportBuilder.saveReport(window.reportBuilderContext.isNew);
+}
+</script>
+{% endblock %}

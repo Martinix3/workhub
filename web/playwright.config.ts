@@ -8,18 +8,30 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: process.env.CI ? 1 : undefined,
   reporter: [
+    ['list'],
     ['html'],
     ['json', { outputFile: 'test-results/results.json' }],
     ...(process.env.CI ? [['github'] as const] : []),
   ],
+  timeout: 30 * 1000,
 
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
+    expect: {
+      timeout: 5 * 1000,
+    },
+  },
+
+  // Visual regression screenshot defaults
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixels: 100, // Allow up to 100 pixels difference for component tests
+    },
   },
 
   projects: [
@@ -29,10 +41,20 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    // Desktop Firefox - cross-browser testing
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    // Desktop Safari (WebKit) - cross-browser testing
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
 
   webServer: {
-    command: `pnpm dev --port ${PORT}`,
+    command: `npm run dev -- --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

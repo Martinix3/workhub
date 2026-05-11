@@ -3,10 +3,11 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate, add_days
+from frappe.utils import nowdate, getdate, add_days, now
 import json
 
 from workhub_frappe_app.api.utils import require_auth, require_permission
+from workhub_frappe_app.api.notifications import create_notification
 
 
 @frappe.whitelist()
@@ -52,7 +53,37 @@ def get_tasks(filters=None, limit=50, offset=0):
         ignore_permissions=True
     )
 
-    # Enrich with project info
+    # Get dependency counts for all tasks in batch
+    dependency_counts = {}
+    if tasks:
+        task_ids = [t["name"] for t in tasks]
+
+        # Count blocked_by (tasks blocking this task - where this task is successor)
+        blocked_by_results = frappe.db.sql("""
+            SELECT successor, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE successor IN %(task_ids)s AND is_active = 1
+            GROUP BY successor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Count blocks (tasks this task is blocking - where this task is predecessor)
+        blocks_results = frappe.db.sql("""
+            SELECT predecessor, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE predecessor IN %(task_ids)s AND is_active = 1
+            GROUP BY predecessor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Build lookup dictionaries
+        for row in blocked_by_results:
+            dependency_counts[row["successor"]] = dependency_counts.get(row["successor"], {})
+            dependency_counts[row["successor"]]["blocked_by_count"] = row["count"]
+
+        for row in blocks_results:
+            dependency_counts[row["predecessor"]] = dependency_counts.get(row["predecessor"], {})
+            dependency_counts[row["predecessor"]]["blocks_count"] = row["count"]
+
+    # Enrich with project info and dependency counts
     for task in tasks:
         if task.get("project"):
             project_data = frappe.db.get_value("WH Project", task["project"],
@@ -66,6 +97,11 @@ def get_tasks(filters=None, limit=50, offset=0):
             task["is_overdue"] = getdate(task["due_date"]) < getdate(nowdate())
         else:
             task["is_overdue"] = False
+
+        # Add dependency counts
+        task_deps = dependency_counts.get(task["name"], {})
+        task["blocked_by_count"] = task_deps.get("blocked_by_count", 0)
+        task["blocks_count"] = task_deps.get("blocks_count", 0)
 
     return tasks
 
@@ -189,7 +225,80 @@ def change_status(task_id, new_status):
     doc = frappe.get_doc("WH Task", task_id)
     doc.status = new_status
     doc.save()
-    return {"success": True, "status": doc.status}
+
+    result = {"success": True, "status": doc.status}
+
+    # Check if completing a task that blocks other incomplete tasks
+    if new_status == "DONE":
+        incomplete_blocked_tasks = _get_incomplete_blocked_tasks(task_id)
+        if incomplete_blocked_tasks:
+            result["warning"] = _("This task is blocking {0} incomplete task(s): {1}").format(
+                len(incomplete_blocked_tasks),
+                ", ".join([t["title"] for t in incomplete_blocked_tasks[:3]])
+            )
+            result["blocked_tasks"] = incomplete_blocked_tasks
+
+    return result
+
+
+@frappe.whitelist()
+def complete_task(task_id, completion_notes=None):
+    """Complete a task with validation and timestamp"""
+    require_permission("WH Task", "write")
+
+    if not task_id:
+        frappe.throw(_("Task ID is required"))
+
+    doc = frappe.get_doc("WH Task", task_id)
+
+    # Validate status transition
+    if doc.status == "DONE":
+        frappe.throw(_("Task is already completed"))
+
+    if doc.status != "DOING":
+        frappe.throw(_("Cannot complete task in {0} status. Task must be in DOING status.").format(doc.status))
+
+    # Set status to DONE
+    doc.status = "DONE"
+
+    # Set completion timestamp server-side
+    doc.completed_at = now()
+
+    # Set completion notes if provided
+    if completion_notes:
+        doc.completion_notes = completion_notes
+
+    doc.save()
+
+    # Notify task creator about completion
+    if doc.created_by and doc.created_by != frappe.session.user:
+        create_notification(
+            user=doc.created_by,
+            notification_type="COMPLETED",
+            title=f"Tarea completada: {doc.title}",
+            message=f"La tarea '{doc.title}' ha sido completada",
+            reference_doctype="WH Task",
+            reference_name=task_id,
+            priority="MEDIUM",
+            task_priority=doc.priority
+        )
+
+    result = {
+        "success": True,
+        "status": doc.status,
+        "completed_at": doc.completed_at
+    }
+
+    # Check if completing a task that blocks other incomplete tasks
+    incomplete_blocked_tasks = _get_incomplete_blocked_tasks(task_id)
+    if incomplete_blocked_tasks:
+        result["warning"] = _("This task is blocking {0} incomplete task(s): {1}").format(
+            len(incomplete_blocked_tasks),
+            ", ".join([t["title"] for t in incomplete_blocked_tasks[:3]])
+        )
+        result["blocked_tasks"] = incomplete_blocked_tasks
+
+    return result
 
 
 @frappe.whitelist()
@@ -262,6 +371,21 @@ def _has_circular_dependency(predecessor_id, successor_id):
         stack.extend(predecessors)
 
     return False
+
+
+def _get_incomplete_blocked_tasks(task_id):
+    """Get incomplete tasks that are blocked by this task"""
+    # Get all active dependencies where this task is the predecessor
+    successors = frappe.db.sql("""
+        SELECT d.successor, t.title, t.status
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.successor = t.name
+        WHERE d.predecessor = %(task_id)s
+        AND d.is_active = 1
+        AND t.status != 'DONE'
+    """, {"task_id": task_id}, as_dict=True)
+
+    return successors
 
 
 @frappe.whitelist()
@@ -422,3 +546,102 @@ def quick_add(title, priority="P1", department=None, assigned_to=None):
     doc.is_inbox = 1
     doc.insert()
     return {"success": True, "task_id": doc.name}
+
+
+@frappe.whitelist()
+def get_dependency_popover_data(task_id):
+    """Get detailed dependency info for popover display"""
+    require_auth()
+    if not task_id:
+        frappe.throw(_("Task ID is required"))
+
+    # Get tasks that are blocking this task (predecessors / blocked_by)
+    blocked_by = frappe.db.sql("""
+        SELECT
+            d.predecessor as task_id,
+            t.title,
+            t.status,
+            t.assigned_to,
+            t.due_date,
+            t.priority
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.predecessor = t.name
+        WHERE d.successor = %(task_id)s
+        AND d.is_active = 1
+        ORDER BY t.priority ASC, t.due_date ASC
+    """, {"task_id": task_id}, as_dict=True)
+
+    # Get tasks that this task is blocking (successors / blocks)
+    blocks = frappe.db.sql("""
+        SELECT
+            d.successor as task_id,
+            t.title,
+            t.status,
+            t.assigned_to,
+            t.start_date,
+            t.priority
+        FROM `tabWH Task Dependency` d
+        INNER JOIN `tabWH Task` t ON d.successor = t.name
+        WHERE d.predecessor = %(task_id)s
+        AND d.is_active = 1
+        ORDER BY t.priority ASC, t.start_date ASC
+    """, {"task_id": task_id}, as_dict=True)
+
+    # Enrich with user full names
+    for task in blocked_by:
+        if task.get("assigned_to"):
+            task["assigned_to_name"] = frappe.db.get_value("User", task["assigned_to"], "full_name")
+
+    for task in blocks:
+        if task.get("assigned_to"):
+            task["assigned_to_name"] = frappe.db.get_value("User", task["assigned_to"], "full_name")
+
+    return {
+        "blocked_by": blocked_by,
+        "blocks": blocks,
+        "blocked_by_count": len(blocked_by),
+        "blocks_count": len(blocks)
+    }
+
+
+@frappe.whitelist()
+def get_dependency_counts(task_ids):
+    """Get dependency counts for multiple tasks (for Kanban board highlighting)"""
+    require_auth()
+
+    # Parse task_ids if it's a JSON string
+    if isinstance(task_ids, str):
+        task_ids = json.loads(task_ids)
+
+    if not task_ids or not isinstance(task_ids, list):
+        return []
+
+    # Get blocked_by counts (tasks blocking each task - where task is successor)
+    blocked_by_results = frappe.db.sql("""
+        SELECT successor as task_id, COUNT(*) as blocked_by_count
+        FROM `tabWH Task Dependency`
+        WHERE successor IN %(task_ids)s AND is_active = 1
+        GROUP BY successor
+    """, {"task_ids": task_ids}, as_dict=True)
+
+    # Get blocks counts (tasks each task is blocking - where task is predecessor)
+    blocks_results = frappe.db.sql("""
+        SELECT predecessor as task_id, COUNT(*) as blocks_count
+        FROM `tabWH Task Dependency`
+        WHERE predecessor IN %(task_ids)s AND is_active = 1
+        GROUP BY predecessor
+    """, {"task_ids": task_ids}, as_dict=True)
+
+    # Build lookup dictionaries
+    counts_map = {}
+    for row in blocked_by_results:
+        counts_map[row["task_id"]] = {"task_id": row["task_id"], "blocked_by_count": row["blocked_by_count"], "blocks_count": 0}
+
+    for row in blocks_results:
+        if row["task_id"] in counts_map:
+            counts_map[row["task_id"]]["blocks_count"] = row["blocks_count"]
+        else:
+            counts_map[row["task_id"]] = {"task_id": row["task_id"], "blocked_by_count": 0, "blocks_count": row["blocks_count"]}
+
+    # Return array of task dependency counts (only for tasks with dependencies)
+    return list(counts_map.values())

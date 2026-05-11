@@ -34,7 +34,9 @@ test.describe('Navigation', () => {
       if (await sellInSection.isVisible()) {
         // Expand SELL IN section
         await shellPage.expandSection('SELL IN')
-        await authenticatedPage.waitForTimeout(300)
+
+        // Wait for sublinks to appear
+        await authenticatedPage.waitForLoadState('domcontentloaded')
 
         // Check if any subitems are visible (there should be some links inside)
         const sublinks = authenticatedPage.locator('aside a')

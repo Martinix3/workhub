@@ -1,4 +1,4 @@
-// Error State Component - Neobrutal style
+// Error State Component
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -24,20 +24,20 @@ export function ErrorState({
   const content = (
     <div className="flex flex-col items-center justify-center gap-6 p-8 max-w-md mx-auto text-center">
       {/* Error icon */}
-      <div className="w-16 h-16 bg-red-100 border-2 border-red-500 flex items-center justify-center">
-        <AlertTriangle className="w-8 h-8 text-red-600" />
+      <div className="w-16 h-16 bg-error-light border border-error-dark flex items-center justify-center">
+        <AlertTriangle className="w-8 h-8 text-error-dark" />
       </div>
 
       {/* Title and message */}
       <div>
-        <h2 className="font-serif text-xl font-bold text-stone-900 mb-2">
+        <h2 className="font-heading text-xl font-bold text-neutral-900 mb-2">
           {title}
         </h2>
-        <p className="text-stone-600">
+        <p className="text-neutral-600">
           {message}
         </p>
         {error && import.meta.env.DEV && (
-          <p className="mt-2 text-sm text-red-600 font-mono bg-red-50 p-2 border border-red-200">
+          <p className="mt-2 text-sm text-error-dark font-mono bg-error-light p-2 border border-error">
             {error.message}
           </p>
         )}
@@ -50,11 +50,8 @@ export function ErrorState({
             onClick={onRetry}
             className="
               flex items-center gap-2 px-4 py-2
-              bg-amber-500 text-white font-medium
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
-              hover:shadow-[2px_2px_0_#1c1917]
+              bg-gold-dark text-white font-medium
+              border border-neutral-200
               transition-all duration-75
             "
           >
@@ -67,11 +64,8 @@ export function ErrorState({
             onClick={() => navigate('/')}
             className="
               flex items-center gap-2 px-4 py-2
-              bg-white text-stone-900 font-medium
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
-              hover:shadow-[2px_2px_0_#1c1917]
+              bg-white text-neutral-900 font-medium
+              border border-neutral-200
               transition-all duration-75
             "
           >
@@ -117,15 +111,15 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
       {icon && (
-        <div className="w-12 h-12 bg-stone-100 border-2 border-stone-300 flex items-center justify-center">
+        <div className="w-12 h-12 bg-neutral-100 border border-neutral-200 flex items-center justify-center">
           {icon}
         </div>
       )}
       <div>
-        <h3 className="font-serif text-lg font-bold text-stone-900 mb-1">
+        <h3 className="font-heading text-lg font-bold text-neutral-900 mb-1">
           {title}
         </h3>
-        <p className="text-stone-500 text-sm">
+        <p className="text-neutral-500 text-sm">
           {message}
         </p>
       </div>
@@ -134,11 +128,8 @@ export function EmptyState({
           onClick={onAction}
           className="
             px-4 py-2
-            bg-amber-500 text-white font-medium
-            border-2 border-stone-900
-            shadow-[4px_4px_0_#1c1917]
-            hover:translate-x-[2px] hover:translate-y-[2px]
-            hover:shadow-[2px_2px_0_#1c1917]
+            bg-gold-dark text-white font-medium
+            border border-neutral-200
             transition-all duration-75
           "
         >

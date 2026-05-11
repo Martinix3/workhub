@@ -122,7 +122,7 @@ export function CreateOrderWizard({ isOpen, onClose, onSuccess }: CreateOrderWiz
 
       {/* Error display */}
       {error && (
-        <div className="mx-6 mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300">
+        <div className="mx-6 mb-4 p-3 bg-error-light dark:bg-error-dark/20 border border-error dark:border-error-dark text-sm text-error-text dark:text-error">
           Error: {error.message}
         </div>
       )}

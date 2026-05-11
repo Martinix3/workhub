@@ -69,8 +69,8 @@ export function DepartmentsTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-stone-900 mb-1">Departamentos</h3>
-        <p className="text-sm text-stone-500 mb-6">
+        <h3 className="text-lg font-medium text-neutral-900 mb-1">Departamentos</h3>
+        <p className="text-sm text-neutral-500 mb-6">
           Selecciona los departamentos que quieres ver en tu dashboard.
           Solo puedes acceder a departamentos asignados a tu rol.
         </p>
@@ -88,40 +88,40 @@ export function DepartmentsTab() {
                 className={`
                   flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all
                   ${isDisabled
-                    ? 'border-stone-200 bg-stone-50 cursor-not-allowed opacity-60'
+                    ? 'border-neutral-200 bg-neutral-50 cursor-not-allowed opacity-60'
                     : isSelected
-                      ? 'border-amber-500 bg-amber-50'
-                      : 'border-stone-200 hover:border-stone-300'
+                      ? 'border-gold-dark bg-gold-light'
+                      : 'border-neutral-200 hover:border-neutral-300'
                   }
                 `}
               >
                 <div className={`
                   p-3 rounded-lg
-                  ${isSelected ? 'bg-amber-100' : 'bg-stone-100'}
+                  ${isSelected ? 'bg-gold-light' : 'bg-neutral-100'}
                 `}>
                   <Building2
                     size={24}
-                    className={isSelected ? 'text-amber-600' : 'text-stone-500'}
+                    className={isSelected ? 'text-gold-dark' : 'text-neutral-500'}
                   />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className={`font-medium ${isSelected ? 'text-amber-700' : 'text-stone-900'}`}>
+                    <span className={`font-medium ${isSelected ? 'text-gold-dark' : 'text-neutral-900'}`}>
                       {dept.name}
                     </span>
                     {isDisabled && (
-                      <Lock size={14} className="text-stone-400" />
+                      <Lock size={14} className="text-neutral-400" />
                     )}
                   </div>
-                  <p className="text-sm text-stone-500">{dept.description}</p>
+                  <p className="text-sm text-neutral-500">{dept.description}</p>
                 </div>
                 {!isDisabled && (
                   <div className="relative">
                     <div className={`
                       w-5 h-5 rounded border-2 flex items-center justify-center
                       ${isSelected
-                        ? 'border-amber-500 bg-amber-500'
-                        : 'border-stone-300'
+                        ? 'border-gold-dark bg-gold-dark'
+                        : 'border-neutral-300'
                       }
                     `}>
                       {isSelected && (
@@ -138,7 +138,7 @@ export function DepartmentsTab() {
         </div>
 
         {departments.some(d => !d.enabled) && (
-          <p className="text-sm text-stone-400 mt-4 flex items-center gap-2">
+          <p className="text-sm text-neutral-400 mt-4 flex items-center gap-2">
             <Lock size={14} />
             Los departamentos bloqueados requieren permisos adicionales.
             Contacta a tu administrador para solicitar acceso.
@@ -147,15 +147,15 @@ export function DepartmentsTab() {
       </div>
 
       {/* Save Button */}
-      <div className="flex items-center gap-4 pt-4 border-t border-stone-200">
+      <div className="flex items-center gap-4 pt-4 border-t border-neutral-200">
         <button
           onClick={handleSave}
           disabled={!hasChanges || updating}
           className={`
             flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors
             ${hasChanges
-              ? 'bg-amber-500 text-white hover:bg-amber-600'
-              : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+              ? 'bg-gold-dark text-white hover:bg-gold-dark'
+              : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
             }
           `}
         >
@@ -167,7 +167,7 @@ export function DepartmentsTab() {
           Guardar cambios
         </button>
         {saveSuccess && (
-          <span className="text-sm text-green-600">Departamentos actualizados</span>
+          <span className="text-sm text-success-dark">Departamentos actualizados</span>
         )}
       </div>
     </div>

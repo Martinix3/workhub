@@ -1,0 +1,109 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-01-10 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "timestamp",
+  "section_break_input",
+  "original_text",
+  "section_break_llm",
+  "llm_output",
+  "section_break_corrections",
+  "user_corrections",
+  "section_break_final",
+  "final_output"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Usuario",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "timestamp",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Fecha y Hora",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_input",
+   "fieldtype": "Section Break",
+   "label": "Entrada Original"
+  },
+  {
+   "fieldname": "original_text",
+   "fieldtype": "Long Text",
+   "label": "Texto Original",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_llm",
+   "fieldtype": "Section Break",
+   "label": "Salida del LLM"
+  },
+  {
+   "fieldname": "llm_output",
+   "fieldtype": "Long Text",
+   "label": "Salida LLM (JSON)",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_corrections",
+   "fieldtype": "Section Break",
+   "label": "Correcciones del Usuario"
+  },
+  {
+   "fieldname": "user_corrections",
+   "fieldtype": "Long Text",
+   "label": "Correcciones (JSON)"
+  },
+  {
+   "fieldname": "section_break_final",
+   "fieldtype": "Section Break",
+   "label": "Salida Final"
+  },
+  {
+   "fieldname": "final_output",
+   "fieldtype": "Long Text",
+   "label": "Salida Final (JSON)",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Workhub Frappe App",
+ "name": "WH NL Task Correction",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "All",
+   "write": 1
+  }
+ ],
+ "sort_field": "timestamp",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

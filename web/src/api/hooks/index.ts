@@ -81,3 +81,10 @@ export {
   useCustomerSearch,
   useItemSearch
 } from './useNotepad'
+
+// WorkLink Suggestions
+export {
+  useWorkLinkSuggestions,
+  useAcceptSuggestion,
+  useDismissSuggestion
+} from './useWorkLinkSuggestions'

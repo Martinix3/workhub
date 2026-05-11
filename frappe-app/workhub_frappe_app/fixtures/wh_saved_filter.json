@@ -1,0 +1,35 @@
+[
+  {
+    "doctype": "WH Saved Filter",
+    "name": "preset-mis-tareas",
+    "title": "Mis Tareas",
+    "entity_type": "task",
+    "icon": "👤",
+    "is_shared": 0,
+    "is_preset": 1,
+    "sort_order": 1,
+    "filter_json": "{\"assigned_to\": \"$current_user\", \"status\": [\"BACKLOG\", \"NEXT\", \"DOING\", \"BLOCKED\"]}"
+  },
+  {
+    "doctype": "WH Saved Filter",
+    "name": "preset-vencidas",
+    "title": "Vencidas",
+    "entity_type": "task",
+    "icon": "⚠️",
+    "is_shared": 0,
+    "is_preset": 1,
+    "sort_order": 2,
+    "filter_json": "{\"due_date_op\": \"<\", \"due_date_value\": \"$today\", \"status\": [\"BACKLOG\", \"NEXT\", \"DOING\", \"BLOCKED\"]}"
+  },
+  {
+    "doctype": "WH Saved Filter",
+    "name": "preset-esta-semana",
+    "title": "Esta Semana",
+    "entity_type": "task",
+    "icon": "📅",
+    "is_shared": 0,
+    "is_preset": 1,
+    "sort_order": 3,
+    "filter_json": "{\"due_date_op\": \"in_range\", \"due_date_value\": \"$this_week\", \"status\": [\"BACKLOG\", \"NEXT\", \"DOING\", \"BLOCKED\"]}"
+  }
+]

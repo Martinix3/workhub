@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 import json
 
-from workhub_frappe_app.api.utils import require_auth
+from workhub_frappe_app.api.utils import require_auth, sanitize_search_term
 from workhub_frappe_app.services.llm_parser import parse_note_with_llm
 from workhub_frappe_app.services.customer_matcher import (
     match_customer,
@@ -153,7 +153,7 @@ def get_items(search: str = "", limit: int = 20) -> list:
     filters = {"disabled": 0, "is_sales_item": 1}
 
     if search:
-        filters["item_name"] = ["like", f"%{search}%"]
+        filters["item_name"] = ["like", f"%{sanitize_search_term(search)}%"]
 
     items = frappe.get_all(
         "Item",

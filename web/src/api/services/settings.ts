@@ -6,9 +6,12 @@ export interface UserSettings {
   theme: 'light' | 'dark' | 'system'
   language: 'es' | 'en'
   notifications: {
-    email: boolean
-    push: boolean
-    digest: 'daily' | 'weekly' | 'none'
+    frequency: 'realtime' | 'daily' | 'weekly' | 'off'
+    quiet_hours_enabled: boolean
+    quiet_hours_start: string // HH:MM:SS format
+    quiet_hours_end: string // HH:MM:SS format
+    priority_bypass_enabled: boolean
+    email_enabled: boolean
   }
   department_access: string[]
 }
@@ -27,7 +30,12 @@ export interface Department {
   id: string
   name: string
   icon: string
+  code?: string
+  enabled?: boolean
+  description?: string
 }
+
+export type UserKPIs = any
 
 export interface UpdateProfileData {
   first_name?: string
@@ -39,10 +47,14 @@ export interface UpdateSettingsData {
   theme?: 'light' | 'dark' | 'system'
   language?: 'es' | 'en'
   notifications?: {
-    email?: boolean
-    push?: boolean
-    digest?: 'daily' | 'weekly' | 'none'
+    frequency?: 'realtime' | 'daily' | 'weekly' | 'off'
+    quiet_hours_enabled?: boolean
+    quiet_hours_start?: string // HH:MM:SS format
+    quiet_hours_end?: string // HH:MM:SS format
+    priority_bypass_enabled?: boolean
+    email_enabled?: boolean
   }
+  department_access?: string[]
 }
 
 // API Methods
@@ -74,6 +86,10 @@ const settingsApi = {
   // Get available departments
   async getDepartments(): Promise<Department[]> {
     return frappe.call<Department[]>('workhub_frappe_app.api.settings.get_available_departments')
+  },
+
+  async getUserKPIs(_period?: string | { period?: string }): Promise<UserKPIs> {
+    return frappe.call<UserKPIs>('workhub_frappe_app.api.settings.get_user_kpis')
   }
 }
 

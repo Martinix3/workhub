@@ -4,31 +4,49 @@ import { ShellPage } from '../pages/shell.page'
 /**
  * Auth fixtures for E2E tests
  * Provides pre-authenticated pages for different user roles
+ *
+ * Note: These fixtures use bypass mode for testing, which stores auth state in sessionStorage.
+ * For testing cookie-based OAuth authentication, use the direct test cases in auth.spec.ts
+ * that simulate the OAuth callback flow with ?auth_success=true parameter.
+ *
+ * Cookie-based auth flow (production):
+ * 1. User clicks "Login with Google"
+ * 2. Backend OAuth callback sets HTTP-only cookie and redirects to /?auth_success=true
+ * 3. Frontend verifies cookie via API call and stores user info
+ * 4. All subsequent API calls use the cookie automatically (credentials: 'include')
+ * 5. Logout clears the HTTP-only cookie via API call
  */
 
 type AuthFixtures = {
-  /** Page with demo user logged in (Sales Manager, Viewer roles) */
+  /** Page with demo user logged in (Sales Manager, Viewer roles) - uses bypass mode */
   authenticatedPage: Page
   /** ShellPage instance with authenticated user */
   shellPage: ShellPage
-  /** Page with admin user (System Manager role) - for admin tests */
+  /** Page with admin user (System Manager role) - for admin tests - uses bypass mode */
   adminPage: Page
 }
 
 export const test = base.extend<AuthFixtures>({
   authenticatedPage: async ({ page }, use) => {
     // Navigate to login and use bypass mode
+    // Bypass mode is used for testing to avoid OAuth dependencies
     await page.goto('/login')
     await page.waitForLoadState('domcontentloaded')
 
     // Click bypass login button ("Revisar UI" is the bypass mode button)
-    const bypassButton = page.locator('button:has-text("Revisar UI"), button:has-text("Bypass"), [data-testid="bypass-login"]').first()
+    // Multiple selectors for fallback: data-testid (preferred), then text-based
+    const bypassButton = page.locator('[data-testid="bypass-login"], button:has-text("Revisar UI"), button:has-text("Bypass")').first()
+
+    // Wait for button to be both visible and enabled
     await bypassButton.waitFor({ state: 'visible', timeout: 10000 })
     await bypassButton.click()
 
-    // Wait for redirect to home
-    await page.waitForURL('/', { timeout: 15000 })
+    // Wait for redirect to home with proper load state
+    await page.waitForURL('/', { timeout: 10000 })
     await page.waitForLoadState('domcontentloaded')
+
+    // Verify critical element loaded (sidebar or main navigation)
+    await page.locator('aside, nav, main').first().waitFor({ state: 'visible', timeout: 5000 })
 
     await use(page)
   },
@@ -48,10 +66,17 @@ export const test = base.extend<AuthFixtures>({
     await page.goto('/login')
     await page.waitForLoadState('domcontentloaded')
 
-    const bypassButton = page.locator('button:has-text("Revisar UI"), button:has-text("Bypass"), [data-testid="bypass-login"]').first()
+    // Use same improved bypass pattern
+    const bypassButton = page.locator('[data-testid="bypass-login"], button:has-text("Revisar UI"), button:has-text("Bypass")').first()
     await bypassButton.waitFor({ state: 'visible', timeout: 10000 })
     await bypassButton.click()
-    await page.waitForURL('/', { timeout: 15000 })
+
+    // Wait for redirect with proper load state
+    await page.waitForURL('/', { timeout: 10000 })
+    await page.waitForLoadState('domcontentloaded')
+
+    // Verify page loaded
+    await page.locator('aside, nav, main').first().waitFor({ state: 'visible', timeout: 5000 })
 
     await use(page)
     await context.close()

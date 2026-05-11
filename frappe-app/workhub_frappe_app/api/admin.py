@@ -353,6 +353,22 @@ def remove_role(user_id, role):
 
 
 @frappe.whitelist()
+def get_assignable_users():
+    """Get lightweight list of users for assignee dropdown selection"""
+    require_auth()
+
+    users = frappe.get_all("User",
+        filters={"enabled": 1, "user_type": "System User"},
+        fields=["name", "full_name", "user_image"],
+        order_by="full_name asc",
+        limit_page_length=100,
+        ignore_permissions=True
+    )
+
+    return users
+
+
+@frappe.whitelist()
 def send_invitation(email, first_name=None, roles=None, message=None):
     """
     Send an invitation email to a new user.

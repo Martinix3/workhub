@@ -227,3 +227,298 @@
 .data-table--clickable tbody tr:active {
 	background: var(--grid);
 }
+
+/* === MOBILE RESPONSIVE === */
+
+/* Mobile: Card-based layout for small screens (<768px) */
+@media (max-width: 767px) {
+	.data-table-wrapper {
+		border: none;
+		box-shadow: none;
+		background: transparent;
+	}
+
+	/* Hide traditional table structure */
+	.data-table thead {
+		display: none;
+	}
+
+	.data-table,
+	.data-table tbody,
+	.data-table tbody tr {
+		display: block;
+		width: 100%;
+	}
+
+	/* Transform rows into cards */
+	.data-table tbody tr {
+		background: var(--surface-1);
+		border: var(--border-width) solid var(--border-1);
+		border-radius: var(--radius);
+		box-shadow: 3px 3px 0 var(--border-1);
+		padding: var(--space-4);
+		margin-bottom: var(--mobile-card-gap);
+		position: relative;
+		transition: transform var(--mobile-transition-fast), box-shadow var(--mobile-transition-fast);
+
+		/* GPU acceleration for smooth scrolling */
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+	}
+
+	.data-table tbody tr:last-child {
+		margin-bottom: 0;
+	}
+
+	/* Touch feedback for clickable rows */
+	.data-table--clickable tbody tr:active {
+		transform: translate(2px, 2px);
+		box-shadow: 1px 1px 0 var(--border-1);
+	}
+
+	/* Remove hover effects on touch devices */
+	@media (hover: none) {
+		.data-table tbody tr:hover {
+			background: var(--surface-1);
+		}
+	}
+
+	/* Table cells become stacked items */
+	.data-table td {
+		display: block;
+		width: 100%;
+		padding: var(--space-2) 0;
+		border: none;
+		text-align: left !important;
+	}
+
+	.data-table td:first-child {
+		padding-left: 0;
+		padding-top: 0;
+	}
+
+	.data-table td:last-child {
+		padding-right: 0;
+		padding-bottom: 0;
+	}
+
+	/* Add data labels before each cell using data-label attribute */
+	.data-table td[data-label]:before {
+		content: attr(data-label);
+		display: block;
+		font-family: var(--font-ui);
+		font-size: var(--mobile-text-xs);
+		font-weight: var(--weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--text-3);
+		margin-bottom: var(--space-1);
+	}
+
+	/* Cell content styling */
+	.data-table .cell-primary {
+		font-size: var(--mobile-text-base);
+		margin-bottom: var(--space-2);
+	}
+
+	.data-table .cell-mono {
+		font-size: var(--mobile-text-sm);
+	}
+
+	.data-table .cell-currency {
+		text-align: left;
+	}
+
+	.data-table .cell-truncate {
+		max-width: 100%;
+		white-space: normal;
+		overflow: visible;
+		text-overflow: clip;
+	}
+
+	/* === Mobile Row Actions === */
+	.data-table .cell-actions {
+		opacity: 1;
+		width: 100%;
+		padding-top: var(--space-3);
+		margin-top: var(--space-3);
+		border-top: var(--border-width-thin) solid var(--border-2);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+
+	/* Remove data label for actions cell */
+	.data-table .cell-actions:before {
+		display: none;
+	}
+
+	/* Touch-friendly action buttons */
+	.data-table .row-action {
+		min-height: var(--touch-target-min);
+		min-width: var(--touch-target-min);
+		padding: var(--space-2) var(--space-4);
+		font-size: var(--mobile-text-sm);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: 1;
+		transition: all var(--mobile-transition-fast);
+	}
+
+	.data-table .row-action:active {
+		transform: scale(0.98);
+		background: var(--text-1);
+		color: var(--surface-1);
+	}
+
+	.data-table .row-action + .row-action {
+		margin-left: 0;
+	}
+
+	/* Swipe-ready structure for phase 4 */
+	.data-table tbody tr {
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* Swipe action container (hidden by default, revealed by swipe gesture) */
+	.data-table tbody tr .swipe-actions {
+		position: absolute;
+		top: 0;
+		right: 0;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		background: var(--surface-2);
+		transform: translateX(100%);
+		transition: transform var(--mobile-transition-normal);
+		padding: 0 var(--space-2);
+	}
+
+	.data-table tbody tr.swiping .swipe-actions {
+		transition: none;
+	}
+
+	/* Swipe action buttons */
+	.swipe-action {
+		min-width: var(--touch-target-large);
+		min-height: var(--touch-target-large);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--text-1);
+		color: var(--surface-1);
+		border: none;
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: transform var(--mobile-transition-fast);
+	}
+
+	.swipe-action:active {
+		transform: scale(0.95);
+	}
+
+	.swipe-action--danger {
+		background: var(--danger);
+		color: var(--surface-1);
+	}
+
+	.swipe-action--success {
+		background: var(--success);
+		color: var(--surface-1);
+	}
+
+	/* Empty state adjustments */
+	.data-table-empty {
+		padding: var(--space-8) var(--mobile-gutter);
+	}
+
+	.data-table-empty__icon {
+		font-size: var(--text-3xl);
+	}
+
+	.data-table-empty__title {
+		font-size: var(--mobile-text-base);
+	}
+
+	.data-table-empty__text {
+		font-size: var(--mobile-text-sm);
+	}
+}
+
+/* Very small screens (<375px): Extra compact cards */
+@media (max-width: 374px) {
+	.data-table tbody tr {
+		padding: var(--space-3);
+		box-shadow: 2px 2px 0 var(--border-1);
+	}
+
+	.data-table td {
+		padding: var(--space-1) 0;
+	}
+
+	.data-table .cell-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.data-table .row-action {
+		flex: none;
+		width: 100%;
+	}
+}
+
+/* Tablet: Optimize for touch but keep table layout */
+@media (min-width: 768px) and (max-width: 1023px) {
+	/* Slightly larger touch targets on tablet */
+	.data-table .row-action {
+		min-height: var(--touch-target-min);
+		padding: var(--space-2) var(--space-3);
+	}
+
+	.data-table th,
+	.data-table td {
+		padding: var(--space-3);
+	}
+
+	.data-table th:first-child,
+	.data-table td:first-child {
+		padding-left: var(--space-4);
+	}
+
+	.data-table th:last-child,
+	.data-table td:last-child {
+		padding-right: var(--space-4);
+	}
+
+	/* Show actions on tablet (always visible for touch) */
+	.data-table .cell-actions {
+		opacity: 1;
+	}
+}
+
+/* Landscape mobile: Optimize spacing */
+@media (max-width: 767px) and (orientation: landscape) {
+	.data-table tbody tr {
+		padding: var(--space-3);
+		margin-bottom: var(--space-2);
+	}
+
+	.data-table td {
+		padding: var(--space-1) 0;
+	}
+
+	.data-table .cell-actions {
+		padding-top: var(--space-2);
+		margin-top: var(--space-2);
+	}
+
+	.data-table .row-action {
+		min-height: 40px;
+		padding: var(--space-1) var(--space-3);
+	}
+}

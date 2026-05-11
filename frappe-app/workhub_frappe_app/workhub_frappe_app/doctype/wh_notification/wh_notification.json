@@ -17,7 +17,10 @@
   "section_break_reference",
   "reference_doctype",
   "reference_name",
-  "action_url"
+  "action_url",
+  "section_break_digest",
+  "queued_for_digest",
+  "digest_sent_at"
  ],
  "fields": [
   {
@@ -35,7 +38,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Tipo",
-   "options": "TASK_ASSIGNED\nBLOCKED\nOVERDUE\nDEPENDENCY\nPROJECT_RISK\nEMAIL_TASK\nMENTION\nCOMPLETED",
+   "options": "TASK_ASSIGNED\nBLOCKED\nOVERDUE\nDEPENDENCY\nPROJECT_RISK\nEMAIL_TASK\nMENTION\nCOMPLETED\nORDER_STATUS\nORDER_CREATED\nORDER_DELIVERED",
    "reqd": 1
   },
   {
@@ -101,6 +104,25 @@
    "fieldname": "action_url",
    "fieldtype": "Data",
    "label": "URL Accion"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_digest",
+   "fieldtype": "Section Break",
+   "label": "Seguimiento de Digest"
+  },
+  {
+   "default": "0",
+   "fieldname": "queued_for_digest",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "En Cola para Digest"
+  },
+  {
+   "fieldname": "digest_sent_at",
+   "fieldtype": "Datetime",
+   "label": "Digest Enviado en",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

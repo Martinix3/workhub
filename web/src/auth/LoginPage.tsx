@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext'
 import { useNavigate } from 'react-router-dom'
 
 export function LoginPage() {
-  const { login, loading, error, clearError, bypassAuth } = useAuth()
+  const { login, loading, error, clearError, bypassAuth, isBypassEnabled } = useAuth()
   const navigate = useNavigate()
 
   const handleBypass = () => {
@@ -16,31 +16,31 @@ export function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo and Title */}
         <div className="text-center mb-8">
-          <h1 className="font-serif text-4xl font-bold text-stone-900 mb-2">
+          <h1 className="font-heading text-4xl font-bold text-neutral-900 mb-2">
             Santa Brisa
           </h1>
-          <p className="text-lg text-stone-600 font-medium">
+          <p className="text-lg text-neutral-600 font-medium">
             WorkHub
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] p-8">
-          <h2 className="font-serif text-2xl font-bold text-stone-900 mb-2">
+        <div className="bg-white border border-neutral-200 p-8">
+          <h2 className="font-heading text-2xl font-bold text-neutral-900 mb-2">
             Iniciar Sesion
           </h2>
-          <p className="text-stone-600 mb-6">
+          <p className="text-neutral-600 mb-6">
             Accede con tu cuenta de Google para continuar
           </p>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border-2 border-red-500 text-red-700 text-sm">
+            <div className="mb-4 p-3 bg-error-light border border-error-dark text-error-text text-sm">
               <div className="flex justify-between items-start">
                 <span>{error}</span>
                 <button
                   onClick={clearError}
-                  className="text-red-500 hover:text-red-700 font-bold"
+                  className="text-error hover:text-error-text font-bold"
                 >
                   X
                 </button>
@@ -55,10 +55,7 @@ export function LoginPage() {
             className={`
               w-full flex items-center justify-center gap-3
               px-6 py-3
-              bg-white border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
-              hover:shadow-[2px_2px_0_#1c1917]
+              bg-white border border-neutral-200
               transition-all duration-75
               font-medium
               ${loading ? 'opacity-50 cursor-not-allowed' : ''}
@@ -88,37 +85,41 @@ export function LoginPage() {
             </span>
           </button>
 
-          {/* Divider */}
-          <div className="my-6 flex items-center">
-            <div className="flex-1 border-t border-stone-300"></div>
-            <span className="px-3 text-sm text-stone-500">o</span>
-            <div className="flex-1 border-t border-stone-300"></div>
-          </div>
+          {/* Divider - Only show in development when bypass is enabled */}
+          {isBypassEnabled && (
+            <>
+              <div className="my-6 flex items-center">
+                <div className="flex-1 border-t border-neutral-300"></div>
+                <span className="px-3 text-sm text-neutral-500">o</span>
+                <div className="flex-1 border-t border-neutral-300"></div>
+              </div>
 
-          {/* Bypass Button for UI Review */}
-          <button
-            onClick={handleBypass}
-            className="
-              w-full px-6 py-3
-              bg-stone-100 border-2 border-stone-400
-              text-stone-600 font-medium
-              hover:bg-stone-200
-              transition-colors
-            "
-          >
-            Revisar UI (sin backend)
-          </button>
+              {/* Bypass Button for UI Review */}
+              <button
+                onClick={handleBypass}
+                className="
+                  w-full px-6 py-3
+                  bg-neutral-100 border-2 border-neutral-400
+                  text-neutral-600 font-medium
+                  hover:bg-neutral-200
+                  transition-colors
+                "
+              >
+                Revisar UI (sin backend)
+              </button>
+            </>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="mt-6 text-center text-sm text-stone-500">
+        <div className="mt-6 text-center text-sm text-neutral-500">
           <p>
             Al iniciar sesion, aceptas los{' '}
-            <a href="#" className="text-amber-600 hover:underline">
+            <a href="#" className="text-gold-dark hover:underline">
               Terminos de Servicio
             </a>{' '}
             y la{' '}
-            <a href="#" className="text-amber-600 hover:underline">
+            <a href="#" className="text-gold-dark hover:underline">
               Politica de Privacidad
             </a>
           </p>

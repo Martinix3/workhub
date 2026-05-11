@@ -153,6 +153,16 @@ frappe.workhub.NAV_CONFIG = [
         ]
     },
     {
+        id: 'reportes',
+        title: 'Reportes',
+        icon: 'file-text',
+        href: '/workhub_reportes',
+        items: [
+            { href: '/workhub_reportes_builder', label: 'Crear Reporte' },
+            { href: '/workhub_reportes_programados', label: 'Programados' }
+        ]
+    },
+    {
         id: 'tecnico',
         title: 'Técnico',
         icon: 'tool',
@@ -246,11 +256,11 @@ frappe.workhub.sidebar = {
                 <div class="wh-sidebar-logo">
                     <img src="/assets/workhub_frappe_app/img/logo.svg" alt="Santa Brisa" />
                 </div>
-                <div class="wh-sidebar-toggle" data-action="toggle">
+                <button class="wh-sidebar-toggle" data-action="toggle" aria-label="Colapsar barra lateral">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                </div>
+                </button>
             </div>
             <nav class="wh-sidebar-nav">
                 ${this.renderNavItems()}
@@ -259,6 +269,20 @@ frappe.workhub.sidebar = {
 
         // Agregar al body
         document.body.appendChild(sidebar);
+
+        // Create backdrop for mobile (if not exists)
+        if (!document.querySelector('.wh-sidebar-backdrop')) {
+            const backdrop = document.createElement('div');
+            backdrop.className = 'wh-sidebar-backdrop';
+            document.body.appendChild(backdrop);
+
+            // Add click listener to close sidebar
+            backdrop.addEventListener('click', () => {
+                if (frappe.workhub.bottomNav) {
+                    frappe.workhub.bottomNav.closeMobileSidebar();
+                }
+            });
+        }
     },
 
     renderNavItems() {
@@ -320,9 +344,13 @@ frappe.workhub.sidebar = {
     },
 
     getModuleBadgeCount(moduleId) {
-        // TODO: Conectar con sistema de alertas real
+        // Conectar con sistema de alertas real
         if (moduleId === 'alertas') {
-            return 5; // Mock data
+            // Obtener contador del modulo de notificaciones
+            if (frappe.workhub.notifications && frappe.workhub.notifications.unreadCount > 0) {
+                return frappe.workhub.notifications.unreadCount;
+            }
+            return null; // Ocultar badge si count es 0
         }
         return null;
     },
@@ -340,6 +368,7 @@ frappe.workhub.sidebar = {
             'check-circle': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
             'building': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></svg>',
             'dollar-sign': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+            'file-text': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
             'tool': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
             'settings': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg>'
         };
@@ -469,6 +498,43 @@ frappe.workhub.sidebar = {
         }
     },
 
+    /**
+     * Actualizar badge de un modulo especifico sin re-renderizar todo
+     * @param {string} moduleId - ID del modulo (ej: 'alertas')
+     * @param {number} count - Numero a mostrar en el badge (null para ocultar)
+     */
+    updateBadgeCount(moduleId, count) {
+        const navItem = document.querySelector(`[data-module-id="${moduleId}"]`);
+        if (!navItem) return;
+
+        // Buscar badge existente o el lugar donde deberia ir
+        let badge = navItem.querySelector('.wh-nav-item-badge');
+
+        if (count && count > 0) {
+            // Crear badge si no existe
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'wh-nav-item-badge';
+
+                // Insertar antes del chevron (si existe) o al final del label
+                const chevron = navItem.querySelector('.wh-nav-item-chevron');
+                if (chevron) {
+                    navItem.insertBefore(badge, chevron);
+                } else {
+                    navItem.appendChild(badge);
+                }
+            }
+            // Actualizar contenido del badge
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = '';
+        } else {
+            // Ocultar o eliminar badge si count es 0 o null
+            if (badge) {
+                badge.remove();
+            }
+        }
+    },
+
     updateActivePath() {
         // Actualizar item activo según ruta actual
         document.querySelectorAll('.wh-nav-item').forEach(item => {
@@ -497,6 +563,317 @@ frappe.router.on('change', () => {
 });
 
 // ==========================================
+// NOTIFICATIONS MODULE
+// ==========================================
+frappe.workhub.notifications = {
+    /**
+     * Estado interno del modulo
+     */
+    notifications: [],
+    unreadCount: 0,
+    highPriorityCount: 0,
+    isInitialized: false,
+
+    /**
+     * Inicializar el modulo de notificaciones
+     * Carga notificaciones iniciales y configura listeners
+     */
+    init() {
+        if (this.isInitialized) return;
+
+        this.loadNotifications();
+        this.setupRealtimeListener();
+        this.isInitialized = true;
+    },
+
+    /**
+     * Cargar notificaciones del usuario actual
+     * @param {Object} options - Opciones de filtrado { unread_only, priority, limit }
+     */
+    loadNotifications(options = {}) {
+        const defaultOptions = {
+            unread_only: false,
+            priority: null,
+            limit: 50
+        };
+        const params = Object.assign({}, defaultOptions, options);
+
+        frappe.call({
+            method: 'workhub_frappe_app.api.notifications.get_notifications',
+            args: params,
+            callback: (r) => {
+                if (r.message) {
+                    this.notifications = r.message.notifications || [];
+                    this.unreadCount = r.message.unread_count || 0;
+                    this.updateBadge();
+                    this.renderNotificationsList();
+                }
+            }
+        });
+    },
+
+    /**
+     * Actualizar solo los contadores (optimizado para polling)
+     */
+    updateCounts() {
+        frappe.call({
+            method: 'workhub_frappe_app.api.notifications.get_unread_count',
+            callback: (r) => {
+                if (r.message) {
+                    this.unreadCount = r.message.unread_count || 0;
+                    this.highPriorityCount = r.message.high_priority_count || 0;
+                    this.updateBadge();
+                }
+            }
+        });
+    },
+
+    /**
+     * Actualizar el badge visual del header y del sidebar
+     */
+    updateBadge() {
+        // Actualizar badge del header
+        const badge = document.querySelector('.wh-notification-badge');
+        if (badge) {
+            if (this.unreadCount > 0) {
+                badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+                badge.style.display = 'flex';
+
+                // Agregar clase especial si hay notificaciones de alta prioridad
+                if (this.highPriorityCount > 0) {
+                    badge.classList.add('has-high-priority');
+                } else {
+                    badge.classList.remove('has-high-priority');
+                }
+            } else {
+                badge.style.display = 'none';
+                badge.classList.remove('has-high-priority');
+            }
+        }
+
+        // Actualizar badge del sidebar (Alertas)
+        if (frappe.workhub.sidebar && frappe.workhub.sidebar.updateBadgeCount) {
+            frappe.workhub.sidebar.updateBadgeCount('alertas', this.unreadCount);
+        }
+    },
+
+    /**
+     * Renderizar lista de notificaciones en el panel
+     */
+    renderNotificationsList() {
+        const list = document.querySelector('.wh-notifications-list');
+        if (!list) return;
+
+        // Limpiar
+        list.innerHTML = '';
+
+        if (!this.notifications || this.notifications.length === 0) {
+            list.innerHTML = '<div class="wh-notifications-empty">No tienes notificaciones</div>';
+            return;
+        }
+
+        // Renderizar cada notificacion
+        this.notifications.forEach(notif => {
+            this.addNotificationToList(notif, false);
+        });
+    },
+
+    /**
+     * Agregar una notificacion al panel
+     * @param {Object} notification - Datos de la notificacion
+     * @param {Boolean} prepend - Si debe agregarse al inicio (true) o al final (false)
+     */
+    addNotificationToList(notification, prepend = true) {
+        const list = document.querySelector('.wh-notifications-list');
+        if (!list) return;
+
+        // Remover mensaje vacio si existe
+        const empty = list.querySelector('.wh-notifications-empty');
+        if (empty) empty.remove();
+
+        // Crear elemento de notificacion
+        const item = document.createElement('div');
+        item.className = 'wh-notification-item';
+        item.dataset.notificationId = notification.name;
+
+        // Clases adicionales segun estado y prioridad
+        if (!notification.read) {
+            item.classList.add('unread');
+        }
+        if (notification.priority === 'HIGH') {
+            item.classList.add('high-priority');
+        }
+
+        // Icono segun prioridad
+        const priorityIcon = this.getPriorityIcon(notification.priority);
+
+        // Construir HTML
+        item.innerHTML = `
+            ${priorityIcon}
+            <div class="wh-notification-content">
+                <div class="wh-notification-title">${notification.title || 'Notificación'}</div>
+                <div class="wh-notification-message">${notification.message || ''}</div>
+                <div class="wh-notification-time">${frappe.datetime.comment_when(notification.created_at)}</div>
+            </div>
+        `;
+
+        // Click handler para marcar como leida y navegar
+        item.addEventListener('click', () => {
+            this.markAsRead(notification.name);
+
+            // Navegar si tiene action_url
+            if (notification.action_url) {
+                window.location.href = notification.action_url;
+            } else if (notification.reference_doctype && notification.reference_name) {
+                frappe.set_route('Form', notification.reference_doctype, notification.reference_name);
+            }
+        });
+
+        // Agregar al DOM
+        if (prepend) {
+            list.insertBefore(item, list.firstChild);
+        } else {
+            list.appendChild(item);
+        }
+    },
+
+    /**
+     * Obtener icono segun prioridad
+     * @param {String} priority - HIGH, MEDIUM, LOW
+     */
+    getPriorityIcon(priority) {
+        const icons = {
+            'HIGH': '<div class="wh-notification-priority high"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>',
+            'MEDIUM': '<div class="wh-notification-priority medium"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>',
+            'LOW': '<div class="wh-notification-priority low"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>'
+        };
+        return icons[priority] || icons['LOW'];
+    },
+
+    /**
+     * Marcar una notificacion como leida
+     * @param {String} notificationId - ID de la notificacion
+     */
+    markAsRead(notificationId) {
+        frappe.call({
+            method: 'workhub_frappe_app.api.notifications.mark_read',
+            args: { notification_id: notificationId },
+            callback: (r) => {
+                if (r.message && r.message.success) {
+                    // Actualizar UI
+                    const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (item) {
+                        item.classList.remove('unread');
+                        item.classList.remove('high-priority');
+                    }
+
+                    // Actualizar en array local para obtener prioridad
+                    const notif = this.notifications.find(n => n.name === notificationId);
+                    const wasHighPriority = notif && notif.priority === 'HIGH' && !notif.read;
+
+                    // Actualizar contador de no leidas
+                    if (this.unreadCount > 0) {
+                        this.unreadCount--;
+                    }
+
+                    // Actualizar contador de alta prioridad si era HIGH
+                    if (wasHighPriority && this.highPriorityCount > 0) {
+                        this.highPriorityCount--;
+                    }
+
+                    // Marcar como leida en array local
+                    if (notif) {
+                        notif.read = 1;
+                    }
+
+                    this.updateBadge();
+                }
+            }
+        });
+    },
+
+    /**
+     * Marcar todas las notificaciones como leidas
+     */
+    markAllAsRead() {
+        frappe.call({
+            method: 'workhub_frappe_app.api.notifications.mark_all_read',
+            callback: (r) => {
+                if (r.message && r.message.success) {
+                    // Actualizar UI
+                    document.querySelectorAll('.wh-notification-item.unread').forEach(item => {
+                        item.classList.remove('unread');
+                    });
+
+                    // Actualizar array local
+                    this.notifications.forEach(n => {
+                        n.read = 1;
+                    });
+
+                    this.unreadCount = 0;
+                    this.highPriorityCount = 0;
+                    this.updateBadge();
+                }
+            }
+        });
+    },
+
+    /**
+     * Configurar listener de eventos en tiempo real
+     * Escucha el evento 'wh_notification' publicado por el backend
+     */
+    setupRealtimeListener() {
+        // Escuchar nuevas notificaciones via Frappe realtime (socket.io)
+        frappe.realtime.on('wh_notification', (data) => {
+            // Validar que tenemos datos validos
+            if (!data || !data.name) {
+                console.warn('Received invalid notification data:', data);
+                return;
+            }
+
+            try {
+                // Agregar a array local (al inicio)
+                this.notifications.unshift(data);
+
+                // Incrementar contador si no esta leida
+                if (!data.read) {
+                    this.unreadCount++;
+                    if (data.priority === 'HIGH') {
+                        this.highPriorityCount++;
+                    }
+                }
+
+                // Actualizar UI inmediatamente
+                this.updateBadge();
+                this.addNotificationToList(data, true);
+
+                // Mostrar toast para notificaciones de alta prioridad
+                if (data.priority === 'HIGH') {
+                    this.showHighPriorityToast(data);
+                }
+            } catch (error) {
+                console.error('Error handling realtime notification:', error);
+                frappe.show_alert({
+                    message: __('Error al procesar notificación en tiempo real'),
+                    indicator: 'red'
+                }, 3);
+            }
+        });
+    },
+
+    /**
+     * Mostrar toast para notificaciones urgentes
+     * @param {Object} notification - Datos de la notificacion
+     */
+    showHighPriorityToast(notification) {
+        frappe.show_alert({
+            message: `<strong>${notification.title}</strong><br>${notification.message}`,
+            indicator: 'red'
+        }, 7);
+    }
+};
+
+// ==========================================
 // HEADER COMPONENT
 // ==========================================
 frappe.workhub.header = {
@@ -504,7 +881,11 @@ frappe.workhub.header = {
         this.render();
         this.attachEventListeners();
         this.updateBreadcrumbs();
-        this.setupRealtimeNotifications();
+
+        // Inicializar modulo de notificaciones
+        if (frappe.workhub.notifications) {
+            frappe.workhub.notifications.init();
+        }
     },
 
     render() {
@@ -524,7 +905,7 @@ frappe.workhub.header = {
         header.className = 'wh-header';
         header.innerHTML = `
             <div class="wh-header-left">
-                <button class="wh-header-menu-toggle" onclick="frappe.workhub.bottomNav.openMobileSidebar()">
+                <button class="wh-header-menu-toggle" aria-label="Abrir menú de navegación" onclick="frappe.workhub.bottomNav.openMobileSidebar()">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
@@ -541,7 +922,7 @@ frappe.workhub.header = {
                         placeholder="Buscar... (Ctrl+K)"
                     />
                     <div class="wh-search-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <circle cx="11" cy="11" r="8"/>
                             <path d="m21 21-4.35-4.35"/>
                         </svg>
@@ -550,7 +931,7 @@ frappe.workhub.header = {
             </div>
             <div class="wh-header-right">
                 <!-- Notificaciones -->
-                <div class="wh-header-action" data-action="notifications">
+                <button class="wh-header-action" data-action="notifications" aria-label="Abrir notificaciones">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -558,13 +939,13 @@ frappe.workhub.header = {
                     <div class="wh-notification-badge has-count" data-count="0" style="display: none;">
                         0
                     </div>
-                </div>
+                </button>
 
                 <!-- User Menu -->
                 <div class="wh-user-menu">
-                    <div class="wh-user-avatar" data-action="user-menu">
+                    <button class="wh-user-avatar" data-action="user-menu" aria-label="Abrir menú de usuario">
                         ${this.getUserInitials()}
-                    </div>
+                    </button>
                 </div>
             </div>
         `;
@@ -727,7 +1108,9 @@ frappe.workhub.header = {
                     frappe.app.logout();
                     break;
                 case 'mark-all-read':
-                    this.markAllNotificationsRead();
+                    if (frappe.workhub.notifications) {
+                        frappe.workhub.notifications.markAllAsRead();
+                    }
                     break;
             }
         });
@@ -759,105 +1142,267 @@ frappe.workhub.header = {
 
         // Usar búsqueda nativa de Frappe
         frappe.searchdialog.search.init_search(query, 'Global Search');
-    },
+    }
+};
 
-    setupRealtimeNotifications() {
-        // Obtener notificaciones iniciales
-        frappe.call({
-            method: 'frappe.desk.doctype.notification_log.notification_log.get_notification_logs',
-            args: {
-                limit: 20
-            },
-            callback: (r) => {
-                if (r.message) {
-                    // API returns {notification_logs: [...]} or direct array
-                    const notifications = r.message.notification_logs || r.message || [];
-                    this.loadNotifications(Array.isArray(notifications) ? notifications : []);
-                }
-            }
-        });
+// ==========================================
+// MOBILE GESTURES (Swipe Support)
+// ==========================================
+frappe.workhub.mobileGestures = {
+    touchStartX: 0,
+    touchStartY: 0,
+    touchCurrentX: 0,
+    touchCurrentY: 0,
+    touchStartTime: 0,
+    isSwiping: false,
+    swipeDirection: null,
+    edgeSwipeThreshold: 50, // pixels from edge to trigger edge swipe
+    minSwipeDistance: 80, // minimum distance to complete swipe
+    maxSwipeTime: 500, // maximum time for a swipe gesture (ms)
+    velocityThreshold: 0.3, // minimum velocity (px/ms)
 
-        // Escuchar nuevas notificaciones
-        frappe.realtime.on('notification', (data) => {
-            this.addNotification(data);
-            this.updateNotificationCount(this.getUnreadCount() + 1);
-        });
-    },
-
-    loadNotifications(notifications) {
-        const list = document.querySelector('.wh-notifications-list');
-        if (!list) return;
-
-        // Limpiar
-        list.innerHTML = '';
-
-        if (!notifications || notifications.length === 0) {
-            list.innerHTML = '<div class="wh-notifications-empty">No tienes notificaciones</div>';
-            this.updateNotificationCount(0);
+    init() {
+        // Only enable on touch devices
+        if (!('ontouchstart' in window)) {
             return;
         }
 
-        // Renderizar notificaciones
-        notifications.forEach(notif => {
-            this.addNotification(notif, false);
-        });
-
-        // Actualizar count
-        const unreadCount = notifications.filter(n => !n.read).length;
-        this.updateNotificationCount(unreadCount);
+        this.attachEventListeners();
     },
 
-    addNotification(notification, prepend = true) {
-        const list = document.querySelector('.wh-notifications-list');
-        if (!list) return;
+    attachEventListeners() {
+        // Touch start
+        document.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
 
-        // Remove empty message
-        const empty = list.querySelector('.wh-notifications-empty');
-        if (empty) empty.remove();
+        // Touch move - not passive because we may need to prevent scroll
+        document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
 
-        // Add notification
-        const item = document.createElement('div');
-        item.className = 'wh-notification-item' + (notification.read ? '' : ' unread');
-        item.innerHTML = `
-            <div class="wh-notification-title">${notification.subject || 'Notificación'}</div>
-            <div class="wh-notification-message">${notification.email_content || notification.document_name || ''}</div>
-            <div class="wh-notification-time">${frappe.datetime.comment_when(notification.creation || new Date())}</div>
-        `;
+        // Touch end
+        document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
 
-        if (prepend) {
-            list.insertBefore(item, list.firstChild);
-        } else {
-            list.appendChild(item);
-        }
+        // Touch cancel
+        document.addEventListener('touchcancel', (e) => this.handleTouchCancel(e), { passive: true });
     },
 
-    getUnreadCount() {
-        const items = document.querySelectorAll('.wh-notification-item.unread');
-        return items.length;
+    handleTouchStart(e) {
+        const touch = e.touches[0];
+        this.touchStartX = touch.clientX;
+        this.touchStartY = touch.clientY;
+        this.touchCurrentX = touch.clientX;
+        this.touchCurrentY = touch.clientY;
+        this.touchStartTime = Date.now();
+        this.isSwiping = false;
+        this.swipeDirection = null;
     },
 
-    updateNotificationCount(count) {
-        const badge = document.querySelector('.wh-notification-badge');
-        if (!badge) return;
+    handleTouchMove(e) {
+        if (!e.touches || e.touches.length === 0) return;
 
-        if (count > 0) {
-            badge.textContent = count > 99 ? '99+' : count;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    },
+        const touch = e.touches[0];
+        this.touchCurrentX = touch.clientX;
+        this.touchCurrentY = touch.clientY;
 
-    markAllNotificationsRead() {
-        frappe.call({
-            method: 'frappe.desk.doctype.notification_log.notification_log.mark_all_as_read',
-            callback: () => {
-                document.querySelectorAll('.wh-notification-item.unread').forEach(item => {
-                    item.classList.remove('unread');
-                });
-                this.updateNotificationCount(0);
+        const deltaX = this.touchCurrentX - this.touchStartX;
+        const deltaY = this.touchCurrentY - this.touchStartY;
+        const absDeltaX = Math.abs(deltaX);
+        const absDeltaY = Math.abs(deltaY);
+
+        // Determine if this is a horizontal or vertical swipe
+        if (!this.isSwiping && (absDeltaX > 10 || absDeltaY > 10)) {
+            // Determine swipe direction based on which delta is larger
+            if (absDeltaX > absDeltaY) {
+                // Horizontal swipe
+                this.swipeDirection = 'horizontal';
+                this.isSwiping = true;
+            } else {
+                // Vertical swipe - let it scroll normally
+                this.swipeDirection = 'vertical';
+                return;
             }
-        });
+        }
+
+        // Only handle horizontal swipes
+        if (this.swipeDirection !== 'horizontal') {
+            return;
+        }
+
+        const sidebar = document.querySelector('.wh-sidebar');
+        const isSidebarOpen = sidebar && sidebar.classList.contains('mobile-open');
+
+        // Check if this is an edge swipe (from left edge) to open sidebar
+        const isEdgeSwipe = this.touchStartX <= this.edgeSwipeThreshold;
+
+        if (isEdgeSwipe && !isSidebarOpen && deltaX > 0) {
+            // Swipe right from edge to open
+            e.preventDefault(); // Prevent scrolling during swipe
+            this.updateSidebarPosition(deltaX, false);
+        } else if (isSidebarOpen && deltaX < 0) {
+            // Swipe left to close
+            e.preventDefault(); // Prevent scrolling during swipe
+            this.updateSidebarPosition(deltaX, true);
+        }
+    },
+
+    handleTouchEnd(e) {
+        if (!this.isSwiping || this.swipeDirection !== 'horizontal') {
+            this.resetSwipe();
+            return;
+        }
+
+        const deltaX = this.touchCurrentX - this.touchStartX;
+        const deltaY = this.touchCurrentY - this.touchStartY;
+        const absDeltaX = Math.abs(deltaX);
+        const distance = Math.abs(deltaX);
+        const duration = Date.now() - this.touchStartTime;
+        const velocity = distance / duration;
+
+        const sidebar = document.querySelector('.wh-sidebar');
+        const isSidebarOpen = sidebar && sidebar.classList.contains('mobile-open');
+        const isEdgeSwipe = this.touchStartX <= this.edgeSwipeThreshold;
+
+        // Determine if swipe should complete
+        const shouldComplete = distance >= this.minSwipeDistance || velocity >= this.velocityThreshold;
+
+        if (isEdgeSwipe && !isSidebarOpen && deltaX > 0 && shouldComplete) {
+            // Complete open swipe
+            this.completeSidebarOpen();
+        } else if (isSidebarOpen && deltaX < 0 && shouldComplete) {
+            // Complete close swipe
+            this.completeSidebarClose();
+        } else {
+            // Cancel swipe - return to original state
+            this.cancelSwipe(isSidebarOpen);
+        }
+
+        this.resetSwipe();
+    },
+
+    handleTouchCancel(e) {
+        const sidebar = document.querySelector('.wh-sidebar');
+        const isSidebarOpen = sidebar && sidebar.classList.contains('mobile-open');
+        this.cancelSwipe(isSidebarOpen);
+        this.resetSwipe();
+    },
+
+    updateSidebarPosition(deltaX, isClosing) {
+        const sidebar = document.querySelector('.wh-sidebar');
+        if (!sidebar) return;
+
+        // Add swiping class to disable transitions
+        sidebar.classList.add('swiping');
+
+        if (isClosing) {
+            // Closing: translate from 0 to -100%
+            // Clamp deltaX to not go beyond 0 (right)
+            const translateX = Math.min(0, deltaX);
+            sidebar.style.transform = `translateX(${translateX}px)`;
+        } else {
+            // Opening: translate from -100% to 0
+            // Start at -256px (sidebar width) and add deltaX
+            const sidebarWidth = 256;
+            const translateX = Math.max(-sidebarWidth, -sidebarWidth + deltaX);
+            sidebar.style.transform = `translateX(${translateX}px)`;
+        }
+
+        // Update backdrop opacity based on position
+        this.updateBackdropOpacity(deltaX, isClosing);
+    },
+
+    updateBackdropOpacity(deltaX, isClosing) {
+        const backdrop = document.querySelector('.wh-sidebar-backdrop');
+        if (!backdrop) return;
+
+        const sidebarWidth = 256;
+        let opacity;
+
+        if (isClosing) {
+            // When closing, opacity decreases as we swipe left
+            const progress = Math.abs(deltaX) / sidebarWidth;
+            opacity = Math.max(0, 1 - progress);
+        } else {
+            // When opening, opacity increases as we swipe right
+            const progress = Math.abs(deltaX) / sidebarWidth;
+            opacity = Math.min(1, progress);
+        }
+
+        backdrop.style.opacity = opacity.toString();
+
+        // Show backdrop during swipe
+        if (!backdrop.classList.contains('active')) {
+            backdrop.style.display = 'block';
+        }
+    },
+
+    completeSidebarOpen() {
+        const sidebar = document.querySelector('.wh-sidebar');
+        const backdrop = document.querySelector('.wh-sidebar-backdrop');
+
+        if (sidebar) {
+            sidebar.classList.remove('swiping');
+            sidebar.style.transform = '';
+            sidebar.classList.add('mobile-open');
+        }
+
+        if (backdrop) {
+            backdrop.classList.add('active');
+            backdrop.style.opacity = '';
+            backdrop.style.display = '';
+        }
+    },
+
+    completeSidebarClose() {
+        const sidebar = document.querySelector('.wh-sidebar');
+        const backdrop = document.querySelector('.wh-sidebar-backdrop');
+
+        if (sidebar) {
+            sidebar.classList.remove('swiping');
+            sidebar.style.transform = '';
+            sidebar.classList.remove('mobile-open');
+        }
+
+        if (backdrop) {
+            backdrop.classList.remove('active');
+            backdrop.style.opacity = '';
+            backdrop.style.display = '';
+        }
+    },
+
+    cancelSwipe(wasOpen) {
+        const sidebar = document.querySelector('.wh-sidebar');
+        const backdrop = document.querySelector('.wh-sidebar-backdrop');
+
+        if (sidebar) {
+            sidebar.classList.remove('swiping');
+            sidebar.style.transform = '';
+
+            // Return to original state
+            if (wasOpen) {
+                sidebar.classList.add('mobile-open');
+            } else {
+                sidebar.classList.remove('mobile-open');
+            }
+        }
+
+        if (backdrop) {
+            backdrop.style.opacity = '';
+
+            if (wasOpen) {
+                backdrop.classList.add('active');
+            } else {
+                backdrop.classList.remove('active');
+                backdrop.style.display = '';
+            }
+        }
+    },
+
+    resetSwipe() {
+        this.touchStartX = 0;
+        this.touchStartY = 0;
+        this.touchCurrentX = 0;
+        this.touchCurrentY = 0;
+        this.touchStartTime = 0;
+        this.isSwiping = false;
+        this.swipeDirection = null;
     }
 };
 
@@ -1018,12 +1563,16 @@ frappe.workhub.bottomNav = {
     openMobileSidebar() {
         const sidebar = document.querySelector('.wh-sidebar');
         const overlay = document.querySelector('.wh-mobile-overlay');
+        const backdrop = document.querySelector('.wh-sidebar-backdrop');
 
         if (sidebar) {
             sidebar.classList.add('mobile-open');
         }
         if (overlay) {
             overlay.classList.add('active');
+        }
+        if (backdrop) {
+            backdrop.classList.add('active');
         }
     },
 
@@ -1033,12 +1582,16 @@ frappe.workhub.bottomNav = {
     closeMobileSidebar() {
         const sidebar = document.querySelector('.wh-sidebar');
         const overlay = document.querySelector('.wh-mobile-overlay');
+        const backdrop = document.querySelector('.wh-sidebar-backdrop');
 
         if (sidebar) {
             sidebar.classList.remove('mobile-open');
         }
         if (overlay) {
             overlay.classList.remove('active');
+        }
+        if (backdrop) {
+            backdrop.classList.remove('active');
         }
     }
 };
@@ -1318,6 +1871,1396 @@ frappe.workhub.shortcuts = {
 };
 
 // ==========================================
+// TASK STATE MANAGEMENT
+// ==========================================
+frappe.workhub.taskManager = {
+    /**
+     * Update task status in Leantime (SSOT for tasks)
+     *
+     * @param {string} taskId - Leantime task ID
+     * @param {string} status - New status (BACKLOG, NEXT, DOING, BLOCKED, DONE)
+     * @returns {Promise}
+     */
+    updateTaskStatus(taskId, status) {
+        return new Promise((resolve, reject) => {
+            if (!taskId) {
+                reject(new Error('Task ID is required'));
+                return;
+            }
+
+            // Call Frappe backend method which will sync to Leantime
+            frappe.call({
+                method: 'workhub_frappe_app.api.tasks.update_task_status',
+                args: {
+                    task_id: taskId,
+                    status: status
+                },
+                callback: (response) => {
+                    if (response.message && response.message.success) {
+                        resolve(response.message);
+                    } else {
+                        reject(new Error(response.message?.error || 'Failed to update task status'));
+                    }
+                },
+                error: (error) => {
+                    reject(error);
+                }
+            });
+        });
+    },
+
+    /**
+     * Mark task as complete (sets status to DONE)
+     *
+     * @param {HTMLElement} taskElement - Task DOM element
+     * @returns {Promise}
+     */
+    async completeTask(taskElement) {
+        const taskId = taskElement.dataset.taskId || taskElement.getAttribute('data-task-id');
+
+        if (!taskId) {
+            console.warn('Task element missing data-task-id attribute:', taskElement);
+            frappe.show_alert({
+                message: __('Task ID not found'),
+                indicator: 'red'
+            }, 3);
+            return;
+        }
+
+        try {
+            await this.updateTaskStatus(taskId, 'DONE');
+
+            // Show success notification
+            frappe.show_alert({
+                message: __('Task marked as complete'),
+                indicator: 'green'
+            }, 3);
+
+            // Emit event for other components to listen to
+            frappe.ui.trigger('task:completed', {
+                taskId: taskId,
+                element: taskElement
+            });
+
+        } catch (error) {
+            console.error('Failed to complete task:', error);
+
+            frappe.show_alert({
+                message: __('Failed to complete task: {0}', [error.message]),
+                indicator: 'red'
+            }, 5);
+
+            // Re-add the task element if it was removed
+            throw error;
+        }
+    },
+
+    /**
+     * Delete/archive task
+     *
+     * @param {HTMLElement} taskElement - Task DOM element
+     * @returns {Promise}
+     */
+    async deleteTask(taskElement) {
+        const taskId = taskElement.dataset.taskId || taskElement.getAttribute('data-task-id');
+
+        if (!taskId) {
+            console.warn('Task element missing data-task-id attribute:', taskElement);
+            frappe.show_alert({
+                message: __('Task ID not found'),
+                indicator: 'red'
+            }, 3);
+            return;
+        }
+
+        try {
+            // Call Frappe backend method to delete/archive task
+            await new Promise((resolve, reject) => {
+                frappe.call({
+                    method: 'workhub_frappe_app.api.tasks.delete_task',
+                    args: {
+                        task_id: taskId
+                    },
+                    callback: (response) => {
+                        if (response.message && response.message.success) {
+                            resolve(response.message);
+                        } else {
+                            reject(new Error(response.message?.error || 'Failed to delete task'));
+                        }
+                    },
+                    error: (error) => {
+                        reject(error);
+                    }
+                });
+            });
+
+            // Show success notification
+            frappe.show_alert({
+                message: __('Task archived'),
+                indicator: 'orange'
+            }, 3);
+
+            // Emit event for other components
+            frappe.ui.trigger('task:deleted', {
+                taskId: taskId,
+                element: taskElement
+            });
+
+        } catch (error) {
+            console.error('Failed to delete task:', error);
+
+            frappe.show_alert({
+                message: __('Failed to archive task: {0}', [error.message]),
+                indicator: 'red'
+            }, 5);
+
+            // Re-add the task element if it was removed
+            throw error;
+        }
+    }
+};
+
+// ==========================================
+// SWIPEABLE TASKS INITIALIZATION
+// ==========================================
+frappe.workhub.swipeableTasks = {
+    instances: [],
+
+    /**
+     * Initialize swipeable task gestures on all task elements
+     */
+    init() {
+        // Only initialize on touch devices
+        if (!('ontouchstart' in window)) {
+            return;
+        }
+
+        // Initialize all existing swipeable tasks
+        this.initializeAll();
+
+        // Re-initialize when new tasks are added to the DOM
+        this.observeTaskChanges();
+    },
+
+    /**
+     * Initialize all swipeable task elements on the current page
+     */
+    initializeAll() {
+        if (!frappe.workhub.SwipeableTask) {
+            console.warn('SwipeableTask component not loaded');
+            return;
+        }
+
+        // Default configuration for task swipe gestures
+        const options = {
+            threshold: 0.3,
+            minSwipeDistance: 80,
+            velocityThreshold: 0.3,
+            onComplete: (element) => {
+                // Handle swipe right to complete
+                frappe.workhub.taskManager.completeTask(element).catch((error) => {
+                    // If task completion fails, we need to restore the element
+                    // since SwipeableTask removes it on completion
+                    console.error('Task completion failed, but element already removed:', error);
+                });
+            },
+            onDelete: (element) => {
+                // Handle swipe left to delete/archive
+                frappe.workhub.taskManager.deleteTask(element).catch((error) => {
+                    // If task deletion fails, restore the element
+                    console.error('Task deletion failed, but element already removed:', error);
+                });
+            }
+        };
+
+        // Initialize all tasks with the .wh-swipeable-task class
+        const instances = frappe.workhub.SwipeableTask.initializeAll('.wh-swipeable-task', options);
+        this.instances.push(...instances);
+
+        if (instances.length > 0) {
+            console.log(`Initialized ${instances.length} swipeable task(s)`);
+        }
+    },
+
+    /**
+     * Observe DOM changes to initialize swipeable tasks dynamically
+     */
+    observeTaskChanges() {
+        // Use MutationObserver to detect when new tasks are added
+        const observer = new MutationObserver((mutations) => {
+            let hasNewTasks = false;
+
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    // Check if the added node is a task or contains tasks
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node.classList && node.classList.contains('wh-swipeable-task')) {
+                            hasNewTasks = true;
+                        } else if (node.querySelectorAll) {
+                            const tasks = node.querySelectorAll('.wh-swipeable-task');
+                            if (tasks.length > 0) {
+                                hasNewTasks = true;
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Re-initialize if new tasks were added
+            if (hasNewTasks) {
+                this.initializeAll();
+            }
+        });
+
+        // Start observing the document body for changes
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        this.observer = observer;
+    },
+
+    /**
+     * Destroy all swipeable task instances
+     */
+    destroy() {
+        if (frappe.workhub.SwipeableTask) {
+            frappe.workhub.SwipeableTask.destroyAll();
+        }
+
+        this.instances = [];
+
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
+    },
+
+    /**
+     * Refresh swipeable tasks (destroy and re-initialize)
+     */
+    refresh() {
+        this.destroy();
+        this.initializeAll();
+    }
+};
+
+// ==========================================
+// SERVICE WORKER (PWA)
+// ==========================================
+frappe.workhub.serviceWorker = {
+    registration: null,
+    updateAvailable: false,
+
+    /**
+     * Initialize and register service worker
+     */
+    init() {
+        // Check if service workers are supported
+        if (!('serviceWorker' in navigator)) {
+            console.log('[SW] Service workers not supported in this browser');
+            return;
+        }
+
+        // Register service worker
+        this.register();
+
+        // Listen for online/offline events
+        this.setupConnectivityListeners();
+    },
+
+    /**
+     * Register the service worker
+     */
+    async register() {
+        try {
+            console.log('[SW] Registering service worker...');
+
+            // Register service worker at /assets/workhub_frappe_app/sw.js
+            const registration = await navigator.serviceWorker.register(
+                '/assets/workhub_frappe_app/sw.js',
+                {
+                    scope: '/'
+                }
+            );
+
+            this.registration = registration;
+
+            console.log('[SW] Service worker registered successfully:', registration.scope);
+
+            // Check for updates on page load
+            registration.update();
+
+            // Listen for service worker updates
+            registration.addEventListener('updatefound', () => {
+                this.handleUpdateFound(registration);
+            });
+
+            // Check if service worker is already controlling the page
+            if (navigator.serviceWorker.controller) {
+                console.log('[SW] Service worker is controlling the page');
+            }
+
+            // Listen for controller changes (when a new service worker activates)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                console.log('[SW] Controller changed - page will reload');
+                // Reload the page to get latest content
+                window.location.reload();
+            });
+
+            // Check for updates periodically (every 60 minutes)
+            setInterval(() => {
+                registration.update();
+            }, 60 * 60 * 1000);
+
+        } catch (error) {
+            console.error('[SW] Service worker registration failed:', error);
+        }
+    },
+
+    /**
+     * Handle service worker update found
+     * @param {ServiceWorkerRegistration} registration
+     */
+    handleUpdateFound(registration) {
+        const newWorker = registration.installing;
+
+        if (!newWorker) {
+            return;
+        }
+
+        console.log('[SW] New service worker found, installing...');
+
+        newWorker.addEventListener('statechange', () => {
+            console.log('[SW] Service worker state changed:', newWorker.state);
+
+            // When the new service worker is installed and waiting
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New service worker is waiting to activate
+                this.updateAvailable = true;
+                this.showUpdateNotification();
+            }
+        });
+    },
+
+    /**
+     * Show update notification to user
+     */
+    showUpdateNotification() {
+        console.log('[SW] Update available - showing notification');
+
+        // Use Frappe's alert system to notify user
+        frappe.show_alert({
+            message: __('A new version of WorkHub is available!'),
+            indicator: 'blue',
+            action: {
+                label: __('Update Now'),
+                callback: () => {
+                    this.activateUpdate();
+                }
+            }
+        }, 0); // 0 = don't auto-dismiss
+
+        // Also emit event for offline indicator component
+        frappe.ui.trigger('sw:update-available', {
+            registration: this.registration
+        });
+    },
+
+    /**
+     * Activate the waiting service worker
+     */
+    activateUpdate() {
+        if (!this.registration || !this.registration.waiting) {
+            console.log('[SW] No service worker waiting to activate');
+            return;
+        }
+
+        console.log('[SW] Activating new service worker...');
+
+        // Send message to service worker to skip waiting
+        this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+
+        // The controllerchange event listener will reload the page
+    },
+
+    /**
+     * Setup connectivity listeners for online/offline detection
+     */
+    setupConnectivityListeners() {
+        // Online event
+        window.addEventListener('online', () => {
+            console.log('[SW] Network connection restored');
+
+            frappe.show_alert({
+                message: __('You are back online'),
+                indicator: 'green'
+            }, 3);
+
+            // Emit event for offline indicator
+            frappe.ui.trigger('connectivity:online');
+        });
+
+        // Offline event
+        window.addEventListener('offline', () => {
+            console.log('[SW] Network connection lost');
+
+            frappe.show_alert({
+                message: __('You are offline - some features may be limited'),
+                indicator: 'orange'
+            }, 5);
+
+            // Emit event for offline indicator
+            frappe.ui.trigger('connectivity:offline');
+        });
+
+        // Log current connectivity status
+        console.log('[SW] Initial connectivity status:', navigator.onLine ? 'online' : 'offline');
+    },
+
+    /**
+     * Check if app is currently online
+     * @returns {boolean}
+     */
+    isOnline() {
+        return navigator.onLine;
+    },
+
+    /**
+     * Unregister service worker (for development/debugging)
+     */
+    async unregister() {
+        if (!this.registration) {
+            console.log('[SW] No service worker registered');
+            return;
+        }
+
+        try {
+            const success = await this.registration.unregister();
+            if (success) {
+                console.log('[SW] Service worker unregistered successfully');
+                this.registration = null;
+            } else {
+                console.log('[SW] Service worker unregister failed');
+            }
+        } catch (error) {
+            console.error('[SW] Error unregistering service worker:', error);
+        }
+    },
+
+    /**
+     * Clear all caches (for development/debugging)
+     */
+    async clearCache() {
+        try {
+            const cacheNames = await caches.keys();
+            const workhubCaches = cacheNames.filter(name => name.startsWith('workhub-'));
+
+            await Promise.all(
+                workhubCaches.map(cacheName => {
+                    console.log('[SW] Deleting cache:', cacheName);
+                    return caches.delete(cacheName);
+                })
+            );
+
+            console.log('[SW] All WorkHub caches cleared');
+
+            frappe.show_alert({
+                message: __('Cache cleared successfully'),
+                indicator: 'green'
+            }, 3);
+
+        } catch (error) {
+            console.error('[SW] Error clearing cache:', error);
+        }
+    },
+
+    /**
+     * Get cache size (for debugging)
+     */
+    async getCacheSize() {
+        if (!this.registration || !this.registration.active) {
+            console.log('[SW] No active service worker');
+            return 0;
+        }
+
+        try {
+            const cacheNames = await caches.keys();
+            let totalSize = 0;
+
+            for (const cacheName of cacheNames) {
+                if (cacheName.startsWith('workhub-')) {
+                    const cache = await caches.open(cacheName);
+                    const keys = await cache.keys();
+                    totalSize += keys.length;
+                }
+            }
+
+            console.log('[SW] Total cached items:', totalSize);
+            return totalSize;
+
+        } catch (error) {
+            console.error('[SW] Error getting cache size:', error);
+            return 0;
+        }
+    }
+};
+
+// ==========================================
+// OFFLINE INDICATOR (PWA)
+// ==========================================
+frappe.workhub.offlineIndicator = {
+    indicator: null,
+    autoHideTimeout: null,
+    autoHideDelay: 5000, // Auto-hide online status after 5 seconds
+
+    /**
+     * Initialize offline indicator component
+     */
+    init() {
+        console.log('[Offline Indicator] Initializing...');
+
+        // Create indicator DOM element
+        this.createIndicator();
+
+        // Listen to connectivity events from service worker
+        this.setupEventListeners();
+
+        // Set initial state
+        this.updateStatus(navigator.onLine);
+
+        console.log('[Offline Indicator] Initialized');
+    },
+
+    /**
+     * Create the indicator DOM element and inject into page
+     */
+    createIndicator() {
+        // Check if indicator already exists
+        if (document.querySelector('.wh-offline-indicator')) {
+            console.log('[Offline Indicator] Already exists');
+            return;
+        }
+
+        // Create indicator element
+        const indicator = document.createElement('div');
+        indicator.className = 'wh-offline-indicator';
+        indicator.setAttribute('role', 'status');
+        indicator.setAttribute('aria-live', 'polite');
+
+        // Create status dot
+        const dot = document.createElement('span');
+        dot.className = 'wh-offline-indicator__dot';
+        dot.setAttribute('aria-hidden', 'true');
+
+        // Create status text
+        const text = document.createElement('span');
+        text.className = 'wh-offline-indicator__text';
+        text.textContent = navigator.onLine ? 'Online' : 'Offline';
+
+        // Assemble indicator
+        indicator.appendChild(dot);
+        indicator.appendChild(text);
+
+        // Inject into page
+        document.body.appendChild(indicator);
+
+        // Store reference
+        this.indicator = indicator;
+
+        console.log('[Offline Indicator] DOM element created');
+    },
+
+    /**
+     * Setup event listeners for connectivity changes
+     */
+    setupEventListeners() {
+        // Listen to custom connectivity events from service worker
+        frappe.ui.on('connectivity:online', () => {
+            console.log('[Offline Indicator] Received online event');
+            this.updateStatus(true);
+        });
+
+        frappe.ui.on('connectivity:offline', () => {
+            console.log('[Offline Indicator] Received offline event');
+            this.updateStatus(false);
+        });
+
+        // Also listen to native events as fallback
+        window.addEventListener('online', () => {
+            console.log('[Offline Indicator] Native online event');
+            this.updateStatus(true);
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('[Offline Indicator] Native offline event');
+            this.updateStatus(false);
+        });
+
+        console.log('[Offline Indicator] Event listeners registered');
+    },
+
+    /**
+     * Update indicator status
+     * @param {boolean} isOnline - Whether the app is online
+     */
+    updateStatus(isOnline) {
+        if (!this.indicator) {
+            console.warn('[Offline Indicator] Indicator not initialized');
+            return;
+        }
+
+        // Clear any pending auto-hide timeout
+        if (this.autoHideTimeout) {
+            clearTimeout(this.autoHideTimeout);
+            this.autoHideTimeout = null;
+        }
+
+        // Update indicator classes
+        this.indicator.classList.remove('online', 'offline');
+        this.indicator.classList.add(isOnline ? 'online' : 'offline');
+
+        // Update text
+        const textElement = this.indicator.querySelector('.wh-offline-indicator__text');
+        if (textElement) {
+            textElement.textContent = isOnline ? 'Online' : 'Offline';
+        }
+
+        // Show indicator
+        this.show();
+
+        // Auto-hide online status after delay (keep offline visible)
+        if (isOnline) {
+            this.autoHideTimeout = setTimeout(() => {
+                this.hide();
+            }, this.autoHideDelay);
+        }
+
+        console.log('[Offline Indicator] Status updated:', isOnline ? 'online' : 'offline');
+    },
+
+    /**
+     * Show the indicator
+     */
+    show() {
+        if (!this.indicator) return;
+
+        // Add visible class to trigger slide-down animation
+        this.indicator.classList.add('visible');
+    },
+
+    /**
+     * Hide the indicator
+     */
+    hide() {
+        if (!this.indicator) return;
+
+        // Remove visible class to trigger slide-up animation
+        this.indicator.classList.remove('visible');
+    },
+
+    /**
+     * Check if indicator is currently visible
+     * @returns {boolean}
+     */
+    isVisible() {
+        return this.indicator && this.indicator.classList.contains('visible');
+    },
+
+    /**
+     * Destroy the indicator (for cleanup)
+     */
+    destroy() {
+        if (this.autoHideTimeout) {
+            clearTimeout(this.autoHideTimeout);
+            this.autoHideTimeout = null;
+        }
+
+        if (this.indicator) {
+            this.indicator.remove();
+            this.indicator = null;
+        }
+
+        console.log('[Offline Indicator] Destroyed');
+    }
+};
+
+// ==========================================
+// TASK EDITOR (MOBILE)
+// ==========================================
+
+/**
+ * Task Editor Module
+ *
+ * Handles task editing on mobile via drawer interface.
+ * Integrates with MobileTaskDrawer component for edit functionality.
+ *
+ * Features:
+ * - Click/tap on task to open edit drawer
+ * - Extracts task data from DOM element
+ * - Opens MobileTaskDrawer in edit mode
+ * - Handles task updates and UI refresh
+ * - Works with existing task list rendering
+ * - Event delegation for dynamically added tasks
+ * - DOM mutation observer for auto-initialization
+ *
+ * Usage:
+ * To enable edit functionality on a task element, add the data-task-id attribute
+ * and optionally include other task data attributes:
+ *
+ * <div class="wh-swipeable-task"
+ *      data-task-id="123"
+ *      data-task-status="DOING"
+ *      data-task-priority="P1"
+ *      data-task-department="SALES">
+ *   <div class="wh-swipeable-task-content">
+ *     <div class="task-name">Task name here</div>
+ *     <div class="task-description">Task description here</div>
+ *   </div>
+ * </div>
+ *
+ * Supported data attributes:
+ * - data-task-id (required) - Leantime task ID
+ * - data-task-status - Task status (BACKLOG, NEXT, DOING, BLOCKED, DONE)
+ * - data-task-priority - Priority (P0, P1, P2)
+ * - data-task-department - Department (SALES, OPS, MKT)
+ * - data-task-due-date - Due date (YYYY-MM-DD)
+ * - data-task-assigned - Assigned user email/name
+ *
+ * The module will automatically detect clicks on task elements and open
+ * the MobileTaskDrawer in edit mode. It skips clicks on action buttons
+ * (.task-action, .task-complete-btn, .task-delete-btn) and during swipe gestures.
+ */
+frappe.workhub.taskEditor = {
+    /**
+     * Initialize task editor
+     */
+    init() {
+        console.log('[Task Editor] Initializing...');
+
+        // Load MobileTaskDrawer component dynamically
+        this.loadComponent();
+
+        console.log('[Task Editor] Initialized');
+    },
+
+    /**
+     * Load MobileTaskDrawer component dynamically
+     */
+    loadComponent() {
+        // Check if already loaded
+        if (frappe.workhub.MobileTaskDrawer) {
+            console.log('[Task Editor] MobileTaskDrawer already loaded');
+            this.setupTaskClickHandlers();
+            return;
+        }
+
+        // Check if script is already loading
+        const existingScript = document.querySelector('script[src*="mobile-task-drawer.js"]');
+        if (existingScript) {
+            console.log('[Task Editor] MobileTaskDrawer script already loading');
+            this.waitForComponent();
+            return;
+        }
+
+        // Load component script
+        console.log('[Task Editor] Loading MobileTaskDrawer component...');
+        const script = document.createElement('script');
+        script.src = '/assets/workhub_frappe_app/js/components/mobile-task-drawer.js';
+        script.async = true;
+        script.onload = () => {
+            console.log('[Task Editor] MobileTaskDrawer component script loaded');
+            this.waitForComponent();
+        };
+        script.onerror = (error) => {
+            console.error('[Task Editor] Failed to load MobileTaskDrawer component:', error);
+        };
+        document.head.appendChild(script);
+    },
+
+    /**
+     * Wait for MobileTaskDrawer component to be available
+     */
+    waitForComponent() {
+        const checkInterval = setInterval(() => {
+            if (frappe.workhub.MobileTaskDrawer) {
+                clearInterval(checkInterval);
+                console.log('[Task Editor] MobileTaskDrawer component ready');
+                this.setupTaskClickHandlers();
+            }
+        }, 100);
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            if (!frappe.workhub.MobileTaskDrawer) {
+                console.warn('[Task Editor] MobileTaskDrawer component not available after timeout');
+            }
+        }, 10000);
+    },
+
+    /**
+     * Setup click handlers for tasks
+     */
+    setupTaskClickHandlers() {
+        console.log('[Task Editor] Setting up task click handlers...');
+
+        // Use event delegation for dynamically added tasks
+        document.addEventListener('click', (e) => {
+            // Find closest task element
+            const taskElement = e.target.closest('[data-task-id]');
+
+            if (!taskElement) return;
+
+            // Skip if clicking on action buttons (complete, delete, etc.)
+            if (e.target.closest('.task-action, .task-complete-btn, .task-delete-btn')) {
+                return;
+            }
+
+            // Skip if clicking on swipeable task during swipe
+            if (taskElement.classList.contains('swiping')) {
+                return;
+            }
+
+            // Get task data
+            const taskData = this.extractTaskData(taskElement);
+
+            if (taskData && taskData.id) {
+                console.log('[Task Editor] Opening edit drawer for task:', taskData.id);
+                this.openEditDrawer(taskData);
+            }
+        });
+
+        // Also observe DOM for new tasks and add explicit handlers
+        this.observeTaskList();
+
+        console.log('[Task Editor] Task click handlers ready');
+    },
+
+    /**
+     * Observe task list for dynamically added tasks
+     */
+    observeTaskList() {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    // Check if added node is a task or contains tasks
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const tasks = node.matches && node.matches('[data-task-id]')
+                            ? [node]
+                            : node.querySelectorAll('[data-task-id]');
+
+                        if (tasks.length > 0) {
+                            console.log(`[Task Editor] ${tasks.length} new task(s) detected`);
+                        }
+                    }
+                });
+            });
+        });
+
+        // Start observing document body for task additions
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        console.log('[Task Editor] DOM observer started');
+    },
+
+    /**
+     * Extract task data from DOM element
+     * @param {HTMLElement} taskElement - Task element
+     * @returns {Object} Task data object
+     */
+    extractTaskData(taskElement) {
+        try {
+            const taskData = {
+                id: taskElement.dataset.taskId || taskElement.getAttribute('data-task-id'),
+                name: '',
+                description: '',
+                status: 'BACKLOG',
+                priority: 'P2',
+                department: 'SALES',
+                dueDate: null,
+                assignedTo: null
+            };
+
+            // Extract task name
+            const nameElement = taskElement.querySelector('.task-name, .task-title, [data-task-name]');
+            if (nameElement) {
+                taskData.name = nameElement.textContent.trim() || nameElement.dataset.taskName;
+            }
+
+            // Extract description
+            const descElement = taskElement.querySelector('.task-description, .task-desc, [data-task-description]');
+            if (descElement) {
+                taskData.description = descElement.textContent.trim() || descElement.dataset.taskDescription || '';
+            }
+
+            // Extract status
+            const statusElement = taskElement.querySelector('[data-task-status]');
+            if (statusElement) {
+                taskData.status = statusElement.dataset.taskStatus || taskData.status;
+            } else if (taskElement.dataset.taskStatus) {
+                taskData.status = taskElement.dataset.taskStatus;
+            }
+
+            // Extract priority
+            const priorityElement = taskElement.querySelector('[data-task-priority]');
+            if (priorityElement) {
+                taskData.priority = priorityElement.dataset.taskPriority || taskData.priority;
+            } else if (taskElement.dataset.taskPriority) {
+                taskData.priority = taskElement.dataset.taskPriority;
+            }
+
+            // Extract department
+            const deptElement = taskElement.querySelector('[data-task-department]');
+            if (deptElement) {
+                taskData.department = deptElement.dataset.taskDepartment || taskData.department;
+            } else if (taskElement.dataset.taskDepartment) {
+                taskData.department = taskElement.dataset.taskDepartment;
+            }
+
+            // Extract due date
+            const dueDateElement = taskElement.querySelector('[data-task-due-date]');
+            if (dueDateElement) {
+                taskData.dueDate = dueDateElement.dataset.taskDueDate || null;
+            } else if (taskElement.dataset.taskDueDate) {
+                taskData.dueDate = taskElement.dataset.taskDueDate;
+            }
+
+            // Extract assigned to
+            const assignedElement = taskElement.querySelector('[data-task-assigned]');
+            if (assignedElement) {
+                taskData.assignedTo = assignedElement.dataset.taskAssigned || null;
+            } else if (taskElement.dataset.taskAssigned) {
+                taskData.assignedTo = taskElement.dataset.taskAssigned;
+            }
+
+            return taskData;
+        } catch (error) {
+            console.error('[Task Editor] Error extracting task data:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Open edit drawer for task
+     * @param {Object} taskData - Task data object
+     */
+    openEditDrawer(taskData) {
+        if (!frappe.workhub.MobileTaskDrawer) {
+            console.error('[Task Editor] MobileTaskDrawer component not available');
+            frappe.show_alert({
+                message: __('Task editor not available. Please refresh the page.'),
+                indicator: 'red'
+            }, 3);
+            return;
+        }
+
+        try {
+            // Open edit drawer
+            frappe.workhub.MobileTaskDrawer.openEditTaskDrawer(taskData, {
+                onSave: (updatedTask) => {
+                    console.log('[Task Editor] Task updated:', updatedTask);
+                    // Refresh task list or update specific task in DOM
+                    this.refreshTaskInList(updatedTask);
+                },
+                onCancel: () => {
+                    console.log('[Task Editor] Edit cancelled');
+                }
+            });
+        } catch (error) {
+            console.error('[Task Editor] Error opening edit drawer:', error);
+            frappe.show_alert({
+                message: __('Failed to open task editor. Please try again.'),
+                indicator: 'red'
+            }, 3);
+        }
+    },
+
+    /**
+     * Refresh task in list after update
+     * @param {Object} updatedTask - Updated task data
+     */
+    refreshTaskInList(updatedTask) {
+        if (!updatedTask || !updatedTask.id) return;
+
+        // Find task element by ID
+        const taskElement = document.querySelector(`[data-task-id="${updatedTask.id}"]`);
+
+        if (!taskElement) {
+            console.warn('[Task Editor] Task element not found for refresh:', updatedTask.id);
+            // Trigger a full list refresh event
+            frappe.ui.trigger_event('task:list:refresh');
+            return;
+        }
+
+        // Update task element data attributes
+        if (updatedTask.status) {
+            taskElement.dataset.taskStatus = updatedTask.status;
+            const statusElement = taskElement.querySelector('[data-task-status]');
+            if (statusElement) {
+                statusElement.dataset.taskStatus = updatedTask.status;
+                statusElement.textContent = updatedTask.status;
+            }
+        }
+
+        if (updatedTask.priority) {
+            taskElement.dataset.taskPriority = updatedTask.priority;
+            const priorityElement = taskElement.querySelector('[data-task-priority]');
+            if (priorityElement) {
+                priorityElement.dataset.taskPriority = updatedTask.priority;
+                priorityElement.textContent = updatedTask.priority;
+            }
+        }
+
+        // Update task name
+        if (updatedTask.name) {
+            const nameElement = taskElement.querySelector('.task-name, .task-title, [data-task-name]');
+            if (nameElement) {
+                nameElement.textContent = updatedTask.name;
+                nameElement.dataset.taskName = updatedTask.name;
+            }
+        }
+
+        // Update description
+        if (updatedTask.description !== undefined) {
+            const descElement = taskElement.querySelector('.task-description, .task-desc, [data-task-description]');
+            if (descElement) {
+                descElement.textContent = updatedTask.description;
+                descElement.dataset.taskDescription = updatedTask.description;
+            }
+        }
+
+        console.log('[Task Editor] Task element refreshed:', updatedTask.id);
+
+        // Trigger refresh event for other components
+        frappe.ui.trigger_event('task:updated', updatedTask);
+    }
+};
+
+// ==========================================
+// FAB (FLOATING ACTION BUTTON)
+// ==========================================
+/**
+ * FAB Component for Quick Task Creation
+ *
+ * Floating action button that's always accessible on mobile.
+ * Opens the MobileTaskDrawer for creating new tasks.
+ *
+ * Features:
+ * - Fixed position in bottom-right corner (mobile only)
+ * - Touch-optimized (56px tap target)
+ * - Haptic feedback on tap
+ * - Safe area insets support
+ * - GPU-accelerated animations
+ * - Pulse animation on first appearance
+ * - Auto-hides when drawer is open
+ *
+ * Integration:
+ * - Uses MobileTaskDrawer.openNewTaskDrawer() for task creation
+ * - Automatically hides when drawer opens
+ * - Works with mobile-drawer.css and mobile-forms.css
+ */
+frappe.workhub.fab = {
+    button: null,
+    isPulsing: false,
+
+    /**
+     * Initialize FAB component
+     */
+    init() {
+        console.log('[FAB] Initializing...');
+
+        // Only initialize on mobile devices
+        if (!this.isMobileDevice()) {
+            console.log('[FAB] Skipping - not a mobile device');
+            return;
+        }
+
+        // Create FAB DOM element
+        this.createFAB();
+
+        // Setup event listeners
+        this.setupEventListeners();
+
+        // Add pulse animation on first load (if user hasn't seen it before)
+        this.maybeShowPulse();
+
+        console.log('[FAB] Initialized');
+    },
+
+    /**
+     * Check if current device is mobile
+     * @returns {boolean}
+     */
+    isMobileDevice() {
+        // Check window width (mobile breakpoint: 768px)
+        if (window.innerWidth > 768) {
+            return false;
+        }
+
+        // Check for touch support
+        const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        return hasTouch;
+    },
+
+    /**
+     * Create the FAB DOM element and inject into page
+     */
+    createFAB() {
+        // Check if FAB already exists
+        if (document.querySelector('.wh-fab')) {
+            console.log('[FAB] Already exists');
+            this.button = document.querySelector('.wh-fab');
+            return;
+        }
+
+        // Create FAB button
+        const button = document.createElement('button');
+        button.className = 'wh-fab';
+        button.setAttribute('type', 'button');
+        button.setAttribute('aria-label', __('Create new task'));
+        button.setAttribute('title', __('Create new task'));
+
+        // Create plus icon (SVG)
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('class', 'wh-fab__icon');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '2.5');
+        icon.setAttribute('stroke-linecap', 'round');
+        icon.setAttribute('stroke-linejoin', 'round');
+        icon.setAttribute('aria-hidden', 'true');
+
+        // Plus icon paths (horizontal and vertical lines)
+        const horizontalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        horizontalLine.setAttribute('x1', '12');
+        horizontalLine.setAttribute('y1', '5');
+        horizontalLine.setAttribute('x2', '12');
+        horizontalLine.setAttribute('y2', '19');
+
+        const verticalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        verticalLine.setAttribute('x1', '5');
+        verticalLine.setAttribute('y1', '12');
+        verticalLine.setAttribute('x2', '19');
+        verticalLine.setAttribute('y2', '12');
+
+        // Assemble icon
+        icon.appendChild(horizontalLine);
+        icon.appendChild(verticalLine);
+
+        // Assemble button
+        button.appendChild(icon);
+
+        // Inject into page
+        document.body.appendChild(button);
+
+        // Store reference
+        this.button = button;
+
+        console.log('[FAB] DOM element created');
+    },
+
+    /**
+     * Setup event listeners
+     */
+    setupEventListeners() {
+        if (!this.button) {
+            console.warn('[FAB] Button not initialized');
+            return;
+        }
+
+        // Click event - open task creation drawer
+        this.button.addEventListener('click', () => {
+            this.handleClick();
+        });
+
+        // Listen for drawer open/close events
+        frappe.ui.on('drawer:opened', () => {
+            this.hide();
+        });
+
+        frappe.ui.on('drawer:closed', () => {
+            this.show();
+        });
+
+        // Listen for task creation to provide feedback
+        frappe.ui.on('task:created', (task) => {
+            console.log('[FAB] Task created:', task);
+            // FAB will auto-show when drawer closes
+        });
+
+        console.log('[FAB] Event listeners registered');
+    },
+
+    /**
+     * Handle FAB click
+     */
+    handleClick() {
+        console.log('[FAB] Clicked');
+
+        // Trigger haptic feedback
+        this.triggerHapticFeedback();
+
+        // Remove pulse animation if active
+        if (this.isPulsing) {
+            this.button.classList.remove('pulse');
+            this.isPulsing = false;
+        }
+
+        // Open task creation drawer
+        if (frappe.workhub && frappe.workhub.MobileTaskDrawer) {
+            // Emit drawer opened event (for auto-hiding FAB)
+            frappe.ui.trigger_event('drawer:opened');
+
+            // Open drawer
+            const drawer = frappe.workhub.MobileTaskDrawer.openNewTaskDrawer({
+                onSave: (task) => {
+                    console.log('[FAB] Task created via FAB:', task);
+                },
+                onCancel: () => {
+                    // Emit drawer closed event (for showing FAB again)
+                    frappe.ui.trigger_event('drawer:closed');
+                }
+            });
+
+            // Override drawer close method to emit event
+            const originalClose = drawer.close.bind(drawer);
+            drawer.close = () => {
+                originalClose();
+                frappe.ui.trigger_event('drawer:closed');
+            };
+        } else {
+            console.error('[FAB] MobileTaskDrawer not available');
+            frappe.show_alert({
+                message: __('Task creation not available'),
+                indicator: 'red'
+            }, 3);
+        }
+    },
+
+    /**
+     * Trigger haptic feedback (if available)
+     */
+    triggerHapticFeedback() {
+        // Check if haptic feedback is supported and enabled
+        if (!navigator.vibrate) {
+            return;
+        }
+
+        // Check user preference for reduced motion
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        // Check localStorage preference
+        const hapticEnabled = localStorage.getItem('workhub_haptic_feedback');
+        if (hapticEnabled === 'false') {
+            return;
+        }
+
+        // Medium vibration pattern for FAB tap
+        try {
+            navigator.vibrate([15, 10, 15]);
+        } catch (error) {
+            // Silently fail if vibration API throws error
+            console.debug('[FAB] Haptic feedback not available:', error);
+        }
+    },
+
+    /**
+     * Show pulse animation on first load
+     */
+    maybeShowPulse() {
+        if (!this.button) {
+            return;
+        }
+
+        // Check if user has seen pulse before
+        const hasSeenPulse = localStorage.getItem('workhub_fab_pulse_seen');
+        if (hasSeenPulse === 'true') {
+            return;
+        }
+
+        // Add pulse animation
+        this.button.classList.add('pulse');
+        this.isPulsing = true;
+
+        // Mark as seen after animation completes (6 seconds = 3 pulses × 2s)
+        setTimeout(() => {
+            this.button.classList.remove('pulse');
+            this.isPulsing = false;
+            localStorage.setItem('workhub_fab_pulse_seen', 'true');
+        }, 6000);
+
+        console.log('[FAB] Showing pulse animation');
+    },
+
+    /**
+     * Hide FAB
+     */
+    hide() {
+        if (!this.button) {
+            return;
+        }
+
+        this.button.classList.add('hidden');
+        this.button.setAttribute('aria-hidden', 'true');
+        console.log('[FAB] Hidden');
+    },
+
+    /**
+     * Show FAB
+     */
+    show() {
+        if (!this.button) {
+            return;
+        }
+
+        this.button.classList.remove('hidden');
+        this.button.setAttribute('aria-hidden', 'false');
+        console.log('[FAB] Shown');
+    },
+
+    /**
+     * Check if FAB is visible
+     * @returns {boolean}
+     */
+    isVisible() {
+        if (!this.button) {
+            return false;
+        }
+
+        return !this.button.classList.contains('hidden');
+    },
+
+    /**
+     * Destroy FAB and clean up
+     */
+    destroy() {
+        if (!this.button) {
+            return;
+        }
+
+        // Remove DOM element
+        if (this.button.parentNode) {
+            this.button.parentNode.removeChild(this.button);
+        }
+
+        // Clear reference
+        this.button = null;
+        this.isPulsing = false;
+
+        console.log('[FAB] Destroyed');
+    }
+};
+
+// ==========================================
 // INITIALIZATION
 // ==========================================
 (function initWorkHub() {
@@ -1335,6 +3278,36 @@ frappe.workhub.shortcuts = {
         // Inicializar bottom navigation (Mobile)
         if (frappe.workhub && frappe.workhub.bottomNav) {
             frappe.workhub.bottomNav.init();
+        }
+
+        // Inicializar mobile gestures (swipe support)
+        if (frappe.workhub && frappe.workhub.mobileGestures) {
+            frappe.workhub.mobileGestures.init();
+        }
+
+        // Inicializar swipeable tasks (mobile task gestures)
+        if (frappe.workhub && frappe.workhub.swipeableTasks) {
+            frappe.workhub.swipeableTasks.init();
+        }
+
+        // Inicializar Service Worker (PWA)
+        if (frappe.workhub && frappe.workhub.serviceWorker) {
+            frappe.workhub.serviceWorker.init();
+        }
+
+        // Inicializar Offline Indicator (PWA)
+        if (frappe.workhub && frappe.workhub.offlineIndicator) {
+            frappe.workhub.offlineIndicator.init();
+        }
+
+        // Inicializar Task Editor (Mobile task editing)
+        if (frappe.workhub && frappe.workhub.taskEditor) {
+            frappe.workhub.taskEditor.init();
+        }
+
+        // Inicializar FAB (Floating Action Button for mobile task creation)
+        if (frappe.workhub && frappe.workhub.fab) {
+            frappe.workhub.fab.init();
         }
 
         // Inicializar Command Palette (Cmd+K)

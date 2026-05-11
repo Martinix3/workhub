@@ -1,2 +1,39 @@
-# Auto Claude data directory
-.auto-claude/
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies / build outputs
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local runtime logs / pids
+*.log
+*.pid
+.workhub-server.log
+.workhub-server.pid
+
+# Local agent/tooling artifacts
+.hermes/
+.claude/plans/
+.playwright-mcp/
+artifacts/
+
+# Frappe generated assets
+frappe-app/workhub_frappe_app/public/dist/

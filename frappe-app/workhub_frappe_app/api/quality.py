@@ -116,8 +116,7 @@ def get_pending_inspections(limit=50, offset=0):
                     "item_code", "item_name", "sample_size", "status", "inspected_by", "report_date", "creation"],
             limit_page_length=int(limit),
             limit_start=int(offset),
-            order_by="creation desc",
-            ignore_permissions=True
+            order_by="creation desc"
         )
 
         # Transform to React Inspection interface:
@@ -158,8 +157,7 @@ def get_open_ncs(limit=50, offset=0):
                     "assigned_to", "due_date", "status", "creation"],
             limit_page_length=int(limit),
             limit_start=int(offset),
-            order_by="severity desc, creation desc",
-            ignore_permissions=True
+            order_by="severity desc, creation desc"
         )
 
         # Transform to React NonConformance interface:

@@ -5,6 +5,7 @@ import type { KPIs, SalesTrends, Activity, Customer, SalesOrder, Opportunity } f
 import type { NetworkKPIs, Distributor } from '../components/sections/distributor-network/types'
 import type { ProductionKPIs, ProductionOrder, ProductionLine, Lot, HACCPPlan, CCPReading, QualityDocument, DocumentFolder, QualityKPIs, Inspection, NonConformance, WeeklyTrendPoint } from '../components/sections/production-and-quality/types'
 import type { MarketingKPIs, Campaign, SocialPost, PlatformStats } from '../components/sections/marketing-and-growth/types'
+import type { TaskAssignee } from '../components/sections/tasks/types'
 
 // Command Center
 export const sampleAreaSummaries: AreaSummary[] = [
@@ -341,36 +342,299 @@ export const samplePlatformStats: PlatformStats[] = [
 import type { Task, Project, ProjectTemplate, MyDayData, KanbanColumn, DashboardKPIs } from '../components/sections/tasks/types'
 
 export const sampleTasks: Task[] = [
-  { name: 'WHT-2025-001', title: 'Revisar propuesta comercial', status: 'DOING', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date().toISOString().split('T')[0], worked_today: true },
-  { name: 'WHT-2025-002', title: 'Actualizar catalogo de productos', status: 'NEXT', priority: 'P2', assigned_to: 'martin@example.com', department: 'MKT', due_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0] },
-  { name: 'WHT-2025-003', title: 'Coordinar envio a distribuidor', status: 'BACKLOG', priority: 'P2', assigned_to: 'martin@example.com', department: 'OPS', due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0] },
-  { name: 'WHT-2025-004', title: 'Llamar a cliente potencial', status: 'BLOCKED', priority: 'P0', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date(Date.now() - 86400000).toISOString().split('T')[0], blocked_reason: 'Esperando informacion del gerente' },
-  { name: 'WHT-2025-005', title: 'Preparar presentacion Q1', status: 'DONE', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0] }
+  {
+    name: 'WHT-2025-001',
+    title: 'Revisar propuesta comercial',
+    status: 'DOING',
+    priority: 'P1',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'ana@example.com', role: 'Collaborator', user_name: 'Ana Garcia', user_email: 'ana@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    due_date: new Date().toISOString().split('T')[0],
+    worked_today: true
+  },
+  {
+    name: 'WHT-2025-002',
+    title: 'Actualizar catalogo de productos',
+    status: 'NEXT',
+    priority: 'P2',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'MKT',
+    due_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-003',
+    title: 'Coordinar envio a distribuidor',
+    status: 'BACKLOG',
+    priority: 'P2',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'martin@example.com', role: 'Collaborator', user_name: 'Martin Jaime', user_email: 'martin@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-004',
+    title: 'Llamar a cliente potencial',
+    status: 'BLOCKED',
+    priority: 'P0',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    due_date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+    blocked_reason: 'Esperando informacion del gerente'
+  },
+  {
+    name: 'WHT-2025-005',
+    title: 'Preparar presentacion Q1',
+    status: 'DONE',
+    priority: 'P1',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'ana@example.com', role: 'Collaborator', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'carlos@example.com', role: 'Collaborator', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-006',
+    title: 'Implementar campana multi-canal',
+    status: 'DOING',
+    priority: 'P0',
+    assignees: [
+      { user: 'ana@example.com', role: 'Owner', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'martin@example.com', role: 'Collaborator', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'carlos@example.com', role: 'Collaborator', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' },
+      { user: 'maria@example.com', role: 'Collaborator', user_name: 'Maria Rodriguez', user_email: 'maria@example.com' },
+      { user: 'luis@example.com', role: 'Collaborator', user_name: 'Luis Martinez', user_email: 'luis@example.com' },
+      { user: 'sofia@example.com', role: 'Collaborator', user_name: 'Sofia Gonzalez', user_email: 'sofia@example.com' },
+      { user: 'diego@example.com', role: 'Collaborator', user_name: 'Diego Sanchez', user_email: 'diego@example.com' }
+    ],
+    primary_owner: 'ana@example.com',
+    department: 'MKT',
+    due_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+    worked_today: true,
+    description: 'Campana integrada con equipo completo - testing overflow UI y max assignees'
+  },
+  {
+    name: 'WHT-2025-007',
+    title: 'Auditoria de calidad mensual',
+    status: 'NEXT',
+    priority: 'P1',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'maria@example.com', role: 'Collaborator', user_name: 'Maria Rodriguez', user_email: 'maria@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' },
+      { user: 'sofia@example.com', role: 'Collaborator', user_name: 'Sofia Gonzalez', user_email: 'sofia@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    due_date: new Date(Date.now() + 86400000 * 10).toISOString().split('T')[0],
+    description: 'Revision mensual con equipo de calidad'
+  },
+  {
+    name: 'WHT-2025-008',
+    title: 'Planning trimestral Q2 2025',
+    status: 'BACKLOG',
+    priority: 'P2',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'ana@example.com', role: 'Collaborator', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'carlos@example.com', role: 'Collaborator', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' },
+      { user: 'maria@example.com', role: 'Collaborator', user_name: 'Maria Rodriguez', user_email: 'maria@example.com' },
+      { user: 'luis@example.com', role: 'Collaborator', user_name: 'Luis Martinez', user_email: 'luis@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    due_date: new Date(Date.now() + 86400000 * 30).toISOString().split('T')[0],
+    description: 'Planning estrategico con todos los lideres de area'
+  }
 ]
 
 // Project templates
 export const sampleProjectTemplates: ProjectTemplate[] = [
-  { name: 'WHPT-001', title: 'Lanzamiento de Producto', description: 'Template para lanzar un nuevo producto al mercado', department: 'MKT', default_duration_days: 45, task_count: 8, is_active: true },
-  { name: 'WHPT-002', title: 'Expansion Regional', description: 'Template para expandir a una nueva region geografica', department: 'SALES', default_duration_days: 60, task_count: 12, is_active: true },
-  { name: 'WHPT-003', title: 'Mejora Operacional', description: 'Template para proyectos de mejora de procesos', department: 'OPS', default_duration_days: 30, task_count: 6, is_active: true }
+  { name: 'WHPT-001', title: 'Lanzamiento de Producto', description: 'Template para lanzar un nuevo producto al mercado', department: 'MKT', estimated_duration_days: 45, default_duration_days: 45, task_count: 8, is_active: true },
+  { name: 'WHPT-002', title: 'Expansion Regional', description: 'Template para expandir a una nueva region geografica', department: 'SALES', estimated_duration_days: 60, default_duration_days: 60, task_count: 12, is_active: true },
+  { name: 'WHPT-003', title: 'Mejora Operacional', description: 'Template para proyectos de mejora de procesos', department: 'OPS', estimated_duration_days: 30, default_duration_days: 30, task_count: 6, is_active: true }
 ]
 
 // Projects with tasks
 const projectTasks1: Task[] = [
-  { name: 'WHT-2025-P1-001', title: 'Identificar distribuidores potenciales', status: 'DONE', priority: 'P1', assigned_to: 'martin@example.com', department: 'SALES', project: 'WHP-2025-001', due_date: new Date(Date.now() - 86400000 * 20).toISOString().split('T')[0] },
-  { name: 'WHT-2025-P1-002', title: 'Negociar contratos', status: 'DOING', priority: 'P0', assigned_to: 'martin@example.com', department: 'SALES', project: 'WHP-2025-001', due_date: new Date().toISOString().split('T')[0] },
-  { name: 'WHT-2025-P1-003', title: 'Setup logistico', status: 'NEXT', priority: 'P2', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-001', due_date: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0] }
+  {
+    name: 'WHT-2025-P1-001',
+    title: 'Identificar distribuidores potenciales',
+    status: 'DONE',
+    priority: 'P1',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    project: 'WHP-2025-001',
+    due_date: new Date(Date.now() - 86400000 * 20).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P1-002',
+    title: 'Negociar contratos',
+    status: 'DOING',
+    priority: 'P0',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'ana@example.com', role: 'Collaborator', user_name: 'Ana Garcia', user_email: 'ana@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    project: 'WHP-2025-001',
+    due_date: new Date().toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P1-003',
+    title: 'Setup logistico',
+    status: 'NEXT',
+    priority: 'P2',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    project: 'WHP-2025-001',
+    due_date: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P1-004',
+    title: 'Capacitar equipo de ventas regional',
+    status: 'NEXT',
+    priority: 'P1',
+    assignees: [
+      { user: 'martin@example.com', role: 'Owner', user_name: 'Martin Jaime', user_email: 'martin@example.com' },
+      { user: 'ana@example.com', role: 'Collaborator', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' }
+    ],
+    primary_owner: 'martin@example.com',
+    department: 'SALES',
+    project: 'WHP-2025-001',
+    due_date: new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0]
+  }
 ]
 
 const projectTasks2: Task[] = [
-  { name: 'WHT-2025-P2-001', title: 'Definir producto', status: 'DONE', priority: 'P1', assigned_to: 'ana@example.com', department: 'MKT', project: 'WHP-2025-002', due_date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0] },
-  { name: 'WHT-2025-P2-002', title: 'Disenar packaging', status: 'BLOCKED', priority: 'P1', assigned_to: 'ana@example.com', department: 'MKT', project: 'WHP-2025-002', blocked_reason: 'Esperando aprobacion legal', due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0] }
+  {
+    name: 'WHT-2025-P2-001',
+    title: 'Definir producto',
+    status: 'DONE',
+    priority: 'P1',
+    assignees: [
+      { user: 'ana@example.com', role: 'Owner', user_name: 'Ana Garcia', user_email: 'ana@example.com' }
+    ],
+    primary_owner: 'ana@example.com',
+    department: 'MKT',
+    project: 'WHP-2025-002',
+    due_date: new Date(Date.now() - 86400000 * 10).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P2-002',
+    title: 'Disenar packaging',
+    status: 'BLOCKED',
+    priority: 'P1',
+    assignees: [
+      { user: 'ana@example.com', role: 'Owner', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'martin@example.com', role: 'Collaborator', user_name: 'Martin Jaime', user_email: 'martin@example.com' }
+    ],
+    primary_owner: 'ana@example.com',
+    department: 'MKT',
+    project: 'WHP-2025-002',
+    blocked_reason: 'Esperando aprobacion legal',
+    due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P2-003',
+    title: 'Crear material promocional',
+    status: 'DOING',
+    priority: 'P1',
+    assignees: [
+      { user: 'ana@example.com', role: 'Owner', user_name: 'Ana Garcia', user_email: 'ana@example.com' },
+      { user: 'sofia@example.com', role: 'Collaborator', user_name: 'Sofia Gonzalez', user_email: 'sofia@example.com' },
+      { user: 'diego@example.com', role: 'Collaborator', user_name: 'Diego Sanchez', user_email: 'diego@example.com' },
+      { user: 'maria@example.com', role: 'Collaborator', user_name: 'Maria Rodriguez', user_email: 'maria@example.com' }
+    ],
+    primary_owner: 'ana@example.com',
+    department: 'MKT',
+    project: 'WHP-2025-002',
+    due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+    worked_today: true
+  }
 ]
 
 const projectTasks3: Task[] = [
-  { name: 'WHT-2025-P3-001', title: 'Analisis de rutas', status: 'DONE', priority: 'P1', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 30).toISOString().split('T')[0] },
-  { name: 'WHT-2025-P3-002', title: 'Optimizar tiempos de entrega', status: 'DOING', priority: 'P0', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0] },
-  { name: 'WHT-2025-P3-003', title: 'Implementar tracking GPS', status: 'NEXT', priority: 'P2', assigned_to: 'carlos@example.com', department: 'OPS', project: 'WHP-2025-003', due_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0] }
+  {
+    name: 'WHT-2025-P3-001',
+    title: 'Analisis de rutas',
+    status: 'DONE',
+    priority: 'P1',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    project: 'WHP-2025-003',
+    due_date: new Date(Date.now() - 86400000 * 30).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P3-002',
+    title: 'Optimizar tiempos de entrega',
+    status: 'DOING',
+    priority: 'P0',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'martin@example.com', role: 'Collaborator', user_name: 'Martin Jaime', user_email: 'martin@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    project: 'WHP-2025-003',
+    due_date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P3-003',
+    title: 'Implementar tracking GPS',
+    status: 'NEXT',
+    priority: 'P2',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    project: 'WHP-2025-003',
+    due_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0]
+  },
+  {
+    name: 'WHT-2025-P3-004',
+    title: 'Optimizar sistema de inventario',
+    status: 'BACKLOG',
+    priority: 'P2',
+    assignees: [
+      { user: 'carlos@example.com', role: 'Owner', user_name: 'Carlos Lopez', user_email: 'carlos@example.com' },
+      { user: 'juan@example.com', role: 'Collaborator', user_name: 'Juan Perez', user_email: 'juan@example.com' },
+      { user: 'luis@example.com', role: 'Collaborator', user_name: 'Luis Martinez', user_email: 'luis@example.com' }
+    ],
+    primary_owner: 'carlos@example.com',
+    department: 'OPS',
+    project: 'WHP-2025-003',
+    due_date: new Date(Date.now() + 86400000 * 20).toISOString().split('T')[0]
+  }
 ]
 
 export const sampleProjects: Project[] = [
@@ -389,7 +653,8 @@ export const sampleMyDayData: MyDayData = {
   summary: {
     total_today: 2,
     overdue_count: 1,
-    blocked_count: 1
+    blocked_count: 1,
+    completed_today: 0
   }
 }
 
@@ -402,11 +667,11 @@ const allTasks: Task[] = [
 ]
 
 export const sampleKanbanColumns: KanbanColumn[] = [
-  { status: 'BACKLOG', tasks: allTasks.filter(t => t.status === 'BACKLOG') },
-  { status: 'NEXT', tasks: allTasks.filter(t => t.status === 'NEXT') },
-  { status: 'DOING', tasks: allTasks.filter(t => t.status === 'DOING') },
-  { status: 'BLOCKED', tasks: allTasks.filter(t => t.status === 'BLOCKED') },
-  { status: 'DONE', tasks: allTasks.filter(t => t.status === 'DONE') }
+  { status: 'BACKLOG', label: 'Backlog', tasks: allTasks.filter(t => t.status === 'BACKLOG') },
+  { status: 'NEXT', label: 'Next', tasks: allTasks.filter(t => t.status === 'NEXT') },
+  { status: 'DOING', label: 'En curso', tasks: allTasks.filter(t => t.status === 'DOING') },
+  { status: 'BLOCKED', label: 'Bloqueado', tasks: allTasks.filter(t => t.status === 'BLOCKED') },
+  { status: 'DONE', label: 'Completado', tasks: allTasks.filter(t => t.status === 'DONE') }
 ]
 
 export const sampleTaskKPIs: DashboardKPIs = {
@@ -437,3 +702,27 @@ export const sampleTaskKPIs: DashboardKPIs = {
 export function isInBypassMode(): boolean {
   return sessionStorage.getItem('auth_bypass') === 'true'
 }
+
+
+// Compatibility sample data for optional/bypass-only modules
+export const sampleRoles = [
+  { name: 'System Manager', desk_access: 1, is_custom: 0, description: 'Administrador', user_count: 1, disabled: 0 },
+  { name: 'Sales User', desk_access: 1, is_custom: 0, description: 'Ventas', user_count: 2, disabled: 0 }
+]
+
+export const sampleProjectOptions = sampleProjects.map(project => ({ name: project.name, title: project.title }))
+export const sampleAssignableUsers = [
+  { name: 'martin@example.com', full_name: 'Martin Jaime', user_image: null },
+  { name: 'ana@example.com', full_name: 'Ana Garcia', user_image: null }
+]
+export const sampleWorkLinkSuggestions = [
+  { source_doctype: 'Sales Order', source_id: 'SO-001', display_name: 'Pedido SO-001', modified: new Date().toISOString(), has_worklink: false }
+]
+
+export const sampleNotificationsResponse = { notifications: [], unread_count: 0 }
+export const sampleTeamWorkload = { workload: [] }
+export const sampleVelocityTrends = { period: 'daily' as const, data: [], trend: 'stable' as const, avg_current: 0, avg_previous: 0 }
+export const sampleBlockerAnalysis = { blocked_areas: [], avg_blocked_time_days: 0, top_blocked_tasks: [] }
+export const sampleOverdueTrends = { weeks: [], trend: 'stable' as const }
+export const sampleOrderDetail = null
+export const sampleOrderWorkLinks = []

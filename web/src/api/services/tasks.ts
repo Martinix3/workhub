@@ -56,10 +56,18 @@ export const tasksApi = {
     })
   },
 
-  async changeStatus(taskId: string, status: TaskStatus): Promise<Task> {
+  async changeStatus(taskId: string, status: TaskStatus, blockedReason?: string): Promise<Task> {
     return frappe.call<Task>('workhub_frappe_app.api.tasks.change_status', {
       task_id: taskId,
-      status
+      status,
+      blocked_reason: blockedReason
+    })
+  },
+
+  async completeTask(taskId: string, notes?: string): Promise<Task> {
+    return frappe.call<Task>('workhub_frappe_app.api.tasks.complete_task', {
+      task_id: taskId,
+      completion_notes: notes
     })
   },
 
@@ -206,7 +214,92 @@ export const tasksApi = {
       user_id: userId,
       period
     })
+  },
+
+  // ============== Quick Task Creation ==============
+
+  async quickCreateTask(data: QuickTaskData): Promise<QuickTaskResponse> {
+    return frappe.call<QuickTaskResponse>('workhub_frappe_app.api.tasks.quick_create', {
+      data: JSON.stringify(data)
+    })
+  },
+
+  async getWorkLinkSuggestions(
+    doctype?: string,
+    docId?: string,
+    limit: number = 10
+  ): Promise<WorkLinkSuggestionsResponse> {
+    return frappe.call<WorkLinkSuggestionsResponse>(
+      'workhub_frappe_app.api.tasks.get_worklink_suggestions',
+      {
+        doctype,
+        doc_id: docId,
+        limit
+      }
+    )
+  },
+
+  async getProjectOptions(): Promise<ProjectOption[]> {
+    return frappe.call<ProjectOption[]>('workhub_frappe_app.api.projects.get_project_options')
+  },
+
+  async getAssignableUsers(): Promise<AssignableUser[]> {
+    return frappe.call<AssignableUser[]>('workhub_frappe_app.api.admin.get_assignable_users')
+  },
+
+  async getBlockedTasks(limit?: number, offset?: number): Promise<{ tasks: Task[]; total: number; limit: number; offset: number; has_more: boolean }> {
+    return frappe.call('workhub_frappe_app.api.tasks.get_blocked_tasks', { limit, offset })
+  },
+
+  async exportKPIs(format: 'csv' | 'pdf' | 'json' = 'csv'): Promise<{ url?: string; content?: string }> {
+    return frappe.call('workhub_frappe_app.api.kpis.export_kpis', { format })
   }
+}
+
+// Types for Quick Task Creation
+
+export interface QuickTaskData {
+  title: string
+  priority?: 'P0' | 'P1' | 'P2'
+  due_date?: string
+  project?: string
+  assigned_to?: string
+  source_doctype?: string
+  source_id?: string
+  department?: 'SALES' | 'OPS' | 'MKT'
+}
+
+export interface QuickTaskResponse {
+  success: boolean
+  task_id: string
+  worklink_id?: string
+}
+
+export interface WorkLinkSuggestion {
+  source_doctype: string
+  source_id: string
+  display_name: string
+  modified: string
+  has_worklink: boolean
+}
+
+export interface WorkLinkSuggestionsResponse {
+  suggestions: WorkLinkSuggestion[]
+  context?: {
+    doctype: string
+    doc_id: string
+  } | null
+}
+
+export interface ProjectOption {
+  name: string
+  title: string
+}
+
+export interface AssignableUser {
+  name: string
+  full_name: string
+  user_image: string | null
 }
 
 export default tasksApi

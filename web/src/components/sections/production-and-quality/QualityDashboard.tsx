@@ -1,5 +1,6 @@
 import type { QualityDashboardProps, NonConformance, Inspection, WeeklyTrendPoint } from './types'
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Clock, CheckCircle, XCircle, Eye } from 'lucide-react'
+import { ExportKPIsButton } from '../../ui'
 
 interface KPICardProps {
   kpi: { value: number; previousValue: number; change: number; label: string }
@@ -21,23 +22,22 @@ function KPICard({ kpi, format = 'number', invertTrend = false }: KPICardProps) 
 
   return (
     <div className="
-      bg-white dark:bg-stone-900
-      border-2 border-stone-900 dark:border-stone-100
+      bg-white dark:bg-neutral-900
+      border border-neutral-200 dark:border-neutral-100
       p-4 lg:p-6
-      shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
     ">
-      <div className="font-mono text-3xl lg:text-4xl font-bold text-stone-900 dark:text-stone-100 mb-1">
+      <div className="font-mono text-3xl lg:text-4xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
         {formatValue(kpi.value)}
       </div>
-      <div className="w-12 h-0.5 bg-stone-900 dark:bg-stone-100 mb-2" />
-      <div className="font-sans text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">
+      <div className="w-12 h-0.5 bg-neutral-900 dark:bg-neutral-100 mb-2" />
+      <div className="font-sans text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">
         {kpi.label}
       </div>
       <div className={`
         flex items-center gap-1 font-mono text-sm font-medium
-        ${isPositive ? 'text-green-600 dark:text-green-400' : ''}
-        ${isNegative ? 'text-red-600 dark:text-red-400' : ''}
-        ${!isPositive && !isNegative ? 'text-stone-400' : ''}
+        ${isPositive ? 'text-success-dark dark:text-success' : ''}
+        ${isNegative ? 'text-error-dark dark:text-error' : ''}
+        ${!isPositive && !isNegative ? 'text-neutral-400' : ''}
       `}>
         {rawPositive && <TrendingUp size={14} />}
         {rawNegative && <TrendingDown size={14} />}
@@ -49,9 +49,9 @@ function KPICard({ kpi, format = 'number', invertTrend = false }: KPICardProps) 
 }
 
 const severityConfig = {
-  minor: { bg: 'bg-amber-100 dark:bg-amber-900', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-400' },
-  major: { bg: 'bg-orange-100 dark:bg-orange-900', text: 'text-orange-700 dark:text-orange-300', border: 'border-orange-400' },
-  critical: { bg: 'bg-red-100 dark:bg-red-900', text: 'text-red-700 dark:text-red-300', border: 'border-red-400' },
+  minor: { bg: 'bg-gold-light dark:bg-gold-dark', text: 'text-gold-dark dark:text-gold', border: 'border-gold' },
+  major: { bg: 'bg-error-light dark:bg-error-dark', text: 'text-error-dark dark:text-error', border: 'border-error' },
+  critical: { bg: 'bg-error-light dark:bg-error-dark', text: 'text-error-text dark:text-error', border: 'border-error' },
 }
 
 const statusLabels = {
@@ -62,9 +62,9 @@ const statusLabels = {
 }
 
 const resultConfig = {
-  approved: { icon: CheckCircle, color: 'text-green-600 dark:text-green-400', label: 'Aprobado' },
-  rejected: { icon: XCircle, color: 'text-red-600 dark:text-red-400', label: 'Rechazado' },
-  held: { icon: Clock, color: 'text-amber-600 dark:text-amber-400', label: 'Retenido' },
+  approved: { icon: CheckCircle, color: 'text-success-dark dark:text-success', label: 'Aprobado' },
+  rejected: { icon: XCircle, color: 'text-error-dark dark:text-error', label: 'Rechazado' },
+  held: { icon: Clock, color: 'text-gold-dark dark:text-gold', label: 'Retenido' },
 }
 
 interface NCCardProps {
@@ -80,36 +80,34 @@ function NCCard({ nc, onView }: NCCardProps) {
       onClick={onView}
       className={`
         w-full text-left
-        bg-white dark:bg-stone-900
-        border-2 border-stone-900 dark:border-stone-100
+        bg-white dark:bg-neutral-900
+        border border-neutral-200 dark:border-neutral-100
         border-l-4 ${severity.border}
         p-4
-        shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]
-        hover:translate-x-[2px] hover:translate-y-[2px]
-        hover:shadow-[2px_2px_0_#1c1917] dark:hover:shadow-[2px_2px_0_#fafaf9]
+        hover:shadow-sm
         transition-all duration-75
       `}
     >
       <div className="flex items-start justify-between mb-2">
         <div>
-          <span className="font-mono text-sm font-bold text-stone-900 dark:text-stone-100">
+          <span className="font-mono text-sm font-bold text-neutral-900 dark:text-neutral-100">
             {nc.ncNumber}
           </span>
           <span className={`ml-2 px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${severity.bg} ${severity.text}`}>
             {nc.severity}
           </span>
         </div>
-        <div className="flex items-center gap-1 text-stone-500">
+        <div className="flex items-center gap-1 text-neutral-500">
           <Clock size={12} />
           <span className="text-xs">{nc.daysOpen}d</span>
         </div>
       </div>
 
-      <p className="text-sm text-stone-700 dark:text-stone-300 mb-2 line-clamp-2">
+      <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-2 line-clamp-2">
         {nc.description}
       </p>
 
-      <div className="flex items-center justify-between text-xs text-stone-500">
+      <div className="flex items-center justify-between text-xs text-neutral-500">
         <span>{statusLabels[nc.status]}</span>
         <span>{nc.responsible}</span>
       </div>
@@ -127,13 +125,13 @@ function InspectionRow({ inspection, onView }: InspectionRowProps) {
   const ResultIcon = result.icon
 
   return (
-    <tr className="group hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
+    <tr className="group hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
       <td className="px-4 py-3">
-        <span className="font-mono text-sm text-stone-900 dark:text-stone-100">
+        <span className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
           {inspection.lotNumber}
         </span>
       </td>
-      <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300">
+      <td className="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">
         {inspection.productName}
       </td>
       <td className="px-4 py-3">
@@ -145,9 +143,9 @@ function InspectionRow({ inspection, onView }: InspectionRowProps) {
       <td className="px-4 py-3">
         <button
           onClick={onView}
-          className="p-1.5 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors opacity-0 group-hover:opacity-100"
+          className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors opacity-0 group-hover:opacity-100"
         >
-          <Eye size={16} className="text-stone-500" />
+          <Eye size={16} className="text-neutral-500" />
         </button>
       </td>
     </tr>
@@ -173,16 +171,16 @@ function TrendChart({ data }: TrendChartProps) {
               <div className="w-full flex flex-col justify-end h-24 gap-0.5">
                 {rejectedHeight > 0 && (
                   <div
-                    className="w-full bg-red-500"
+                    className="w-full bg-error"
                     style={{ height: `${rejectedHeight}%` }}
                   />
                 )}
                 <div
-                  className="w-full bg-green-500"
+                  className="w-full bg-success"
                   style={{ height: `${approvedHeight}%` }}
                 />
               </div>
-              <span className="text-[10px] text-stone-400 mt-1">{point.day}</span>
+              <span className="text-[10px] text-neutral-400 mt-1">{point.day}</span>
             </div>
           )
         })}
@@ -197,18 +195,23 @@ export function QualityDashboard({
   openNCs,
   weeklyTrend,
   onViewInspection,
-  onViewNC
+  onViewNC,
+  onExport
 }: QualityDashboardProps) {
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-serif text-2xl lg:text-3xl font-bold text-stone-900 dark:text-stone-100">
-          Control de Calidad
-        </h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-          Inspecciones, no-conformidades y metricas de calidad
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="font-heading text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+            Control de Calidad
+          </h1>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            Inspecciones, no-conformidades y metricas de calidad
+          </p>
+        </div>
+
+        {onExport && <ExportKPIsButton onExport={onExport} />}
       </div>
 
       {/* KPIs */}
@@ -223,40 +226,40 @@ export function QualityDashboard({
         {/* Weekly Trend + Pending Inspections */}
         <div className="lg:col-span-2 space-y-6">
           {/* Trend Chart */}
-          <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 p-4 shadow-[4px_4px_0_#1c1917] dark:shadow-[4px_4px_0_#fafaf9]">
-            <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-4">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 p-4">
+            <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-4">
               Tendencia Semanal
             </h2>
             <TrendChart data={weeklyTrend} />
             <div className="flex items-center justify-center gap-6 mt-4 text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500" />
-                <span className="text-stone-500">Aprobados</span>
+                <div className="w-3 h-3 bg-success" />
+                <span className="text-neutral-500">Aprobados</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500" />
-                <span className="text-stone-500">Rechazados</span>
+                <div className="w-3 h-3 bg-error" />
+                <span className="text-neutral-500">Rechazados</span>
               </div>
             </div>
           </div>
 
           {/* Pending Inspections */}
-          <div className="bg-white dark:bg-stone-900 border-2 border-stone-900 dark:border-stone-100 overflow-hidden">
-            <div className="px-4 py-3 border-b-2 border-stone-900 dark:border-stone-100">
-              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-100 overflow-hidden">
+            <div className="px-4 py-3 border-b border-neutral-200 dark:border-neutral-100">
+              <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100">
                 Inspecciones Recientes
               </h2>
             </div>
             <table className="w-full">
               <thead>
-                <tr className="border-b border-stone-200 dark:border-stone-700">
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">Lote</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">Producto</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-stone-400">Resultado</th>
+                <tr className="border-b border-neutral-200 dark:border-neutral-700">
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">Lote</th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">Producto</th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold text-neutral-600 dark:text-neutral-400">Resultado</th>
                   <th className="px-4 py-3 w-12"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-200 dark:divide-stone-700">
+              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
                 {pendingInspections.map((inspection) => (
                   <InspectionRow
                     key={inspection.id}
@@ -272,8 +275,8 @@ export function QualityDashboard({
         {/* Open NCs */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle size={20} className="text-amber-500" />
-            <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            <AlertTriangle size={20} className="text-gold-dark" />
+            <h2 className="font-heading text-lg font-bold text-neutral-900 dark:text-neutral-100">
               No-Conformidades Abiertas
             </h2>
           </div>

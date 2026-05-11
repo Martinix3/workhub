@@ -1,7 +1,7 @@
 // React hooks for Sales data
 import { useState, useEffect, useCallback } from 'react'
 import salesApi from '../services/sales'
-import type { Product, CreateOrderData, CreateOrderResponse } from '../services/sales'
+import type { Product, CreateOrderData, CreateOrderResponse, UpdateOrderData, CancelOrderResponse } from '../services/sales'
 import type {
   KPIs,
   Customer,
@@ -10,6 +10,7 @@ import type {
   Activity,
   SalesTrends
 } from '../../components/sections/sell-in-operations/types'
+import type { OrderDetail, WorkLink } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
 import {
   isInBypassMode,
   sampleSalesKPIs,
@@ -17,7 +18,9 @@ import {
   sampleRecentActivity,
   sampleCustomers,
   sampleOrders,
-  sampleOpportunities
+  sampleOpportunities,
+  sampleOrderDetail,
+  sampleOrderWorkLinks
 } from '../sample-data'
 
 interface UseDataState<T> {
@@ -265,4 +268,126 @@ export function useCreateOrder() {
   }, [])
 
   return { createOrder, loading, error }
+}
+
+export function useOrderDetail(orderId: string | null): UseDataState<OrderDetail> {
+  const [data, setData] = useState<OrderDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    if (!orderId) {
+      setData(null)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const orderDetail = await salesApi.getOrderDetail(orderId)
+      setData(orderDetail)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleOrderDetail)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch order detail'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [orderId])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
+
+export function useUpdateOrder() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const updateOrder = useCallback(async (orderId: string, data: UpdateOrderData): Promise<OrderDetail | null> => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await salesApi.updateOrder(orderId, data)
+      return result
+    } catch (err) {
+      if (isInBypassMode()) {
+        // Simulate order update in bypass mode by returning updated sample data
+        return {
+          ...sampleOrderDetail,
+          ...data,
+          items: data.items || sampleOrderDetail.items
+        }
+      }
+      setError(err instanceof Error ? err : new Error('Failed to update order'))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { updateOrder, loading, error }
+}
+
+export function useCancelOrder() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const cancelOrder = useCallback(async (orderId: string): Promise<CancelOrderResponse | null> => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await salesApi.cancelOrder(orderId)
+      return result
+    } catch (err) {
+      if (isInBypassMode()) {
+        // Simulate order cancellation in bypass mode
+        return {
+          success: true,
+          order_id: orderId,
+          message: 'Order cancelled successfully (bypass mode)'
+        }
+      }
+      setError(err instanceof Error ? err : new Error('Failed to cancel order'))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { cancelOrder, loading, error }
+}
+
+export function useOrderWorkLinks(orderId: string | null): UseDataState<WorkLink[]> {
+  const [data, setData] = useState<WorkLink[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetch = useCallback(async () => {
+    if (!orderId) {
+      setData([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const workLinks = await salesApi.getOrderWorkLinks(orderId)
+      setData(workLinks)
+    } catch (err) {
+      if (isInBypassMode()) {
+        setData(sampleOrderWorkLinks)
+      } else {
+        setError(err instanceof Error ? err : new Error('Failed to fetch order WorkLinks'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [orderId])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
 }

@@ -25,5 +25,19 @@
     "reqd": 0,
     "in_standard_filter": 1,
     "description": "Distribuidor que atenderá pedidos Sell Out de este cliente"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Customer-can_create_orders",
+    "dt": "Customer",
+    "fieldname": "can_create_orders",
+    "fieldtype": "Check",
+    "label": "Puede Crear Pedidos",
+    "insert_after": "assigned_distributor",
+    "default": "0",
+    "reqd": 0,
+    "in_list_view": 0,
+    "in_standard_filter": 1,
+    "description": "Permitir a este distribuidor crear pedidos mediante auto-servicio en el portal"
   }
 ]

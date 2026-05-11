@@ -1,31 +1,45 @@
 // Kanban Board Page - Enhanced with priority bars, avatars, drag effects, FAB
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen } from 'lucide-react'
+import { GripVertical, AlertTriangle, Clock, Plus, Flag, X, FolderOpen, CheckSquare, Square, HelpCircle } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { AssigneeAvatarGroup } from '../../components/ui/AssigneeAvatarGroup'
 import { useKanban, useTaskMutations } from '../../api'
+import { TaskSelectionProvider, useTaskSelection } from '../../contexts/TaskSelectionContext'
+import { SelectableTaskCard } from '../../components/tasks/SelectableTaskCard'
+import { BulkActionsBar } from '../../components/tasks/BulkActionsBar'
 import type { Task, TaskStatus, TaskPriority, Department, KanbanColumn } from '../../components/sections/tasks/types'
 
 const columnConfig: Record<TaskStatus, { label: string; headerBg: string; bg: string; dropBg: string }> = {
-  BACKLOG: { label: 'BACKLOG', headerBg: 'bg-stone-600', bg: 'bg-stone-100', dropBg: 'bg-stone-200' },
+  BACKLOG: { label: 'BACKLOG', headerBg: 'bg-neutral-600', bg: 'bg-neutral-100', dropBg: 'bg-neutral-200' },
   NEXT: { label: 'NEXT', headerBg: 'bg-cyan-400', bg: 'bg-cyan-50', dropBg: 'bg-cyan-100' },
-  DOING: { label: 'DOING', headerBg: 'bg-amber-400', bg: 'bg-amber-50', dropBg: 'bg-amber-100' },
-  BLOCKED: { label: 'BLOCKED', headerBg: 'bg-red-500', bg: 'bg-red-50', dropBg: 'bg-red-100' },
+  DOING: { label: 'DOING', headerBg: 'bg-gold', bg: 'bg-gold-light', dropBg: 'bg-gold-light' },
+  BLOCKED: { label: 'BLOCKED', headerBg: 'bg-error', bg: 'bg-error-light', dropBg: 'bg-error-light' },
   DONE: { label: 'DONE', headerBg: 'bg-emerald-400', bg: 'bg-emerald-50', dropBg: 'bg-emerald-100' },
 }
 
 const priorityConfig: Record<TaskPriority, { bg: string; text: string; bar: string }> = {
-  P0: { bg: 'bg-red-100', text: 'text-red-700', bar: 'bg-red-500' },
-  P1: { bg: 'bg-amber-100', text: 'text-amber-700', bar: 'bg-amber-400' },
-  P2: { bg: 'bg-green-100', text: 'text-green-700', bar: 'bg-emerald-400' },
+  P0: { bg: 'bg-error-light', text: 'text-error-text', bar: 'bg-error' },
+  P1: { bg: 'bg-gold-light', text: 'text-gold-dark', bar: 'bg-gold' },
+  P2: { bg: 'bg-success-light', text: 'text-success-text', bar: 'bg-emerald-400' },
 }
 
 export function KanbanPage() {
+  return (
+    <TaskSelectionProvider>
+      <KanbanContent />
+    </TaskSelectionProvider>
+  )
+}
+
+function KanbanContent() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const projectFilter = searchParams.get('project')
   const [departmentFilter, setDepartmentFilter] = useState<Department | 'ALL'>('ALL')
+  const [selectionMode, setSelectionMode] = useState(false)
+  const { selectAll, clearSelection, selectedTasks } = useTaskSelection()
 
   // Build filters object
   const filters = {
@@ -49,6 +63,61 @@ export function KanbanPage() {
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [quickAddTitle, setQuickAddTitle] = useState('')
 
+  // Toggle selection mode
+  const toggleSelectionMode = () => {
+    if (selectionMode) {
+      clearSelection()
+    }
+    setSelectionMode(!selectionMode)
+  }
+
+  // Select all tasks in a column
+  const handleSelectAllColumn = (columnTasks: Task[]) => {
+    const taskIds = columnTasks.map(task => task.name)
+    selectAll(taskIds)
+  }
+
+  // Bulk action handlers (placeholders - will be implemented in subtask 4.2)
+  const handleBulkChangeStatus = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  const handleBulkAssign = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  const handleBulkChangePriority = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  const handleBulkMoveProject = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  const handleBulkAddWorkLink = () => {
+    // TODO: Implement in subtask 4.2
+  }
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd+A: Select all visible tasks
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode) {
+        e.preventDefault()
+        const allVisibleTasks = allColumns.flatMap(col => col.tasks)
+        const allTaskIds = allVisibleTasks.map(task => task.name)
+        selectAll(allTaskIds)
+      }
+      // Escape: Clear selection
+      else if (e.key === 'Escape' && selectionMode) {
+        clearSelection()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectionMode, columns, selectAll, clearSelection])
+
   if (loading) {
     return <LoadingState message="Cargando tablero..." />
   }
@@ -71,6 +140,14 @@ export function KanbanPage() {
   })
 
   const totalTasks = allColumns.reduce((sum, col) => sum + col.tasks.length, 0)
+  const pendingTasks = allColumns.reduce(
+    (sum, col) => sum + col.tasks.filter(task => task.status !== 'DONE').length,
+    0
+  )
+  const urgentTasks = allColumns.reduce(
+    (sum, col) => sum + col.tasks.filter(task => task.priority === 'P0' || task.status === 'BLOCKED').length,
+    0
+  )
 
   const handleDragStart = (task: Task) => {
     setDraggedTask(task)
@@ -109,19 +186,19 @@ export function KanbanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100">
+    <div className="min-h-screen bg-neutral-100">
       {/* Header */}
-      <div className="bg-white border-b-2 border-stone-900 px-4 lg:px-8 py-4">
+      <div className="bg-white border-b border-neutral-200 px-4 lg:px-8 py-4">
         <div className="max-w-full mx-auto flex items-center justify-between">
           <div>
-            <p className="text-stone-500 uppercase tracking-wider text-xs font-bold">Kanban Board</p>
-            <h1 className="font-serif text-2xl font-bold text-stone-900">
+            <p className="text-neutral-500 uppercase tracking-wider text-xs font-bold">Kanban Board</p>
+            <h1 className="font-heading text-2xl font-bold text-neutral-900">
               {projectFilter ? projectFilter.replace('WHP-', 'Proyecto ') : 'Todas las Tareas'}
             </h1>
             {projectFilter && (
               <button
                 onClick={clearProjectFilter}
-                className="mt-1 flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium"
+                className="mt-1 flex items-center gap-1 text-xs text-gold-dark hover:text-gold-dark font-medium"
               >
                 <FolderOpen size={12} />
                 Ver todas las tareas
@@ -131,9 +208,70 @@ export function KanbanPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Task count */}
-            <div className="px-3 py-1 border-2 border-stone-900 font-mono font-bold text-sm">
-              {totalTasks} tareas
+            {/* Board KPIs */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="px-3 py-2 bg-white border border-neutral-200">
+                <p className="font-mono font-bold text-sm text-neutral-900">{pendingTasks}</p>
+                <p className="text-[10px] uppercase tracking-wider text-neutral-500">pendiente{pendingTasks === 1 ? '' : 's'}</p>
+              </div>
+              <div className="px-3 py-2 bg-error-light border border-error-dark">
+                <p className="font-mono font-bold text-sm text-error-text">{urgentTasks}</p>
+                <p className="text-[10px] uppercase tracking-wider text-error-text">urgente{urgentTasks === 1 ? '' : 's'}</p>
+              </div>
+              <div className="px-3 py-2 bg-white border border-neutral-200">
+                <p className="font-mono font-bold text-sm text-neutral-900">{totalTasks}</p>
+                <p className="text-[10px] uppercase tracking-wider text-neutral-500">total</p>
+              </div>
+            </div>
+
+            {/* Selection Mode Toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleSelectionMode}
+                className={`
+                  px-3 py-1.5 text-xs font-medium uppercase tracking-wider
+                  border border-neutral-200
+                  transition-all duration-75
+                  flex items-center gap-2
+                  ${selectionMode
+                    ? 'bg-gold text-neutral-900 shadow-sm'
+                    : 'bg-white text-neutral-900 hover:bg-neutral-100'
+                  }
+                `}
+                title={selectionMode ? 'Salir de selección' : 'Seleccionar tareas'}
+              >
+                {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
+                <span>{selectionMode ? 'Salir de selección' : 'Seleccionar tareas'}</span>
+              </button>
+
+              {/* Keyboard Shortcuts Help */}
+              <div className="relative group">
+                <HelpCircle size={18} className="text-neutral-400 hover:text-neutral-600 cursor-help" />
+                <div className="
+                  absolute right-0 top-full mt-2 w-64 p-3
+                  bg-white border border-neutral-200
+                  opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                  transition-all duration-150 z-50
+                ">
+                  <p className="font-bold text-xs uppercase tracking-wider text-neutral-900 mb-2">
+                    Atajos de Teclado
+                  </p>
+                  <div className="space-y-1 text-xs text-neutral-700">
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-neutral-100 px-1.5 py-0.5 border border-neutral-300">Ctrl/Cmd+A</span>
+                      <span className="text-[10px] ml-2">Seleccionar todas</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-neutral-100 px-1.5 py-0.5 border border-neutral-300">Escape</span>
+                      <span className="text-[10px] ml-2">Limpiar selección</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-[10px] bg-neutral-100 px-1.5 py-0.5 border border-neutral-300">Ctrl/Cmd+Click</span>
+                      <span className="text-[10px] ml-2">Alternar selección</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Department Filter */}
@@ -144,11 +282,11 @@ export function KanbanPage() {
                   onClick={() => setDepartmentFilter(dept)}
                   className={`
                     px-3 py-1.5 text-xs font-medium uppercase tracking-wider
-                    border-2 border-stone-900
+                    border border-neutral-200
                     transition-all duration-75
                     ${departmentFilter === dept
-                      ? 'bg-stone-900 text-white'
-                      : 'bg-white text-stone-900 hover:bg-stone-100'
+                      ? 'bg-neutral-900 text-white'
+                      : 'bg-white text-neutral-900 hover:bg-neutral-100'
                     }
                   `}
                 >
@@ -159,6 +297,17 @@ export function KanbanPage() {
           </div>
         </div>
       </div>
+
+      {selectionMode && (
+        <div className="mx-4 lg:mx-6 mt-4 p-3 bg-gold-light border border-gold-dark flex items-center justify-between">
+          <span className="text-sm font-semibold text-gold-dark">
+            Modo selección activo · {selectedTasks.size} seleccionada{selectedTasks.size === 1 ? '' : 's'}
+          </span>
+          <span className="text-xs text-gold-dark uppercase tracking-wider">
+            Click en tarjetas para seleccionar · Escape limpia
+          </span>
+        </div>
+      )}
 
       {/* Board */}
       <div className="p-4 lg:p-6 overflow-x-auto">
@@ -172,32 +321,46 @@ export function KanbanPage() {
                 key={column.status}
                 className={`
                   w-72 flex-shrink-0
-                  border-2 border-stone-900
+                  border border-neutral-200
                   ${config.bg}
                   transition-all duration-75
-                  ${isDropTarget
-                    ? 'shadow-[6px_6px_0_#f59e0b]'
-                    : 'shadow-[4px_4px_0_#1c1917]'
-                  }
                 `}
                 onDragOver={(e) => handleDragOver(e, column.status)}
                 onDragLeave={handleDragLeave}
                 onDrop={() => handleDrop(column.status)}
               >
                 {/* Column Header */}
-                <div className={`${config.headerBg} p-3 border-b-2 border-stone-900`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm uppercase tracking-wider text-stone-900">
+                <div className={`${config.headerBg} p-3 border-b border-neutral-200`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-sm uppercase tracking-wider text-neutral-900">
                       {config.label}
                     </span>
                     <span className="
                       w-8 h-8 flex items-center justify-center
-                      bg-stone-900 text-white
+                      bg-neutral-900 text-white
                       font-mono font-bold text-sm
                     ">
                       {column.tasks.length}
                     </span>
                   </div>
+
+                  {/* Select All Button - shown in selection mode */}
+                  {selectionMode && column.tasks.length > 0 && (
+                    <button
+                      onClick={() => handleSelectAllColumn(column.tasks)}
+                      className="
+                        w-full px-2 py-1.5 text-xs font-medium
+                        bg-white hover:bg-neutral-100
+                        border border-neutral-200
+                        transition-all duration-75
+                        shadow-sm
+                        flex items-center justify-center gap-1
+                      "
+                    >
+                      <CheckSquare size={12} />
+                      <span>Seleccionar todas</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Tasks Container */}
@@ -207,22 +370,34 @@ export function KanbanPage() {
                   transition-colors
                 `}>
                   {column.tasks.map((task) => (
-                    <TaskCard
-                      key={task.name}
-                      task={task}
-                      onDragStart={() => handleDragStart(task)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => navigate(`/tareas/tarea/${task.name}`)}
-                      isDragging={draggedTask?.name === task.name}
-                    />
+                    selectionMode ? (
+                      <SelectableTaskCard
+                        key={task.name}
+                        task={task}
+                        onDragStart={() => handleDragStart(task)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => navigate(`/tareas/tarea/${task.name}`)}
+                        isDragging={draggedTask?.name === task.name}
+                        selectionMode={true}
+                      />
+                    ) : (
+                      <TaskCard
+                        key={task.name}
+                        task={task}
+                        onDragStart={() => handleDragStart(task)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => navigate(`/tareas/tarea/${task.name}`)}
+                        isDragging={draggedTask?.name === task.name}
+                      />
+                    )
                   ))}
 
                   {/* Empty State */}
                   {column.tasks.length === 0 && (
                     <div className="
-                      h-32 border-2 border-dashed border-stone-400
+                      h-32 border-2 border-dashed border-neutral-400
                       flex items-center justify-center
-                      text-stone-400 text-sm uppercase tracking-wider
+                      text-neutral-400 text-sm uppercase tracking-wider
                     ">
                       Arrastra aquí
                     </div>
@@ -240,33 +415,29 @@ export function KanbanPage() {
         className="
           fixed bottom-8 right-8
           w-14 h-14 flex items-center justify-center
-          bg-amber-400 hover:bg-amber-500
-          border-2 border-stone-900
-          shadow-[4px_4px_0_#1c1917]
-          hover:shadow-[2px_2px_0_#1c1917]
-          hover:translate-x-[2px] hover:translate-y-[2px]
+          bg-gold hover:bg-gold-dark
+          border border-neutral-200
           transition-all duration-75
         "
       >
-        <Plus size={24} className="text-stone-900" />
+        <Plus size={24} className="text-neutral-900" />
       </button>
 
       {/* Quick Add Modal */}
       {showQuickAdd && (
         <div
-          className="fixed inset-0 z-50 bg-stone-900/50 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-neutral-900/50 flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowQuickAdd(false)}
         >
           <form
             onSubmit={handleQuickAddSubmit}
             onClick={(e) => e.stopPropagation()}
             className="
-              bg-white border-2 border-stone-900
-              shadow-[8px_8px_0_#1c1917]
+              bg-white border border-neutral-200
               w-full max-w-md p-6
             "
           >
-            <h2 className="font-serif text-xl font-bold text-stone-900 mb-4">
+            <h2 className="font-heading text-xl font-bold text-neutral-900 mb-4">
               Nueva Tarea
             </h2>
             <input
@@ -277,8 +448,8 @@ export function KanbanPage() {
               autoFocus
               className="
                 w-full px-4 py-3 text-lg
-                border-2 border-stone-900
-                focus:outline-none focus:ring-2 focus:ring-amber-400
+                border border-neutral-200
+                focus:outline-none focus:ring-2 focus:ring-gold
                 mb-4
               "
             />
@@ -288,9 +459,9 @@ export function KanbanPage() {
                 disabled={!quickAddTitle.trim()}
                 className="
                   flex-1 py-3
-                  bg-amber-400 hover:bg-amber-500
-                  text-stone-900 font-medium uppercase tracking-wider
-                  border-2 border-stone-900
+                  bg-gold hover:bg-gold-dark
+                  text-neutral-900 font-medium uppercase tracking-wider
+                  border border-neutral-200
                   disabled:opacity-50 disabled:cursor-not-allowed
                   transition-colors
                 "
@@ -302,7 +473,7 @@ export function KanbanPage() {
                 onClick={() => setShowQuickAdd(false)}
                 className="
                   px-6 py-3
-                  text-stone-600 hover:text-stone-900
+                  text-neutral-600 hover:text-neutral-900
                   font-medium uppercase tracking-wider
                   transition-colors
                 "
@@ -312,6 +483,17 @@ export function KanbanPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {/* Bulk Actions Bar - shown when tasks are selected in selection mode */}
+      {selectionMode && (
+        <BulkActionsBar
+          onChangeStatus={handleBulkChangeStatus}
+          onAssign={handleBulkAssign}
+          onChangePriority={handleBulkChangePriority}
+          onMoveProject={handleBulkMoveProject}
+          onAddWorkLink={handleBulkAddWorkLink}
+        />
       )}
     </div>
   )
@@ -329,17 +511,6 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCar
   const priority = priorityConfig[task.priority]
   const isDone = task.status === 'DONE'
 
-  // Get initials from assigned_to_name or assigned_to
-  const getInitials = () => {
-    const name = task.assigned_to_name || task.assigned_to || ''
-    if (!name) return '?'
-    const parts = name.split(/[@\s]/)
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
-  }
-
   return (
     <div
       draggable
@@ -348,12 +519,12 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCar
       onClick={onClick}
       className={`
         bg-white
-        border-2 border-stone-900
+        border border-neutral-200
         cursor-grab active:cursor-grabbing
         transition-all duration-75
         ${isDragging
-          ? 'opacity-50 rotate-2 shadow-[8px_8px_0_#1c1917]'
-          : 'hover:shadow-[4px_4px_0_#1c1917]'
+          ? 'opacity-50 rotate-2'
+          : ''
         }
       `}
     >
@@ -364,47 +535,44 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCar
         {/* Drag Handle + Priority */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <GripVertical size={14} className="text-stone-400" />
+            <GripVertical size={14} className="text-neutral-400" />
             <span className={`px-1.5 py-0.5 text-xs font-bold ${priority.bg} ${priority.text}`}>
               {task.priority}
             </span>
             {task.department && (
-              <span className="text-[10px] text-stone-400 uppercase">{task.department}</span>
+              <span className="text-[10px] text-neutral-400 uppercase">{task.department}</span>
             )}
           </div>
           {task.status === 'BLOCKED' && (
-            <AlertTriangle size={14} className="text-red-500" />
+            <AlertTriangle size={14} className="text-error" />
           )}
         </div>
 
         {/* Title */}
         <h3 className={`
           font-medium text-sm leading-snug mb-2
-          ${isDone ? 'line-through text-stone-400' : 'text-stone-900'}
+          ${isDone ? 'line-through text-neutral-400' : 'text-neutral-900'}
         `}>
           {task.title}
         </h3>
 
         {/* Blocked Reason */}
         {task.blocked_reason && (
-          <p className="text-xs text-red-500 mb-2 bg-red-50 p-2 border border-red-200">
+          <p className="text-xs text-error mb-2 bg-error-light p-2 border border-error">
             {task.blocked_reason}
           </p>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-stone-500">
+        <div className="flex items-center justify-between text-xs text-neutral-500">
           <div className="flex items-center gap-2">
-            {/* Avatar */}
-            {task.assigned_to && (
-              <div className="
-                w-6 h-6 flex items-center justify-center
-                bg-stone-200
-                border border-stone-900
-                text-[10px] font-bold
-              " title={task.assigned_to_name || task.assigned_to}>
-                {getInitials()}
-              </div>
+            {/* Assignees */}
+            {task.assignees && task.assignees.length > 0 && (
+              <AssigneeAvatarGroup
+                assignees={task.assignees}
+                size="sm"
+                maxVisible={3}
+              />
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -419,7 +587,7 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCar
             )}
             {/* Estimated hours - if we had this field */}
             {task.project_title && (
-              <span className="font-mono text-stone-400 truncate max-w-[60px]" title={task.project_title}>
+              <span className="font-mono text-neutral-400 truncate max-w-[60px]" title={task.project_title}>
                 {task.project_title}
               </span>
             )}
@@ -428,7 +596,7 @@ function TaskCard({ task, onDragStart, onDragEnd, onClick, isDragging }: TaskCar
 
         {/* Blocking Count Badge */}
         {task.total_work_days && task.total_work_days > 0 && (
-          <div className="mt-2 flex items-center gap-1 text-xs text-amber-600">
+          <div className="mt-2 flex items-center gap-1 text-xs text-gold-dark">
             <Flag size={10} />
             <span>{task.total_work_days} días trabajados</span>
           </div>

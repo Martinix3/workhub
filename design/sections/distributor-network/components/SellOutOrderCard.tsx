@@ -262,7 +262,7 @@ export function SellOutOrderCard({ order, onStartDelivery, onMarkDelivered, onRe
                   border-2 border-stone-900 dark:border-stone-100
                   text-stone-900 dark:text-stone-100
                   placeholder:text-stone-400
-                  focus:outline-none focus:ring-0
+                  focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-300
                 "
               />
             </div>

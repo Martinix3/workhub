@@ -89,23 +89,23 @@ export function InvitationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-stone-900">Invitaciones</h2>
-        <p className="text-sm text-stone-500 mt-1">
+        <h2 className="text-lg font-medium text-neutral-900">Invitaciones</h2>
+        <p className="text-sm text-neutral-500 mt-1">
           Envia invitaciones por email para que nuevos usuarios se unan al sistema
         </p>
       </div>
 
       {/* Add invitation form */}
-      <div className="p-4 border border-stone-200 rounded-xl space-y-4">
+      <div className="p-4 border border-neutral-200 rounded-xl space-y-4">
         <div className="flex gap-3">
           <div className="flex-1 relative">
-            <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <input
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="usuario@empresa.com"
-              className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-gold-dark focus:border-gold-dark transition-colors"
               onKeyDown={(e) => e.key === 'Enter' && addInvitation()}
             />
           </div>
@@ -114,8 +114,8 @@ export function InvitationsPage() {
             className={`
               px-4 py-2 border rounded-lg transition-colors
               ${newRoles.length > 0
-                ? 'border-amber-500 bg-amber-50 text-amber-700'
-                : 'border-stone-300 text-stone-600 hover:bg-stone-50'
+                ? 'border-gold-dark bg-gold-light text-gold-dark'
+                : 'border-neutral-300 text-neutral-600 hover:bg-neutral-50'
               }
             `}
           >
@@ -127,8 +127,8 @@ export function InvitationsPage() {
             className={`
               flex items-center gap-2 px-4 py-2 rounded-lg transition-colors
               ${newEmail
-                ? 'bg-amber-500 text-white hover:bg-amber-600'
-                : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                ? 'bg-gold-dark text-white hover:bg-gold-dark'
+                : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
               }
             `}
           >
@@ -139,8 +139,8 @@ export function InvitationsPage() {
 
         {/* Role selector dropdown */}
         {showRoleSelector && (
-          <div className="p-4 bg-stone-50 rounded-lg border border-stone-200">
-            <p className="text-sm font-medium text-stone-700 mb-2">Selecciona roles:</p>
+          <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+            <p className="text-sm font-medium text-neutral-700 mb-2">Selecciona roles:</p>
             <div className="flex flex-wrap gap-2">
               {allRoles?.map((role) => (
                 <button
@@ -149,8 +149,8 @@ export function InvitationsPage() {
                   className={`
                     px-3 py-1 text-sm rounded-full transition-colors
                     ${newRoles.includes(role.name)
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-300'
+                      ? 'bg-gold-dark text-white'
+                      : 'bg-white border border-neutral-200 text-neutral-600 hover:border-neutral-300'
                     }
                   `}
                 >
@@ -166,11 +166,11 @@ export function InvitationsPage() {
       {invitations.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium text-stone-900">Lista de invitaciones</h3>
+            <h3 className="font-medium text-neutral-900">Lista de invitaciones</h3>
             {pendingCount > 0 && (
               <button
                 onClick={sendAllPending}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-gold-dark text-white rounded-lg hover:bg-gold-dark transition-colors text-sm font-medium"
               >
                 <Send size={16} />
                 Enviar todas ({pendingCount})
@@ -178,17 +178,17 @@ export function InvitationsPage() {
             )}
           </div>
 
-          <div className="border border-stone-200 rounded-lg divide-y divide-stone-100">
+          <div className="border border-neutral-200 rounded-lg divide-y divide-neutral-100">
             {invitations.map((inv) => (
               <div key={inv.id} className="flex items-center gap-4 p-4">
                 <div className="flex-1">
-                  <div className="font-medium text-stone-900">{inv.email}</div>
+                  <div className="font-medium text-neutral-900">{inv.email}</div>
                   {inv.roles.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {inv.roles.map((role) => (
                         <span
                           key={role}
-                          className="px-2 py-0.5 text-xs bg-stone-100 text-stone-600 rounded-full"
+                          className="px-2 py-0.5 text-xs bg-neutral-100 text-neutral-600 rounded-full"
                         >
                           {role}
                         </span>
@@ -196,7 +196,7 @@ export function InvitationsPage() {
                     </div>
                   )}
                   {inv.error && (
-                    <p className="text-xs text-red-500 mt-1">{inv.error}</p>
+                    <p className="text-xs text-error mt-1">{inv.error}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -204,14 +204,14 @@ export function InvitationsPage() {
                     <>
                       <button
                         onClick={() => sendSingleInvitation(inv)}
-                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        className="p-2 text-gold-dark hover:bg-gold-light rounded-lg transition-colors"
                         title="Enviar"
                       >
                         <Send size={18} />
                       </button>
                       <button
                         onClick={() => removeInvitation(inv.id)}
-                        className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-neutral-400 hover:text-error hover:bg-error-light rounded-lg transition-colors"
                         title="Eliminar"
                       >
                         <X size={18} />
@@ -219,10 +219,10 @@ export function InvitationsPage() {
                     </>
                   )}
                   {inv.status === 'sending' && (
-                    <Loader2 size={18} className="animate-spin text-amber-500" />
+                    <Loader2 size={18} className="animate-spin text-gold-dark" />
                   )}
                   {inv.status === 'sent' && (
-                    <div className="flex items-center gap-1 text-green-600">
+                    <div className="flex items-center gap-1 text-success-dark">
                       <Check size={18} />
                       <span className="text-sm">Enviado</span>
                     </div>
@@ -230,7 +230,7 @@ export function InvitationsPage() {
                   {inv.status === 'error' && (
                     <button
                       onClick={() => sendSingleInvitation(inv)}
-                      className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                      className="px-3 py-1 text-sm text-error-dark border border-error rounded-lg hover:bg-error-light transition-colors"
                     >
                       Reintentar
                     </button>
@@ -244,14 +244,14 @@ export function InvitationsPage() {
 
       {/* Empty state */}
       {invitations.length === 0 && (
-        <div className="text-center py-12 text-stone-500">
-          <Mail size={48} className="mx-auto mb-4 text-stone-300" />
+        <div className="text-center py-12 text-neutral-500">
+          <Mail size={48} className="mx-auto mb-4 text-neutral-300" />
           <p>Agrega emails para enviar invitaciones</p>
         </div>
       )}
 
       {/* Info */}
-      <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600">
+      <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 text-sm text-neutral-600">
         <p>
           <strong>Nota:</strong> Los usuarios invitados recibiran un email con un enlace para
           completar su registro. Si ya tienen cuenta en el sistema, podran usar sus credenciales

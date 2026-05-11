@@ -9,13 +9,8 @@ import type {
   CreateUserData,
   UpdateUserData
 } from '../services/admin'
-
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
+import { createDataHook, type UseDataState } from './createDataHook'
+import { sampleRoles } from '../sample-data'
 
 // Hook for users list with pagination and search
 export function useUsers(initialLimit = 50): UseDataState<UsersResponse> & {
@@ -81,38 +76,24 @@ export function useUserDetail(userId: string | null): UseDataState<UserDetail> {
 }
 
 // Hook for roles list
-export function useRoles(): UseDataState<Role[]> {
-  const [data, setData] = useState<Role[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const roles = await adminApi.getRoles()
-      setData(roles)
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch roles'))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-
-  return { data, loading, error, refetch: fetch }
-}
+export const useRoles = createDataHook<Role[]>({
+  apiMethod: adminApi.getRoles,
+  sampleData: sampleRoles,
+  errorMessage: 'Failed to fetch roles'
+})
 
 // Hook for user CRUD operations
 export function useUserMutations() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
-  const createUser = useCallback(async (data: CreateUserData): Promise<UserDetail> => {
+  const createUser = useCallback(async (dataOrEmail: CreateUserData | string, firstName?: string, lastName?: string, roles?: string[]): Promise<UserDetail> => {
     setLoading(true)
     setError(null)
     try {
+      const data = typeof dataOrEmail === 'string'
+        ? { email: dataOrEmail, first_name: firstName || '', last_name: lastName, roles }
+        : dataOrEmail
       const user = await adminApi.createUser(data)
       return user
     } catch (err) {
@@ -183,11 +164,11 @@ export function useUserMutations() {
     }
   }, [])
 
-  const sendInvitation = useCallback(async (email: string, firstName?: string, roles?: string[]): Promise<void> => {
+  const sendInvitation = useCallback(async (email: string, firstNameOrRoles?: string | string[], roles?: string[]): Promise<void> => {
     setLoading(true)
     setError(null)
     try {
-      await adminApi.sendInvitation(email, firstName, roles)
+      await adminApi.sendInvitation(email, Array.isArray(firstNameOrRoles) ? undefined : firstNameOrRoles, Array.isArray(firstNameOrRoles) ? firstNameOrRoles : roles)
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to send invitation')
       setError(error)

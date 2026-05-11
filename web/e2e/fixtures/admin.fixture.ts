@@ -28,15 +28,18 @@ export const test = base.extend<AdminFixtures>({
     // The bypass user typically has limited roles but for UI testing purposes
     // we verify access denied messages when accessing admin-only features
     const bypassButton = page.locator(
-      'button:has-text("Revisar UI"), button:has-text("Bypass"), [data-testid="bypass-login"]'
+      '[data-testid="bypass-login"], button:has-text("Revisar UI"), button:has-text("Bypass")'
     ).first()
 
     await bypassButton.waitFor({ state: 'visible', timeout: 10000 })
     await bypassButton.click()
 
-    // Wait for redirect to home
-    await page.waitForURL('/', { timeout: 15000 })
+    // Wait for redirect to home with proper load state
+    await page.waitForURL('/', { timeout: 10000 })
     await page.waitForLoadState('domcontentloaded')
+
+    // Verify page loaded
+    await page.locator('aside, nav, main').first().waitFor({ state: 'visible', timeout: 5000 })
 
     await use(page)
     await context.close()
@@ -58,19 +61,18 @@ export async function hasAdminAccess(page: Page): Promise<boolean> {
   await page.goto('/admin')
   await page.waitForLoadState('domcontentloaded')
 
-  // Check for access denied message
-  const accessDenied = await page.locator(
-    'text=Acceso denegado, text=No tienes permisos, text=Access Denied'
-  ).isVisible().catch(() => false)
+  // Check for access denied message (with better selector pattern)
+  const accessDeniedLocator = page.locator('text=/Acceso denegado|No tienes permisos|Access Denied/i')
+  const accessDenied = await accessDeniedLocator.isVisible().catch(() => false)
 
   if (accessDenied) {
     return false
   }
 
-  // Check if admin content is visible
+  // Check if admin content is visible (using semantic selectors)
   const adminContent = await page.locator(
-    'h1:has-text("Admin"), h1:has-text("Usuarios"), [class*="admin"]'
-  ).isVisible().catch(() => false)
+    'h1:has-text("Admin"), h1:has-text("Usuarios"), [data-testid="admin-content"]'
+  ).first().isVisible().catch(() => false)
 
   return adminContent
 }

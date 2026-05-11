@@ -22,13 +22,7 @@ import {
   sampleKanbanColumns,
   sampleTaskKPIs
 } from '../sample-data'
-
-interface UseDataState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
-  refetch: () => Promise<void>
-}
+import { createDataHook, type UseDataState } from './createDataHook'
 
 // ============== My Day Hook ==============
 
@@ -71,35 +65,11 @@ export function useMyDay(): UseDataState<MyDayData> & {
 
 // ============== Tasks Hooks ==============
 
-export function useTasks(filters?: TaskFilters): UseDataState<Task[]> {
-  const [data, setData] = useState<Task[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  // Serialize filters for stable dependency comparison
-  const filtersKey = filters ? JSON.stringify(filters) : ''
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const parsedFilters = filtersKey ? JSON.parse(filtersKey) : undefined
-      const tasks = await tasksApi.getTasks(parsedFilters)
-      setData(tasks)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleTasks)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch tasks'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [filtersKey])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useTasks = createDataHook<Task[], TaskFilters>({
+  apiMethod: tasksApi.getTasks,
+  sampleData: sampleTasks,
+  errorMessage: 'Failed to fetch tasks'
+})
 
 export function useTaskMutations() {
   const [loading, setLoading] = useState(false)
@@ -131,11 +101,11 @@ export function useTaskMutations() {
     }
   }, [])
 
-  const changeStatus = useCallback(async (taskId: string, status: TaskStatus): Promise<Task | null> => {
+  const changeStatus = useCallback(async (taskId: string, status: TaskStatus, blockedReason?: string): Promise<Task | null> => {
     setLoading(true)
     setError(null)
     try {
-      return await tasksApi.changeStatus(taskId, status)
+      return await tasksApi.changeStatus(taskId, status, blockedReason)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to change status'))
       return null
@@ -157,69 +127,37 @@ export function useTaskMutations() {
     }
   }, [])
 
-  return { createTask, updateTask, changeStatus, quickAdd, loading, error }
+  const completeTask = useCallback(async (taskId: string, notes?: string): Promise<Task | null> => {
+    setLoading(true)
+    setError(null)
+    try {
+      return await tasksApi.completeTask(taskId, notes)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to complete task'))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { createTask, updateTask, changeStatus, quickAdd, completeTask, loading, error }
 }
 
 // ============== Projects Hooks ==============
 
-export function useProjects(filters?: ProjectFilters): UseDataState<Project[]> {
-  const [data, setData] = useState<Project[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+export const useProjects = createDataHook<Project[], ProjectFilters>({
+  apiMethod: tasksApi.getProjects,
+  sampleData: sampleProjects,
+  errorMessage: 'Failed to fetch projects',
+  bypassTransformer: (data, filters) =>
+    filters?.status ? data.filter(p => p.status === filters.status) : data
+})
 
-  // Serialize filters for stable dependency comparison
-  const filtersKey = filters ? JSON.stringify(filters) : ''
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const parsedFilters = filtersKey ? JSON.parse(filtersKey) : undefined
-      const projects = await tasksApi.getProjects(parsedFilters)
-      setData(projects)
-    } catch (err) {
-      if (isInBypassMode()) {
-        // Apply filters to sample data
-        const parsedFilters = filtersKey ? JSON.parse(filtersKey) : {}
-        let filtered = [...sampleProjects]
-        if (parsedFilters.status) {
-          filtered = filtered.filter(p => p.status === parsedFilters.status)
-        }
-        setData(filtered)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch projects'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [filtersKey])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useProject(projectId: string): UseDataState<Project> {
-  const [data, setData] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    if (!projectId) return
-    setLoading(true)
-    setError(null)
-    try {
-      const project = await tasksApi.getProject(projectId)
-      setData(project)
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch project'))
-    } finally {
-      setLoading(false)
-    }
-  }, [projectId])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useProject = createDataHook<Project, string>({
+  apiMethod: tasksApi.getProject,
+  sampleData: sampleProjects[0],
+  errorMessage: 'Failed to fetch project'
+})
 
 // ============== Gantt Hook ==============
 
@@ -260,7 +198,7 @@ export function useGantt(projectId: string): UseDataState<GanttData> & {
 // ============== Kanban Hook ==============
 
 export function useKanban(filters?: TaskFilters): UseDataState<KanbanColumn[]> & {
-  moveTask: (taskId: string, newStatus: TaskStatus) => Promise<void>
+  moveTask: (taskId: string, newStatus: TaskStatus, blockedReason?: string) => Promise<void>
 } {
   const [data, setData] = useState<KanbanColumn[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -297,9 +235,9 @@ export function useKanban(filters?: TaskFilters): UseDataState<KanbanColumn[]> &
     }
   }, [filtersKey])
 
-  const moveTask = useCallback(async (taskId: string, newStatus: TaskStatus) => {
+  const moveTask = useCallback(async (taskId: string, newStatus: TaskStatus, blockedReason?: string) => {
     try {
-      await tasksApi.changeStatus(taskId, newStatus)
+      await tasksApi.changeStatus(taskId, newStatus, blockedReason)
       // Optimistic update
       setData(prev => {
         if (!prev) return prev
@@ -324,36 +262,36 @@ export function useKanban(filters?: TaskFilters): UseDataState<KanbanColumn[]> &
 
 // ============== Project Templates Hook ==============
 
-export function useProjectTemplates(): UseDataState<ProjectTemplate[]> {
-  const [data, setData] = useState<ProjectTemplate[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const templates = await tasksApi.getProjectTemplates()
-      setData(templates)
-    } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleProjectTemplates)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch templates'))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+export const useProjectTemplates = createDataHook<ProjectTemplate[]>({
+  apiMethod: tasksApi.getProjectTemplates,
+  sampleData: sampleProjectTemplates,
+  errorMessage: 'Failed to fetch templates'
+})
 
 // ============== Dashboard KPIs Hook ==============
 
-export function useTaskKPIs(): UseDataState<DashboardKPIs> {
-  const [data, setData] = useState<DashboardKPIs | null>(null)
+export const useTaskKPIs = createDataHook<DashboardKPIs>({
+  apiMethod: tasksApi.getDashboardKPIs,
+  sampleData: sampleTaskKPIs,
+  errorMessage: 'Failed to fetch KPIs'
+})
+
+// ============== Blocked Tasks Hook (Manager View) ==============
+
+export function useBlockedTasks(limit: number = 50, offset: number = 0): UseDataState<{
+  tasks: Task[]
+  total: number
+  limit: number
+  offset: number
+  has_more: boolean
+}> {
+  const [data, setData] = useState<{
+    tasks: Task[]
+    total: number
+    limit: number
+    offset: number
+    has_more: boolean
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -361,18 +299,14 @@ export function useTaskKPIs(): UseDataState<DashboardKPIs> {
     setLoading(true)
     setError(null)
     try {
-      const kpis = await tasksApi.getDashboardKPIs()
-      setData(kpis)
+      const result = await tasksApi.getBlockedTasks(limit, offset)
+      setData(result)
     } catch (err) {
-      if (isInBypassMode()) {
-        setData(sampleTaskKPIs)
-      } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch KPIs'))
-      }
+      setError(err instanceof Error ? err : new Error('Failed to fetch blocked tasks'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [limit, offset])
 
   useEffect(() => { fetch() }, [fetch])
   return { data, loading, error, refetch: fetch }

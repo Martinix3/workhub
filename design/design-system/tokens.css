@@ -144,6 +144,16 @@
   --transition-normal: 150ms ease-out;
 
   /* =================================== */
+  /* FOCUS INDICATORS                    */
+  /* =================================== */
+
+  /* Focus Ring (WCAG 2.1 AA Compliant) */
+  --focus-ring-width: 2px;
+  --focus-ring-color: #fbbf24; /* amber-400 - matches primary accent */
+  --focus-ring-offset: 2px;
+  --focus-ring-color-dark: #fcd34d; /* amber-300 - brighter for dark mode */
+
+  /* =================================== */
   /* LAYOUT                              */
   /* =================================== */
 

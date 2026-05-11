@@ -1,6 +1,6 @@
 // Projects List Page - Enhanced with Stats, Expandable Projects, Templates Modal
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Plus,
   FolderOpen,
@@ -13,10 +13,14 @@ import {
   ExternalLink,
   List,
   BarChart2,
+  Menu,
 } from 'lucide-react'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
-import { useProjects, useProjectTemplates } from '../../api'
+import { useProjects, useProjectTemplates, useSavedFilter } from '../../api'
+import { SavedFiltersPanel } from '../../components/sections/tasks/SavedFiltersPanel'
+import { FilterBar } from '../../components/sections/tasks/FilterBar'
+import { SaveFilterModal } from '../../components/sections/tasks/SaveFilterModal'
 import type {
   Project,
   ProjectTemplate,
@@ -26,46 +30,88 @@ import type {
   TaskStatus,
   TaskPriority,
 } from '../../components/sections/tasks/types'
+import type { SavedFilter, FilterCriteria } from '../../api/services/saved-filters'
 
 const healthConfig: Record<ProjectHealth, { bg: string; border: string; text: string; label: string }> = {
   GREEN: { bg: 'bg-emerald-400', border: 'border-t-emerald-400', text: 'text-emerald-600', label: 'ON TRACK' },
-  YELLOW: { bg: 'bg-amber-400', border: 'border-t-amber-400', text: 'text-amber-600', label: 'AT RISK' },
-  RED: { bg: 'bg-red-500', border: 'border-t-red-500', text: 'text-red-600', label: 'CRITICAL' },
+  YELLOW: { bg: 'bg-gold', border: 'border-t-gold', text: 'text-gold-dark', label: 'AT RISK' },
+  RED: { bg: 'bg-error', border: 'border-t-error-dark', text: 'text-error-dark', label: 'CRITICAL' },
 }
 
 const departmentConfig: Record<Department, { bg: string; text: string }> = {
   SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
   OPS: { bg: 'bg-violet-100', text: 'text-violet-700' },
+  PRODUCTION: { bg: 'bg-success-light', text: 'text-success-text' },
   MKT: { bg: 'bg-pink-100', text: 'text-pink-700' },
 }
 
 const statusConfig: Record<TaskStatus, { bg: string; text: string; label: string }> = {
-  BACKLOG: { bg: 'bg-stone-100', text: 'text-stone-500', label: 'Backlog' },
+  BACKLOG: { bg: 'bg-neutral-100', text: 'text-neutral-500', label: 'Backlog' },
   NEXT: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Next' },
-  DOING: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Doing' },
-  BLOCKED: { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocked' },
-  DONE: { bg: 'bg-green-100', text: 'text-green-700', label: 'Done' },
+  DOING: { bg: 'bg-gold-light', text: 'text-gold-dark', label: 'Doing' },
+  BLOCKED: { bg: 'bg-error-light', text: 'text-error-text', label: 'Blocked' },
+  DONE: { bg: 'bg-success-light', text: 'text-success-text', label: 'Done' },
 }
 
 const priorityConfig: Record<TaskPriority, { bg: string; text: string }> = {
-  P0: { bg: 'bg-red-100', text: 'text-red-700' },
-  P1: { bg: 'bg-amber-100', text: 'text-amber-700' },
-  P2: { bg: 'bg-green-100', text: 'text-green-700' },
+  P0: { bg: 'bg-error-light', text: 'text-error-text' },
+  P1: { bg: 'bg-gold-light', text: 'text-gold-dark' },
+  P2: { bg: 'bg-success-light', text: 'text-success-text' },
 }
 
 type ViewMode = 'list' | 'gantt'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filterIdFromUrl = searchParams.get('filter')
+
   const [showNewProject, setShowNewProject] = useState(false)
   const [filter, setFilter] = useState<'all' | 'risk'>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [expandedProject, setExpandedProject] = useState<string | null>(null)
 
+  // Saved filters state
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [activeFilterId, setActiveFilterId] = useState<string | null>(filterIdFromUrl)
+  const [currentFilters, setCurrentFilters] = useState<FilterCriteria>({})
+  const [showSaveModal, setShowSaveModal] = useState(false)
+
   const { data: projects, loading, error, refetch } = useProjects({ status: 'ACTIVE' })
   const { data: templates } = useProjectTemplates()
 
-  if (loading) {
+  // Load saved filter from URL
+  const { data: savedFilter, loading: savedFilterLoading } = useSavedFilter(filterIdFromUrl || '')
+
+  // Apply saved filter when loaded
+  useEffect(() => {
+    if (savedFilter && savedFilter.filter_json) {
+      setCurrentFilters(savedFilter.filter_json)
+      setActiveFilterId(savedFilter.name)
+    }
+  }, [savedFilter])
+
+  // Keyboard shortcut 's' to toggle sidebar
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only trigger if not typing in an input/textarea and 's' is pressed
+      if (
+        e.key === 's' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault()
+        setSidebarOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [])
+
+  if (loading || (filterIdFromUrl && savedFilterLoading)) {
     return <LoadingState message="Cargando proyectos..." />
   }
 
@@ -109,29 +155,81 @@ export function ProjectsPage() {
     console.log('Complete task:', taskId)
   }
 
+  // Handle filter selection from sidebar
+  const handleFilterSelect = (filter: SavedFilter) => {
+    setActiveFilterId(filter.name)
+    setCurrentFilters(filter.filter_json)
+    // Update URL with filter ID for shareable links
+    searchParams.set('filter', filter.name)
+    setSearchParams(searchParams)
+  }
+
+  // Handle filter changes from FilterBar
+  const handleFilterChange = (newFilters: FilterCriteria) => {
+    setCurrentFilters(newFilters)
+    // Clear active filter ID when manually changing filters
+    if (activeFilterId) {
+      setActiveFilterId(null)
+      searchParams.delete('filter')
+      setSearchParams(searchParams)
+    }
+  }
+
+  // Handle save filter success
+  const handleSaveSuccess = () => {
+    // Refetch would happen automatically via useSavedFilters hook
+  }
+
   return (
-    <div className="min-h-screen bg-stone-100">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="font-serif text-3xl lg:text-4xl font-bold text-stone-900">
-              Proyectos
-            </h1>
-            <p className="text-stone-500 uppercase tracking-wider text-sm mt-1">
-              {stats.active} proyectos activos
-            </p>
-          </div>
+    <div className="min-h-screen bg-neutral-100 flex">
+      {/* Saved Filters Sidebar */}
+      {sidebarOpen && (
+        <aside className="hidden lg:block flex-shrink-0">
+          <SavedFiltersPanel
+            activeFilterId={activeFilterId}
+            onFilterSelect={handleFilterSelect}
+            onCreateNew={() => setShowSaveModal(true)}
+          />
+        </aside>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        <div className="max-w-full px-4 py-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              {/* Sidebar toggle button */}
+              <button
+                onClick={() => setSidebarOpen(prev => !prev)}
+                className="
+                  p-2
+                  border border-neutral-200
+                  bg-white hover:bg-neutral-100
+                  shadow-sm
+                  transition-all duration-75
+                "
+                title="Alternar panel de filtros (tecla: s)"
+              >
+                <Menu size={18} />
+              </button>
+
+              <div>
+                <h1 className="font-heading text-3xl lg:text-4xl font-bold text-neutral-900">
+                  Proyectos
+                </h1>
+                <p className="text-neutral-500 uppercase tracking-wider text-sm mt-1">
+                  {stats.active} proyectos activos
+                </p>
+              </div>
+            </div>
           <button
             onClick={() => setShowNewProject(true)}
             className="
               inline-flex items-center gap-2 px-4 py-2
-              bg-amber-400 hover:bg-amber-500
-              text-stone-900 font-medium text-sm uppercase tracking-wider
-              border-2 border-stone-900
-              shadow-[4px_4px_0_#1c1917]
-              hover:shadow-[2px_2px_0_#1c1917]
-              hover:translate-x-[2px] hover:translate-y-[2px]
+              bg-gold hover:bg-gold-dark
+              text-neutral-900 font-medium text-sm uppercase tracking-wider
+              border border-neutral-200
               transition-all duration-75
             "
           >
@@ -139,6 +237,13 @@ export function ProjectsPage() {
             Nuevo Proyecto
           </button>
         </div>
+
+        {/* Filter Bar */}
+        <FilterBar
+          currentFilters={currentFilters}
+          onFilterChange={handleFilterChange}
+          onSaveClick={() => setShowSaveModal(true)}
+        />
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -156,11 +261,11 @@ export function ProjectsPage() {
               onClick={() => setFilter('all')}
               className={`
                 px-4 py-2 font-medium text-sm uppercase tracking-wider
-                border-2 border-stone-900
+                border border-neutral-200
                 transition-all duration-75
                 ${filter === 'all'
-                  ? 'bg-stone-900 text-white'
-                  : 'bg-white text-stone-600 hover:bg-stone-100'
+                  ? 'bg-neutral-900 text-white'
+                  : 'bg-white text-neutral-600 hover:bg-neutral-100'
                 }
               `}
             >
@@ -170,11 +275,11 @@ export function ProjectsPage() {
               onClick={() => setFilter('risk')}
               className={`
                 px-4 py-2 font-medium text-sm uppercase tracking-wider
-                border-2 border-stone-900
+                border border-neutral-200
                 transition-all duration-75
                 ${filter === 'risk'
-                  ? 'bg-stone-900 text-white'
-                  : 'bg-white text-stone-600 hover:bg-stone-100'
+                  ? 'bg-neutral-900 text-white'
+                  : 'bg-white text-neutral-600 hover:bg-neutral-100'
                 }
               `}
             >
@@ -183,7 +288,7 @@ export function ProjectsPage() {
           </div>
 
           {/* View Toggle */}
-          <div className="flex border-2 border-stone-900 bg-white">
+          <div className="flex border border-neutral-200 bg-white">
             <button
               onClick={() => setViewMode('list')}
               className={`
@@ -191,8 +296,8 @@ export function ProjectsPage() {
                 font-medium text-sm uppercase tracking-wider
                 transition-all duration-75
                 ${viewMode === 'list'
-                  ? 'bg-amber-400 text-stone-900'
-                  : 'text-stone-500 hover:bg-stone-100'
+                  ? 'bg-gold text-neutral-900'
+                  : 'text-neutral-500 hover:bg-neutral-100'
                 }
               `}
               title="Vista Lista"
@@ -205,11 +310,11 @@ export function ProjectsPage() {
               className={`
                 px-3 py-2 flex items-center gap-2
                 font-medium text-sm uppercase tracking-wider
-                border-l-2 border-stone-900
+                border-l border-neutral-200
                 transition-all duration-75
                 ${viewMode === 'gantt'
-                  ? 'bg-amber-400 text-stone-900'
-                  : 'text-stone-500 hover:bg-stone-100'
+                  ? 'bg-gold text-neutral-900'
+                  : 'text-neutral-500 hover:bg-neutral-100'
                 }
               `}
               title="Vista Gantt"
@@ -246,14 +351,14 @@ export function ProjectsPage() {
 
         {/* Empty State */}
         {displayProjects.length === 0 && viewMode === 'list' && (
-          <div className="text-center py-16 bg-white border-2 border-stone-900">
-            <div className="w-20 h-20 mx-auto mb-4 bg-stone-100 border-2 border-stone-900 flex items-center justify-center">
-              <FolderOpen size={40} className="text-stone-400" />
+          <div className="text-center py-16 bg-white border border-neutral-200">
+            <div className="w-20 h-20 mx-auto mb-4 bg-neutral-100 border border-neutral-200 flex items-center justify-center">
+              <FolderOpen size={40} className="text-neutral-400" />
             </div>
-            <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">
+            <h3 className="font-heading text-xl font-bold text-neutral-900 mb-2">
               Sin Proyectos
             </h3>
-            <p className="text-stone-500">
+            <p className="text-neutral-500">
               {filter === 'risk' ? 'No hay proyectos en riesgo' : 'Crea tu primer proyecto'}
             </p>
           </div>
@@ -262,31 +367,31 @@ export function ProjectsPage() {
         {/* New Project Modal - Templates */}
         {showNewProject && (
           <div
-            className="fixed inset-0 z-50 bg-stone-900/50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-neutral-900/50 flex items-center justify-center p-4"
             onClick={() => setShowNewProject(false)}
           >
             <div
-              className="bg-white border-2 border-stone-900 shadow-[8px_8px_0_#1c1917] w-full max-w-lg"
+              className="bg-white border border-neutral-200 w-full max-w-lg"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-stone-200">
-                <h2 className="font-serif text-2xl font-bold text-stone-900">
+              <div className="p-6 border-b border-neutral-200">
+                <h2 className="font-heading text-2xl font-bold text-neutral-900">
                   Nuevo Proyecto
                 </h2>
-                <p className="text-stone-500 mt-1 text-sm uppercase tracking-wider">
+                <p className="text-neutral-500 mt-1 text-sm uppercase tracking-wider">
                   Selecciona una plantilla
                 </p>
               </div>
               <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
                 {templatesList.length === 0 ? (
-                  <div className="text-center py-8 text-stone-500">
+                  <div className="text-center py-8 text-neutral-500">
                     <p>No hay plantillas disponibles</p>
                     <button
                       onClick={() => {
                         navigate('/tareas/proyectos/nuevo')
                         setShowNewProject(false)
                       }}
-                      className="mt-4 text-amber-600 hover:text-amber-700 font-medium"
+                      className="mt-4 text-gold-dark hover:text-gold-dark font-medium"
                     >
                       Crear proyecto en blanco
                     </button>
@@ -298,22 +403,21 @@ export function ProjectsPage() {
                       onClick={() => handleCreateFromTemplate(template.name)}
                       className="
                         w-full p-4 text-left
-                        bg-stone-50
-                        border-2 border-stone-300
-                        hover:border-stone-900
-                        hover:shadow-[4px_4px_0_#1c1917]
+                        bg-neutral-50
+                        border border-neutral-300
+                        hover:border-neutral-900
                         transition-all duration-75
                       "
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-medium text-stone-900">
+                          <h3 className="font-medium text-neutral-900">
                             {template.title}
                           </h3>
-                          <p className="text-sm text-stone-500 mt-1">
+                          <p className="text-sm text-neutral-500 mt-1">
                             {template.description}
                           </p>
-                          <p className="text-sm text-stone-500 mt-1 font-mono">
+                          <p className="text-sm text-neutral-500 mt-1 font-mono">
                             {template.task_count} tareas · {template.default_duration_days} dias
                           </p>
                         </div>
@@ -325,7 +429,7 @@ export function ProjectsPage() {
                   ))
                 )}
               </div>
-              <div className="p-4 border-t border-stone-200 bg-stone-50 flex gap-2">
+              <div className="p-4 border-t border-neutral-200 bg-neutral-50 flex gap-2">
                 <button
                   onClick={() => {
                     navigate('/tareas/proyectos/nuevo')
@@ -333,9 +437,9 @@ export function ProjectsPage() {
                   }}
                   className="
                     flex-1 py-3
-                    bg-white border-2 border-stone-900
-                    text-stone-900 font-medium uppercase tracking-wider
-                    hover:bg-stone-100
+                    bg-white border border-neutral-200
+                    text-neutral-900 font-medium uppercase tracking-wider
+                    hover:bg-neutral-100
                     transition-colors
                   "
                 >
@@ -343,7 +447,7 @@ export function ProjectsPage() {
                 </button>
                 <button
                   onClick={() => setShowNewProject(false)}
-                  className="flex-1 py-3 text-stone-600 hover:text-stone-900 font-medium uppercase tracking-wider transition-colors"
+                  className="flex-1 py-3 text-neutral-600 hover:text-neutral-900 font-medium uppercase tracking-wider transition-colors"
                 >
                   Cancelar
                 </button>
@@ -351,7 +455,16 @@ export function ProjectsPage() {
             </div>
           </div>
         )}
+
+        {/* Save Filter Modal */}
+        <SaveFilterModal
+          isOpen={showSaveModal}
+          onClose={() => setShowSaveModal(false)}
+          currentFilters={currentFilters}
+          onSaved={handleSaveSuccess}
+        />
       </div>
+    </div>
     </div>
   )
 }
@@ -365,22 +478,22 @@ interface StatsCardProps {
 
 function StatsCard({ label, value, icon, color }: StatsCardProps) {
   const colorClasses = {
-    amber: 'bg-amber-100',
+    amber: 'bg-gold-light',
     emerald: 'bg-emerald-100',
-    red: 'bg-red-100',
+    red: 'bg-error-light',
   }
 
   return (
-    <div className="bg-white border-2 border-stone-900 p-4">
+    <div className="bg-white border border-neutral-200 p-4">
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 flex items-center justify-center border-2 border-stone-900 ${color ? colorClasses[color] : 'bg-stone-100'}`}>
+        <div className={`w-10 h-10 flex items-center justify-center border border-neutral-200 ${color ? colorClasses[color] : 'bg-neutral-100'}`}>
           {icon}
         </div>
         <div>
-          <p className="text-2xl font-mono font-bold text-stone-900">
+          <p className="text-2xl font-mono font-bold text-neutral-900">
             {value}
           </p>
-          <p className="text-xs text-stone-500 uppercase tracking-wider font-medium">
+          <p className="text-xs text-neutral-500 uppercase tracking-wider font-medium">
             {label}
           </p>
         </div>
@@ -406,18 +519,18 @@ function ProjectRow({ project, isExpanded, onToggle, onProjectClick, onTaskClick
   return (
     <div className={`
       bg-white
-      border-2 border-stone-900
+      border border-neutral-200
       border-t-4 ${health.border}
-      ${isExpanded ? 'shadow-[4px_4px_0_#1c1917]' : 'shadow-[2px_2px_0_#1c1917]'}
+      ${isExpanded ? '' : 'shadow-sm'}
       transition-all duration-75
     `}>
       {/* Project Header - Clickable */}
       <div
         onClick={onToggle}
-        className="p-4 flex items-center gap-4 cursor-pointer hover:bg-stone-50 transition-colors"
+        className="p-4 flex items-center gap-4 cursor-pointer hover:bg-neutral-50 transition-colors"
       >
         {/* Expand Icon */}
-        <button className="text-stone-400 hover:text-stone-900">
+        <button className="text-neutral-400 hover:text-neutral-900">
           {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
         </button>
 
@@ -432,7 +545,7 @@ function ProjectRow({ project, isExpanded, onToggle, onProjectClick, onTaskClick
               {health.label}
             </span>
           </div>
-          <h3 className="font-serif text-lg font-bold text-stone-900 truncate">
+          <h3 className="font-heading text-lg font-bold text-neutral-900 truncate">
             {project.title}
           </h3>
         </div>
@@ -440,10 +553,10 @@ function ProjectRow({ project, isExpanded, onToggle, onProjectClick, onTaskClick
         {/* Progress */}
         <div className="hidden sm:block w-32">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-stone-500 uppercase tracking-wider">Progreso</span>
-            <span className="font-mono font-bold text-stone-900">{progress}%</span>
+            <span className="text-neutral-500 uppercase tracking-wider">Progreso</span>
+            <span className="font-mono font-bold text-neutral-900">{progress}%</span>
           </div>
-          <div className="h-2 bg-stone-200 border border-stone-900">
+          <div className="h-2 bg-neutral-200 border border-neutral-200">
             <div className={`h-full ${health.bg}`} style={{ width: `${progress}%` }} />
           </div>
         </div>
@@ -451,13 +564,13 @@ function ProjectRow({ project, isExpanded, onToggle, onProjectClick, onTaskClick
         {/* Stats */}
         <div className="hidden md:flex items-center gap-4 text-sm">
           <div className="text-center">
-            <p className="font-mono font-bold text-stone-900">{project.completed_tasks || 0}/{project.total_tasks || 0}</p>
-            <p className="text-xs text-stone-500 uppercase">Tareas</p>
+            <p className="font-mono font-bold text-neutral-900">{project.completed_tasks || 0}/{project.total_tasks || 0}</p>
+            <p className="text-xs text-neutral-500 uppercase">Tareas</p>
           </div>
           {(project.blocked_tasks || 0) > 0 && (
             <div className="text-center">
-              <p className="font-mono font-bold text-red-600">{project.blocked_tasks}</p>
-              <p className="text-xs text-stone-500 uppercase">Bloq</p>
+              <p className="font-mono font-bold text-error-dark">{project.blocked_tasks}</p>
+              <p className="text-xs text-neutral-500 uppercase">Bloq</p>
             </div>
           )}
         </div>
@@ -468,7 +581,7 @@ function ProjectRow({ project, isExpanded, onToggle, onProjectClick, onTaskClick
             e.stopPropagation()
             onProjectClick?.()
           }}
-          className="p-2 text-stone-400 hover:text-amber-500 transition-colors"
+          className="p-2 text-neutral-400 hover:text-gold-dark transition-colors"
           title="Ver detalle"
         >
           <ExternalLink size={18} />
@@ -477,7 +590,7 @@ function ProjectRow({ project, isExpanded, onToggle, onProjectClick, onTaskClick
 
       {/* Expanded Tasks */}
       {isExpanded && project.tasks && project.tasks.length > 0 && (
-        <div className="border-t-2 border-stone-200 bg-stone-50">
+        <div className="border-t-2 border-neutral-200 bg-neutral-50">
           <div className="p-4 space-y-2">
             {project.tasks.map((task) => (
               <TaskRow
@@ -493,7 +606,7 @@ function ProjectRow({ project, isExpanded, onToggle, onProjectClick, onTaskClick
 
       {/* No tasks message when expanded */}
       {isExpanded && (!project.tasks || project.tasks.length === 0) && (
-        <div className="border-t-2 border-stone-200 bg-stone-50 p-4 text-center text-stone-500 text-sm">
+        <div className="border-t-2 border-neutral-200 bg-neutral-50 p-4 text-center text-neutral-500 text-sm">
           No hay tareas en este proyecto
         </div>
       )}
@@ -526,9 +639,9 @@ function TaskRow({ task, onClick, onComplete }: TaskRowProps) {
       className={`
         flex items-center gap-3 p-3
         bg-white
-        border border-stone-200
+        border border-neutral-200
         ${isDone ? 'opacity-60' : ''}
-        hover:border-stone-400
+        hover:border-neutral-400
         transition-colors cursor-pointer
       `}
       onClick={onClick}
@@ -541,8 +654,8 @@ function TaskRow({ task, onClick, onComplete }: TaskRowProps) {
         }}
         className={`
           w-5 h-5 flex-shrink-0
-          border-2 border-stone-900
-          ${isDone ? 'bg-green-500' : 'hover:bg-green-100'}
+          border border-neutral-200
+          ${isDone ? 'bg-success' : 'hover:bg-success-light'}
           flex items-center justify-center
           transition-colors
         `}
@@ -556,7 +669,7 @@ function TaskRow({ task, onClick, onComplete }: TaskRowProps) {
       </span>
 
       {/* Title */}
-      <span className={`flex-1 text-sm ${isDone ? 'line-through text-stone-400' : 'text-stone-900'}`}>
+      <span className={`flex-1 text-sm ${isDone ? 'line-through text-neutral-400' : 'text-neutral-900'}`}>
         {task.title}
       </span>
 
@@ -567,7 +680,7 @@ function TaskRow({ task, onClick, onComplete }: TaskRowProps) {
 
       {/* Overdue indicator */}
       {daysOverdue > 0 && (
-        <span className="text-xs text-red-600 font-medium flex items-center gap-1">
+        <span className="text-xs text-error-dark font-medium flex items-center gap-1">
           <Clock size={12} />
           -{daysOverdue}d
         </span>
@@ -575,7 +688,7 @@ function TaskRow({ task, onClick, onComplete }: TaskRowProps) {
 
       {/* Blocked reason */}
       {task.blocked_reason && (
-        <span className="text-xs text-red-500 truncate max-w-32" title={task.blocked_reason}>
+        <span className="text-xs text-error truncate max-w-32" title={task.blocked_reason}>
           {task.blocked_reason}
         </span>
       )}
@@ -601,8 +714,8 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
 
   if (dates.length === 0) {
     return (
-      <div className="text-center py-16 bg-white border-2 border-stone-900">
-        <p className="text-stone-500">No hay proyectos para mostrar en Gantt</p>
+      <div className="text-center py-16 bg-white border border-neutral-200">
+        <p className="text-neutral-500">No hay proyectos para mostrar en Gantt</p>
       </div>
     )
   }
@@ -645,11 +758,11 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
   const todayOffset = (today.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24) * dayWidth
 
   return (
-    <div className="bg-white border-2 border-stone-900 shadow-[4px_4px_0_#1c1917] overflow-hidden">
+    <div className="bg-white border border-neutral-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-stone-100 border-b-2 border-stone-900 p-3 flex items-center justify-between">
-        <h3 className="font-serif font-bold text-stone-900">Diagrama de Gantt</h3>
-        <p className="text-xs text-stone-500 uppercase tracking-wider">
+      <div className="bg-neutral-100 border-b border-neutral-200 p-3 flex items-center justify-between">
+        <h3 className="font-heading font-bold text-neutral-900">Diagrama de Gantt</h3>
+        <p className="text-xs text-neutral-500 uppercase tracking-wider">
           {projects.length} proyecto{projects.length !== 1 ? 's' : ''}
         </p>
       </div>
@@ -657,10 +770,10 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
       <div className="overflow-x-auto">
         <div style={{ minWidth: totalDays * dayWidth + 200 }}>
           {/* Timeline Header */}
-          <div className="flex border-b-2 border-stone-300 bg-stone-50">
+          <div className="flex border-b-2 border-neutral-300 bg-neutral-50">
             {/* Project names column */}
-            <div className="w-48 flex-shrink-0 border-r-2 border-stone-300 p-2">
-              <span className="text-xs text-stone-500 uppercase tracking-wider font-medium">
+            <div className="w-48 flex-shrink-0 border-r-2 border-neutral-300 p-2">
+              <span className="text-xs text-neutral-500 uppercase tracking-wider font-medium">
                 Proyecto
               </span>
             </div>
@@ -669,7 +782,7 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
               {weeks.map((week, i) => (
                 <div
                   key={i}
-                  className="text-center py-2 border-r border-stone-200 text-xs text-stone-500 uppercase tracking-wider"
+                  className="text-center py-2 border-r border-neutral-200 text-xs text-neutral-500 uppercase tracking-wider"
                   style={{ width: 7 * dayWidth }}
                 >
                   {week.label}
@@ -687,13 +800,13 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
             return (
               <div
                 key={project.name}
-                className={`flex border-b border-stone-200 hover:bg-stone-50 transition-colors ${
-                  idx % 2 === 0 ? 'bg-white' : 'bg-stone-50/50'
+                className={`flex border-b border-neutral-200 hover:bg-neutral-50 transition-colors ${
+                  idx % 2 === 0 ? 'bg-white' : 'bg-neutral-50/50'
                 }`}
               >
                 {/* Project Info */}
                 <div
-                  className="w-48 flex-shrink-0 border-r-2 border-stone-300 p-3 cursor-pointer hover:bg-amber-50"
+                  className="w-48 flex-shrink-0 border-r-2 border-neutral-300 p-3 cursor-pointer hover:bg-gold-light"
                   onClick={() => onProjectClick?.(project.name)}
                 >
                   <div className="flex items-center gap-2 mb-1">
@@ -702,10 +815,10 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
                     </span>
                     <span className={`w-2 h-2 ${health.bg}`} />
                   </div>
-                  <p className="font-medium text-sm text-stone-900 truncate" title={project.title}>
+                  <p className="font-medium text-sm text-neutral-900 truncate" title={project.title}>
                     {project.title}
                   </p>
-                  <p className="text-xs text-stone-500 font-mono mt-0.5">
+                  <p className="text-xs text-neutral-500 font-mono mt-0.5">
                     {project.progress_pct || 0}% completado
                   </p>
                 </div>
@@ -714,7 +827,7 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
                 <div className="flex-1 relative h-20">
                   {/* Today Line */}
                   <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-10"
+                    className="absolute top-0 bottom-0 w-0.5 bg-gold-dark z-10"
                     style={{ left: todayOffset }}
                   />
 
@@ -723,11 +836,9 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
                     className={`
                       absolute top-4 h-12
                       ${health.bg}
-                      border-2 border-stone-900
-                      shadow-[2px_2px_0_#1c1917]
+                      border border-neutral-200
+                      shadow-sm
                       cursor-pointer
-                      hover:shadow-[4px_4px_0_#1c1917]
-                      hover:-translate-x-0.5 hover:-translate-y-0.5
                       transition-all duration-75
                     `}
                     style={{ left: bar.left, width: Math.max(bar.width, 20) }}
@@ -736,12 +847,12 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
                   >
                     {/* Progress overlay */}
                     <div
-                      className="absolute inset-0 bg-stone-900/20"
+                      className="absolute inset-0 bg-neutral-900/20"
                       style={{ width: `${project.progress_pct || 0}%` }}
                     />
                     {/* Label inside bar */}
                     {bar.width > 80 && (
-                      <span className="absolute inset-0 flex items-center px-2 text-xs font-medium text-stone-900 truncate">
+                      <span className="absolute inset-0 flex items-center px-2 text-xs font-medium text-neutral-900 truncate">
                         {project.title}
                       </span>
                     )}
@@ -754,22 +865,22 @@ function GanttView({ projects, onProjectClick }: GanttViewProps) {
       </div>
 
       {/* Legend */}
-      <div className="border-t-2 border-stone-200 bg-stone-50 px-4 py-3 flex flex-wrap items-center gap-4 text-xs">
-        <span className="text-stone-500 uppercase tracking-wider font-medium">Estado:</span>
+      <div className="border-t-2 border-neutral-200 bg-neutral-50 px-4 py-3 flex flex-wrap items-center gap-4 text-xs">
+        <span className="text-neutral-500 uppercase tracking-wider font-medium">Estado:</span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 bg-emerald-400 border border-stone-900" />
+          <span className="w-3 h-3 bg-emerald-400 border border-neutral-200" />
           On Track
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 bg-amber-400 border border-stone-900" />
+          <span className="w-3 h-3 bg-gold border border-neutral-200" />
           At Risk
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 bg-red-500 border border-stone-900" />
+          <span className="w-3 h-3 bg-error border border-neutral-200" />
           Critical
         </span>
         <span className="flex items-center gap-1.5 ml-4">
-          <span className="w-3 h-0.5 bg-amber-500" />
+          <span className="w-3 h-0.5 bg-gold-dark" />
           Hoy
         </span>
       </div>

@@ -44,9 +44,12 @@ def get_dashboard_kpis():
     """, (month_ago,))[0][0]
 
     # === EQUIPO ===
+    # Count unique users from assignees table
     team_size = frappe.db.sql("""
-        SELECT COUNT(DISTINCT assigned_to) FROM `tabWH Task`
-        WHERE status != 'DONE'
+        SELECT COUNT(DISTINCT ta.user)
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON ta.parent = t.name
+        WHERE t.status != 'DONE'
     """)[0][0] or 1
 
     avg_velocity = tasks_completed_week / team_size if team_size else 0
@@ -167,16 +170,17 @@ def get_project_kpis(project_id):
         GROUP BY priority
     """, (project_id,), as_dict=True)
 
-    # Desglose por persona
+    # Desglose por persona (from assignees table)
     person_breakdown = frappe.db.sql("""
         SELECT
-            assigned_to as user,
-            SUM(CASE WHEN status = 'DONE' THEN 1 ELSE 0 END) as completed,
-            SUM(CASE WHEN status != 'DONE' THEN 1 ELSE 0 END) as pending,
-            COUNT(*) as total
-        FROM `tabWH Task`
-        WHERE project = %s
-        GROUP BY assigned_to
+            ta.user as user,
+            SUM(CASE WHEN t.status = 'DONE' THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN t.status != 'DONE' THEN 1 ELSE 0 END) as pending,
+            COUNT(DISTINCT ta.parent) as total
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON ta.parent = t.name
+        WHERE t.project = %s
+        GROUP BY ta.user
     """, (project_id,), as_dict=True)
 
     for p in person_breakdown:
@@ -230,9 +234,13 @@ def get_project_kpis(project_id):
 
 
 @frappe.whitelist()
-def get_user_kpis(user_id, period="week"):
+def get_user_kpis(user_id=None, period="week"):
     """KPIs de un usuario"""
     require_auth()
+
+    # Default to current user if not specified
+    if not user_id:
+        user_id = frappe.session.user
 
     if period == "week":
         start_date = add_days(nowdate(), -7)
@@ -241,19 +249,30 @@ def get_user_kpis(user_id, period="week"):
     else:
         start_date = add_days(nowdate(), -7)
 
-    # Tareas completadas
-    completed = frappe.db.sql("""
-        SELECT COUNT(*) FROM `tabWH Task`
-        WHERE assigned_to = %s AND status = 'DONE' AND modified >= %s
-    """, (user_id, start_date))[0][0]
+    # Get user task IDs from assignees table
+    user_task_ids = frappe.get_all("WH Task Assignee",
+        filters={"user": user_id},
+        pluck="parent"
+    )
 
-    # Tareas actuales
-    current_tasks = frappe.db.sql("""
-        SELECT status, COUNT(*) as count
-        FROM `tabWH Task`
-        WHERE assigned_to = %s AND status != 'DONE'
-        GROUP BY status
-    """, (user_id,), as_dict=True)
+    if not user_task_ids:
+        # User has no tasks
+        current_tasks = []
+        completed = 0
+    else:
+        # Tareas completadas
+        completed = frappe.db.sql("""
+            SELECT COUNT(*) FROM `tabWH Task`
+            WHERE name IN %s AND status = 'DONE' AND modified >= %s
+        """, (tuple(user_task_ids), start_date))[0][0]
+
+        # Tareas actuales
+        current_tasks = frappe.db.sql("""
+            SELECT status, COUNT(*) as count
+            FROM `tabWH Task`
+            WHERE name IN %s AND status != 'DONE'
+            GROUP BY status
+        """, (tuple(user_task_ids),), as_dict=True)
 
     # Dias trabajados
     work_days = frappe.db.sql("""
@@ -264,19 +283,23 @@ def get_user_kpis(user_id, period="week"):
     """, (user_id, start_date))[0][0]
 
     # Proyectos activos
-    active_projects = frappe.db.sql("""
-        SELECT COUNT(DISTINCT project) FROM `tabWH Task`
-        WHERE assigned_to = %s AND status != 'DONE' AND project IS NOT NULL
-    """, (user_id,))[0][0]
+    if user_task_ids:
+        active_projects = frappe.db.sql("""
+            SELECT COUNT(DISTINCT project) FROM `tabWH Task`
+            WHERE name IN %s AND status != 'DONE' AND project IS NOT NULL
+        """, (tuple(user_task_ids),))[0][0]
 
-    # Tendencia diaria
-    daily_completed = frappe.db.sql("""
-        SELECT DATE(modified) as date, COUNT(*) as count
-        FROM `tabWH Task`
-        WHERE assigned_to = %s AND status = 'DONE' AND modified >= %s
-        GROUP BY DATE(modified)
-        ORDER BY date
-    """, (user_id, start_date), as_dict=True)
+        # Tendencia diaria
+        daily_completed = frappe.db.sql("""
+            SELECT DATE(modified) as date, COUNT(*) as count
+            FROM `tabWH Task`
+            WHERE name IN %s AND status = 'DONE' AND modified >= %s
+            GROUP BY DATE(modified)
+            ORDER BY date
+        """, (tuple(user_task_ids), start_date), as_dict=True)
+    else:
+        active_projects = 0
+        daily_completed = []
 
     return {
         "user": user_id,
@@ -320,14 +343,15 @@ def get_department_kpis(department, period="month"):
         WHERE department = %s
     """, (start_date, department), as_dict=True)[0]
 
-    # Top performers
+    # Top performers (from assignees table)
     top_performers = frappe.db.sql("""
         SELECT
-            assigned_to as user,
-            COUNT(*) as completed
-        FROM `tabWH Task`
-        WHERE department = %s AND status = 'DONE' AND modified >= %s
-        GROUP BY assigned_to
+            ta.user as user,
+            COUNT(DISTINCT ta.parent) as completed
+        FROM `tabWH Task Assignee` ta
+        JOIN `tabWH Task` t ON ta.parent = t.name
+        WHERE t.department = %s AND t.status = 'DONE' AND t.modified >= %s
+        GROUP BY ta.user
         ORDER BY completed DESC
         LIMIT 5
     """, (department, start_date), as_dict=True)

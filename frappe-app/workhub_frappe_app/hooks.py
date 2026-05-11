@@ -26,7 +26,11 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/workhub_frappe_app/css/workhub.bundle.css"
-app_include_js = "/assets/workhub_frappe_app/js/workhub.bundle.js"
+app_include_js = [
+    "/assets/workhub_frappe_app/js/workhub.bundle.js",
+    "/assets/workhub_frappe_app/js/workhub_dependencies.js",
+    "/assets/workhub_frappe_app/js/workhub_dependency_modal.js"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/workhub_frappe_app/css/workhub_frappe_app.css"
@@ -94,7 +98,9 @@ after_install = "workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_crm
 fixtures = [
     {"dt": "Custom Field", "filters": [["dt", "=", "Sales Order"], ["fieldname", "=", "sales_type"]]},
     # Project templates con sus tareas
-    {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]}
+    {"dt": "WH Project Template", "filters": [["is_active", "=", 1]]},
+    # KPI metrics
+    {"dt": "WH KPI Metric", "filters": [["is_active", "=", 1]]}
 ]
 
 # Boot Session
@@ -161,9 +167,13 @@ after_migrate = ["workhub_frappe_app.workhub_frappe_app.utils.crm_lite.ensure_cr
 
 scheduler_events = {
 	"cron": {
-		# Email diario a las 8am (hora local)
+		# Daily digest at 8am for users with frequency='daily'
 		"0 8 * * *": [
-			"workhub_frappe_app.api.notifications.send_daily_emails"
+			"workhub_frappe_app.api.notifications.send_daily_digests"
+		],
+		# Weekly digest on Mondays at 8am for users with frequency='weekly'
+		"0 8 * * 1": [
+			"workhub_frappe_app.api.notifications.send_weekly_digests"
 		]
 	},
 	"hourly": [

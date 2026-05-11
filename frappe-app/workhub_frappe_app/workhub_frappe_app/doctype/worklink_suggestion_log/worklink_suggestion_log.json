@@ -1,0 +1,148 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-01-11 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "department",
+  "created_at",
+  "column_break_1",
+  "action",
+  "confidence_score",
+  "section_break_task",
+  "task_id",
+  "task_title",
+  "task_keywords",
+  "section_break_suggestion",
+  "suggested_doctype",
+  "suggested_id",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Department",
+   "options": "SALES\nOPS\nMKT"
+  },
+  {
+   "fieldname": "created_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Created At",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Action",
+   "options": "accepted\ndismissed",
+   "reqd": 1
+  },
+  {
+   "fieldname": "confidence_score",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Confidence Score",
+   "precision": "2"
+  },
+  {
+   "collapsible": 0,
+   "fieldname": "section_break_task",
+   "fieldtype": "Section Break",
+   "label": "Task Details"
+  },
+  {
+   "fieldname": "task_id",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Task ID",
+   "options": "WH Task",
+   "reqd": 1
+  },
+  {
+   "fieldname": "task_title",
+   "fieldtype": "Data",
+   "label": "Task Title"
+  },
+  {
+   "fieldname": "task_keywords",
+   "fieldtype": "Text",
+   "label": "Task Keywords"
+  },
+  {
+   "collapsible": 0,
+   "fieldname": "section_break_suggestion",
+   "fieldtype": "Section Break",
+   "label": "Suggestion Details"
+  },
+  {
+   "fieldname": "suggested_doctype",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Suggested DocType",
+   "options": "Account\nOpportunity\nCampaign\nOpsCase\nCalendarEvent\nSales Order\nDelivery Note\nSales Invoice\nPayment Entry\nPurchase Order\nPurchase Receipt\nPurchase Invoice\nWork Order\nStock Entry\nBatch\nQuality Inspection\nCustomer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "suggested_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Suggested ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-11 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WorkHub Frappe App",
+ "name": "WorkLink Suggestion Log",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "All",
+   "write": 1
+  }
+ ],
+ "sort_field": "created_at",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

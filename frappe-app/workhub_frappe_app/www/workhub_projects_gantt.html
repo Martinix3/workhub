@@ -1,0 +1,904 @@
+<!-- Page: WorkHub Project Timeline/Gantt - Neobrutalismo Editorial -->
+{% extends "workhub_frappe_app/templates/workhub_base.html" %}
+
+{% block title %}{{ _("Timeline") }} - {{ project.title }}{% endblock %}
+{% block breadcrumb %}Proyectos / {{ project.title }} / Timeline{% endblock %}
+
+{% block page_content %}
+<div class="wh-container">
+	<!-- Toolbar -->
+	<div class="gantt-toolbar">
+		<div class="gantt-toolbar__left">
+			<a href="/app/wh-project/{{ project.name }}" class="btn btn-ghost btn-sm">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+				</svg>
+				Volver al Proyecto
+			</a>
+			<div class="gantt-toolbar__divider"></div>
+			<h1 class="gantt-toolbar__title">{{ project.title }}</h1>
+			<span class="badge badge-{{ 'success' if project.health == 'green' else ('warning' if project.health == 'yellow' else 'danger') }}">
+				{{ project.status }}
+			</span>
+		</div>
+		<div class="gantt-toolbar__right">
+			<!-- Zoom Controls -->
+			<div class="gantt-zoom-controls">
+				<span class="gantt-zoom-controls__label">Zoom:</span>
+				<button class="btn btn-ghost btn-sm" id="zoom-day" title="Vista Diaria">
+					D
+				</button>
+				<button class="btn btn-ghost btn-sm" id="zoom-week" title="Vista Semanal">
+					S
+				</button>
+				<button class="btn btn-ghost btn-sm active" id="zoom-month" title="Vista Mensual">
+					M
+				</button>
+				<button class="btn btn-ghost btn-sm" id="zoom-quarter" title="Vista Trimestral">
+					T
+				</button>
+			</div>
+			<div class="gantt-toolbar__divider"></div>
+			<!-- Action Buttons -->
+			<button class="btn btn-ghost btn-sm" id="btn-today" title="Ir a Hoy">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+				</svg>
+				Hoy
+			</button>
+			<button class="btn btn-ghost btn-sm" id="btn-critical-path" title="Mostrar Ruta Crítica">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+				</svg>
+				Ruta Crítica
+			</button>
+			<button class="btn btn-secondary btn-sm" id="btn-auto-schedule" title="Auto-programar Tareas">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+				</svg>
+				Auto-programar
+			</button>
+			<button class="btn btn-ghost btn-sm" id="btn-export" title="Exportar como PNG">
+				<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+				</svg>
+				Exportar
+			</button>
+		</div>
+	</div>
+
+	<!-- Project Header -->
+	<div class="gantt-project-header">
+		<div class="gantt-project-header__info">
+			<div class="gantt-project-meta">
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Inicio:</span>
+					<span class="gantt-project-meta__value">{{ project.start_date or "Sin definir" }}</span>
+				</div>
+				<div class="gantt-project-meta__divider"></div>
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Fin:</span>
+					<span class="gantt-project-meta__value">{{ project.target_date or "Sin definir" }}</span>
+				</div>
+				<div class="gantt-project-meta__divider"></div>
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Tareas:</span>
+					<span class="gantt-project-meta__value">{{ tasks|length }}</span>
+				</div>
+				<div class="gantt-project-meta__divider"></div>
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Hitos:</span>
+					<span class="gantt-project-meta__value">{{ milestones|length }}</span>
+				</div>
+				{% if project.slack_days != None %}
+				<div class="gantt-project-meta__divider"></div>
+				<div class="gantt-project-meta__item">
+					<span class="gantt-project-meta__label">Holgura:</span>
+					<span class="gantt-project-meta__value {{ 'text-danger' if project.slack_days < 0 else 'text-success' }}">
+						{{ project.slack_days }} días
+					</span>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+	<!-- Gantt Container -->
+	<div class="gantt-container">
+		<div id="gantt-chart" class="gantt-chart">
+			<!-- Chart will be rendered here by JavaScript -->
+		</div>
+	</div>
+
+	<!-- Task Detail Sidebar (initially hidden) -->
+	<div id="task-detail-sidebar" class="task-detail-sidebar">
+		<div class="task-detail-sidebar__header">
+			<h3 class="task-detail-sidebar__title">Detalle de Tarea</h3>
+			<button class="task-detail-sidebar__close" id="close-task-detail">
+				<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+			</button>
+		</div>
+		<div class="task-detail-sidebar__content" id="task-detail-content">
+			<!-- Task details will be populated here by JavaScript -->
+		</div>
+	</div>
+
+	<!-- Overlay for sidebar -->
+	<div id="sidebar-overlay" class="sidebar-overlay"></div>
+</div>
+
+<style>
+/* Gantt Toolbar - Neobrutal Style */
+.gantt-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--space-4);
+	background: var(--surface-1);
+	border: 3px solid var(--border-1);
+	margin-bottom: var(--space-4);
+	gap: var(--space-4);
+}
+
+.gantt-toolbar__left {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	flex: 1;
+	min-width: 0;
+}
+
+.gantt-toolbar__right {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.gantt-toolbar__divider {
+	width: 1px;
+	height: 24px;
+	background: var(--border-2);
+}
+
+.gantt-toolbar__title {
+	font-family: var(--font-display);
+	font-size: var(--text-xl);
+	font-weight: 700;
+	margin: 0;
+	color: var(--text-1);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Zoom Controls */
+.gantt-zoom-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.gantt-zoom-controls__label {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	color: var(--text-3);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Project Header */
+.gantt-project-header {
+	background: var(--surface-1);
+	border: 3px solid var(--border-1);
+	padding: var(--space-4);
+	margin-bottom: var(--space-4);
+}
+
+.gantt-project-meta {
+	display: flex;
+	align-items: center;
+	gap: var(--space-4);
+	flex-wrap: wrap;
+}
+
+.gantt-project-meta__item {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.gantt-project-meta__label {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	color: var(--text-3);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.gantt-project-meta__value {
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--text-1);
+}
+
+.gantt-project-meta__divider {
+	width: 1px;
+	height: 20px;
+	background: var(--border-2);
+}
+
+/* Gantt Container */
+.gantt-container {
+	background: var(--surface-1);
+	border: 3px solid var(--border-1);
+	min-height: 600px;
+	position: relative;
+	overflow: auto;
+}
+
+.gantt-chart {
+	width: 100%;
+	height: 100%;
+	min-height: 600px;
+}
+
+/* Task Detail Sidebar */
+.task-detail-sidebar {
+	position: fixed;
+	top: 0;
+	right: -400px;
+	width: 400px;
+	height: 100vh;
+	background: var(--surface-1);
+	border-left: 3px solid var(--border-1);
+	box-shadow: -4px 0 8px rgba(0, 0, 0, 0.1);
+	transition: right 0.3s ease;
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+}
+
+.task-detail-sidebar.open {
+	right: 0;
+}
+
+.task-detail-sidebar__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--space-4);
+	border-bottom: 3px solid var(--border-1);
+}
+
+.task-detail-sidebar__title {
+	font-family: var(--font-display);
+	font-size: var(--text-lg);
+	font-weight: 700;
+	margin: 0;
+	color: var(--text-1);
+}
+
+.task-detail-sidebar__close {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: var(--space-2);
+	color: var(--text-2);
+	transition: color var(--transition);
+}
+
+.task-detail-sidebar__close:hover {
+	color: var(--text-1);
+}
+
+.task-detail-sidebar__content {
+	flex: 1;
+	padding: var(--space-4);
+	overflow-y: auto;
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.3);
+	z-index: 999;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.gantt-toolbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.gantt-toolbar__left,
+	.gantt-toolbar__right {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.gantt-toolbar__title {
+		font-size: var(--text-lg);
+	}
+
+	.gantt-zoom-controls {
+		justify-content: space-between;
+	}
+
+	.task-detail-sidebar {
+		width: 100%;
+		right: -100%;
+	}
+}
+
+/* Task Detail Content */
+.task-detail {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.task-detail__section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+
+.task-detail__task-title {
+	font-family: var(--font-display);
+	font-size: var(--text-lg);
+	font-weight: 700;
+	color: var(--text-1);
+	margin: 0;
+	line-height: 1.3;
+}
+
+.task-detail__label {
+	font-family: var(--font-ui);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	color: var(--text-3);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.task-detail__value {
+	font-family: var(--font-body);
+	font-size: var(--text-sm);
+	color: var(--text-2);
+	line-height: 1.5;
+}
+
+.task-detail__description {
+	padding: var(--space-3);
+	background: var(--surface-2);
+	border: 2px solid var(--border-1);
+	white-space: pre-wrap;
+}
+
+/* Dates */
+.task-detail__dates {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+
+.task-detail__date-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: var(--space-2);
+	background: var(--surface-2);
+	border: 2px solid var(--border-1);
+}
+
+.task-detail__date-label {
+	font-family: var(--font-ui);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	color: var(--text-3);
+}
+
+.task-detail__date-value {
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--text-1);
+}
+
+/* Assigned User */
+.task-detail__assigned {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-3);
+	background: var(--surface-2);
+	border: 2px solid var(--border-1);
+}
+
+.task-detail__avatar {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--primary);
+	color: white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-ui);
+	font-size: var(--text-xs);
+	font-weight: 700;
+	border: 2px solid var(--border-1);
+}
+
+.task-detail__assigned-name {
+	font-family: var(--font-body);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--text-1);
+}
+
+/* Status Select */
+.task-detail__status-select {
+	width: 100%;
+	padding: var(--space-3);
+	font-family: var(--font-body);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--text-1);
+	background: var(--surface-2);
+	border: 2px solid var(--border-1);
+	cursor: pointer;
+	transition: all var(--transition);
+}
+
+.task-detail__status-select:hover {
+	border-color: var(--primary);
+	background: var(--surface-1);
+}
+
+.task-detail__status-select:focus {
+	outline: none;
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+/* Priority */
+.task-detail__priority {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--space-2) var(--space-3);
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	font-weight: 700;
+	border: 2px solid var(--border-1);
+	background: var(--surface-2);
+}
+
+.task-detail__priority--p0 {
+	color: var(--danger);
+	border-color: var(--danger);
+	background: var(--danger-soft);
+}
+
+.task-detail__priority--p1 {
+	color: var(--warning);
+	border-color: var(--warning);
+	background: var(--warning-soft);
+}
+
+.task-detail__priority--p2 {
+	color: var(--info);
+	border-color: var(--info);
+	background: var(--info-soft);
+}
+
+/* Dependencies */
+.task-detail__dependencies {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.task-detail__dep-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+
+.task-detail__dep-type {
+	font-family: var(--font-ui);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	color: var(--text-2);
+}
+
+.task-detail__dep-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+}
+
+.task-detail__dep-item {
+	padding: var(--space-2);
+	background: var(--surface-2);
+	border: 2px solid var(--border-1);
+	font-family: var(--font-body);
+	font-size: var(--text-sm);
+	color: var(--text-2);
+}
+
+.task-detail__dep-type-label {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	color: var(--text-3);
+	font-weight: 500;
+}
+
+/* Utility Classes */
+.text-danger {
+	color: var(--danger) !important;
+}
+
+.text-success {
+	color: var(--success) !important;
+}
+
+/* Export Menu */
+.gantt-export-menu {
+	display: flex;
+	flex-direction: column;
+}
+
+.gantt-export-menu__item {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-3) var(--space-4);
+	cursor: pointer;
+	background: var(--surface-1);
+	border-bottom: 2px solid var(--border-2);
+	transition: all var(--transition);
+	font-family: var(--font-body);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--text-1);
+}
+
+.gantt-export-menu__item:last-child {
+	border-bottom: none;
+}
+
+.gantt-export-menu__item:hover {
+	background: var(--surface-2);
+	color: var(--primary);
+}
+
+.gantt-export-menu__item svg {
+	flex-shrink: 0;
+}
+
+/* Print-specific styles */
+@media print {
+	/* Hide UI elements during print */
+	.gantt-toolbar__right,
+	.task-detail-sidebar,
+	.sidebar-overlay,
+	.gantt-export-menu {
+		display: none !important;
+	}
+
+	/* Make sure project header is visible */
+	.gantt-toolbar,
+	.gantt-project-header,
+	.gantt-container {
+		border: 2px solid var(--border-1) !important;
+		box-shadow: none !important;
+		page-break-inside: avoid;
+	}
+
+	/* Ensure chart is visible */
+	.gantt-container {
+		overflow: visible !important;
+		height: auto !important;
+	}
+
+	.gantt-chart {
+		min-height: auto !important;
+	}
+
+	/* Page setup */
+	@page {
+		size: landscape;
+		margin: 1cm;
+	}
+
+	body {
+		print-color-adjust: exact;
+		-webkit-print-color-adjust: exact;
+	}
+}
+</style>
+
+{% endblock %}
+
+{% block script %}
+<script>
+	// Pass server-side data to JavaScript
+	window.ganttData = {
+		project: {{ project | tojson }},
+		tasks: {{ tasks | tojson }},
+		dependencies: {{ dependencies | tojson }},
+		milestones: {{ milestones | tojson }},
+		criticalPath: {{ critical_path | tojson }}
+	};
+
+	// Global gantt instance
+	let ganttChart = null;
+
+	// Initialize Gantt chart when ready
+	document.addEventListener('DOMContentLoaded', function() {
+		// Initialize GanttChart component
+		if (frappe.workhub && frappe.workhub.GanttChart) {
+			ganttChart = new frappe.workhub.GanttChart('#gantt-chart', {
+				zoom: 'month',
+				showWeekends: true,
+				showToday: true
+			});
+
+			// Bind data
+			ganttChart.setData(window.ganttData);
+
+			// Render chart
+			ganttChart.render();
+
+			// Listen for task date changes and save to backend
+			ganttChart.container.addEventListener('taskDateChanged', function(event) {
+				ganttChart.saveTaskDates(event.detail);
+			});
+		} else {
+			console.error('GanttChart component not loaded');
+		}
+
+		// Setup sidebar controls
+		setupSidebarControls();
+
+		// Setup toolbar button handlers
+		setupToolbarHandlers();
+	});
+
+	function setupSidebarControls() {
+		const sidebar = document.getElementById('task-detail-sidebar');
+		const overlay = document.getElementById('sidebar-overlay');
+		const closeBtn = document.getElementById('close-task-detail');
+
+		// Close sidebar
+		function closeSidebar() {
+			sidebar.classList.remove('open');
+			overlay.classList.remove('active');
+		}
+
+		closeBtn.addEventListener('click', closeSidebar);
+		overlay.addEventListener('click', closeSidebar);
+	}
+
+	function setupToolbarHandlers() {
+		// Zoom controls
+		['day', 'week', 'month', 'quarter'].forEach(zoom => {
+			const btn = document.getElementById('zoom-' + zoom);
+			btn.addEventListener('click', function() {
+				// Remove active from all
+				document.querySelectorAll('.gantt-zoom-controls .btn').forEach(b => {
+					b.classList.remove('active');
+				});
+				// Add active to clicked
+				this.classList.add('active');
+
+				// Change gantt zoom
+				if (ganttChart) {
+					ganttChart.setZoom(zoom);
+				}
+			});
+		});
+
+		// Today button
+		document.getElementById('btn-today').addEventListener('click', function() {
+			if (ganttChart) {
+				ganttChart.scrollToToday();
+			}
+		});
+
+		// Critical path toggle
+		document.getElementById('btn-critical-path').addEventListener('click', function() {
+			this.classList.toggle('active');
+			const isActive = this.classList.contains('active');
+
+			if (ganttChart) {
+				ganttChart.toggleCriticalPath(isActive);
+			}
+		});
+
+		// Auto-schedule
+		document.getElementById('btn-auto-schedule').addEventListener('click', function() {
+			// Show confirmation dialog
+			frappe.confirm(
+				'¿Deseas auto-programar todas las tareas sin fecha basándote en las dependencias?',
+				function() {
+					// Yes - proceed with auto-scheduling
+					autoScheduleTasks();
+				}
+			);
+		});
+
+		// Export - show menu with options
+		document.getElementById('btn-export').addEventListener('click', function(e) {
+			if (!ganttChart) {
+				frappe.msgprint('El gráfico no está cargado');
+				return;
+			}
+
+			// Create export menu
+			const menu = document.createElement('div');
+			menu.className = 'gantt-export-menu';
+			menu.style.cssText = `
+				position: fixed;
+				top: ${e.clientY}px;
+				left: ${e.clientX}px;
+				background: var(--surface-1);
+				border: 3px solid var(--border-1);
+				box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+				z-index: 1001;
+				min-width: 180px;
+			`;
+
+			menu.innerHTML = `
+				<div class="gantt-export-menu__item" data-action="png">
+					<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+					</svg>
+					<span>Exportar como PNG</span>
+				</div>
+				<div class="gantt-export-menu__item" data-action="print">
+					<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+					</svg>
+					<span>Imprimir</span>
+				</div>
+			`;
+
+			document.body.appendChild(menu);
+
+			// Handle menu item clicks
+			menu.querySelectorAll('.gantt-export-menu__item').forEach(item => {
+				item.addEventListener('click', function() {
+					const action = this.getAttribute('data-action');
+
+					if (action === 'png') {
+						ganttChart.exportAsPNG();
+					} else if (action === 'print') {
+						ganttChart.printChart();
+					}
+
+					// Remove menu
+					document.body.removeChild(menu);
+				});
+			});
+
+			// Close menu on click outside
+			const closeMenu = function(evt) {
+				if (!menu.contains(evt.target)) {
+					if (document.body.contains(menu)) {
+						document.body.removeChild(menu);
+					}
+					document.removeEventListener('click', closeMenu);
+				}
+			};
+			setTimeout(() => {
+				document.addEventListener('click', closeMenu);
+			}, 10);
+		});
+	}
+
+	/**
+	 * Auto-schedule all tasks based on dependencies
+	 */
+	function autoScheduleTasks() {
+		if (!ganttChart || !window.ganttData.project) {
+			frappe.msgprint('No se pudo cargar el proyecto');
+			return;
+		}
+
+		const projectId = window.ganttData.project.name;
+
+		// Show loading indicator
+		frappe.freeze('Auto-programando tareas...');
+
+		// Call auto_schedule API
+		frappe.call({
+			method: 'workhub_frappe_app.api.gantt.auto_schedule',
+			args: {
+				project_id: projectId
+			},
+			callback: function(r) {
+				frappe.unfreeze();
+
+				if (r.message && r.message.success) {
+					// Show success message with count
+					frappe.show_alert({
+						message: `${r.message.scheduled_count} tareas programadas exitosamente`,
+						indicator: 'green'
+					}, 5);
+
+					// Refresh chart data to show updated dates
+					refreshChartData();
+				} else {
+					frappe.msgprint({
+						title: 'Error',
+						message: 'No se pudo auto-programar las tareas',
+						indicator: 'red'
+					});
+				}
+			},
+			error: function(err) {
+				frappe.unfreeze();
+				frappe.msgprint({
+					title: 'Error',
+					message: 'Ocurrió un error al auto-programar: ' + (err.message || 'Error desconocido'),
+					indicator: 'red'
+				});
+			}
+		});
+	}
+
+	/**
+	 * Refresh chart data from backend
+	 */
+	function refreshChartData() {
+		if (!ganttChart || !window.ganttData.project) {
+			return;
+		}
+
+		const projectId = window.ganttData.project.name;
+
+		// Fetch fresh data from API
+		frappe.call({
+			method: 'workhub_frappe_app.api.gantt.get_gantt_view',
+			args: {
+				project_id: projectId
+			},
+			callback: function(r) {
+				if (r.message) {
+					// Update window data
+					window.ganttData = r.message;
+
+					// Re-bind data to chart
+					ganttChart.setData(window.ganttData);
+
+					// Re-render chart
+					ganttChart.render();
+				}
+			}
+		});
+	}
+</script>
+{% endblock %}

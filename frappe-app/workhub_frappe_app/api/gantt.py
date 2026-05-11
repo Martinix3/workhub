@@ -7,7 +7,26 @@ from frappe.utils import nowdate, getdate, add_days, date_diff
 import json
 from collections import defaultdict
 
-from workhub_frappe_app.api.utils import require_auth
+from workhub_frappe_app.api.utils import require_auth, require_permission
+
+
+def _enrich_task_assignees(task):
+    """Enrich task with assignees data including user info"""
+    if not task.get("name"):
+        return []
+
+    assignees = frappe.get_all("WH Task Assignee",
+        filters={"parent": task["name"]},
+        fields=["user", "role"],
+        order_by="idx"
+    )
+
+    # Enrich with user info
+    for assignee in assignees:
+        if assignee.get("user"):
+            assignee["user_name"] = frappe.db.get_value("User", assignee["user"], "full_name")
+
+    return assignees
 
 
 @frappe.whitelist()
@@ -28,6 +47,10 @@ def get_gantt_view(project_id):
 
     # Enriquecer con info adicional
     for task in tasks:
+        # Add assignees with user info
+        task["assignees"] = _enrich_task_assignees(task)
+
+        # Keep assigned_name for backward compatibility (primary owner)
         if task.get("assigned_to"):
             task["assigned_name"] = frappe.db.get_value("User", task["assigned_to"], "full_name")
 
@@ -81,10 +104,19 @@ def update_task_schedule(task_id, start_date=None, due_date=None):
 
     task = frappe.get_doc("WH Task", task_id)
 
+    # Parse dates
+    new_start = getdate(start_date) if start_date else task.start_date
+    new_due = getdate(due_date) if due_date else task.due_date
+
+    # VALIDATION: Ensure start_date is before due_date
+    if new_start and new_due and new_start > new_due:
+        frappe.throw(_("La fecha de inicio no puede ser posterior a la fecha de fin"))
+
+    # Update task
     if start_date:
-        task.start_date = getdate(start_date)
+        task.start_date = new_start
     if due_date:
-        task.due_date = getdate(due_date)
+        task.due_date = new_due
 
     task.save()
 
@@ -393,13 +425,16 @@ def add_dependency(predecessor_id, successor_id, dep_type="FS", lag_days=0):
     if would_create_cycle(predecessor_id, successor_id):
         return {"success": False, "message": "Esto crearia un ciclo de dependencias"}
 
+    # Check user has permission to create dependencies
+    require_permission("WH Task Dependency", "create")
+
     doc = frappe.new_doc("WH Task Dependency")
     doc.predecessor = predecessor_id
     doc.successor = successor_id
     doc.type = dep_type
     doc.lag_days = lag_days
     doc.is_active = 1
-    doc.insert(ignore_permissions=True)
+    doc.insert()
 
     # Propagar fechas
     propagate_dates(predecessor_id)
@@ -453,6 +488,10 @@ def get_milestones(project_id):
         order_by="due_date asc")
 
     for m in milestones:
+        # Add assignees
+        m["assignees"] = _enrich_task_assignees(m)
+
+        # Keep assigned_name for backward compatibility
         if m.get("assigned_to"):
             m["assigned_name"] = frappe.db.get_value("User", m["assigned_to"], "full_name")
 

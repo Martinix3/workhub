@@ -58,6 +58,42 @@ def get_my_day():
         order_by="priority asc",
         limit=5)
 
+    # Enrich all task lists with dependency counts
+    all_tasks = today_tasks + overdue + upcoming + blocked
+    if all_tasks:
+        task_ids = [t["name"] for t in all_tasks]
+
+        # Get dependency counts in batch
+        blocked_by_results = frappe.db.sql("""
+            SELECT successor as task_id, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE successor IN %(task_ids)s AND is_active = 1
+            GROUP BY successor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        blocks_results = frappe.db.sql("""
+            SELECT predecessor as task_id, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE predecessor IN %(task_ids)s AND is_active = 1
+            GROUP BY predecessor
+        """, {"task_ids": task_ids}, as_dict=True)
+
+        # Build lookup dictionary
+        dependency_counts = {}
+        for row in blocked_by_results:
+            dependency_counts[row["task_id"]] = dependency_counts.get(row["task_id"], {})
+            dependency_counts[row["task_id"]]["blocked_by_count"] = row["count"]
+
+        for row in blocks_results:
+            dependency_counts[row["task_id"]] = dependency_counts.get(row["task_id"], {})
+            dependency_counts[row["task_id"]]["blocks_count"] = row["count"]
+
+        # Add counts to all tasks
+        for task in all_tasks:
+            task_deps = dependency_counts.get(task["name"], {})
+            task["blocked_by_count"] = task_deps.get("blocked_by_count", 0)
+            task["blocks_count"] = task_deps.get("blocks_count", 0)
+
     # Tareas que bloqueo a otros (soy predecessor de algo que espera)
     my_task_ids = frappe.get_all("WH Task",
         filters={"assigned_to": user, "status": ["not in", ["DONE"]]},
@@ -92,6 +128,38 @@ def get_my_day():
         fields=["name", "title", "priority", "creation"],
         order_by="priority asc, creation desc",
         limit=10)
+
+    # Add dependency counts to inbox tasks
+    if inbox:
+        inbox_task_ids = [t["name"] for t in inbox]
+
+        blocked_by_inbox = frappe.db.sql("""
+            SELECT successor as task_id, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE successor IN %(task_ids)s AND is_active = 1
+            GROUP BY successor
+        """, {"task_ids": inbox_task_ids}, as_dict=True)
+
+        blocks_inbox = frappe.db.sql("""
+            SELECT predecessor as task_id, COUNT(*) as count
+            FROM `tabWH Task Dependency`
+            WHERE predecessor IN %(task_ids)s AND is_active = 1
+            GROUP BY predecessor
+        """, {"task_ids": inbox_task_ids}, as_dict=True)
+
+        inbox_deps = {}
+        for row in blocked_by_inbox:
+            inbox_deps[row["task_id"]] = inbox_deps.get(row["task_id"], {})
+            inbox_deps[row["task_id"]]["blocked_by_count"] = row["count"]
+
+        for row in blocks_inbox:
+            inbox_deps[row["task_id"]] = inbox_deps.get(row["task_id"], {})
+            inbox_deps[row["task_id"]]["blocks_count"] = row["count"]
+
+        for task in inbox:
+            task_deps = inbox_deps.get(task["name"], {})
+            task["blocked_by_count"] = task_deps.get("blocked_by_count", 0)
+            task["blocks_count"] = task_deps.get("blocks_count", 0)
 
     # Resumen rapido
     summary = {

@@ -7,6 +7,9 @@ from frappe.utils import nowdate, now_datetime, getdate, add_days, date_diff
 
 
 class WHTask(Document):
+    def validate(self):
+        self.handle_assignees()
+
     def before_save(self):
         self.handle_status_change()
         self.handle_worked_today()
@@ -15,6 +18,7 @@ class WHTask(Document):
     def on_update(self):
         self.update_project_kpis()
         self.propagate_to_successors()
+        self.sync_assignees_to_worklink()
 
     def set_defaults(self):
         """Establece valores por defecto"""
@@ -30,6 +34,47 @@ class WHTask(Document):
         # Marcar como inbox si no tiene proyecto
         if not self.project and not self.parent_task:
             self.is_inbox = 1
+
+    def handle_assignees(self):
+        """Maneja logica de asignados: sync, validacion, auto-populate"""
+        # (4) Auto-populate assignees from assigned_to if empty
+        if not self.assignees and self.assigned_to:
+            self.append("assignees", {
+                "user": self.assigned_to,
+                "role": "Owner",
+                "added_at": now_datetime(),
+                "added_by": frappe.session.user
+            })
+
+        # Set defaults for assignee entries
+        for assignee in self.assignees:
+            if not assignee.added_at:
+                assignee.added_at = now_datetime()
+            if not assignee.added_by:
+                assignee.added_by = frappe.session.user
+
+        # (2) Validate max 10 assignees
+        if len(self.assignees) > 10:
+            frappe.throw("No se pueden asignar mas de 10 usuarios a una tarea")
+
+        # (3) Ensure exactly one Owner role exists
+        owners = [a for a in self.assignees if a.role == "Owner"]
+        if len(owners) == 0:
+            # Auto-promote first assignee to Owner if none exists
+            if self.assignees:
+                self.assignees[0].role = "Owner"
+        elif len(owners) > 1:
+            frappe.throw("Solo puede haber un propietario (Owner) por tarea")
+
+        # (1) Sync assigned_to with primary owner from assignees table
+        # (5) Sync primary_owner computed field
+        owner = next((a for a in self.assignees if a.role == "Owner"), None)
+        if owner:
+            self.assigned_to = owner.user
+            self.primary_owner = owner.user
+        else:
+            self.assigned_to = None
+            self.primary_owner = None
 
     def handle_status_change(self):
         """Maneja cambios de estado - registra fechas reales"""
@@ -127,6 +172,22 @@ class WHTask(Document):
             except Exception:
                 # Si falla una propagacion, continuar con las demas
                 pass
+
+    def sync_assignees_to_worklink(self):
+        """Sync assignees to linked WorkLink when assignees change"""
+        if not self.worklink:
+            return
+
+        try:
+            # Get the linked WorkLink document
+            worklink = frappe.get_doc("WorkLink", self.worklink)
+            # Sync assignees from this task to the WorkLink
+            worklink.sync_assignees()
+            # Save the WorkLink to persist changes and trigger Leantime sync
+            worklink.save()
+        except Exception:
+            # Si falla el sync, no bloquear la operacion de la tarea
+            pass
 
 
 @frappe.whitelist()

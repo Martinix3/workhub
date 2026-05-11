@@ -8,6 +8,7 @@ import type {
   Activity,
   SalesTrends
 } from '../../components/sections/sell-in-operations/types'
+import type { OrderDetail, WorkLink } from '../../components/sections/sell-in-operations/OrderDetailPanel/types'
 
 export const salesApi = {
   async getKPIs(): Promise<KPIs> {
@@ -110,6 +111,38 @@ export const salesApi = {
       { data: orderData }
     )
     return data
+  },
+
+  async getOrderDetail(orderId: string): Promise<OrderDetail> {
+    const data = await frappe.call<OrderDetail>(
+      'workhub_frappe_app.api.sales.get_order_detail',
+      { order_id: orderId }
+    )
+    return data
+  },
+
+  async updateOrder(orderId: string, data: UpdateOrderData): Promise<OrderDetail> {
+    const result = await frappe.call<OrderDetail>(
+      'workhub_frappe_app.api.sales.update_order',
+      { order_id: orderId, data }
+    )
+    return result
+  },
+
+  async cancelOrder(orderId: string): Promise<CancelOrderResponse> {
+    const result = await frappe.call<CancelOrderResponse>(
+      'workhub_frappe_app.api.sales.cancel_order',
+      { order_id: orderId }
+    )
+    return result
+  },
+
+  async getOrderWorkLinks(orderId: string): Promise<WorkLink[]> {
+    const result = await frappe.call<WorkLink[]>(
+      'workhub_frappe_app.api.sales.get_order_worklinks',
+      { order_id: orderId }
+    )
+    return result
   }
 }
 
@@ -143,6 +176,28 @@ export interface CreateOrderResponse {
   success: boolean
   order_id: string
   total: number
+}
+
+// Order update types
+export interface UpdateOrderItem {
+  itemCode: string
+  itemName?: string
+  qty: number
+  rate: number
+  amount?: number
+}
+
+export interface UpdateOrderData {
+  deliveryDate?: string
+  salesType?: 'sell_in' | 'sell_out'
+  items?: UpdateOrderItem[]
+}
+
+// Order cancel response type
+export interface CancelOrderResponse {
+  success: boolean
+  order_id: string
+  message: string
 }
 
 export default salesApi

@@ -11,6 +11,68 @@
 		<p class="text-muted">Dashboard de Administración</p>
 	</div>
 
+	<!-- Quick Access -->
+	<div class="row mt-4">
+		<div class="col-md-4">
+			<a href="/workhub_admin_usuarios" class="card wh-quick-access-card">
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<div class="wh-quick-icon">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+								<circle cx="9" cy="7" r="4"/>
+								<path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+								<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+							</svg>
+						</div>
+						<div class="flex-grow-1 ms-3">
+							<h5 class="mb-1">Usuarios</h5>
+							<p class="text-muted mb-0 small">Gestionar usuarios del sistema</p>
+						</div>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class="col-md-4">
+			<a href="/workhub_reportes" class="card wh-quick-access-card">
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<div class="wh-quick-icon">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+								<polyline points="14 2 14 8 20 8"/>
+								<line x1="16" y1="13" x2="8" y2="13"/>
+								<line x1="16" y1="17" x2="8" y2="17"/>
+							</svg>
+						</div>
+						<div class="flex-grow-1 ms-3">
+							<h5 class="mb-1">Reportes</h5>
+							<p class="text-muted mb-0 small">Ver todos los reportes</p>
+						</div>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class="col-md-4">
+			<a href="/workhub_admin_reportes" class="card wh-quick-access-card">
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<div class="wh-quick-icon">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="12" cy="12" r="10"/>
+								<polyline points="12 6 12 12 16 14"/>
+							</svg>
+						</div>
+						<div class="flex-grow-1 ms-3">
+							<h5 class="mb-1">Reportes Programados</h5>
+							<p class="text-muted mb-0 small">Gestionar reportes programados</p>
+						</div>
+					</div>
+				</div>
+			</a>
+		</div>
+	</div>
+
 	<!-- KPIs -->
 	<div class="row mt-4">
 		<div class="col-md-3">
@@ -87,6 +149,47 @@
 	border-radius: 8px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	margin-bottom: 20px;
+}
+
+/* Quick Access Cards */
+.wh-quick-access-card {
+	text-decoration: none;
+	color: inherit;
+	transition: all 0.2s ease;
+	border: 2px solid transparent;
+}
+
+.wh-quick-access-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	border-color: var(--primary, #f5ce3e);
+	text-decoration: none;
+	color: inherit;
+}
+
+.wh-quick-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 8px;
+	background: var(--primary-soft, #fef9e7);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.wh-quick-icon svg {
+	color: var(--primary, #f5ce3e);
+}
+
+.wh-quick-access-card h5 {
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--text-1, #0a0a0a);
+}
+
+.wh-quick-access-card p {
+	font-size: 13px;
 }
 </style>
 {% endblock %}
