@@ -10,6 +10,7 @@ import type { Department, TaskAssignee } from '../../components/sections/tasks/t
 const departmentConfig: Record<Department, { bg: string; text: string; label: string }> = {
   SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Ventas' },
   OPS: { bg: 'bg-violet-100', text: 'text-violet-700', label: 'Operaciones' },
+  PRODUCTION: { bg: 'bg-success-light', text: 'text-success-text', label: 'Producción' },
   MKT: { bg: 'bg-pink-100', text: 'text-pink-700', label: 'Marketing' },
 }
 

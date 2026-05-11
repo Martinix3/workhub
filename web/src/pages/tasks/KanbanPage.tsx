@@ -39,7 +39,7 @@ function KanbanContent() {
   const projectFilter = searchParams.get('project')
   const [departmentFilter, setDepartmentFilter] = useState<Department | 'ALL'>('ALL')
   const [selectionMode, setSelectionMode] = useState(false)
-  const { selectAll, clearSelection } = useTaskSelection()
+  const { selectAll, clearSelection, selectedTasks } = useTaskSelection()
 
   // Build filters object
   const filters = {
@@ -65,10 +65,10 @@ function KanbanContent() {
 
   // Toggle selection mode
   const toggleSelectionMode = () => {
-    setSelectionMode(!selectionMode)
-    if (!selectionMode) {
-      clearSelection() // Clear selection when exiting selection mode
+    if (selectionMode) {
+      clearSelection()
     }
+    setSelectionMode(!selectionMode)
   }
 
   // Select all tasks in a column
@@ -140,6 +140,14 @@ function KanbanContent() {
   })
 
   const totalTasks = allColumns.reduce((sum, col) => sum + col.tasks.length, 0)
+  const pendingTasks = allColumns.reduce(
+    (sum, col) => sum + col.tasks.filter(task => task.status !== 'DONE').length,
+    0
+  )
+  const urgentTasks = allColumns.reduce(
+    (sum, col) => sum + col.tasks.filter(task => task.priority === 'P0' || task.status === 'BLOCKED').length,
+    0
+  )
 
   const handleDragStart = (task: Task) => {
     setDraggedTask(task)
@@ -200,9 +208,20 @@ function KanbanContent() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Task count */}
-            <div className="px-3 py-1 border border-neutral-200 font-mono font-bold text-sm">
-              {totalTasks} tareas
+            {/* Board KPIs */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="px-3 py-2 bg-white border border-neutral-200">
+                <p className="font-mono font-bold text-sm text-neutral-900">{pendingTasks}</p>
+                <p className="text-[10px] uppercase tracking-wider text-neutral-500">pendiente{pendingTasks === 1 ? '' : 's'}</p>
+              </div>
+              <div className="px-3 py-2 bg-error-light border border-error-dark">
+                <p className="font-mono font-bold text-sm text-error-text">{urgentTasks}</p>
+                <p className="text-[10px] uppercase tracking-wider text-error-text">urgente{urgentTasks === 1 ? '' : 's'}</p>
+              </div>
+              <div className="px-3 py-2 bg-white border border-neutral-200">
+                <p className="font-mono font-bold text-sm text-neutral-900">{totalTasks}</p>
+                <p className="text-[10px] uppercase tracking-wider text-neutral-500">total</p>
+              </div>
             </div>
 
             {/* Selection Mode Toggle */}
@@ -219,10 +238,10 @@ function KanbanContent() {
                     : 'bg-white text-neutral-900 hover:bg-neutral-100'
                   }
                 `}
-                title={selectionMode ? 'Salir del modo selección' : 'Activar modo selección'}
+                title={selectionMode ? 'Salir de selección' : 'Seleccionar tareas'}
               >
                 {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
-                <span>{selectionMode ? 'Seleccionando' : 'Seleccionar'}</span>
+                <span>{selectionMode ? 'Salir de selección' : 'Seleccionar tareas'}</span>
               </button>
 
               {/* Keyboard Shortcuts Help */}
@@ -278,6 +297,17 @@ function KanbanContent() {
           </div>
         </div>
       </div>
+
+      {selectionMode && (
+        <div className="mx-4 lg:mx-6 mt-4 p-3 bg-gold-light border border-gold-dark flex items-center justify-between">
+          <span className="text-sm font-semibold text-gold-dark">
+            Modo selección activo · {selectedTasks.size} seleccionada{selectedTasks.size === 1 ? '' : 's'}
+          </span>
+          <span className="text-xs text-gold-dark uppercase tracking-wider">
+            Click en tarjetas para seleccionar · Escape limpia
+          </span>
+        </div>
+      )}
 
       {/* Board */}
       <div className="p-4 lg:p-6 overflow-x-auto">

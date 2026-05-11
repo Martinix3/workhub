@@ -41,6 +41,7 @@ const healthConfig: Record<ProjectHealth, { bg: string; border: string; text: st
 const departmentConfig: Record<Department, { bg: string; text: string }> = {
   SALES: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
   OPS: { bg: 'bg-violet-100', text: 'text-violet-700' },
+  PRODUCTION: { bg: 'bg-success-light', text: 'text-success-text' },
   MKT: { bg: 'bg-pink-100', text: 'text-pink-700' },
 }
 

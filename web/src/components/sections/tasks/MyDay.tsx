@@ -16,12 +16,30 @@ interface MyDayProps {
   onTaskClick?: (id: string) => void
   onQuickAdd?: (title: string, priority: TaskPriority) => void
   onChangeStatus?: (id: string, status: TaskStatus) => void
+  selectionMode?: boolean
+  selectedTasks?: Set<string>
+  onToggleSelection?: (id: string) => void
+  onToggleSelectionMode?: () => void
+  onBulkStatusChange?: (status: TaskStatus) => void
+  onBulkChangeStatus?: (status: TaskStatus) => void
+  onBulkAssign?: () => void
+  onBulkPriorityChange?: (priority: TaskPriority) => void
+  onBulkChangePriority?: (priority: TaskPriority) => void
+  onBulkProjectAssign?: () => void
+  onBulkMoveProject?: () => void
+  onBulkAddWorkLink?: () => void
 }
 
 const priorityConfig: Record<TaskPriority, { bg: string; text: string; softBg: string }> = {
   P0: { bg: 'bg-error', text: 'text-error-text', softBg: 'bg-error-light' },
   P1: { bg: 'bg-gold', text: 'text-gold-dark', softBg: 'bg-gold-light' },
   P2: { bg: 'bg-success', text: 'text-success-text', softBg: 'bg-success-light' },
+}
+
+const priorityLabels: Record<TaskPriority, string> = {
+  P0: 'P0 Alta',
+  P1: 'P1 Media',
+  P2: 'P2 Baja',
 }
 
 const statusBorderTop: Record<TaskStatus, string> = {
@@ -70,6 +88,22 @@ export function MyDay({
       setShowSuggestions(true)
     }
   }, [suggestions.length, showSuggestions, selectedWorkLink])
+
+  useEffect(() => {
+    if (!showQuickAdd) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowQuickAdd(false)
+        setQuickAddTitle('')
+        setSelectedWorkLink(null)
+        setShowSuggestions(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showQuickAdd])
 
   const allTasks = [...data.today, ...data.upcoming]
   const focusedTask = focusedTaskId ? allTasks.find(t => t.name === focusedTaskId) : null
@@ -244,7 +278,7 @@ export function MyDay({
             "
           >
             <Plus size={18} />
-            Agregar
+            Nueva tarea
           </button>
         </div>
 
@@ -262,12 +296,26 @@ export function MyDay({
 
             {/* Overdue Alert */}
             {data.overdue.length > 0 && (
-              <div className="mb-6 p-4 bg-error-light border-2 border-error-dark">
-                <div className="flex items-center gap-2 text-error-text font-medium mb-1">
-                  <AlertTriangle size={18} />
-                  {data.overdue.length} tarea{data.overdue.length > 1 ? 's' : ''} vencida{data.overdue.length > 1 ? 's' : ''}
+              <div className="mb-6 p-4 bg-error-light border border-error-dark">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 text-error-text font-semibold mb-1">
+                      <AlertTriangle size={18} />
+                      Tienes {data.overdue.length} tarea{data.overdue.length > 1 ? 's' : ''} vencida{data.overdue.length > 1 ? 's' : ''}
+                    </div>
+                    <p className="text-xs text-error-text">
+                      Revisa primero lo atrasado antes de meter más ruido en la lista.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onTaskClick?.(data.overdue[0].name)}
+                    className="px-3 py-2 bg-white text-error-text border border-error-dark text-xs font-semibold uppercase tracking-wider hover:bg-error-light"
+                  >
+                    Ver vencidas
+                  </button>
                 </div>
-                <div className="space-y-1">
+                <div className="mt-3 space-y-1">
                   {data.overdue.slice(0, 3).map(task => (
                     <p
                       key={task.name}
@@ -372,15 +420,22 @@ export function MyDay({
             <form
               onSubmit={handleQuickAddSubmit}
               onClick={e => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="quick-add-title"
               className="bg-white border border-neutral-200 w-full max-w-md mx-4"
             >
               <div className="p-4 border-b border-neutral-200">
-                <h3 className="font-heading text-lg font-bold text-neutral-900">
+                <h3 id="quick-add-title" className="font-heading text-lg font-bold text-neutral-900">
                   Nueva Tarea
                 </h3>
               </div>
               <div className="p-4">
+                <label htmlFor="quick-add-task-title" className="block text-sm font-medium text-neutral-700 mb-2">
+                  Nombre de la tarea
+                </label>
                 <input
+                  id="quick-add-task-title"
                   type="text"
                   value={quickAddTitle}
                   onChange={e => setQuickAddTitle(e.target.value)}
@@ -396,7 +451,7 @@ export function MyDay({
                   "
                 />
 
-                <div className="flex gap-2 mt-4">
+                <div className="flex gap-2 mt-4" aria-label="Prioridad">
                   {(['P0', 'P1', 'P2'] as TaskPriority[]).map(p => {
                     const cfg = priorityConfig[p]
                     return (
@@ -410,7 +465,7 @@ export function MyDay({
                           ${quickAddPriority === p ? `${cfg.softBg} ${cfg.text}` : 'bg-white text-neutral-500'}
                         `}
                       >
-                        {p}
+                        {priorityLabels[p]}
                       </button>
                     )
                   })}

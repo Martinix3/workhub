@@ -79,6 +79,7 @@ export function SaveFilterModal({
       const deptLabels: Record<Department, string> = {
         SALES: 'Ventas',
         OPS: 'Operaciones',
+        PRODUCTION: 'Producción',
         MKT: 'Marketing'
       }
       chips.push({

@@ -29,6 +29,7 @@ interface KPIBuilderModalProps {
   onSuccess?: () => void
   /** Existing KPI to edit (optional - if provided, modal is in edit mode) */
   editKPI?: CustomKPI
+  existingKPI?: CustomKPI
 }
 
 /**
@@ -40,8 +41,10 @@ export function KPIBuilderModal({
   onClose,
   department,
   onSuccess,
-  editKPI
+  editKPI,
+  existingKPI
 }: KPIBuilderModalProps) {
+  const activeEditKPI = editKPI ?? existingKPI
   const [step, setStep] = useState<Step>('metric')
   const [title, setTitle] = useState('')
   const [selectedMetric, setSelectedMetric] = useState<KPIMetric | null>(null)
@@ -58,18 +61,18 @@ export function KPIBuilderModal({
 
   // Initialize form when editing existing KPI
   useEffect(() => {
-    if (editKPI) {
-      setTitle(editKPI.title)
+    if (activeEditKPI) {
+      setTitle(activeEditKPI.title)
       setSelectedMetric(null) // Will be set by MetricSelector based on metric code
       setThresholds({
-        target_value: editKPI.target_value,
-        warning_threshold: editKPI.warning_threshold,
-        critical_threshold: editKPI.critical_threshold
+        target_value: activeEditKPI.target_value,
+        warning_threshold: activeEditKPI.warning_threshold,
+        critical_threshold: activeEditKPI.critical_threshold
       })
-      setVisualizationType(editKPI.visualization_type)
-      setIsShared(editKPI.is_shared)
+      setVisualizationType(activeEditKPI.visualization_type)
+      setIsShared(activeEditKPI.is_shared)
     }
-  }, [editKPI])
+  }, [activeEditKPI])
 
   // Reset form when modal is closed
   useEffect(() => {
@@ -114,7 +117,7 @@ export function KPIBuilderModal({
       return
     }
 
-    if (editKPI) {
+    if (activeEditKPI) {
       // Update existing KPI
       const updates: UpdateCustomKPIData = {
         title: title.trim(),
@@ -127,7 +130,7 @@ export function KPIBuilderModal({
         is_shared: isShared
       }
 
-      const result = await updateKPI(editKPI.name, updates)
+      const result = await updateKPI(activeEditKPI.name, updates)
       if (result) {
         toast.success('KPI updated successfully')
         onClose()

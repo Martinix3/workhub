@@ -1,4 +1,4 @@
-import { useEffect, useRef, RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 
 /**
  * Hook to trap focus within a container element

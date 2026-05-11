@@ -111,3 +111,31 @@ export {
   useAvailableMetrics,
   useCustomKPIMutations
 } from './hooks/useCustomKPIs'
+
+
+// Compatibility exports for in-progress task/admin modules
+export { useManagerAnalyticsDashboard } from './hooks/useManagerAnalytics'
+export { default as managerAnalyticsApi } from './services/manager-analytics'
+export { useUserKPIs } from './hooks/useSettings'
+
+export function useSavedFilters(..._args: any[]): any {
+  return { data: [], loading: false, error: null, refetch: async () => {} }
+}
+export function useSavedFilter(..._args: any[]): any {
+  return { data: null, loading: false, error: null, refetch: async () => {} }
+}
+export function useFilterCounts(..._args: any[]): any {
+  return { data: {}, loading: false, error: null, refetch: async () => {} }
+}
+export function useSavedFilterMutations(..._args: any[]): any {
+  return { loading: false, error: null, createFilter: async (..._a: any[]) => null, updateFilter: async (..._a: any[]) => null, deleteFilter: async (..._a: any[]) => null }
+}
+export function useTemplates(..._args: any[]): any {
+  return { data: [], loading: false, error: null, refetch: async () => {} }
+}
+export function useTemplatePreview(..._args: any[]): any {
+  return { data: null, loading: false, error: null, refetch: async () => {} }
+}
+export function useTemplateMutations(..._args: any[]): any {
+  return { loading: false, error: null, createTemplate: async (..._a: any[]) => null, updateTemplate: async (..._a: any[]) => null, deleteTemplate: async (..._a: any[]) => null }
+}

@@ -52,7 +52,7 @@ export function useWorkLinkSuggestions(
   const [error, setError] = useState<Error | null>(null)
 
   // Debounce timer ref
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Track if component is mounted to avoid state updates after unmount
   const isMountedRef = useRef(true)

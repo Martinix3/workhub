@@ -65,6 +65,7 @@ export interface AcceptSuggestionParams {
   docId: string
   notes?: string
   confidenceScore?: number
+  confidence?: number
 }
 
 /**
@@ -76,6 +77,7 @@ export interface DismissSuggestionParams {
   docId: string
   reason?: string
   confidenceScore?: number
+  confidence?: number
 }
 
 export const workLinkSuggestionsApi = {

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { frappe } from '../api/frappe-client'
 
 // Maximum number of tasks that can be selected at once for performance
 export const MAX_SELECTION = 100
@@ -28,7 +29,7 @@ export function TaskSelectionProvider({ children }: TaskSelectionProviderProps) 
       } else {
         // Enforce maximum selection limit
         if (next.size >= MAX_SELECTION) {
-          frappe.msgprint({
+          window.alert({
             title: 'Límite de Selección Alcanzado',
             message: `No puedes seleccionar más de ${MAX_SELECTION} tareas a la vez por razones de rendimiento.`,
             indicator: 'orange'
@@ -44,7 +45,7 @@ export function TaskSelectionProvider({ children }: TaskSelectionProviderProps) 
   const selectAll = useCallback((taskIds: string[]) => {
     // Enforce maximum selection limit
     if (taskIds.length > MAX_SELECTION) {
-      frappe.msgprint({
+      window.alert({
         title: 'Límite de Selección Alcanzado',
         message: `Solo se seleccionarán las primeras ${MAX_SELECTION} tareas de ${taskIds.length} tareas disponibles por razones de rendimiento.`,
         indicator: 'orange'

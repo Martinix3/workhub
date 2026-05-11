@@ -467,9 +467,9 @@ export const sampleTasks: Task[] = [
 
 // Project templates
 export const sampleProjectTemplates: ProjectTemplate[] = [
-  { name: 'WHPT-001', title: 'Lanzamiento de Producto', description: 'Template para lanzar un nuevo producto al mercado', department: 'MKT', default_duration_days: 45, task_count: 8, is_active: true },
-  { name: 'WHPT-002', title: 'Expansion Regional', description: 'Template para expandir a una nueva region geografica', department: 'SALES', default_duration_days: 60, task_count: 12, is_active: true },
-  { name: 'WHPT-003', title: 'Mejora Operacional', description: 'Template para proyectos de mejora de procesos', department: 'OPS', default_duration_days: 30, task_count: 6, is_active: true }
+  { name: 'WHPT-001', title: 'Lanzamiento de Producto', description: 'Template para lanzar un nuevo producto al mercado', department: 'MKT', estimated_duration_days: 45, default_duration_days: 45, task_count: 8, is_active: true },
+  { name: 'WHPT-002', title: 'Expansion Regional', description: 'Template para expandir a una nueva region geografica', department: 'SALES', estimated_duration_days: 60, default_duration_days: 60, task_count: 12, is_active: true },
+  { name: 'WHPT-003', title: 'Mejora Operacional', description: 'Template para proyectos de mejora de procesos', department: 'OPS', estimated_duration_days: 30, default_duration_days: 30, task_count: 6, is_active: true }
 ]
 
 // Projects with tasks
@@ -653,7 +653,8 @@ export const sampleMyDayData: MyDayData = {
   summary: {
     total_today: 2,
     overdue_count: 1,
-    blocked_count: 1
+    blocked_count: 1,
+    completed_today: 0
   }
 }
 
@@ -666,11 +667,11 @@ const allTasks: Task[] = [
 ]
 
 export const sampleKanbanColumns: KanbanColumn[] = [
-  { status: 'BACKLOG', tasks: allTasks.filter(t => t.status === 'BACKLOG') },
-  { status: 'NEXT', tasks: allTasks.filter(t => t.status === 'NEXT') },
-  { status: 'DOING', tasks: allTasks.filter(t => t.status === 'DOING') },
-  { status: 'BLOCKED', tasks: allTasks.filter(t => t.status === 'BLOCKED') },
-  { status: 'DONE', tasks: allTasks.filter(t => t.status === 'DONE') }
+  { status: 'BACKLOG', label: 'Backlog', tasks: allTasks.filter(t => t.status === 'BACKLOG') },
+  { status: 'NEXT', label: 'Next', tasks: allTasks.filter(t => t.status === 'NEXT') },
+  { status: 'DOING', label: 'En curso', tasks: allTasks.filter(t => t.status === 'DOING') },
+  { status: 'BLOCKED', label: 'Bloqueado', tasks: allTasks.filter(t => t.status === 'BLOCKED') },
+  { status: 'DONE', label: 'Completado', tasks: allTasks.filter(t => t.status === 'DONE') }
 ]
 
 export const sampleTaskKPIs: DashboardKPIs = {
@@ -701,3 +702,27 @@ export const sampleTaskKPIs: DashboardKPIs = {
 export function isInBypassMode(): boolean {
   return sessionStorage.getItem('auth_bypass') === 'true'
 }
+
+
+// Compatibility sample data for optional/bypass-only modules
+export const sampleRoles = [
+  { name: 'System Manager', desk_access: 1, is_custom: 0, description: 'Administrador', user_count: 1, disabled: 0 },
+  { name: 'Sales User', desk_access: 1, is_custom: 0, description: 'Ventas', user_count: 2, disabled: 0 }
+]
+
+export const sampleProjectOptions = sampleProjects.map(project => ({ name: project.name, title: project.title }))
+export const sampleAssignableUsers = [
+  { name: 'martin@example.com', full_name: 'Martin Jaime', user_image: null },
+  { name: 'ana@example.com', full_name: 'Ana Garcia', user_image: null }
+]
+export const sampleWorkLinkSuggestions = [
+  { source_doctype: 'Sales Order', source_id: 'SO-001', display_name: 'Pedido SO-001', modified: new Date().toISOString(), has_worklink: false }
+]
+
+export const sampleNotificationsResponse = { notifications: [], unread_count: 0 }
+export const sampleTeamWorkload = { workload: [] }
+export const sampleVelocityTrends = { period: 'daily' as const, data: [], trend: 'stable' as const, avg_current: 0, avg_previous: 0 }
+export const sampleBlockerAnalysis = { blocked_areas: [], avg_blocked_time_days: 0, top_blocked_tasks: [] }
+export const sampleOverdueTrends = { weeks: [], trend: 'stable' as const }
+export const sampleOrderDetail = null
+export const sampleOrderWorkLinks = []

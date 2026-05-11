@@ -1,3 +1,4 @@
+import React from 'react'
 import type { ValueType, KPIStatus } from '../../types/custom-kpi'
 
 interface GaugeVisualizationProps {
@@ -208,7 +209,7 @@ function renderColorZones(
   targetValue?: number,
   warningThreshold?: number,
   criticalThreshold?: number
-): JSX.Element | null {
+): React.ReactElement | null {
   // Skip if no thresholds defined
   if (!targetValue || !warningThreshold || !criticalThreshold) {
     return null

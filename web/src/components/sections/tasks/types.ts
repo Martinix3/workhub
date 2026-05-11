@@ -48,8 +48,11 @@ export interface Task {
   department: Department
   project?: string
   project_title?: string
+  parent_task?: string
   assignees: TaskAssignee[]
   primary_owner?: string  // Computed field - user ID of the Owner role assignee
+  assigned_to?: string
+  assigned_to_name?: string
   created_by?: string
   start_date?: string
   due_date?: string
@@ -103,6 +106,7 @@ export interface ProjectTemplate {
   description?: string
   department: Department
   estimated_duration_days: number // Renamed from default_duration_days for API consistency
+  default_duration_days?: number
   task_count: number
   milestone_count?: number
   is_active?: boolean

@@ -25,7 +25,7 @@ export function UserDetailPage() {
     if (user) {
       setFirstName(user.first_name || '')
       setLastName(user.last_name || '')
-      setEnabled(user.enabled)
+      setEnabled(Boolean(user.enabled))
     }
   })
 
@@ -49,7 +49,7 @@ export function UserDetailPage() {
       await updateUser(user.name, {
         first_name: firstName,
         last_name: lastName,
-        enabled
+        enabled: enabled ? 1 : 0
       })
       setHasChanges(false)
       refetch()
