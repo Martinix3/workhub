@@ -9,6 +9,63 @@ import json
 from workhub_frappe_app.api.utils import require_auth, require_permission
 
 
+TASK_MANAGER_ROLES = {"Administrator", "System Manager", "WH Admin"}
+
+
+def _user_can_view_all_tasks(user=None):
+    """Return True when the current user has a manager/admin role for task boards."""
+    user = user or frappe.session.user
+    roles = set(frappe.get_roles(user) or [])
+    return bool(TASK_MANAGER_ROLES & roles) or any("Manager" in role for role in roles)
+
+
+def _build_board_filters(raw_filters=None, project_id=None):
+    """Normalize Kanban filters and enforce task visibility by user role.
+
+    Non-manager users must only ever receive their own tasks, even if the
+    frontend asks for "all" or another assignee. Manager/admin users may see all
+    tasks, or filter by a specific assignee.
+    """
+    if raw_filters:
+        if isinstance(raw_filters, str):
+            raw_filters = json.loads(raw_filters)
+        raw_filters = dict(raw_filters)
+    else:
+        raw_filters = {}
+
+    base_filters = {}
+
+    if project_id:
+        base_filters["project"] = project_id
+    elif raw_filters.get("project"):
+        base_filters["project"] = raw_filters.get("project")
+
+    for field in ("priority", "department"):
+        value = raw_filters.get(field)
+        if value:
+            base_filters[field] = value
+
+    assignee = raw_filters.get("assignee") or raw_filters.get("assigned_to")
+    if assignee in ("all", "todos", "Todos"):
+        assignee = None
+
+    if _user_can_view_all_tasks():
+        if assignee:
+            base_filters["assigned_to"] = assignee
+    else:
+        base_filters["assigned_to"] = frappe.session.user
+
+    search = raw_filters.get("search")
+    if search:
+        base_filters["title"] = ["like", f"%{search}%"]
+
+    task_id = raw_filters.get("task") or raw_filters.get("task_id") or raw_filters.get("name")
+    if task_id:
+        base_filters["name"] = task_id
+
+    return base_filters
+
+
 @frappe.whitelist()
 def get_projects(filters=None, limit=50, offset=0):
     """Get project list with optional filters"""
@@ -453,17 +510,7 @@ def get_board(project_id=None, filters=None):
     """Get Kanban board data as array of columns for frontend"""
     require_auth()
 
-    # Build base filters
-    if filters:
-        if isinstance(filters, str):
-            filters = json.loads(filters)
-        base_filters = dict(filters)
-    else:
-        base_filters = {}
-
-    # Add project filter if specified
-    if project_id:
-        base_filters["project"] = project_id
+    base_filters = _build_board_filters(filters, project_id=project_id)
 
     status_labels = {
         "BACKLOG": "Backlog",
