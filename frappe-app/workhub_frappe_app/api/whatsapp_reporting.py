@@ -159,20 +159,45 @@ def _ingest_one(event: dict[str, Any], dry_run: bool = False) -> dict[str, Any]:
     }
 
 
-@frappe.whitelist()
-def ingest_reporting_events(events=None, dry_run=0):
-    """Ingest one or more WhatsApp reporting rows into Momentum CRM.
+def _ingest_parsed_report(parsed: dict[str, Any], dry_run: bool = False) -> dict[str, Any]:
+    """Ingest a report already parsed by a human/LLM reviewer.
 
-    Expected source is the local Hermes collector SQLite export. Writes are
-    idempotent via the WhatsApp message ID stored in Momentum Interaction.description.
+    This deliberately bypasses the legacy deterministic text parser. It is used by
+    the twice-daily LLM agent: the model decides what is a valid commercial
+    report, then this endpoint only validates, deduplicates, and writes records.
     """
-    if not events:
-        frappe.throw(_("events is required"))
-    payload = json.loads(events) if isinstance(events, str) else events
-    if isinstance(payload, dict):
-        payload = [payload]
-    dry = str(dry_run).lower() in {"1", "true", "yes"}
-    results = [_ingest_one(_as_dict(event), dry_run=dry) for event in payload]
+    if parsed.get("skip"):
+        return {"ok": True, "skipped": True, "reason": parsed.get("skip_reason", "skipped_by_llm"), "parsed": parsed}
+
+    required = ["source_message_id", "account_name", "description"]
+    missing = [key for key in required if not str(parsed.get(key) or "").strip()]
+    if missing:
+        return {"ok": False, "skipped": True, "reason": "missing_required_fields", "missing": missing, "parsed": parsed}
+
+    message_id = str(parsed.get("source_message_id"))
+    existing = _find_existing_interaction(message_id)
+    if existing:
+        return {"ok": True, "skipped": True, "reason": "already_ingested", "interaction_id": existing, "parsed": parsed}
+
+    if dry_run:
+        return {"ok": True, "dry_run": True, "parsed": parsed}
+
+    account_id = _find_or_create_account(parsed)
+    interaction_id = _create_interaction(account_id, parsed)
+    task_id = _create_task_if_needed(account_id, interaction_id, parsed)
+    if task_id:
+        _move_account_to_pipeline(account_id)
+    frappe.db.commit()
+    return {
+        "ok": True,
+        "account_id": account_id,
+        "interaction_id": interaction_id,
+        "task_id": task_id,
+        "parsed": parsed,
+    }
+
+
+def _summary(payload: list[dict[str, Any]], dry: bool, results: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "ok": True,
         "dry_run": dry,
@@ -181,3 +206,34 @@ def ingest_reporting_events(events=None, dry_run=0):
         "skipped": sum(1 for item in results if item.get("skipped")),
         "results": results,
     }
+
+
+@frappe.whitelist()
+def ingest_reporting_events(events=None, dry_run=0):
+    """Ingest one or more raw WhatsApp reporting rows into Momentum CRM.
+
+    Legacy deterministic parser path. Kept for dry-run/debug, but scheduled
+    production ingestion should use ``ingest_parsed_reports`` so an LLM/human-like
+    reviewer decides what is actually commercial reporting.
+    """
+    if not events:
+        frappe.throw(_("events is required"))
+    payload = json.loads(events) if isinstance(events, str) else events
+    if isinstance(payload, dict):
+        payload = [payload]
+    dry = str(dry_run).lower() in {"1", "true", "yes"}
+    results = [_ingest_one(_as_dict(event), dry_run=dry) for event in payload]
+    return _summary(payload, dry, results)
+
+
+@frappe.whitelist()
+def ingest_parsed_reports(reports=None, dry_run=0):
+    """Ingest LLM-reviewed WhatsApp commercial reports into Momentum CRM."""
+    if not reports:
+        frappe.throw(_("reports is required"))
+    payload = json.loads(reports) if isinstance(reports, str) else reports
+    if isinstance(payload, dict):
+        payload = [payload]
+    dry = str(dry_run).lower() in {"1", "true", "yes"}
+    results = [_ingest_parsed_report(_as_dict(report), dry_run=dry) for report in payload]
+    return _summary(payload, dry, results)
