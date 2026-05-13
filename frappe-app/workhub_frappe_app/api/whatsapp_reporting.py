@@ -58,10 +58,17 @@ def _find_existing_interaction(message_id: str) -> str | None:
     return rows[0].name if rows else None
 
 
+def _assignee(parsed: dict[str, Any]) -> str:
+    return parsed.get("assigned_to") or parsed.get("performed_by") or frappe.session.user
+
+
 def _find_or_create_account(parsed: dict[str, Any]) -> str:
     account_name = parsed["account_name"]
+    assigned_to = _assignee(parsed)
     existing = frappe.db.get_value("Momentum Account", {"account_name": account_name}, "name")
     if existing:
+        if assigned_to:
+            frappe.db.set_value("Momentum Account", existing, "assigned_to", assigned_to, update_modified=True)
         return existing
 
     doc = frappe.new_doc("Momentum Account")
@@ -73,7 +80,7 @@ def _find_or_create_account(parsed: dict[str, Any]) -> str:
     doc.column = parsed.get("column", "Backlog")
     doc.contact_name = parsed.get("contact_name")
     doc.notes = parsed.get("description")
-    doc.assigned_to = frappe.session.user
+    doc.assigned_to = assigned_to
     doc.insert(ignore_permissions=True)
     return doc.name
 
@@ -89,7 +96,7 @@ def _create_interaction(account_id: str, parsed: dict[str, Any]) -> str:
     doc.contact_name = parsed.get("contact_name")
     doc.next_action = parsed.get("next_action")
     doc.next_action_date = parsed.get("next_action_date")
-    doc.performed_by = frappe.session.user
+    doc.performed_by = _assignee(parsed)
     doc.insert(ignore_permissions=True)
     return doc.name
 
@@ -102,14 +109,16 @@ def _create_task_if_needed(account_id: str, interaction_id: str, parsed: dict[st
         return None
 
     account_name = frappe.db.get_value("Momentum Account", account_id, "account_name") or account_id
+    assigned_to = _assignee(parsed)
     task = frappe.new_doc("WH Task")
     task.title = f"{next_action} - {account_name}"
     task.description = f"Seguimiento generado desde WhatsApp Reporting Santa Brisa.\n\n{parsed.get('description') or ''}"
     task.status = "NEXT"
     task.priority = "P1" if parsed.get("priority") == "Alta" else "P2"
     task.department = "SALES"
-    task.assigned_to = frappe.session.user
-    task.created_by = frappe.session.user
+    task.assigned_to = assigned_to
+    task.primary_owner = assigned_to
+    task.created_by = assigned_to
     task.is_inbox = 0
     task.auto_created = 1
     task.source_doctype = "Momentum Interaction"
