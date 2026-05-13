@@ -41,5 +41,79 @@ def test_audio_without_transcription_is_kept_as_review_note_not_fake_client():
     assert "Audio pendiente de revisar/transcribir" in parsed["description"]
 
 
+def test_parse_structured_commercial_report_uses_template_fields():
+    event = {
+        "message_id": "structured-1",
+        "sender_name": "Miguel",
+        "body": """REPORTE COMERCIAL
+Tipo: visita
+Nombre Cuenta: Labalabusta
+Distribuidor: Dismavi
+Zona: Barcelona
+Comercial: Miguel
+Estado cliente: interesado
+Stock: 0
+PLV: 0
+Activación: 0
+Producto / Cantidad:
+Qué pasó: quieren programar una cata y taller
+Próxima acción: escribir a Virginia y programar taller
+Responsable: Miguel
+Prioridad: Alta
+Notas Adicionales/ Contacto: Virginia +34 605 01 92 79""",
+        "whatsapp_ts": 1778660000,
+    }
+
+    parsed = parse_reporting_event(event)
+
+    assert parsed["account_name"] == "Labalabusta"
+    assert parsed["interaction_type"] == "Visita"
+    assert parsed["sales_channel"] == "Distribuidor"
+    assert parsed["products_or_service"] == "Taller"
+    assert parsed["next_action"] == "Escribir a Virginia y programar taller"
+    assert parsed["priority"] == "Alta"
+    assert not parsed.get("skip")
+
+
+def test_empty_template_report_is_skipped():
+    event = {
+        "message_id": "empty-template",
+        "sender_name": "Mrtin",
+        "body": """REPORTE COMERCIAL
+Tipo:
+Cliente:
+Distribuidor:
+Zona:
+Comercial:
+Estado cliente:
+Stock:
+PLV:
+Activación:
+Producto / Cantidad:
+Qué pasó:
+Próxima acción:
+Responsable:
+Prioridad:""",
+    }
+
+    parsed = parse_reporting_event(event)
+
+    assert parsed["skip"] is True
+    assert parsed["skip_reason"] == "empty_template"
+
+
+def test_non_report_chatter_is_skipped():
+    event = {
+        "message_id": "chatter-1",
+        "sender_name": "Cristobal",
+        "body": "Q significa PLV",
+    }
+
+    parsed = parse_reporting_event(event)
+
+    assert parsed["skip"] is True
+    assert parsed["skip_reason"] == "not_commercial_report"
+
+
 def test_source_marker_is_stable_for_deduplication():
     assert source_marker("abc123") == "WhatsApp message ID: abc123"

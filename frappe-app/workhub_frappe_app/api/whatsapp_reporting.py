@@ -135,6 +135,8 @@ def _ingest_one(event: dict[str, Any], dry_run: bool = False) -> dict[str, Any]:
         return {"ok": False, "skipped": True, "reason": "wrong_group", "group_name": group_name}
 
     parsed = parse_reporting_event(event)
+    if parsed.get("skip"):
+        return {"ok": True, "skipped": True, "reason": parsed.get("skip_reason", "skipped_by_parser"), "parsed": parsed}
     message_id = parsed.get("source_message_id")
     existing = _find_existing_interaction(message_id)
     if existing:
